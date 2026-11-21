@@ -38,7 +38,8 @@ const updateOrderStatusSchema = z.object({
 const markOrderPaidSchema = z.object({
   tenantId: z.string().uuid(),
   orderId: z.string().uuid(),
-  method: z.string().min(1).max(50),
+  // Same list as the database constraint (orders_payment_method_check).
+  method: z.enum(ALL_PAYMENT_METHOD_IDS as [string, ...string[]]),
   // Integer MINOR units, ADDED to the tip already on the order. Coarse bound
   // here (the largest minor ceiling, 2-decimal currencies); markPaid applies
   // the exact per-currency ceiling on the resulting tip.

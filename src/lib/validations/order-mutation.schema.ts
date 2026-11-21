@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { MAX_TIP_AMOUNT } from './order.schema';
+import { ALL_PAYMENT_METHOD_IDS } from '@/lib/payments/methods';
 
 // Body schema for POST /api/orders/mutations - the single idempotent endpoint
 // that carries offline-replayable order mutations (status change, server
@@ -38,9 +39,9 @@ export const orderMutationSchema = z.discriminatedUnion('type', [
     type: z.literal('pay'),
     client_request_id: clientRequestId,
     orderId: z.string().uuid(),
-    // Valide finement par markOrderPaidSchema cote action; borne ici pour ne
-    // jamais transmettre n'importe quoi.
-    method: z.string().min(1).max(50),
+    // Meme liste que la contrainte de la base (orders_payment_method_check):
+    // un moyen inconnu est refuse ici, avant d'entrer dans la file hors ligne.
+    method: z.enum(ALL_PAYMENT_METHOD_IDS as [string, ...string[]]),
     // Unites MINEURES entieres (le pourboire est stocke en minor dans orders).
     // Plafond grossier (devises a 2 decimales); markPaid applique le plafond
     // exact de la devise sur le pourboire obtenu.

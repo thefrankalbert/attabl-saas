@@ -96,11 +96,13 @@ describe('order.service multi-tenant isolation', () => {
     const calls: Array<Record<string, unknown>> = [];
     db.setRpc('encaisser_commande', async (args) => {
       calls.push(args);
-      return { data: { paid: false }, error: null };
+      // Ce que rend la fonction pour une commande hors de portee: aucun etat.
+      return { data: { paid: false, payment_status: null, status: null }, error: null };
     });
     const service = createOrderService(asClient(db));
-    const res = await service.markPaid('order-B', TENANT_A, { method: 'cash', tipAmount: 500 });
-    expect(res).toEqual({ paid: false });
+    await expect(
+      service.markPaid('order-B', TENANT_A, { method: 'cash', tipAmount: 500 }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     expect(calls).toHaveLength(1);
     expect(calls[0]).toMatchObject({ p_order_id: 'order-B', p_tenant_id: TENANT_A });
     // Aucune ecriture directe: tout passe par la fonction, qui filtre par

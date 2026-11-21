@@ -418,15 +418,20 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
           error,
         });
         // The database REFUSED: a definitive answer, never retried by the
-        // offline outbox. 23514 = the plan lock on the tip (PR #444,
-        // enforce_order_plan_features); 22023 / 42501 = guard, ceiling, rights.
+        // offline outbox. 23514 is a check violation, raised by more than one
+        // rule: the plan lock on the tip (PR #444, enforce_order_plan_features)
+        // and the list of payment methods (orders_payment_method_check) - the
+        // message tells them apart. 22023 / 42501 = guard, ceiling, rights.
         // Anything else is transient: 'Erreur interne' keeps it retryable, and
         // nothing was booked, so a retry cannot collect twice.
-        const code = (error as { code?: string }).code;
-        if (code === '23514') {
+        const { code, message = '' } = error as { code?: string; message?: string };
+        if (code === '23514' && message.includes('Tips require')) {
           throw new ServiceError('Pourboire non inclus dans votre plan', 'VALIDATION', error);
         }
-        if (code === '22023' || code === '42501') {
+        if (code === '23514' && message.includes('orders_payment_method_check')) {
+          throw new ServiceError('Moyen de paiement non accepte', 'VALIDATION', error);
+        }
+        if (code === '23514' || code === '22023' || code === '42501') {
           throw new ServiceError("Le paiement n'a pas pu etre enregistre", 'VALIDATION', error);
         }
         throw new ServiceError('Erreur interne', 'INTERNAL', error);
@@ -436,7 +441,21 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
         paid?: boolean;
         session_id?: string | null;
         payment_status?: string | null;
+        status?: string | null;
       };
+
+      // Nothing flipped: say why instead of "already settled" for everything.
+      // A cancelled order keeps payment_status 'pending', and an order out of
+      // reach (another restaurant, deleted) comes back without any state.
+      if (!result.paid && result.status === 'cancelled') {
+        throw new ServiceError(
+          'Cette commande est annulee : elle ne peut pas etre encaissee.',
+          'VALIDATION',
+        );
+      }
+      if (!result.paid && !result.payment_status) {
+        throw new ServiceError('Commande introuvable', 'NOT_FOUND');
+      }
 
       // A partly paid order is settled tender by tender from its details
       // (OrderPaymentPanel): this screen would ask for the full amount. It used

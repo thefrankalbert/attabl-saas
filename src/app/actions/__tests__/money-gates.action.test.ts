@@ -232,6 +232,16 @@ describe('pourboire a l encaissement: refuse au plan Starter', () => {
 
   // Constat F, premiere barriere: un pourboire non entier ou demesure est
   // refuse avant tout acces a la base (le plafond exact est dans markPaid).
+  // Contre-verification du 2026-11-21: le moyen etait un texte libre, refuse
+  // seulement par la base (23514). Meme liste que la contrainte maintenant.
+  it('refuse un moyen de paiement inconnu avant tout acces a la base', async () => {
+    member.role = 'cashier';
+    const { actionMarkOrderPaid } = await import('@/app/actions/orders');
+    const res = await actionMarkOrderPaid(TENANT_ID, ORDER_ID, 'bitcoin');
+    expect(res.error).toBe('Donnees invalides');
+    expect(mockMarkPaid).not.toHaveBeenCalled();
+  });
+
   it.each([12.5, 100_000_001])('refuse un pourboire invalide (%s)', async (tip) => {
     member.role = 'cashier';
     tenantPlan.value = 'pro';

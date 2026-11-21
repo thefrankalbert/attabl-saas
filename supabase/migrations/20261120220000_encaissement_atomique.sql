@@ -34,16 +34,25 @@
 -- explicitement (42501) au lieu d'un "rien n'a bascule" silencieux. Le role
 -- service (route caisse) n'est pas concerne: il a deja ete controle.
 --
--- RIEN N'A BASCULE. La fonction renvoie l'etat de reglement de la commande
--- (`payment_status`): l'application distingue une commande deja reglee (rejeu,
--- sans effet) d'une commande partiellement payee, qu'on solde depuis son
--- detail et non ici.
+-- RIEN N'A BASCULE. La fonction renvoie l'etat de la commande
+-- (`payment_status` et `status`): l'application distingue une commande deja
+-- reglee (rejeu, sans effet), une commande partiellement payee (a solder
+-- depuis son detail), une commande annulee, et une commande introuvable.
 --
--- Rejouable: CREATE OR REPLACE.
+-- UNE SEULE VERSION. Un premier brouillon de cette fonction prenait un 5e
+-- argument (`p_tip_plafond`). Sur une base ou il aurait ete applique, le
+-- CREATE ci-dessous en ajouterait une seconde au lieu de la remplacer:
+-- PostgREST repondrait PGRST203 (appel ambigu), la file hors ligne relancerait
+-- sans fin, et l'ancienne version, sans controle de `orders.pay`, resterait
+-- appelable. Elle est donc supprimee d'abord.
+--
+-- Rejouable: DROP ... IF EXISTS et CREATE OR REPLACE.
 -- Rollback: DROP FUNCTION public.encaisser_commande(uuid, uuid, text, bigint);
 -- puis redeployer l'ancien markPaid (deux ecritures).
 
 BEGIN;
+
+DROP FUNCTION IF EXISTS public.encaisser_commande(uuid, uuid, text, bigint, bigint);
 
 CREATE OR REPLACE FUNCTION public.encaisser_commande(
   p_order_id uuid,
@@ -58,7 +67,7 @@ SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_ligne record;
-  v_etat text;
+  v_etat record;
 BEGIN
   IF coalesce(p_tip_ajout, 0) < 0 THEN
     RAISE EXCEPTION 'Pourboire negatif' USING ERRCODE = '22023';
@@ -85,10 +94,14 @@ BEGIN
   -- Rien de bascule: deja reglee (double appui, rejeu), partiellement payee,
   -- annulee, ou hors de portee. L'etat dit lequel (NULL = invisible).
   IF NOT FOUND THEN
-    SELECT o.payment_status INTO v_etat
+    SELECT o.payment_status, o.status INTO v_etat
       FROM public.orders o
      WHERE o.id = p_order_id AND o.tenant_id = p_tenant_id;
-    RETURN jsonb_build_object('paid', false, 'payment_status', v_etat);
+    RETURN jsonb_build_object(
+      'paid', false,
+      'payment_status', v_etat.payment_status,
+      'status', v_etat.status
+    );
   END IF;
 
   -- Parentheses obligatoires: sans elles, PL/pgSQL coupe la condition du IF

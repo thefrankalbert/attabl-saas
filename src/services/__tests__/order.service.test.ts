@@ -950,7 +950,10 @@ describe('OrderService', () => {
     });
 
     it('commande deja reglee (rejeu): paid false, sans fermer la table', async () => {
-      const m = makeSupabase({ data: { paid: false }, error: null });
+      const m = makeSupabase({
+        data: { paid: false, payment_status: 'paid', status: 'delivered' },
+        error: null,
+      });
       const res = await createOrderService(m.client).markPaid('o1', 't1', { method: 'cash' });
       expect(res).toEqual({ paid: false });
       expect(m.rpc).not.toHaveBeenCalledWith('close_table_session_if_settled', expect.anything());
@@ -1037,7 +1040,7 @@ describe('OrderService', () => {
     // etait payee.
     it('un rejeu sur une commande deja payee n est jamais refuse par le plafond', async () => {
       const m = makeSupabase(
-        { data: { paid: false }, error: null },
+        { data: { paid: false, payment_status: 'paid', status: 'delivered' }, error: null },
         { tip_amount: 999_900, display_currency: 'XOF', payment_status: 'paid' },
       );
       const res = await createOrderService(m.client).markPaid('o1', 't1', {
@@ -1052,13 +1055,65 @@ describe('OrderService', () => {
     // code 23514) etait traite comme une panne passagere: "Erreur interne" a
     // l'ecran, et la file hors ligne relancait en boucle.
     it('refus de plan (23514): refus definitif, message clair', async () => {
-      const m = makeSupabase({ data: null, error: { code: '23514', message: 'plan' } });
+      const m = makeSupabase({
+        data: null,
+        error: { code: '23514', message: 'Tips require the Pro plan or higher' },
+      });
       await expect(
         createOrderService(m.client).markPaid('o1', 't1', { method: 'cash' }),
       ).rejects.toMatchObject({
         code: 'VALIDATION',
         message: 'Pourboire non inclus dans votre plan',
       });
+    });
+
+    // Contre-verification finale: tout 23514 devenait "Pourboire non inclus
+    // dans votre plan", alors que la liste des moyens de paiement leve aussi
+    // 23514 (orders_payment_method_check).
+    it('23514 de la liste des moyens de paiement: message propre, pas le plan', async () => {
+      const m = makeSupabase({
+        data: null,
+        error: {
+          code: '23514',
+          message:
+            'new row for relation "orders" violates check constraint "orders_payment_method_check"',
+        },
+      });
+      await expect(
+        createOrderService(m.client).markPaid('o1', 't1', { method: 'cash' }),
+      ).rejects.toMatchObject({ code: 'VALIDATION', message: 'Moyen de paiement non accepte' });
+    });
+
+    it('autre 23514: refus definitif generique, jamais "Erreur interne"', async () => {
+      const m = makeSupabase({ data: null, error: { code: '23514', message: 'autre regle' } });
+      await expect(
+        createOrderService(m.client).markPaid('o1', 't1', { method: 'cash' }),
+      ).rejects.toMatchObject({
+        code: 'VALIDATION',
+        message: "Le paiement n'a pas pu etre enregistre",
+      });
+    });
+
+    // Une commande annulee garde payment_status 'pending': elle revenait en
+    // "deja reglee", et le caissier lisait qu'elle etait encaissee.
+    it('commande annulee: message "annulee", pas "deja reglee"', async () => {
+      const m = makeSupabase({
+        data: { paid: false, payment_status: 'pending', status: 'cancelled' },
+        error: null,
+      });
+      await expect(
+        createOrderService(m.client).markPaid('o1', 't1', { method: 'cash' }),
+      ).rejects.toMatchObject({ code: 'VALIDATION', message: expect.stringMatching(/annulee/) });
+    });
+
+    it('commande introuvable (autre restaurant, supprimee): NOT_FOUND', async () => {
+      const m = makeSupabase({
+        data: { paid: false, payment_status: null, status: null },
+        error: null,
+      });
+      await expect(
+        createOrderService(m.client).markPaid('o1', 't1', { method: 'cash' }),
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
 
     // Une commande partiellement payee repondait "succes, deja reglee": le
