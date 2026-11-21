@@ -17,7 +17,14 @@ describe('buildCspHeader en production', () => {
   });
 
   it("n'autorise jamais eval (le polyfill vm d'une dependance en contient un)", () => {
-    expect(directives().join('; ')).not.toContain('unsafe-eval');
+    // Mot-cle exact, guillemets compris: 'wasm-unsafe-eval' (decodeur QR en
+    // WebAssembly) n'autorise que la compilation WASM, pas eval().
+    expect(directives().join('; ')).not.toContain("'unsafe-eval'");
+  });
+
+  it('autorise la compilation WebAssembly du decodeur QR', () => {
+    const script = directives().find((d) => d.startsWith('script-src')) ?? '';
+    expect(script).toContain("'wasm-unsafe-eval'");
   });
 
   it('garde les directives sans repli vers default-src', () => {

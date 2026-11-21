@@ -597,10 +597,10 @@ export default function CartPage() {
                 placeholder={t('cartNotesPlaceholder')}
                 maxLength={NOTES_MAX_LENGTH}
                 autoFocus
-                className="w-full min-h-[80px] bg-[var(--color-surface-alt)] border border-[var(--color-divider)] rounded-xl px-3 py-3 text-[16px] md:text-[14px] font-normal text-[var(--color-ink)] placeholder:text-[var(--color-ink-soft)] focus:outline-none focus-visible:ring-0 focus-visible:border-[#D4D4D4] resize-none transition-colors"
+                className="w-full min-h-[80px] bg-[var(--color-surface-alt)] border border-[var(--color-divider)] rounded-xl px-3 py-3 text-[16px] md:text-[14px] font-normal text-[var(--color-ink)] placeholder:text-[var(--color-ink-muted)] focus:outline-none focus-visible:ring-0 focus-visible:border-[#D4D4D4] resize-none transition-colors"
               />
               <div className="mt-1 flex justify-end">
-                <span className="text-[11px] text-[var(--color-ink-soft)]">
+                <span className="text-[11px] text-[var(--color-ink-muted)]">
                   {notesLength}/{NOTES_MAX_LENGTH}
                 </span>
               </div>
@@ -719,7 +719,11 @@ export default function CartPage() {
               <>
                 <span className="inline-flex min-w-0 items-center gap-2">
                   <ChefHat className="h-[17px] w-[17px] shrink-0" strokeWidth={2} />
-                  <span className="truncate">{t('confirmOrder')}</span>
+                  {/* Deux lignes plutot qu'une coupe: a 375 px "Confirmer ma commande"
+                      finissait en "Confirmer ma comm..." a cote du total. */}
+                  <span className="whitespace-normal text-left leading-tight">
+                    {t('confirmOrder')}
+                  </span>
                 </span>
                 <span className="inline-flex shrink-0 items-center gap-2 tabular-nums">
                   {formatDisplayPrice(finalTotal, currencyCode)}

@@ -30,8 +30,10 @@ function getPasswordStrength(password: string): 0 | 1 | 2 | 3 {
   return score === 0 ? 1 : (score as 1 | 2);
 }
 
+// Hauteurs et marges resserrees sur ecran court (tablette paysage): la regle 12
+// interdit le defilement de l'inscription de 660 a 810 px de haut.
 const inputClass =
-  'h-10 rounded-lg border-[var(--border)] bg-[var(--card)] px-3 text-[16px] md:text-[14px] text-[var(--heading)] shadow-none placeholder:text-[var(--muted)] focus-visible:border-[var(--fg)] focus-visible:ring-[3px] focus-visible:ring-[var(--ring)] focus-visible:ring-offset-0';
+  'h-10 [@media(max-height:819px)]:h-9 rounded-lg border-[var(--border)] bg-[var(--card)] px-3 text-[16px] md:text-[14px] text-[var(--heading)] shadow-none placeholder:text-[var(--muted)] focus-visible:border-[var(--fg)] focus-visible:ring-[3px] focus-visible:ring-[var(--ring)] focus-visible:ring-offset-0';
 const labelClass = 'text-[13.5px] font-medium text-[var(--fg)]';
 
 function AuthForm({ mode }: AuthFormProps) {
@@ -84,9 +86,10 @@ function AuthForm({ mode }: AuthFormProps) {
 
   return (
     <div className="w-full">
-      {/* Header */}
-      <div className="mb-7 text-center">
-        <h1 className="mb-1.5 text-[22px] font-semibold tracking-[-0.02em] text-[var(--heading)]">
+      {/* Header - marges resserrees sous 820 px de haut: l'inscription
+          defilait de 26 px (1024x768) a 134 px (660 de haut), regle 12. */}
+      <div className="mb-7 text-center [@media(min-height:720px)_and_(max-height:819px)]:mb-5 [@media(min-height:680px)_and_(max-height:719px)]:mb-3 [@media(max-height:679px)]:mb-2">
+        <h1 className="mb-1.5 text-[22px] [@media(max-height:719px)]:text-[20px] [@media(max-height:719px)]:leading-tight font-semibold tracking-[-0.02em] text-[var(--heading)]">
           {isLogin ? tForm('loginTitle') : tForm('signupTitle')}
         </h1>
         <p className="text-sm text-[var(--secondary)]">
@@ -145,7 +148,7 @@ function AuthForm({ mode }: AuthFormProps) {
           variant="outline"
           onClick={() => handleOAuthLogin('google')}
           disabled={oauthLoading !== null}
-          className="h-10 w-full rounded-lg border-[var(--border)] bg-[var(--card)] font-medium text-[var(--fg)] transition-colors hover:bg-[var(--surface-hover)]"
+          className="h-10 [@media(max-height:819px)]:h-9 w-full rounded-lg border-[var(--border)] bg-[var(--card)] font-medium text-[var(--fg)] transition-colors hover:bg-[var(--surface-hover)]"
         >
           {oauthLoading === 'google' ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -156,7 +159,7 @@ function AuthForm({ mode }: AuthFormProps) {
         </Button>
 
         {/* Divider */}
-        <div className="relative my-5">
+        <div className="relative my-5 [@media(max-height:819px)]:my-3">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-[var(--border)]" />
           </div>
@@ -166,7 +169,11 @@ function AuthForm({ mode }: AuthFormProps) {
         </div>
 
         {/* Form */}
-        <form method="post" onSubmit={handleSubmit} className="space-y-4">
+        <form
+          method="post"
+          onSubmit={handleSubmit}
+          className="space-y-4 [@media(max-height:819px)]:space-y-3"
+        >
           <div
             className="pointer-events-none absolute h-0 w-0 overflow-hidden opacity-0"
             aria-hidden="true"
@@ -184,7 +191,7 @@ function AuthForm({ mode }: AuthFormProps) {
           </div>
 
           {!isLogin && (
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 [@media(max-height:719px)]:space-y-1">
               <Label htmlFor="restaurant" className={labelClass}>
                 {tForm('restaurantLabel')}
               </Label>
@@ -205,7 +212,7 @@ function AuthForm({ mode }: AuthFormProps) {
             </div>
           )}
 
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 [@media(max-height:719px)]:space-y-1">
             <Label htmlFor="email" className={labelClass}>
               {tForm('emailLabel')}
             </Label>
@@ -223,7 +230,7 @@ function AuthForm({ mode }: AuthFormProps) {
             />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 [@media(max-height:719px)]:space-y-1">
             <Label htmlFor="password" className={labelClass}>
               {tForm('passwordLabel')}
             </Label>
@@ -259,7 +266,7 @@ function AuthForm({ mode }: AuthFormProps) {
               {isLogin && (
                 <Link
                   href="/forgot-password"
-                  className="absolute bottom-full right-0 mb-0 flex h-5 items-center text-xs font-medium text-[var(--subtle)] transition-colors hover:text-[var(--fg)]"
+                  className="absolute bottom-full right-0 mb-0 flex h-6 items-center text-xs font-medium text-[var(--subtle)] transition-colors hover:text-[var(--fg)]"
                 >
                   {tForm('forgotPassword')}
                 </Link>
@@ -319,7 +326,7 @@ function AuthForm({ mode }: AuthFormProps) {
 
           <Button
             type="submit"
-            className="h-10 w-full rounded-lg bg-[var(--fg)] text-sm font-medium text-[var(--primary-fg)] transition-colors hover:bg-[var(--fg-hover)]"
+            className="h-10 [@media(max-height:819px)]:h-9 w-full rounded-lg bg-[var(--fg)] text-sm font-medium text-[var(--primary-fg)] transition-colors hover:bg-[var(--fg-hover)]"
             disabled={loading || (!!turnstileSiteKey && !cfToken)}
           >
             {loading ? (
@@ -348,13 +355,16 @@ function AuthForm({ mode }: AuthFormProps) {
           )}
 
           {!isLogin && (
-            <p className="text-center text-xs text-[var(--muted)]">{tForm('trialNote')}</p>
+            // Deja dit par le titre ("14 jours gratuits"): masque sur ecran court.
+            <p className="text-center text-xs text-[var(--muted)] [@media(max-height:719px)]:hidden">
+              {tForm('trialNote')}
+            </p>
           )}
         </form>
       </AuthCard>
 
       {/* Footer Link */}
-      <p className="mt-6 text-center text-sm text-[var(--muted)]">
+      <p className="mt-6 text-center text-sm text-[var(--muted)] [@media(min-height:720px)_and_(max-height:819px)]:mt-4 [@media(min-height:680px)_and_(max-height:719px)]:mt-3 [@media(max-height:679px)]:mt-2">
         {isLogin ? tForm('noAccount') : tForm('hasAccount')}{' '}
         <Link
           href={isLogin ? '/signup' : '/login'}

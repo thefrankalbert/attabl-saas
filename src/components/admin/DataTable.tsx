@@ -12,6 +12,7 @@ import {
   type Column,
 } from '@tanstack/react-table';
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useSessionState } from '@/hooks/useSessionState';
 import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -87,6 +88,7 @@ export function DataTable<TData>({
   storageKey,
   columnVisibility,
 }: DataTableProps<TData>) {
+  const tc = useTranslations('common');
   const [sortingLocal, setSortingLocal] = useState<SortingState>([]);
   const [sortingSession, setSortingSession] = useSessionState<SortingState>(
     `table:${storageKey ?? 'default'}:sorting`,
@@ -201,6 +203,7 @@ export function DataTable<TData>({
               size="sm"
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
+              aria-label={tc('previousPage')}
               className="h-11 w-11 p-0"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -210,6 +213,7 @@ export function DataTable<TData>({
               size="sm"
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
+              aria-label={tc('nextPage')}
               className="h-11 w-11 p-0"
             >
               <ChevronRight className="h-4 w-4" />

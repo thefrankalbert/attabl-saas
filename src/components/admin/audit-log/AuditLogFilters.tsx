@@ -62,7 +62,7 @@ export default function AuditLogFilters({
               setPage(0);
             }}
           >
-            <SelectTrigger className="w-full h-9">
+            <SelectTrigger aria-label={t('filterAction')} className="w-full h-9">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -89,7 +89,7 @@ export default function AuditLogFilters({
               setPage(0);
             }}
           >
-            <SelectTrigger className="w-full h-9">
+            <SelectTrigger aria-label={t('filterEntity')} className="w-full h-9">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

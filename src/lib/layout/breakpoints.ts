@@ -36,4 +36,6 @@ export const MEDIA_QUERIES = {
   mobile: `(max-width: ${BREAKPOINTS.md - 1}px)`,
   tablet: `(min-width: ${BREAKPOINTS.md}px) and (max-width: ${BREAKPOINTS.lg - 1}px)`,
   desktop: `(min-width: ${BREAKPOINTS.lg}px)`,
+  /** Sous xl: tablette et petit ordinateur (tableaux trop larges -> cartes). */
+  belowXl: `(max-width: ${BREAKPOINTS.xl - 1}px)`,
 } as const;

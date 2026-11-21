@@ -70,7 +70,7 @@ export default function RecipeLineRow({
           }}
           disabled={!canEdit}
         >
-          <SelectTrigger className="w-full h-9">
+          <SelectTrigger aria-label={t('recipeIngredientLabel')} className="w-full h-9">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

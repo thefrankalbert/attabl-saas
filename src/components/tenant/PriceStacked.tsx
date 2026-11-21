@@ -16,7 +16,7 @@ export function PriceStacked({ value, numClass }: { value: string; numClass: str
     <span className="flex flex-col items-end leading-none">
       <span className={`tabular-nums ${numClass}`}>{num}</span>
       {unit && (
-        <span className="mt-[3px] text-[10px] font-medium text-[var(--color-ink-soft)]">
+        <span className="mt-[3px] text-[10px] font-medium text-[var(--color-ink-muted)]">
           {unit}
         </span>
       )}

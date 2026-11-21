@@ -108,7 +108,7 @@ export function SettingsRow({
 export function SettingsCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h2 className="mb-2 px-[6px] font-mono text-[11px] font-medium uppercase tracking-[0.5px] text-[var(--color-ink-soft)]">
+      <h2 className="mb-2 px-[6px] font-mono text-[11px] font-medium uppercase tracking-[0.5px] text-[var(--color-ink-muted)]">
         {title}
       </h2>
       <section className="divide-y divide-[var(--color-divider)] overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-divider)] bg-white">

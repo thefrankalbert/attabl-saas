@@ -306,7 +306,9 @@ jobs:
         # positionnel comme une regex sur les chemins: les trois parcours
         # tournent donc sur UN seul bootstrap. Trois invocations redemarreraient
         # la stack Supabase trois fois, soit 6 a 10 minutes perdues pour rien.
-        run: bash scripts/run-journeys-local.sh "08-bola|04-service|03-staff"
+        # 09-casse: aucun ecran casse (debordement, libelle coupe, controle
+        # recouvert, regles axe-core de mise en page) aux 5 largeurs.
+        run: bash scripts/run-journeys-local.sh "08-bola|04-service|03-staff|09-casse"
 
       - name: Rapport Playwright (en cas d echec)
         # Sans cet artefact, un echec de parcours n'est qu'une ligne rouge: le

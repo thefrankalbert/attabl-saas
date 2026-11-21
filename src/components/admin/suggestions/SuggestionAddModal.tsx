@@ -54,11 +54,14 @@ export default function SuggestionAddModal({
     <AdminModal isOpen={isOpen} onClose={onClose} title={t('newSuggestion')} size="lg">
       <div className="space-y-4 pt-4">
         <div>
-          <Label className="text-sm font-medium text-app-text mb-1.5 block">
+          <Label
+            htmlFor="suggestion-source-dish"
+            className="text-sm font-medium text-app-text mb-1.5 block"
+          >
             {t('sourceDish')}
           </Label>
           <Select value={sourceItemId || undefined} onValueChange={onSourceChange}>
-            <SelectTrigger className="w-full h-10">
+            <SelectTrigger id="suggestion-source-dish" className="w-full h-10">
               <SelectValue placeholder={tc('selectPlaceholder')} />
             </SelectTrigger>
             <SelectContent>
@@ -97,11 +100,14 @@ export default function SuggestionAddModal({
         </div>
 
         <div>
-          <Label className="text-sm font-medium text-app-text mb-1.5 block">
+          <Label
+            htmlFor="suggestion-target-dish"
+            className="text-sm font-medium text-app-text mb-1.5 block"
+          >
             {t('suggestedDish')}
           </Label>
           <Select value={targetItemId || undefined} onValueChange={onTargetChange}>
-            <SelectTrigger className="w-full h-10">
+            <SelectTrigger id="suggestion-target-dish" className="w-full h-10">
               <SelectValue placeholder={tc('selectPlaceholder')} />
             </SelectTrigger>
             <SelectContent>

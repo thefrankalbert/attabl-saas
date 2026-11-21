@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 
 interface ImageUploadPreviewProps {
   value: string;
+  /** Format du recadrage: l'apercu montre la photo entiere, comme recadree. */
+  aspect: number;
   disabled?: boolean;
   isLoading: boolean;
   openRecrop: () => void;
@@ -17,6 +19,7 @@ interface ImageUploadPreviewProps {
 
 export default function ImageUploadPreview({
   value,
+  aspect,
   disabled,
   isLoading,
   openRecrop,
@@ -25,11 +28,13 @@ export default function ImageUploadPreview({
   onRemove,
 }: ImageUploadPreviewProps) {
   return (
-    <div className="w-full rounded-xl overflow-hidden border border-app-border bg-app-card shadow-sm">
-      {/* Image preview */}
-      <div className="relative w-full h-56 bg-black/5">
+    <div className="@container w-full rounded-xl overflow-hidden border border-app-border bg-app-card shadow-sm">
+      {/* Image preview: meme format que le recadrage (une hauteur fixe + cover
+          coupait le haut et le bas de la photo), plafonne a 18rem de haut;
+          au-dela, contain montre la photo entiere sur fond neutre. */}
+      <div className="relative w-full max-h-72 bg-black/5" style={{ aspectRatio: aspect }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={value} alt="" className="object-cover w-full h-full" />
+        <img src={value} alt="" className="object-contain w-full h-full" />
       </div>
 
       {/* Action toolbar */}
@@ -94,15 +99,19 @@ function ActionButton({
       variant={variant === 'danger' ? 'ghost' : 'ghost'}
       onClick={onClick}
       disabled={disabled}
+      aria-label={label}
+      title={label}
       className={cn(
-        'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors h-auto',
+        'inline-flex shrink-0 items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors h-auto',
         variant === 'danger'
           ? 'text-red-400 hover:bg-red-500/10 hover:text-red-300'
           : 'text-app-text-secondary hover:bg-app-elevated hover:text-app-text',
       )}
     >
       {icon}
-      {label}
+      {/* Libelle masque quand la carte est etroite (case de galerie): les trois
+          boutons tiennent alors en icones au lieu de deborder de la carte. */}
+      <span className="hidden @[22rem]:inline">{label}</span>
     </Button>
   );
 }

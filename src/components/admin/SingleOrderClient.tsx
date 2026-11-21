@@ -19,6 +19,7 @@ export default function SingleOrderClient({
 }: SingleOrderClientProps) {
   const router = useRouter();
   const t = useTranslations('orders');
+  const tc = useTranslations('common');
 
   const displayLabel = orderDisplayLabel(initialOrder);
 
@@ -33,8 +34,9 @@ export default function SingleOrderClient({
           size="sm"
           className="shrink-0 h-7 w-7 p-0"
           onClick={() => router.back()}
+          aria-label={tc('back')}
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-4 h-4" aria-hidden />
         </Button>
         <h1 className="text-sm font-semibold text-app-text break-words">
           {t('orderDetails')} - {displayLabel}

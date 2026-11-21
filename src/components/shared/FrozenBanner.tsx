@@ -30,7 +30,7 @@ export function FrozenBanner({
       {showPlansLink && (
         <Link
           href={`/sites/${tenantSlug}/admin/subscription`}
-          className="shrink-0 bg-status-error text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity"
+          className="shrink-0 bg-status-error-solid text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity"
         >
           {t('seePlans')}
         </Link>

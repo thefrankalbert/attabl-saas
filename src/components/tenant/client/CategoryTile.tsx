@@ -51,7 +51,9 @@ export function CategoryTile({ category, href }: CategoryTileProps) {
           <CategoryIcon name={category.icon} size={30} className="text-white" />
         )}
       </div>
-      <div className="w-full truncate text-center text-[11.5px] font-medium text-[var(--color-ink-2)]">
+      {/* line-clamp-2: "Poissons et fruits de mer" etait coupe en "Poissons et f..."
+          sur telephone; deux lignes suffisent aux noms de categorie. */}
+      <div className="line-clamp-2 w-full break-words text-center text-[11.5px] leading-tight font-medium text-[var(--color-ink-2)]">
         {category.label}
       </div>
     </Link>
