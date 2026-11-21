@@ -81,7 +81,7 @@ export function PlanCards({ effectivePeriod }: { effectivePeriod: BillingPeriod 
                 {/* Price */}
                 {perMonth != null ? (
                   <>
-                    <div className="mt-5 flex items-baseline gap-1.5">
+                    <div className="mt-5 flex flex-wrap items-baseline gap-x-1.5">
                       <span
                         className={cn(
                           'text-[32px] font-semibold tracking-[-0.025em]',
@@ -94,7 +94,7 @@ export function PlanCards({ effectivePeriod }: { effectivePeriod: BillingPeriod 
                       </span>
                       <span
                         className={cn(
-                          'text-sm font-medium',
+                          'whitespace-nowrap text-sm font-medium',
                           plan.dark
                             ? 'text-zinc-400 dark:text-zinc-500'
                             : 'text-zinc-500 dark:text-zinc-400',

@@ -20,22 +20,25 @@ export function OfflineIndicator() {
   if (isOnline && !wasOffline && !showPending && !showRejected) return null;
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 flex flex-col">
+    // Dans le flux de main#main-content, juste sous la barre du haut: en `fixed
+    // top-0` le bandeau recouvrait cette barre. `sticky` le garde visible quand
+    // la page defile, `shrink-0` l'empeche d'etre ecrase par la page.
+    <div className="sticky top-0 z-40 flex shrink-0 flex-col">
       {(!isOnline || wasOffline) && (
         <div
           className={cn(
-            'flex items-center justify-center gap-2 py-2 text-sm font-medium transition-colors duration-300',
+            'flex items-center justify-center gap-2 px-4 py-2 text-center text-sm font-medium transition-colors duration-300',
             isOnline && wasOffline ? 'bg-accent text-accent-text' : 'bg-app-bg text-app-text',
           )}
         >
           {isOnline ? (
             <>
-              <RefreshCw className="h-4 w-4 animate-spin" />
+              <RefreshCw className="h-4 w-4 shrink-0 animate-spin" />
               {tc('connectionRestored')}
             </>
           ) : (
             <>
-              <WifiOff className="h-4 w-4" />
+              <WifiOff className="h-4 w-4 shrink-0" />
               {tc('offlineMode')}
             </>
           )}
@@ -43,8 +46,8 @@ export function OfflineIndicator() {
       )}
 
       {showPending && (
-        <div className="flex items-center justify-center gap-2 bg-amber-500/15 py-2 text-sm font-medium text-amber-500 ring-1 ring-amber-500/30">
-          <UploadCloud className="h-4 w-4" />
+        <div className="flex items-center justify-center gap-2 bg-amber-500/15 px-4 py-2 text-center text-sm font-medium text-amber-500 ring-1 ring-amber-500/30">
+          <UploadCloud className="h-4 w-4 shrink-0" />
           {/* Le compte est expose a part du libelle traduit: un test de bout en
               bout doit pouvoir lire le nombre sans dependre de la langue. */}
           <span data-testid="outbox-pending-count" className="sr-only">
@@ -62,7 +65,7 @@ export function OfflineIndicator() {
           aria-label={tc('aria.close')}
           className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-none bg-red-500/15 py-2 text-sm font-medium text-red-500 ring-1 ring-red-500/30 hover:bg-red-500/25 hover:text-red-500"
         >
-          <AlertTriangle className="h-4 w-4" />
+          <AlertTriangle className="h-4 w-4 shrink-0" />
           {tc('outboxRejected', { count: rejected.length })}
         </Button>
       )}
