@@ -62,6 +62,18 @@ const FIRST_STEPS: { title: string; body: string }[] = [
   },
 ];
 
+/** Lignes HTML des etapes, construites une fois a partir du texte fixe ci-dessus. */
+const FIRST_STEPS_HTML = FIRST_STEPS.map(
+  ({ title, body }, i) =>
+    '<tr><td valign="top" style="width:28px;padding:0 12px 16px 0;"><div style="width:24px;height:24px;border-radius:12px;background:#111827;color:#fff;font-size:12px;font-weight:600;line-height:24px;text-align:center;">' +
+    String(i + 1) +
+    '</div></td><td valign="top" style="padding:0 0 16px;"><p style="margin:0;font-size:14px;font-weight:600;color:#111827;">' +
+    escapeHtml(title) +
+    '</p><p style="margin:2px 0 0;font-size:14px;line-height:1.5;color:#4b5563;">' +
+    escapeHtml(body) +
+    '</p></td></tr>',
+).join('');
+
 /** E-mail de bienvenue, envoye une fois l'adresse confirmee. */
 export function buildWelcomeOnboardingEmail(data: WelcomeOnboardingEmailData): EmailContent {
   const name = data.restaurantName?.trim();
@@ -70,18 +82,13 @@ export function buildWelcomeOnboardingEmail(data: WelcomeOnboardingEmailData): E
     ? `Votre compte est actif. <strong style="color:#111827;">${safeName}</strong> a 14 jours pour tout essayer, toutes les fonctions comprises.`
     : 'Votre compte est actif. Vous avez 14 jours pour tout essayer, toutes les fonctions comprises.';
 
-  const steps = FIRST_STEPS.map(
-    (step, i) =>
-      `<tr><td valign="top" style="width:28px;padding:0 12px 16px 0;"><div style="width:24px;height:24px;border-radius:12px;background:#111827;color:#fff;font-size:12px;font-weight:600;line-height:24px;text-align:center;">${i + 1}</div></td><td valign="top" style="padding:0 0 16px;"><p style="margin:0;font-size:14px;font-weight:600;color:#111827;">${step.title}</p><p style="margin:2px 0 0;font-size:14px;line-height:1.5;color:#4b5563;">${step.body}</p></td></tr>`,
-  ).join('');
-
   const html = wrap(
     'Votre compte est actif. Voici comment bien démarrer.',
     card(
       `<p style="margin:0 0 12px;font-size:22px;font-weight:600;line-height:1.3;color:#111827;">Bienvenue sur ATTABL</p>
           <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;">${intro}</p>
           <p style="margin:0 0 16px;font-size:13px;font-weight:600;letter-spacing:0.02em;color:#6b7280;">Pour bien démarrer</p>
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${steps}</table>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${FIRST_STEPS_HTML}</table>
           ${cta(data.dashboardUrl, 'Ouvrir mon tableau de bord')}
           <p style="margin:24px 0 0;padding-top:16px;border-top:1px solid #f3f4f6;font-size:13px;line-height:1.6;color:#6b7280;">Une question ? Écrivez-nous à <a href="mailto:${SUPPORT_EMAIL}" style="color:#111827;">${SUPPORT_EMAIL}</a>. Une personne de l'équipe vous répond.</p>`,
     ),
