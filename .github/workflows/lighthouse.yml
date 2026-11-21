@@ -1,0 +1,50 @@
+# Performance, accessibilite et bonnes pratiques mesurees par Lighthouse sur le
+# site en ligne, en profil telephone (reseau 4G lent simule).
+#
+# Seuils (lighthouserc.json), poses sur les mesures du 2026-11-21 apres le retrait
+# de Session Replay (#447): JavaScript 328-360 Ko par page.
+#   - bloquants: JavaScript > 400 Ko, CSS > 60 Ko, accessibilite < 90,
+#     bonnes pratiques < 95, decalage de mise en page > 0,1;
+#   - avertissements: note de performance < 50, LCP > 4 s (la note varie d'un
+#     passage a l'autre: elle alerte sans bloquer).
+# Les poids sont stables d'un passage a l'autre: ce sont eux qui bloquent.
+#
+# Quand: apres chaque mise en production, chaque jour, et a la demande.
+# Un depassement fait echouer le run: GitHub previent le proprietaire.
+
+name: Lighthouse
+
+on:
+  schedule:
+    - cron: '30 5 * * *'
+  workflow_run:
+    workflows: ['Promote production']
+    types: [completed]
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/lighthouse.yml'
+      - 'lighthouserc.json'
+
+concurrency:
+  group: lighthouse
+  cancel-in-progress: false
+
+# Least privilege: the token can only read the code. A job that needs more
+# asks for it in its own `permissions:` block.
+permissions:
+  contents: read
+
+jobs:
+  lighthouse:
+    name: Lighthouse (attabl.com)
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: treosh/lighthouse-ci-action@3e7e23fb74242897f95c0ba9cabad3d0227b9b18 # 12.6.2
+        with:
+          configPath: ./lighthouserc.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true
