@@ -106,7 +106,8 @@ export function ShellSidebar({
   // (meme repli que getEffectivePlan).
   const plan = tenant.subscription_plan || 'starter';
   const planRaw = plan.toUpperCase();
-  const planName = plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase();
+  const planName =
+    plan === 'trial' ? t('planTrial') : plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase();
 
   const renderItem = (item: ShellNavItem) => {
     const Icon = item.icon;

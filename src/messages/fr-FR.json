@@ -2171,6 +2171,7 @@
       "planRequired": "Fonctionnalité Pro",
       "upgradeCta": "Passer au Pro",
       "askOwner": "Le propriétaire du restaurant peut activer cette fonction.",
+      "back": "Retour au tableau de bord",
       "kds": {
         "title": "Écran cuisine (KDS)",
         "desc": "Les commandes arrivent directement sur l'écran de votre cuisine. Vos cuisiniers ne lisent plus les tickets. Moins d'erreurs, service plus rapide."
@@ -2643,7 +2644,7 @@
     "renameHint": "Choisissez un nouveau nom pour cet espace.",
     "reactivateLimit": "Limite du plan atteinte",
     "empty": "Aucun espace pour le moment.",
-    "limitBanner": "Votre plan inclut {max, plural, one {# espace actif} other {# espaces actifs}}. Vos {count, plural, one {# espace actif continue} other {# espaces actifs continuent}} de fonctionner normalement. Pour en ajouter un, passez au plan supérieur.",
+    "limitBanner": "Votre plan inclut {max, plural, one {# espace actif} other {# espaces actifs}}, et vous en avez {count}. Ceux qui existent continuent de fonctionner normalement. Pour en ajouter un, passez au plan supérieur.",
     "limitBannerCta": "Voir les plans"
   },
   "commandPalette": {
@@ -2768,6 +2769,9 @@
     "planCardTitle": "Plan actuel",
     "planCardCta": "Passer au {plan}",
     "planCardUpsellPro": "Débloquez le point de vente complet, la cuisine et le stock.",
+    "planTrial": "Essai",
+    "planCardTrial": "Pendant l'essai, tout est ouvert. Choisissez votre plan avant la fin.",
+    "planCardTrialCta": "Choisir mon plan",
     "navSupports": "Supports",
     "navInventoryCounts": "Inventaires physiques",
     "supports": {

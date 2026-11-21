@@ -27,7 +27,9 @@ import {
   resolveDisplayedSubscriptionStatus,
 } from '@/lib/billing/lapsed-trial';
 import { LockedSubscriptionRedirect } from '@/components/admin/LockedSubscriptionRedirect';
+import { isTrialActive } from '@/lib/plans/features';
 import type { AdminRole } from '@/types/admin.types';
+import type { SubscriptionStatus } from '@/types/billing';
 import type { PermissionCode, RolePermissions } from '@/types/permission.types';
 import { getEffectivePermissions } from '@/lib/permissions';
 import { determineTrialEventKey, sendTrialEmailForKey } from '@/services/trigger-emails.service';
@@ -275,7 +277,15 @@ export default async function AdminLayout({
                   name: tenant.name,
                   slug: tenant.slug,
                   logo_url: tenant.logo_url ?? undefined,
-                  subscription_plan: tenant.subscription_plan ?? undefined,
+                  // Essai actif: tout est ouvert (offre Business). Le menu affiche
+                  // "Essai" plutot que le plan choisi a l'inscription, qui ferait
+                  // proposer de "debloquer" ce qui est deja ouvert.
+                  subscription_plan: isTrialActive(
+                    tenant.subscription_status as SubscriptionStatus | null,
+                    tenant.trial_ends_at,
+                  )
+                    ? 'trial'
+                    : (tenant.subscription_plan ?? undefined),
                   establishment_type: tenant.establishment_type ?? undefined,
                 }}
                 userName={adminUser?.name || user.email || ''}

@@ -2171,6 +2171,7 @@
       "planRequired": "Pro Feature",
       "upgradeCta": "Upgrade to Pro",
       "askOwner": "The restaurant owner can turn this on.",
+      "back": "Back to dashboard",
       "kds": {
         "title": "Kitchen Display (KDS)",
         "desc": "Orders go directly to your kitchen screen. No more paper tickets, no more trips back and forth. Your team prepares faster, your customers wait less."
@@ -2643,7 +2644,7 @@
     "renameHint": "Pick a new name for this space.",
     "reactivateLimit": "Plan limit reached",
     "empty": "No spaces yet.",
-    "limitBanner": "Your plan includes {max, plural, one {# active space} other {# active spaces}}. Your {count, plural, one {# active space keeps} other {# active spaces keep}} working normally. To add one, upgrade your plan.",
+    "limitBanner": "Your plan includes {max, plural, one {# active space} other {# active spaces}}, and you have {count}. The ones you have keep working normally. To add one, upgrade your plan.",
     "limitBannerCta": "See plans"
   },
   "commandPalette": {
@@ -2768,6 +2769,9 @@
     "planCardTitle": "Current plan",
     "planCardCta": "Upgrade to {plan}",
     "planCardUpsellPro": "Unlock the full POS, kitchen display and inventory.",
+    "planTrial": "Trial",
+    "planCardTrial": "During the trial, everything is open. Pick your plan before it ends.",
+    "planCardTrialCta": "Choose my plan",
     "navSupports": "Print Materials",
     "navInventoryCounts": "Physical inventory",
     "supports": {
