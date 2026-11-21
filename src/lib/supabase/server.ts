@@ -33,6 +33,12 @@ export async function createClient() {
         },
         remove(name: string, options: CookieOptions) {
           try {
+            // Meme domaine que set(): un cookie pose sur `.attabl.com` ne
+            // s'efface que si l'effacement porte ce domaine. Sans lui, la
+            // deconnexion laissait le jeton dans le navigateur.
+            if (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_APP_DOMAIN) {
+              options.domain = `.${process.env.NEXT_PUBLIC_APP_DOMAIN}`;
+            }
             cookieStore.set({ name, value: '', ...options });
           } catch (error) {
             if (process.env.NODE_ENV === 'production') {

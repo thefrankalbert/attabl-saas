@@ -134,7 +134,6 @@ import { POST as invitationsPost } from '../invitations/route';
 import { POST as resendPost } from '../invitations/[id]/resend/route';
 import { DELETE as invitationDelete } from '../invitations/[id]/route';
 import { PUT as permissionsPut, DELETE as permissionsDelete } from '../permissions/route';
-import { POST as assignmentsPost } from '../assignments/route';
 import { TenantLockedError } from '@/lib/billing/assert-tenant-serving';
 
 function jpegForm(): FormData {
@@ -180,16 +179,6 @@ const lockedWrites: Call[] = [
     () =>
       permissionsPut(
         jsonReq({ role: 'waiter', permissions: { [PERMISSION_CODES[0]]: true } }, 'PUT'),
-      ),
-  ],
-  [
-    'POST /api/assignments',
-    () =>
-      assignmentsPost(
-        jsonReq({
-          table_id: '33333333-3333-4333-a333-333333333333',
-          server_id: '44444444-4444-4444-a444-444444444444',
-        }),
       ),
   ],
 ];
@@ -244,9 +233,6 @@ describe('classement de toutes les routes API', () => {
     'invitations',
     'invitations/[id]/resend',
     'permissions',
-    'assignments',
-    'assignments/release-all',
-    'assignments/[id]',
     'orders/[id]/claim',
     'stock-alerts/check',
     'admin/reset',

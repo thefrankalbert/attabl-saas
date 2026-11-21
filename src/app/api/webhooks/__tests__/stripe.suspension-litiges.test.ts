@@ -89,6 +89,7 @@ type QueryResult = { data: unknown; error: unknown };
 interface Chain extends PromiseLike<QueryResult> {
   eq: (column: string, value: unknown) => Chain;
   is: (column: string, value: unknown) => Chain;
+  or: (filters: string) => Chain;
   maybeSingle: () => Promise<QueryResult>;
   single: () => Promise<QueryResult>;
 }
@@ -126,6 +127,10 @@ function setupMock(options: MockOptions = {}) {
         onFilter?.(column, value);
         return chain;
       },
+      or: (filters) => {
+        onFilter?.('or', filters);
+        return chain;
+      },
       maybeSingle: () => Promise.resolve(result()),
       single: () => Promise.resolve(result()),
       then: (onFulfilled, onRejected) => Promise.resolve(result()).then(onFulfilled, onRejected),
@@ -136,6 +141,21 @@ function setupMock(options: MockOptions = {}) {
   mockFrom.mockImplementation((table: string) => {
     if (table === 'stripe_events') {
       return {
+        update: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            // Marquage d'aboutissement: update().eq() attendu directement.
+            then: (ok: (v: { error: null }) => unknown) =>
+              Promise.resolve({ error: null }).then(ok),
+            // Prise de controle: update().eq().is().lt().select().maybeSingle().
+            is: vi.fn().mockReturnValue({
+              lt: vi.fn().mockReturnValue({
+                select: vi.fn().mockReturnValue({
+                  maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+                }),
+              }),
+            }),
+          }),
+        }),
         insert: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
             maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'evt_test' }, error: null }),
@@ -323,7 +343,12 @@ describe('CTR7-1 - le webhook ne leve jamais une suspension plateforme', () => {
     // est exclusivement un bloc d'acces, donc rien n'est perdu a le filtrer.
     const chain = setupMock({ tenant: { id: 'tenant-1', subscription_status: 'past_due' } });
     mockConstructEvent.mockReturnValue(
-      makeStripeEvent('invoice.paid', { customer: 'cus_1', id: 'in_2', amount_paid: 29000 }),
+      makeStripeEvent('invoice.paid', {
+        customer: 'cus_1',
+        id: 'in_2',
+        amount_paid: 29000,
+        status_transitions: { paid_at: 1800000000 },
+      }),
     );
 
     const response = await POST(makeRequest());
@@ -340,6 +365,7 @@ describe('CTR7-1 - le webhook ne leve jamais une suspension plateforme', () => {
       ['stripe_customer_id', 'cus_1'],
       ['subscription_status', 'frozen'],
       ['freeze_reason', 'refund'],
+      ['or', 'refund_frozen_at.is.null,refund_frozen_at.lt."2027-01-15T08:00:00.000Z"'],
       ['suspended_at', null],
       ['deleted_at', null],
     ]);

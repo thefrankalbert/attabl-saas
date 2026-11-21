@@ -7,10 +7,9 @@ vi.mock('@/lib/billing/tenant-lock-response', () => ({
 }));
 
 /**
- * X12: POST /api/assignments ne verifiait que l'appartenance au restaurant, et
- * la prise en charge d'une commande (claim) une liste de roles qui oubliait
- * `admin` et ignorait les reglages du proprietaire. Les deux suivent desormais
- * la meme regle que les actions serveur equivalentes.
+ * X12: la prise en charge d'une commande (claim) verifiait une liste de roles
+ * qui oubliait `admin` et ignorait les reglages du proprietaire. Elle suit
+ * desormais la meme regle que l'action serveur equivalente.
  */
 
 vi.mock('@/lib/rate-limit', () => ({
@@ -36,11 +35,9 @@ vi.mock('@/lib/auth/resolve-admin-permission', () => ({
   resolveAdminPermission: (...a: unknown[]) => mockResolve(...a),
 }));
 
-const mockAssign = vi.fn();
 const mockClaim = vi.fn();
 vi.mock('@/services/assignment.service', () => ({
   createAssignmentService: vi.fn(() => ({
-    assignServerToTable: mockAssign,
     claimOrder: mockClaim,
   })),
 }));
@@ -60,20 +57,10 @@ vi.mock('@/lib/supabase/server', () => ({
   })),
 }));
 
-import { POST as ASSIGN } from '../assignments/route';
 import { POST as CLAIM } from '../orders/[id]/claim/route';
 
-const TABLE_ID = '550e8400-e29b-41d4-a716-446655440001';
-const SERVER_ID = '550e8400-e29b-41d4-a716-446655440002';
 const ORDER_ID = '550e8400-e29b-41d4-a716-446655440003';
 
-function assignRequest() {
-  return new Request('http://localhost/api/assignments', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ table_id: TABLE_ID, server_id: SERVER_ID }),
-  });
-}
 function claimRequest() {
   return new Request(`http://localhost/api/orders/${ORDER_ID}/claim`, { method: 'POST' });
 }
@@ -81,30 +68,7 @@ const params = { params: Promise.resolve({ id: ORDER_ID }) };
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockAssign.mockResolvedValue({ id: 'a-1' });
   mockClaim.mockResolvedValue(undefined);
-});
-
-describe('POST /api/assignments', () => {
-  it('refuse un serveur, meme avec orders.manage (gestion de salle = gerant)', async () => {
-    mockResolve.mockResolvedValue({ allowed: true, role: 'waiter' });
-    const res = await ASSIGN(assignRequest());
-    expect(res.status).toBe(403);
-    expect(mockAssign).not.toHaveBeenCalled();
-  });
-
-  it('refuse un gerant a qui on a retire orders.manage', async () => {
-    mockResolve.mockResolvedValue({ allowed: false, role: 'manager' });
-    const res = await ASSIGN(assignRequest());
-    expect(res.status).toBe(403);
-  });
-
-  it('laisse un gerant assigner', async () => {
-    mockResolve.mockResolvedValue({ allowed: true, role: 'manager' });
-    const res = await ASSIGN(assignRequest());
-    expect(res.status).toBe(201);
-    expect(mockAssign).toHaveBeenCalledWith('tenant-1', TABLE_ID, SERVER_ID);
-  });
 });
 
 describe('POST /api/orders/[id]/claim', () => {

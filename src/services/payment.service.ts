@@ -4,7 +4,7 @@ import { logger } from '@/lib/logger';
 import { createOrderService } from './order.service';
 import type { CompInput, CompResult, PaymentSummary, TenderInput } from './payment.types';
 import { dueFor, summarize } from './payment.calc';
-import { fetchOrder, fetchTenders, recompute } from './payment.queries';
+import { fetchOrder, fetchTenders, isReplayedTender, recompute } from './payment.queries';
 
 /**
  * Payment service - split / partial / refund tenders (audit findings H2 + H8,
@@ -29,8 +29,6 @@ export type { PaymentSummary, CompResult } from './payment.types';
 
 export function createPaymentService(supabase: SupabaseClient) {
   return {
-    dueFor,
-
     /**
      * Aggregated payment state for an order, derived from the ledger.
      * Tenant-scoped. Throws NOT_FOUND if the order does not exist.
@@ -85,6 +83,13 @@ export function createPaymentService(supabase: SupabaseClient) {
       const remaining =
         dueFor(order) - summarize(order, await fetchTenders(supabase, orderId, tenantId)).net;
       if (amount > remaining) {
+        // Le REJEU d'un encaissement deja enregistre depasse forcement le solde
+        // (le premier envoi l'a solde): ce n'est pas un depassement, c'est le
+        // meme paiement. Sans ce test, le rejeu d'un encaissement du total
+        // affichait une erreur sur un paiement abouti.
+        if (await isReplayedTender(supabase, orderId, tenantId, clientRequestId)) {
+          return this.getSummary(orderId, tenantId);
+        }
         throw new ServiceError('Montant superieur au solde du', 'VALIDATION');
       }
 
@@ -112,6 +117,10 @@ export function createPaymentService(supabase: SupabaseClient) {
         // refus est une erreur d'entree; les autres 22023 (annulee, offerte,
         // moyen inconnu) gardent leur propre traitement.
         if (error.code === '22023' && error.hint === 'payments_bound_balance') {
+          // La garde s'execute avant l'index unique: un rejeu concurrent arrive ici.
+          if (await isReplayedTender(supabase, orderId, tenantId, clientRequestId)) {
+            return this.getSummary(orderId, tenantId);
+          }
           throw new ServiceError('Montant superieur au solde du', 'VALIDATION');
         }
         throw new ServiceError('Erreur lors de l enregistrement du paiement', 'INTERNAL', error);

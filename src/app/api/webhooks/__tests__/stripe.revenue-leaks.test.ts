@@ -119,6 +119,21 @@ function setupTenantsMock(options: TenantsMockOptions = {}) {
   mockFrom.mockImplementation((table: string) => {
     if (table === 'stripe_events') {
       return {
+        update: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            // Marquage d'aboutissement: update().eq() attendu directement.
+            then: (ok: (v: { error: null }) => unknown) =>
+              Promise.resolve({ error: null }).then(ok),
+            // Prise de controle: update().eq().is().lt().select().maybeSingle().
+            is: vi.fn().mockReturnValue({
+              lt: vi.fn().mockReturnValue({
+                select: vi.fn().mockReturnValue({
+                  maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+                }),
+              }),
+            }),
+          }),
+        }),
         insert: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
             maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'evt_test' }, error: null }),

@@ -80,6 +80,7 @@ type QueryResult = { data: unknown; error: unknown };
 interface Chain extends PromiseLike<QueryResult> {
   eq: (column: string, value: unknown) => Chain;
   is: (column: string, value: unknown) => Chain;
+  or: (filters: string) => Chain;
   maybeSingle: () => Promise<QueryResult>;
   single: () => Promise<QueryResult>;
 }
@@ -116,6 +117,10 @@ function setupMock(options: MockOptions = {}) {
         onFilter?.(column, value);
         return chain;
       },
+      or: (filters) => {
+        onFilter?.('or', filters);
+        return chain;
+      },
       maybeSingle: () => Promise.resolve(result()),
       single: () => Promise.resolve(result()),
       then: (onFulfilled, onRejected) => Promise.resolve(result()).then(onFulfilled, onRejected),
@@ -128,6 +133,21 @@ function setupMock(options: MockOptions = {}) {
 
     if (table === 'stripe_events') {
       return {
+        update: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            // Marquage d'aboutissement: update().eq() attendu directement.
+            then: (ok: (v: { error: null }) => unknown) =>
+              Promise.resolve({ error: null }).then(ok),
+            // Prise de controle: update().eq().is().lt().select().maybeSingle().
+            is: vi.fn().mockReturnValue({
+              lt: vi.fn().mockReturnValue({
+                select: vi.fn().mockReturnValue({
+                  maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+                }),
+              }),
+            }),
+          }),
+        }),
         insert: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
             maybeSingle: vi.fn().mockResolvedValue({
@@ -245,7 +265,7 @@ describe('idempotence', () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ received: true, idempotent: true });
-    expect(chain.tablesTouched).toEqual(['stripe_events']);
+    expect(new Set(chain.tablesTouched)).toEqual(new Set(['stripe_events']));
     expect(chain.updatePayloads).toEqual([]);
   });
 
@@ -324,7 +344,7 @@ describe('evenements sans effet de bord', () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ received: true });
-    expect(chain.tablesTouched).toEqual(['stripe_events']);
+    expect(new Set(chain.tablesTouched)).toEqual(new Set(['stripe_events']));
     expect(logger.info).toHaveBeenCalledWith('Unhandled Stripe event type', {
       eventType: 'customer.created',
     });
@@ -340,7 +360,7 @@ describe('evenements sans effet de bord', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(chain.tablesTouched).toEqual(['stripe_events']);
+    expect(new Set(chain.tablesTouched)).toEqual(new Set(['stripe_events']));
     expect(logger.info).toHaveBeenCalledWith('Payment action required', {
       customerId: 'cus_1',
       invoiceId: 'in_1',
@@ -358,7 +378,7 @@ describe('evenements sans effet de bord', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(chain.tablesTouched).toEqual(['stripe_events']);
+    expect(new Set(chain.tablesTouched)).toEqual(new Set(['stripe_events']));
     expect(mockSubscriptionsRetrieve).not.toHaveBeenCalled();
   });
 });
@@ -489,7 +509,11 @@ describe('invoice.paid', () => {
   it('ecrit le bloc de retour a la normale, scope aux seuls impayes non coupes', async () => {
     const chain = setupMock();
 
-    const response = await fire('invoice.paid', { customer: 'cus_1', amount_paid: 29000 });
+    const response = await fire('invoice.paid', {
+      customer: 'cus_1',
+      amount_paid: 29000,
+      status_transitions: { paid_at: 1800000000 },
+    });
 
     expect(response.status).toBe(200);
     // DEUX ecritures, et leurs perimetres sont deux gardes distinctes:
@@ -509,6 +533,7 @@ describe('invoice.paid', () => {
         past_due_since: null,
         is_active: true,
         freeze_reason: null,
+        refund_frozen_at: null,
       },
     ]);
     // Le scope EST la garde: 'frozen' est exclu de la PREMIERE (un litige ne se
@@ -522,12 +547,26 @@ describe('invoice.paid', () => {
       ['stripe_customer_id', 'cus_1'],
       ['subscription_status', 'frozen'],
       ['freeze_reason', 'refund'],
+      // Seul un gel pose AVANT le paiement est leve (ou un gel sans date, pose
+      // par l'ancien code): un vieux paiement rejoue ne leve pas un gel recent.
+      ['or', 'refund_frozen_at.is.null,refund_frozen_at.lt."2027-01-15T08:00:00.000Z"'],
       ['suspended_at', null],
       ['deleted_at', null],
     ]);
     expect(logger.info).toHaveBeenCalledWith('Invoice paid, subscription state reconciled', {
       customerId: 'cus_1',
     });
+  });
+
+  it('sans date de paiement lisible, ne leve PAS un gel pour remboursement', async () => {
+    const chain = setupMock();
+
+    const response = await fire('invoice.paid', { customer: 'cus_1', amount_paid: 29000 });
+
+    expect(response.status).toBe(200);
+    // Une seule ecriture: celle de l'impaye. Dans le doute, le gel reste.
+    expect(chain.updatePayloads).toHaveLength(1);
+    expect(chain.updateFilters).not.toContainEqual(['freeze_reason', 'refund']);
   });
 
   it('retire la ligne d idempotence quand l ecriture echoue', async () => {
@@ -552,7 +591,7 @@ describe('charge.dispute.* - sorties sans ecriture', () => {
     const response = await fire('charge.dispute.created', { id: 'dp_1', payment_intent: null });
 
     expect(response.status).toBe(200);
-    expect(chain.tablesTouched).toEqual(['stripe_events']);
+    expect(new Set(chain.tablesTouched)).toEqual(new Set(['stripe_events']));
     expect(logger.warn).toHaveBeenCalledWith('Dispute created without resolvable customer', {
       disputeId: 'dp_1',
     });
@@ -568,7 +607,7 @@ describe('charge.dispute.* - sorties sans ecriture', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(chain.tablesTouched).toEqual(['stripe_events']);
+    expect(new Set(chain.tablesTouched)).toEqual(new Set(['stripe_events']));
     expect(logger.warn).toHaveBeenCalledWith('Dispute closed against us, tenant stays frozen', {
       disputeId: 'dp_1',
       status: 'lost',
@@ -585,6 +624,6 @@ describe('charge.dispute.* - sorties sans ecriture', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(chain.tablesTouched).toEqual(['stripe_events']);
+    expect(new Set(chain.tablesTouched)).toEqual(new Set(['stripe_events']));
   });
 });

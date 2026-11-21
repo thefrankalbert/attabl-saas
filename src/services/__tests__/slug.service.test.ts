@@ -33,6 +33,21 @@ describe('SlugService', () => {
       expect(service.normalizeToSlug('Café Résumé')).toBe('cafe-resume');
     });
 
+    it('generateUniqueSlug ne rend jamais un slug vide pour un nom sans lettre latine', async () => {
+      const service = createSlugService(createMockSupabase());
+      expect(await service.generateUniqueSlug('\u0645\u0637\u0639\u0645')).toBe('restaurant');
+      expect(await service.generateUniqueSlug('!!!')).toBe('restaurant');
+      // normalizeToSlug, lui, rend la chaine vide: chaque appelant choisit son repli.
+      expect(service.normalizeToSlug('!!!')).toBe('');
+    });
+
+    it('borne le slug pour qu il reste un label DNS valide avec ses suffixes', () => {
+      const service = createSlugService(createMockSupabase());
+      const slug = service.normalizeToSlug('a'.repeat(49) + ' ' + 'b'.repeat(40));
+      expect(slug).toBe('a'.repeat(49));
+      expect(`${slug}-restaurant`.length).toBeLessThanOrEqual(63);
+    });
+
     it('should replace special characters with hyphens', () => {
       const supabase = createMockSupabase();
       const service = createSlugService(supabase);

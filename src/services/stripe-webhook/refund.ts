@@ -189,7 +189,16 @@ async function rembourseLaPeriodeEnCours(
 export async function handleChargeRefunded(
   { supabase, stripe }: StripeWebhookDeps,
   charge: Stripe.Charge,
+  /** `event.created` (secondes). Absent: l'heure du traitement. */
+  eventCreated?: number,
 ): Promise<void> {
+  // Date du gel = date du remboursement chez Stripe, pas l'heure ou on le
+  // traite: un `charge.refunded` rejoue en retard ne doit pas dater le gel apres
+  // une facture payee entre-temps, sinon cet argent neuf ne le leverait jamais.
+  const geleLe = new Date(
+    Number.isFinite(eventCreated) ? (eventCreated as number) * 1000 : Date.now(),
+  ).toISOString();
+
   const customerId = typeof charge.customer === 'string' ? charge.customer : charge.customer?.id;
 
   if (!customerId) {
@@ -269,13 +278,21 @@ export async function handleChargeRefunded(
       chargeId: charge.id,
       causeConservee: tenant.freeze_reason ?? null,
     });
-    payload = { is_active: false };
+    // Un second remboursement sur un gel deja `refund` REDATE le gel: sinon une
+    // facture payee entre les deux remboursements (puis remboursee) leverait le
+    // gel au rejeu de son `invoice.paid`, sa date etant posterieure a l'ancien.
+    payload =
+      tenant.freeze_reason === FREEZE_REASONS.REFUND
+        ? { is_active: false, refund_frozen_at: geleLe }
+        : { is_active: false };
     appliquer = (p) => supabase.from('tenants').update(p).eq('id', tenant.id);
   } else {
     payload = {
       subscription_status: 'frozen',
       is_active: false,
       freeze_reason: FREEZE_REASONS.REFUND,
+      // Horodatage du gel: une facture payee AVANT ne le leve pas (invoice.ts).
+      refund_frozen_at: geleLe,
     };
     appliquer = (p) => supabase.from('tenants').update(p).eq('id', tenant.id);
   }

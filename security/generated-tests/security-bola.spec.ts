@@ -47,7 +47,6 @@ const TENANT_B = {
   // Des IDs réels appartenant au tenant B, à voler depuis le compte A:
   orderId: '00000000-0000-0000-0000-000000000000',
   invitationId: '00000000-0000-0000-0000-000000000000',
-  assignmentId: '00000000-0000-0000-0000-000000000000',
 };
 
 // Routes dynamiques sensibles relevées dans src/app/api (à compléter):
@@ -55,7 +54,6 @@ const CROSS_TENANT_ATTEMPTS: Array<{ method: 'GET' | 'POST' | 'DELETE'; path: st
   { method: 'POST', path: `/api/orders/${TENANT_B.orderId}/claim` },
   { method: 'POST', path: `/api/orders/${TENANT_B.orderId}/pay-wave` },
   { method: 'POST', path: `/api/orders/${TENANT_B.orderId}/pay-orange-money` },
-  { method: 'DELETE', path: `/api/assignments/${TENANT_B.assignmentId}` },
   { method: 'DELETE', path: `/api/invitations/${TENANT_B.invitationId}` },
   { method: 'POST', path: `/api/invitations/${TENANT_B.invitationId}/resend` },
 ];

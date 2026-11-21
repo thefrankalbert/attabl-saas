@@ -60,7 +60,9 @@ export function createStripeWebhookService(supabase: SupabaseClient, stripe: Str
           return handleDisputeClosed(deps, event.data.object as Stripe.Dispute);
 
         case 'charge.refunded':
-          return handleChargeRefunded(deps, event.data.object as Stripe.Charge);
+          // La date de l'EVENEMENT date le gel: un rejeu tardif ne doit pas le
+          // rajeunir (invoice.paid compare la date de paiement a celle du gel).
+          return handleChargeRefunded(deps, event.data.object as Stripe.Charge, event.created);
 
         case 'invoice.paid':
           return handleInvoicePaid(deps, event.data.object as Stripe.Invoice);

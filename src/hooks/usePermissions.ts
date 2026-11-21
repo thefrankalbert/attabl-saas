@@ -14,8 +14,7 @@ export function usePermissions(): PermissionsContextValue {
 
 /**
  * Assigner ou liberer un serveur sur une table: meme regle que le serveur
- * (actions/assignments.ts, DELETE /api/assignments/[id], policies "Floor
- * managers"): role de gerant ET `orders.manage`. Le plan de salle reste lisible
+ * (actions/assignments.ts, policies "Floor managers"): role de gerant ET `orders.manage`. Le plan de salle reste lisible
  * pour tous; seuls les gestes d'assignation sont caches.
  */
 export function useCanManageFloor(): boolean {

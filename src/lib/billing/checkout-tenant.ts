@@ -10,15 +10,17 @@ type CheckoutTenantRow = {
     stripe_subscription_id: string | null;
     trial_ends_at: string | null;
     subscription_status: string | null;
+    suspended_at: string | null;
+    deleted_at: string | null;
   } | null;
 };
 
 export type ResolveCheckoutTenantResult =
   | { ok: true; userId: string; email: string; tenant: CheckoutTenantRow }
-  | { ok: false; status: 401 | 403 | 404 | 400; error: string; code?: 'TENANT_AMBIGU' };
+  | { ok: false; status: 401 | 403 | 404 | 400 | 409; error: string; code?: 'TENANT_AMBIGU' };
 
 const COLONNES_FACTURATION =
-  'tenant_id, tenants(name, stripe_customer_id, stripe_subscription_id, trial_ends_at, subscription_status)';
+  'tenant_id, tenants(name, stripe_customer_id, stripe_subscription_id, trial_ends_at, subscription_status, suspended_at, deleted_at)';
 
 /** Les roles autorises a engager une depense pour le restaurant. */
 const ROLES_FACTURATION = ['owner', 'admin'];
@@ -36,6 +38,32 @@ function refusDeRole(role: unknown): ResolveCheckoutTenantResult | null {
     status: 403,
     error: 'Seuls les proprietaires et administrateurs peuvent souscrire un abonnement.',
   };
+}
+
+/**
+ * Refus si un paiement n'ouvrirait rien. UNE seule definition pour les deux
+ * branches, comme `refusDeRole`.
+ *   - restaurant ferme (`deleted_at`): la branche sans cible ne le filtrait pas,
+ *     et un restaurant ferme redevenait abonnable;
+ *   - restaurant suspendu par la plateforme (`suspended_at`): le webhook ne leve
+ *     pas cette suspension, l'argent serait pris pour un acces qui reste ferme.
+ *     Meme regle que la voie Flutterwave (flutterwave-billing.service.ts).
+ */
+function refusDEtat(
+  tenant: CheckoutTenantRow['tenants'],
+  allowSuspended: boolean,
+): ResolveCheckoutTenantResult | null {
+  if (!tenant || tenant.deleted_at) {
+    return { ok: false, status: 404, error: 'Restaurant non trouve' };
+  }
+  if (tenant.suspended_at && !allowSuspended) {
+    return {
+      ok: false,
+      status: 409,
+      error: 'Ce restaurant est suspendu. Contactez le support ATTABL pour le reactiver.',
+    };
+  }
+  return null;
 }
 
 function aplatirTenant(brut: unknown): CheckoutTenantRow['tenants'] {
@@ -71,7 +99,15 @@ function aplatirTenant(brut: unknown): CheckoutTenantRow['tenants'] {
  */
 export async function resolveCheckoutTenant(options?: {
   tenantSlug?: string | null;
+  /**
+   * Ne pas refuser un restaurant suspendu. Reserve a la CONFIRMATION d'un
+   * paiement deja fait: l'argent est pris, le refuser ici ne ferait que
+   * contredire le webhook, qui l'enregistre de toute facon. Les routes qui
+   * OUVRENT un paiement ne le passent jamais.
+   */
+  allowSuspended?: boolean;
 }): Promise<ResolveCheckoutTenantResult> {
+  const allowSuspended = options?.allowSuspended ?? false;
   const supabase = await createClient();
   const {
     data: { user },
@@ -121,14 +157,15 @@ export async function resolveCheckoutTenant(options?: {
     const refus = refusDeRole(membre.role);
     if (refus) return refus;
 
+    const tenants = aplatirTenant((membre as { tenants?: unknown }).tenants);
+    const refusEtat = refusDEtat(tenants, allowSuspended);
+    if (refusEtat) return refusEtat;
+
     return {
       ok: true,
       userId: user.id,
       email: user.email,
-      tenant: {
-        tenant_id: membre.tenant_id as string,
-        tenants: aplatirTenant((membre as { tenants?: unknown }).tenants),
-      },
+      tenant: { tenant_id: membre.tenant_id as string, tenants },
     };
   }
 
@@ -162,13 +199,14 @@ export async function resolveCheckoutTenant(options?: {
   const refusSansCible = refusDeRole((membre as { role?: unknown }).role);
   if (refusSansCible) return refusSansCible;
 
+  const tenants = aplatirTenant((membre as { tenants?: unknown }).tenants);
+  const refusEtatSansCible = refusDEtat(tenants, allowSuspended);
+  if (refusEtatSansCible) return refusEtatSansCible;
+
   return {
     ok: true,
     userId: user.id,
     email: user.email,
-    tenant: {
-      tenant_id: membre.tenant_id as string,
-      tenants: aplatirTenant((membre as { tenants?: unknown }).tenants),
-    },
+    tenant: { tenant_id: membre.tenant_id as string, tenants },
   };
 }

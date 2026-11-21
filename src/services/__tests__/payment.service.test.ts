@@ -51,8 +51,21 @@ function createMockSupabase(order: OrderRow, ledger: LedgerRow[] = []) {
 
   function selectBuilder(rows: () => unknown[]) {
     // Terminal-or-chainable on .eq, terminal on .maybeSingle / .order.
+    const filters: Record<string, unknown> = {};
     const builder = {
-      eq: vi.fn(() => builder),
+      eq: vi.fn((column: string, value: unknown) => {
+        filters[column] = value;
+        return builder;
+      }),
+      // select('id').eq()...eq('client_request_id', cle).limit(1): recherche de rejeu.
+      limit: vi.fn(async () => ({
+        data: rows().filter(
+          (r) =>
+            (r as { client_request_id?: string | null }).client_request_id ===
+            filters.client_request_id,
+        ),
+        error: null,
+      })),
       order: vi.fn(async () => ({ data: rows(), error: null })),
       maybeSingle: vi.fn(async () => ({ data: rows()[0] ?? null, error: null })),
     };
@@ -66,11 +79,20 @@ function createMockSupabase(order: OrderRow, ledger: LedgerRow[] = []) {
         update: vi.fn((patch: Partial<OrderRow>) => {
           const apply = { eq: vi.fn() };
           // update().eq().eq() resolves; mutate the in-memory order on the last eq.
+          // update().eq().eq() se resout; .neq('payment_status', 'paid') en plus
+          // rend l'ecriture sans effet sur une commande deja soldee.
+          const commit = (skip: boolean): Promise<{ error: null }> => {
+            if (!skip) Object.assign(order, patch);
+            return Promise.resolve({ error: null });
+          };
           apply.eq = vi.fn(() => ({
-            eq: vi.fn(async () => {
-              Object.assign(order, patch);
-              return { error: null };
-            }),
+            eq: vi.fn(() => ({
+              neq: vi.fn((column: keyof OrderRow, value: unknown) =>
+                commit(order[column] === value),
+              ),
+              then: (resolve: (v: { error: null }) => unknown, reject: (e: unknown) => unknown) =>
+                commit(false).then(resolve, reject),
+            })),
           }));
           return apply;
         }),
@@ -95,7 +117,8 @@ function createMockSupabase(order: OrderRow, ledger: LedgerRow[] = []) {
             status: row.status,
             created_by: row.created_by ?? null,
             created_at: new Date(2026, 5, 30, 12, 0, seq).toISOString(),
-          });
+            client_request_id: key ?? null,
+          } as LedgerRow);
           return { error: null };
         }),
       };
@@ -566,6 +589,41 @@ describe('idempotence et atomicite du registre de caisse (F5)', () => {
     expect(mock._ledger).toHaveLength(1);
   });
 
+  it('le rejeu d_un encaissement du TOTAL renvoie l_etat courant, pas une erreur de plafond', async () => {
+    const mock = createMockSupabase(baseOrder());
+    const service = createPaymentService(asSupabase(mock));
+    const key = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+    const tender = { amount: 10000, method: 'cash', createdBy: 'admin-1', clientRequestId: key };
+
+    const first = await service.recordTender(ORDER_ID, TENANT, tender);
+    expect(first.paymentStatus).toBe('paid');
+
+    const replay = await service.recordTender(ORDER_ID, TENANT, tender);
+    expect(replay.net).toBe(10000);
+    expect(mock._ledger).toHaveLength(1);
+  });
+
+  it('un depassement avec une AUTRE cle reste refuse', async () => {
+    const mock = createMockSupabase(baseOrder());
+    const service = createPaymentService(asSupabase(mock));
+    await service.recordTender(ORDER_ID, TENANT, {
+      amount: 10000,
+      method: 'cash',
+      createdBy: 'admin-1',
+      clientRequestId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+    });
+
+    await expect(
+      service.recordTender(ORDER_ID, TENANT, {
+        amount: 10000,
+        method: 'cash',
+        createdBy: 'admin-1',
+        clientRequestId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+      }),
+    ).rejects.toMatchObject({ code: 'VALIDATION' });
+    expect(mock._ledger).toHaveLength(1);
+  });
+
   it('le remboursement passe par la RPC verrouillante, pas par un INSERT direct', async () => {
     const mock = createMockSupabase(baseOrder({ payment_status: 'paid', paid_at: 'x' }), [
       {
@@ -839,6 +897,32 @@ function withFailingInsert(
   return client as unknown as SupabaseClient;
 }
 
+describe('recompute - ecriture en retard de deux encaissements simultanes', () => {
+  const staleTender: LedgerRow = {
+    id: 'pay-1',
+    amount: 4000,
+    method: 'cash',
+    status: 'completed',
+    created_by: null,
+    created_at: '2026-06-30T12:00:00.000Z',
+  };
+
+  it('ne retrograde pas en partial une commande que l autre appareil vient de solder', async () => {
+    // La base dit deja 'paid'; cet appareil n'a lu qu'une partie du registre.
+    const mock = createMockSupabase(baseOrder({ payment_status: 'paid', paid_at: 'x' }), [
+      staleTender,
+    ]);
+    await recompute(asSupabase(mock), { ...baseOrder(), payment_status: 'pending' }, TENANT);
+    expect(mock._order.payment_status).toBe('paid');
+  });
+
+  it('temoin: une commande non soldee passe bien a partial', async () => {
+    const mock = createMockSupabase(baseOrder(), [staleTender]);
+    await recompute(asSupabase(mock), baseOrder(), TENANT);
+    expect(mock._order.payment_status).toBe('partial');
+  });
+});
+
 describe('recordTender - refus de la garde du registre (course entre deux appareils)', () => {
   it('traduit le refus 22023 de la base en erreur de validation, sans ecriture', async () => {
     const mock = createMockSupabase(baseOrder());
@@ -854,6 +938,33 @@ describe('recordTender - refus de la garde du registre (course entre deux appare
       service.recordTender(ORDER_ID, TENANT, { amount: 10000, method: 'cash', createdBy: 'a' }),
     ).rejects.toMatchObject({ code: 'VALIDATION', message: 'Montant superieur au solde du' });
     expect(mock._ledger).toHaveLength(0);
+  });
+
+  it('le rejeu refuse par la garde du registre renvoie l etat courant', async () => {
+    // Le premier envoi a solde la commande sur un autre appareil APRES la
+    // lecture du solde: la garde de la base refuse avant l'index unique.
+    const key = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+    const mock = createMockSupabase(baseOrder());
+    const refus = { code: '22023', message: 'x', hint: 'payments_bound_balance' };
+    const service = createPaymentService(withFailingInsert(mock, refus));
+    mock._ledger.push({
+      id: 'pay-1',
+      amount: 4000,
+      method: 'cash',
+      status: 'completed',
+      created_by: null,
+      created_at: '2026-06-30T12:00:00.000Z',
+      client_request_id: key,
+    } as (typeof mock._ledger)[number]);
+
+    const replay = await service.recordTender(ORDER_ID, TENANT, {
+      amount: 4000,
+      method: 'cash',
+      createdBy: 'a',
+      clientRequestId: key,
+    });
+    expect(replay.net).toBe(4000);
+    expect(mock._ledger).toHaveLength(1);
   });
 
   it('un autre 22023 (commande annulee, moyen inconnu) ne devient pas un refus de solde', async () => {

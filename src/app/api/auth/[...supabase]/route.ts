@@ -8,7 +8,14 @@ export async function GET(request: Request) {
   // Strict open-redirect prevention: only allow relative paths that start with
   // a single forward slash and contain no protocol-relative bypasses (// \\ %2f etc.)
   const rawNext = searchParams.get('next') ?? '/';
-  const decoded = decodeURIComponent(rawNext);
+  // decodeURIComponent LEVE sur une sequence invalide (`next=%`): la route
+  // repondait 500. Une valeur indecodable est simplement une valeur refusee.
+  let decoded = '';
+  try {
+    decoded = decodeURIComponent(rawNext);
+  } catch {
+    decoded = '';
+  }
   const isSafe =
     decoded.startsWith('/') &&
     !decoded.startsWith('//') &&
@@ -29,6 +36,7 @@ export async function GET(request: Request) {
     logger.error('OAuth code exchange failed', error);
   }
 
-  // Return the user to an error page with instructions
-  return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+  // `/auth/auth-code-error` n'a jamais existe (404). Meme repli que
+  // /auth/callback: la page de connexion.
+  return NextResponse.redirect(`${origin}/login`);
 }
