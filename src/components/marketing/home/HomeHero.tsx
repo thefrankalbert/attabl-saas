@@ -76,6 +76,7 @@ export async function HomeHero({ videoSrc }: { videoSrc?: string }) {
             alt={t('clientLogoAlt')}
             width={130}
             height={40}
+            loading="eager"
             className="h-9 w-auto"
           />
         </div>
