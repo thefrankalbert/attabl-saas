@@ -2708,11 +2708,127 @@
     "users": "Users"
   },
   "adminSupport": {
-    "whatsappTitle": "Stuck? Message or call us",
-    "whatsappBody": "Someone from the ATTABL team answers you at {phone}. Tell us what is blocking you, we will handle it.",
+    "heading": "How can we help?",
+    "intro": "A guide for each everyday task. And if you are stuck, someone from the team answers you.",
+    "contactTitle": "Talk to someone on the team",
+    "contactBodyPhone": "Message us on WhatsApp at {phone}. We usually reply within 24 hours, Monday to Friday.",
+    "contactBodyEmail": "Write to support@attabl.com. We usually reply within 24 hours, Monday to Friday.",
     "whatsappCta": "Write on WhatsApp",
     "whatsappMessage": "Hello ATTABL, I need help with my restaurant {restaurant}.",
-    "callCta": "Call"
+    "copyNumber": "Copy the number",
+    "numberCopied": "Number copied",
+    "copyFailed": "Could not copy. The number is {phone}.",
+    "callCta": "Call",
+    "emailCta": "Send an email",
+    "noWhatsappHint": "WhatsApp is not installed on this device? Copy the number to use it on your phone, or email us.",
+    "guidesTitle": "Guides",
+    "openPage": "Open {page}",
+    "faqTitle": "Frequently asked questions",
+    "guides": {
+      "menu": {
+        "title": "Create your menu",
+        "page": "Menus & Cards",
+        "steps": {
+          "s1": "In the left menu, open \"Menus & Cards\", then \"New menu\".",
+          "s2": "Name the menu (for example \"Lunch menu\") and save.",
+          "s3": "Add your categories: Starters, Mains, Drinks. Use \"New category\".",
+          "s4": "Open \"Dishes\" and create each dish with its price and photo.",
+          "s5": "Already have your menu in Excel? Use \"Import Excel\" and start from the template."
+        }
+      },
+      "orders": {
+        "title": "Receive and prepare orders",
+        "page": "Kitchen (KDS)",
+        "steps": {
+          "s1": "Every order shows up in \"Orders\" and on the \"Kitchen (KDS)\" screen, in real time.",
+          "s2": "In the kitchen, tap \"Start cooking\" on the ticket when you start the dish.",
+          "s3": "When it is ready, tap \"Finish cooking\": the floor sees it right away.",
+          "s4": "Need paper? From the order, print the kitchen ticket or the customer receipt."
+        }
+      },
+      "pos": {
+        "title": "Take payments at the till",
+        "page": "POS",
+        "steps": {
+          "s1": "Open \"POS\" in the left menu.",
+          "s2": "Tap the dishes ordered: they go into the cart.",
+          "s3": "Tap \"Take payment\", choose how the customer pays, then confirm.",
+          "s4": "No network? The payment is kept on the device and sent as soon as the connection is back."
+        }
+      },
+      "qr": {
+        "title": "Print your table QR codes",
+        "page": "QR Codes",
+        "steps": {
+          "s1": "Open \"QR Codes\" in the left menu.",
+          "s2": "Pick the tables, then the QR code style.",
+          "s3": "Download the PDF or print directly. One QR code per table.",
+          "s4": "Guests scan it, see your menu and order from their table."
+        }
+      },
+      "stock": {
+        "title": "Track stock and suppliers",
+        "page": "Inventory",
+        "steps": {
+          "s1": "Open \"Inventory\", then \"Add ingredient\" for each ingredient.",
+          "s2": "In \"Suppliers\", add the ones who deliver to you.",
+          "s3": "In \"Recipes\", list what goes into each dish. Stock then goes down with every sale.",
+          "s4": "Do a physical count from time to time to fix any gaps."
+        }
+      },
+      "team": {
+        "title": "Add your team",
+        "page": "Users",
+        "steps": {
+          "s1": "At the bottom of the left menu, tap your name, then \"Settings\".",
+          "s2": "\"Staff\" tab, then \"Manage team\".",
+          "s3": "Tap \"New Member\", enter their email and pick their role (waiter, cashier, kitchen...).",
+          "s4": "They get an email invitation. A member's \"...\" menu lets you adjust what they can do."
+        }
+      },
+      "reports": {
+        "title": "See your sales",
+        "page": "Reports",
+        "steps": {
+          "s1": "Open \"Reports\" in the left menu.",
+          "s2": "Pick the period at the top of the screen: today, this week, this month.",
+          "s3": "You see revenue, number of orders and your best-selling dishes.",
+          "s4": "Need to share it? \"CSV\" or \"PDF\" buttons at the top of the page."
+        }
+      },
+      "subscription": {
+        "title": "Manage your subscription",
+        "page": "Subscription",
+        "steps": {
+          "s1": "At the bottom of the left menu, tap your name, then \"Subscription\".",
+          "s2": "You see your plan, and when your trial ends or your next payment is due.",
+          "s3": "To change plan, pick it. Monthly or yearly: yearly costs 15% less.",
+          "s4": "Mid-month, you only pay the difference for the days left."
+        }
+      }
+    },
+    "faq": {
+      "f1": {
+        "q": "How do I change a dish's price?",
+        "a": "Open \"Dishes\", tap the dish, change the price and save. Your guests' menu updates right away."
+      },
+      "f2": {
+        "q": "I have several venues. How do I switch?",
+        "a": "Tap your venue's name at the top of the left menu, then pick the other one. Each keeps its own menu, tables and sales."
+      },
+      "f3": {
+        "q": "What happens if the internet goes down?",
+        "a": "The till keeps working. Payments are kept on the device and sent as soon as the connection is back."
+      },
+      "f4": {
+        "q": "Do my guests need to install an app?",
+        "a": "No. They scan the table QR code with their phone camera and the menu opens."
+      },
+      "f5": {
+        "q": "How do I contact support?",
+        "a": "On WhatsApp or by email at support@attabl.com, with the buttons at the top of this page. We usually reply within 24 hours, Monday to Friday."
+      }
+    }
   },
   "notifications": {
     "muteError": "Could not change this reminder",

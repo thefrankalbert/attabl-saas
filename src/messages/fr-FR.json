@@ -2708,11 +2708,127 @@
     "users": "Utilisateurs"
   },
   "adminSupport": {
-    "whatsappTitle": "Un souci ? Écrivez-nous ou appelez-nous",
-    "whatsappBody": "Une personne de l'équipe ATTABL vous répond au {phone}. Dites-nous ce qui bloque, on s'en occupe.",
+    "heading": "Comment peut-on vous aider ?",
+    "intro": "Un guide pour chaque tâche courante. Et si ça bloque, une personne de l'équipe vous répond.",
+    "contactTitle": "Parlez à quelqu'un de l'équipe",
+    "contactBodyPhone": "Écrivez-nous sur WhatsApp au {phone}. On répond en général sous 24 heures, du lundi au vendredi.",
+    "contactBodyEmail": "Écrivez-nous à support@attabl.com. On répond en général sous 24 heures, du lundi au vendredi.",
     "whatsappCta": "Écrire sur WhatsApp",
     "whatsappMessage": "Bonjour ATTABL, j'ai besoin d'aide pour mon restaurant {restaurant}.",
-    "callCta": "Appeler"
+    "copyNumber": "Copier le numéro",
+    "numberCopied": "Numéro copié",
+    "copyFailed": "Copie impossible. Le numéro est {phone}.",
+    "callCta": "Appeler",
+    "emailCta": "Écrire un e-mail",
+    "noWhatsappHint": "WhatsApp n'est pas installé sur cet appareil ? Copiez le numéro pour l'utiliser sur votre téléphone, ou écrivez-nous par e-mail.",
+    "guidesTitle": "Guides",
+    "openPage": "Ouvrir {page}",
+    "faqTitle": "Questions fréquentes",
+    "guides": {
+      "menu": {
+        "title": "Créer votre carte",
+        "page": "Cartes & Menus",
+        "steps": {
+          "s1": "Dans le menu de gauche, ouvrez \"Cartes & Menus\", puis \"Nouvelle carte\".",
+          "s2": "Donnez un nom à la carte (par exemple \"Carte du midi\") et enregistrez.",
+          "s3": "Ajoutez vos catégories : Entrées, Plats, Boissons. Bouton \"Nouvelle catégorie\".",
+          "s4": "Ouvrez \"Plats\" et créez chaque plat avec son prix et sa photo.",
+          "s5": "Vous avez déjà votre carte dans Excel ? Utilisez \"Importer Excel\" et partez du modèle proposé."
+        }
+      },
+      "orders": {
+        "title": "Recevoir et préparer les commandes",
+        "page": "Cuisine (KDS)",
+        "steps": {
+          "s1": "Chaque commande arrive dans \"Commandes\" et sur l'écran \"Cuisine (KDS)\", en temps réel.",
+          "s2": "En cuisine, touchez \"Démarrer\" sur le ticket quand vous lancez le plat.",
+          "s3": "Quand c'est prêt, touchez \"Terminer\" : la salle le voit tout de suite.",
+          "s4": "Besoin d'un papier ? Depuis la commande, imprimez le ticket cuisine ou le reçu client."
+        }
+      },
+      "pos": {
+        "title": "Encaisser à la caisse",
+        "page": "Caisse (POS)",
+        "steps": {
+          "s1": "Ouvrez \"Caisse (POS)\" dans le menu de gauche.",
+          "s2": "Touchez les plats commandés : ils s'ajoutent au panier.",
+          "s3": "Touchez \"Encaisser\", choisissez comment le client paie, puis validez.",
+          "s4": "Plus de réseau ? Le paiement est gardé sur l'appareil et part dès que la connexion revient."
+        }
+      },
+      "qr": {
+        "title": "Imprimer les QR codes des tables",
+        "page": "QR Codes",
+        "steps": {
+          "s1": "Ouvrez \"QR Codes\" dans le menu de gauche.",
+          "s2": "Choisissez les tables, puis le style du QR code.",
+          "s3": "Téléchargez le PDF ou imprimez directement. Un QR code par table.",
+          "s4": "Le client scanne, voit votre carte et commande depuis sa table."
+        }
+      },
+      "stock": {
+        "title": "Suivre le stock et les fournisseurs",
+        "page": "Inventaire",
+        "steps": {
+          "s1": "Ouvrez \"Inventaire\", puis \"Ajouter un produit\" pour chaque ingrédient.",
+          "s2": "Dans \"Fournisseurs\", ajoutez ceux qui vous livrent.",
+          "s3": "Dans \"Fiches techniques\", dites ce que contient chaque plat. Le stock baisse alors à chaque vente.",
+          "s4": "Faites un inventaire physique de temps en temps pour corriger les écarts."
+        }
+      },
+      "team": {
+        "title": "Ajouter votre équipe",
+        "page": "Utilisateurs",
+        "steps": {
+          "s1": "En bas du menu de gauche, touchez votre nom, puis \"Paramètres\".",
+          "s2": "Onglet \"Personnel\", puis \"Gérer l'équipe\".",
+          "s3": "Touchez \"Nouveau Membre\", entrez son e-mail et choisissez son rôle (serveur, caissier, cuisine...).",
+          "s4": "La personne reçoit une invitation par e-mail. Le menu \"...\" d'un membre permet d'ajuster ce qu'il peut faire."
+        }
+      },
+      "reports": {
+        "title": "Voir vos ventes",
+        "page": "Rapports",
+        "steps": {
+          "s1": "Ouvrez \"Rapports\" dans le menu de gauche.",
+          "s2": "Choisissez la période en haut de l'écran : aujourd'hui, la semaine, le mois.",
+          "s3": "Vous voyez le chiffre d'affaires, le nombre de commandes et les plats qui marchent le mieux.",
+          "s4": "Besoin de le partager ? Boutons \"CSV\" ou \"PDF\" en haut de la page."
+        }
+      },
+      "subscription": {
+        "title": "Gérer votre abonnement",
+        "page": "Abonnement",
+        "steps": {
+          "s1": "En bas du menu de gauche, touchez votre nom, puis \"Abonnement\".",
+          "s2": "Vous voyez votre formule, et la date de fin d'essai ou du prochain paiement.",
+          "s3": "Pour changer de formule, choisissez-la. Mensuel ou annuel : l'annuel coûte 15 % de moins.",
+          "s4": "En cours de mois, vous ne payez que la différence pour les jours restants."
+        }
+      }
+    },
+    "faq": {
+      "f1": {
+        "q": "Comment changer le prix d'un plat ?",
+        "a": "Ouvrez \"Plats\", touchez le plat, changez le prix et enregistrez. Le menu de vos clients est à jour tout de suite."
+      },
+      "f2": {
+        "q": "J'ai plusieurs établissements. Comment passer de l'un à l'autre ?",
+        "a": "Touchez le nom de votre établissement en haut du menu de gauche, puis choisissez l'autre. Chacun garde sa carte, ses tables et ses ventes."
+      },
+      "f3": {
+        "q": "Que se passe-t-il si internet coupe ?",
+        "a": "La caisse continue de fonctionner. Les encaissements sont gardés sur l'appareil et partent dès que la connexion revient."
+      },
+      "f4": {
+        "q": "Mes clients doivent-ils installer une application ?",
+        "a": "Non. Ils scannent le QR code de la table avec l'appareil photo de leur téléphone et la carte s'ouvre."
+      },
+      "f5": {
+        "q": "Comment contacter le support ?",
+        "a": "Par WhatsApp ou par e-mail à support@attabl.com, avec les boutons en haut de cette page. On répond en général sous 24 heures, du lundi au vendredi."
+      }
+    }
   },
   "notifications": {
     "muteError": "Impossible de modifier ce rappel",
