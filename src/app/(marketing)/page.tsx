@@ -25,7 +25,8 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
-      <HomeHero />
+      {/* Video du hero : chemin lu dans HOME_HERO_VIDEO (absent = image fixe). */}
+      <HomeHero videoSrc={process.env.HOME_HERO_VIDEO || undefined} />
       <HomeMosaic />
       <HomeRange />
       <HomeLocal />
