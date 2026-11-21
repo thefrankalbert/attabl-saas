@@ -292,7 +292,7 @@ test.describe('09 - Aucun ecran casse', () => {
     }
   });
 
-  test("inventaire sur tablette: aucun tableau coupe a droite (cartes jusqu'a 1280)", async ({
+  test('inventaire sur tablette: des cartes et aucun tableau (jusqu a 1280)', async ({
     browser,
   }) => {
     test.setTimeout(120_000);
@@ -305,13 +305,15 @@ test.describe('09 - Aucun ecran casse', () => {
           .first()
           .waitFor({ timeout: 60_000 });
         await attendreChargement(page);
-        const tableauxCoupes = await page.evaluate(
-          () =>
-            [...document.querySelectorAll('main table')]
-              .map((t) => t.parentElement as HTMLElement)
-              .filter((w) => w.scrollWidth > w.clientWidth + 1).length,
-        );
-        expect.soft(tableauxCoupes, `${width}px: tableau plus large que sa place`).toBe(0);
+        // Sous 1280 px: des cartes, et aucun tableau (zero tableau coupe ne
+        // prouverait rien si aucun tableau ni aucune carte ne s'affichait).
+        const vue = await page.evaluate(() => ({
+          cartes:
+            document.querySelector('main [data-testid="responsive-cards"]')?.children.length ?? 0,
+          tableaux: document.querySelectorAll('main table').length,
+        }));
+        expect.soft(vue.cartes, `${width}px: cartes de l'inventaire`).toBeGreaterThan(0);
+        expect.soft(vue.tableaux, `${width}px: tableau au lieu des cartes`).toBe(0);
         await verifierCasse(page, `inventaire a ${width}px`);
       });
     }
