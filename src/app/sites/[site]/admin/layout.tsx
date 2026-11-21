@@ -295,9 +295,9 @@ export default async function AdminLayout({
                   <NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />
                 }
                 breadcrumbs={<AdminBreadcrumbs />}
+                statusBar={<OfflineIndicator />}
                 appVersion={APP_VERSION}
               >
-                <OfflineIndicator />
                 <OutboxIdentity userId={adminUser?.user_id} tenantId={tenant.id} />
                 <OrderReadyAlert tenantId={tenant.id} adminUserId={adminUser?.id} />
                 <CommandPalette />

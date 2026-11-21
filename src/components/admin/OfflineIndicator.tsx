@@ -20,10 +20,10 @@ export function OfflineIndicator() {
   if (isOnline && !wasOffline && !showPending && !showRejected) return null;
 
   return (
-    // Dans le flux de main#main-content, juste sous la barre du haut: en `fixed
-    // top-0` le bandeau recouvrait cette barre. `sticky` le garde visible quand
-    // la page defile, `shrink-0` l'empeche d'etre ecrase par la page.
-    <div className="sticky top-0 z-40 flex shrink-0 flex-col">
+    // Rendu par AdminLayoutClient (`statusBar`) entre la barre du haut et
+    // main#main-content, hors de la zone qui defile: en `fixed top-0` il
+    // recouvrait la barre du haut; dans main il partait avec la page.
+    <div className="flex shrink-0 flex-col">
       {(!isOnline || wasOffline) && (
         <div
           className={cn(

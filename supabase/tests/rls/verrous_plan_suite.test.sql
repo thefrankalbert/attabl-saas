@@ -10,7 +10,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(30);
+select plan(32);
 
 -- Fixtures, ecrites sans triggers (etat de depart, pas un comportement teste).
 set local session_replication_role = replica;
@@ -72,7 +72,7 @@ insert into order_items (id, order_id, menu_item_id, price_at_order, item_name, 
 
 set local session_replication_role = origin;
 
--- 1-4. Tables: l'attaque onboarding_completed=false ne rouvre rien.
+-- 1-6. Tables: l'attaque onboarding_completed=false ne rouvre rien.
 update tenants set onboarding_completed = false where id = 'c3000000-0000-4000-8000-000000000001';
 select throws_ok($$
   insert into tables (zone_id, tenant_id, table_number, display_name)
@@ -103,7 +103,7 @@ select throws_ok($$
   from generate_series(1, 21) g
 $$, '23514', null, 'restaurant neuf (Starter): plus de 20 zones de depart refusees');
 
--- 5-6. Assignations.
+-- 7-8. Assignations.
 select throws_ok($$
   update table_assignments set ended_at = null where id = 'c3000000-0000-4000-8000-000000000051'
 $$, '23514', null, 'Starter: reactiver une assignation de l essai est refuse');
@@ -111,7 +111,7 @@ select lives_ok($$
   update table_assignments set started_at = started_at where id = 'c3000000-0000-4000-8000-000000000051'
 $$, 'Starter: une mise a jour sans reactivation passe');
 
--- 7-8. Fiches techniques.
+-- 9-10. Fiches techniques.
 select throws_ok($$
   insert into recipes (tenant_id, menu_item_id, ingredient_id, quantity_needed)
   values ('c3000000-0000-4000-8000-000000000001', 'c3000000-0000-4000-8000-000000000071', 'c3000000-0000-4000-8000-000000000081', 1)
@@ -121,7 +121,7 @@ select lives_ok($$
   values ('c3000000-0000-4000-8000-000000000002', 'c3000000-0000-4000-8000-000000000072', 'c3000000-0000-4000-8000-000000000082', 1)
 $$, 'Pro: fiche technique acceptee');
 
--- 9-11. Mouvements de stock et comptage.
+-- 11-13. Mouvements de stock et comptage.
 select throws_ok($$
   insert into stock_movements (tenant_id, ingredient_id, movement_type, quantity)
   values ('c3000000-0000-4000-8000-000000000001', 'c3000000-0000-4000-8000-000000000081', 'manual_add', 5)
@@ -135,7 +135,7 @@ select throws_ok($$
   values ('c3000000-0000-4000-8000-000000000001', 'c3000000-0000-4000-8000-000000000091', 'c3000000-0000-4000-8000-000000000081', 0)
 $$, '23514', null, 'Starter: ligne de comptage refusee');
 
--- 12-13. Ecran cuisine.
+-- 14-15. Ecran cuisine.
 select throws_ok($$
   update order_items set item_status = 'ready' where id = 'c3000000-0000-4000-8000-0000000000c2'
 $$, '23514', null, 'Starter: statut cuisine d une commande recente refuse');
@@ -143,7 +143,7 @@ select lives_ok($$
   update order_items set item_status = 'ready' where id = 'c3000000-0000-4000-8000-0000000000c1'
 $$, 'Starter: la cuisine termine une commande passee pendant l essai');
 
--- 14-15. Ingredient modifie: ferme au client Starter, ouvert aux fonctions de commande.
+-- 16-17. Ingredient modifie: ferme au client Starter, ouvert aux fonctions de commande.
 select lives_ok($$
   update ingredients set current_stock = 7 where id = 'c3000000-0000-4000-8000-000000000081'
 $$, 'Starter: une fonction SQL (proprietaire) peut toujours ecrire le stock');
@@ -153,14 +153,14 @@ select throws_ok($$
   update ingredients set current_stock = 99 where id = 'c3000000-0000-4000-8000-000000000081'
 $$, '23514', null, 'Starter: le client ne modifie pas un ingredient en direct');
 
--- 16-17. Rapports appeles par le client Starter.
+-- 18-19. Rapports appeles par le client Starter.
 select throws_ok($$
   select * from get_daily_revenue('c3000000-0000-4000-8000-000000000001', now() - interval '30 days', now())
 $$, '42501', null, 'Starter: get_daily_revenue refuse');
 select throws_ok($$
   select * from get_top_items('c3000000-0000-4000-8000-000000000001', now() - interval '30 days', now())
 $$, '42501', null, 'Starter: get_top_items refuse (valeur par defaut de p_limit conservee)');
--- Contre-audit B: les deux fonctions que modifie le lot pourboires (#446).
+-- 20-23. Contre-audit B: les deux fonctions que modifie le lot pourboires (#446).
 select throws_ok($$
   select * from get_order_summary('c3000000-0000-4000-8000-000000000001', now() - interval '30 days', now())
 $$, '42501', null, 'Starter: get_order_summary refuse');
@@ -175,7 +175,7 @@ $$, 'Pro: le client modifie son ingredient');
 select lives_ok($$
   select * from get_top_items('c3000000-0000-4000-8000-000000000002', now() - interval '30 days', now())
 $$, 'Pro: get_top_items ouvert');
--- Un non-membre recoit le refus d'appartenance, pas une information de plan.
+-- 24-25. Un non-membre recoit le refus d'appartenance, pas une information de plan.
 select throws_like($$
   select * from get_daily_revenue('c3000000-0000-4000-8000-000000000001', now() - interval '30 days', now())
 $$, 'access denied: caller is not a member%', 'non-membre: refus d appartenance avant tout controle de plan');
@@ -183,7 +183,7 @@ select ok(not has_function_privilege('authenticated',
   'public.get_daily_revenue_brut(uuid, timestamp with time zone, timestamp with time zone)', 'EXECUTE'),
   'le corps brut des rapports n est pas appelable par un client');
 
--- Contre-audit C: un super administrateur passe l'appartenance; le plan juge.
+-- 26-27. Contre-audit C: un super administrateur passe l'appartenance; le plan juge.
 set local request.jwt.claims = '{"sub":"c3000000-0000-4000-8000-0000000000a3"}';
 select ok(mon_restaurant_a_le_stock('c3000000-0000-4000-8000-000000000002'),
   'super administrateur: un restaurant Pro dont il n est pas membre a le stock');
@@ -191,7 +191,7 @@ select ok(not mon_restaurant_a_le_stock('c3000000-0000-4000-8000-000000000001'),
   'super administrateur: un restaurant Starter n a toujours pas le stock');
 reset role;
 
--- Contre-audit E: le registre n'est ni lisible ni ecrivable par un client.
+-- 28-30. Contre-audit E: le registre n'est ni lisible ni ecrivable par un client.
 select ok(not has_table_privilege('anon', 'public.tenant_tables_initialisees', 'SELECT, INSERT, UPDATE, DELETE'),
   'registre tenant_tables_initialisees: aucun droit pour anon');
 select ok(not has_table_privilege('authenticated', 'public.tenant_tables_initialisees', 'SELECT, INSERT, UPDATE, DELETE'),
@@ -199,6 +199,18 @@ select ok(not has_table_privilege('authenticated', 'public.tenant_tables_initial
 
 select ok(not has_function_privilege('authenticated', 'public.tenant_effective_plan(uuid)', 'EXECUTE'),
   'tenant_effective_plan reste fermee aux clients');
+
+-- 31-32. Garde-fou de l'ordre des migrations: APRES toutes les migrations, les
+-- deux fonctions que #446 recree passent encore par l'enveloppe de plan. Si une
+-- migration posterieure les recree sans l'enveloppe, ces deux assertions tombent.
+select ok((select count(*) > 0 and bool_and(p.prosrc like '%assert_tenant_reports%')
+           from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+           where n.nspname = 'public' and p.proname = 'get_order_summary'),
+  'get_order_summary: toute version appelable passe par le controle de plan');
+select ok((select count(*) > 0 and bool_and(p.prosrc like '%assert_tenant_reports%')
+           from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+           where n.nspname = 'public' and p.proname = 'get_server_performance'),
+  'get_server_performance: toute version appelable passe par le controle de plan');
 
 select * from finish();
 rollback;
