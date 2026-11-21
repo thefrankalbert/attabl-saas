@@ -105,11 +105,6 @@ vi.mock('@/lib/supabase/admin', () => ({
 vi.mock('@/lib/billing/tenant-billing-ids', () => ({
   getTenantBillingIds: (id: string) => state.billing(id),
 }));
-vi.mock('@/lib/plans/features', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/lib/plans/features')>()),
-  getPlanLimits: () => ({ maxMonthlyOrders: -1 }),
-}));
-vi.mock('@/lib/admin/monthly-orders-count', () => ({ getMonthlyOrdersCount: async () => 0 }));
 vi.mock('@/lib/permissions', () => ({ getEffectivePermissions: () => ({}) }));
 vi.mock('@/services/trigger-emails.service', () => ({
   determineTrialEventKey: () => null,

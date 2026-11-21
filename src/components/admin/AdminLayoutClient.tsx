@@ -35,11 +35,11 @@ interface AdminLayoutInnerProps {
   };
   userName?: string;
   userEmail?: string;
-  /** 0..100 - passed to the sidebar usage card in the footer */
-  ordersUsagePercent?: number;
   userTenants?: TenantSwitchOption[];
   notifications?: React.ReactNode;
   breadcrumbs?: React.ReactNode;
+  /** Bandeau d'etat (hors ligne, file d'envoi) entre la barre du haut et main: hors de la zone qui defile. */
+  statusBar?: React.ReactNode;
   /** Effective permissions (3-level resolved) for hiding nav links the member cannot open */
   navPermissions?: Record<PermissionCode, boolean>;
   /** Server-baked deploy sha (APP_VERSION), forwarded to ShellSidebar. */
@@ -57,6 +57,7 @@ function AdminLayoutInner({
   userTenants,
   notifications,
   breadcrumbs,
+  statusBar,
   navPermissions,
   appVersion,
 }: AdminLayoutInnerProps) {
@@ -246,6 +247,8 @@ function AdminLayoutInner({
           />
         )}
 
+        {statusBar}
+
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:rounded-md focus:bg-[var(--card)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium"
@@ -325,10 +328,10 @@ interface AdminLayoutClientProps {
   };
   userName?: string;
   userEmail?: string;
-  ordersUsagePercent?: number;
   userTenants?: TenantSwitchOption[];
   notifications?: React.ReactNode;
   breadcrumbs?: React.ReactNode;
+  statusBar?: React.ReactNode;
   navPermissions?: Record<PermissionCode, boolean>;
   /** Server-baked deploy sha (APP_VERSION), forwarded to ShellSidebar. */
   appVersion?: string;
@@ -342,10 +345,10 @@ export function AdminLayoutClient({
   tenant,
   userName,
   userEmail,
-  ordersUsagePercent,
   userTenants,
   notifications,
   breadcrumbs,
+  statusBar,
   navPermissions,
   appVersion,
 }: AdminLayoutClientProps) {
@@ -358,10 +361,10 @@ export function AdminLayoutClient({
         tenant={tenant}
         userName={userName}
         userEmail={userEmail}
-        ordersUsagePercent={ordersUsagePercent}
         userTenants={userTenants}
         notifications={notifications}
         breadcrumbs={breadcrumbs}
+        statusBar={statusBar}
         navPermissions={navPermissions}
         appVersion={appVersion}
       >

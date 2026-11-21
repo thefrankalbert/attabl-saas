@@ -5,7 +5,7 @@ import { checkAndNotifyLowStock } from '@/services/notification.service';
 import * as Sentry from '@sentry/nextjs';
 
 // --- Mock external dependencies --------------------------------
-// after() runs its callback inline (quota check); NextResponse kept real.
+// after() runs its callback inline; NextResponse kept real.
 vi.mock('next/server', async (importActual) => {
   const actual = await importActual<typeof import('next/server')>();
   return {
@@ -65,12 +65,9 @@ vi.mock('@/services/coupon.service', () => ({
   })),
 }));
 
-// Quota check runs in after(); keep it inert. The order-feature plan gate is
-// exercised in its own unit test, so keep it inert here (no-op assert).
+// The order-feature plan gate is exercised in its own unit test, so keep it
+// inert here (no-op assert).
 vi.mock('@/services/plan-enforcement.service', () => ({
-  createPlanEnforcementService: vi.fn(() => ({
-    getMonthlyOrderUsage: vi.fn().mockResolvedValue({ count: 0, limit: null, exceeded: false }),
-  })),
   assertOrderFeaturesAllowed: vi.fn(),
 }));
 
@@ -374,6 +371,30 @@ describe('POST /api/orders/pos - auto-destock wiring', () => {
 
       expect(status).toBe(200);
       expect(mockAssignIfFree).toHaveBeenCalledWith('tenant-abc', 'tb-5', 'server-1');
+    });
+
+    // Audit des offres 2026-11-20: l'assignation des serveurs est vendue a
+    // partir de Pro. Sur Starter il n'y a pas d'ecran Service pour l'afficher,
+    // et la base refuse la ligne.
+    it('a waiter dine-in ticket on Starter does not assign the table', async () => {
+      const ligne = { ...(mockTenantRow.data as MockTenantRow) };
+      mockTenantRow.data = {
+        ...ligne,
+        subscription_plan: 'starter',
+        subscription_status: 'active',
+      };
+      try {
+        mockAdminUserRow.data.role = 'waiter';
+        placeOn('tb-5');
+        const { POST } = await import('@/app/api/orders/pos/route');
+
+        const { status } = await parseResponse(await POST(createMockRequest(validPosBody())));
+
+        expect(status).toBe(200);
+        expect(mockAssignIfFree).not.toHaveBeenCalled();
+      } finally {
+        mockTenantRow.data = ligne;
+      }
     });
 
     it('a cashier ticket does not touch assignments', async () => {
