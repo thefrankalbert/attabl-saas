@@ -861,8 +861,8 @@
       "hero": {
         "title": "Your restaurant,\nunder control.",
         "subtitle": "Register, orders, kitchen and stock in one app. Even when the internet drops.",
-        "ctaPrimary": "Try it free for 14 days",
-        "ctaWhatsapp": "Message us on WhatsApp",
+        "ctaPrimary": "Start free trial",
+        "ctaWhatsapp": "Contact sales",
         "proof": "They run their service with Attabl",
         "clientLogoAlt": "Radisson Blu N'Djamena"
       },
@@ -1045,8 +1045,8 @@
       "finalCta": {
         "title": "Your business deserves better than a notebook and a calculator.",
         "subtitle": "Account created in 2 minutes. Your menu online today.",
-        "ctaPrimary": "Launch my restaurant, free",
-        "whatsapp": "Message us on WhatsApp"
+        "ctaPrimary": "Start free trial",
+        "whatsapp": "Contact sales"
       }
     },
     "header": {

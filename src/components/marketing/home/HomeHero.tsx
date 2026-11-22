@@ -66,7 +66,7 @@ export async function HomeHero({ videoSrc }: { videoSrc?: string }) {
           >
             <Link
               href="/signup"
-              className="inline-flex h-12 items-center justify-center rounded-full bg-white px-7 text-[16px] font-medium text-encre hover:bg-white/90 max-sm:w-full"
+              className="inline-flex h-11 items-center justify-center rounded-full bg-white px-6 text-[16px] font-medium text-encre hover:bg-white/90 max-sm:w-full"
             >
               {t('ctaPrimary')}
             </Link>
@@ -74,7 +74,7 @@ export async function HomeHero({ videoSrc }: { videoSrc?: string }) {
               href="https://wa.me/237658651050"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-12 items-center justify-center rounded-full border border-white/60 px-6 text-[16px] font-medium hover:bg-white/10 max-sm:w-full"
+              className="inline-flex h-11 items-center justify-center rounded-full border border-white/60 px-6 text-[16px] font-medium hover:bg-white/10 max-sm:w-full"
             >
               {t('ctaWhatsapp')}
             </a>

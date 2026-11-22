@@ -861,8 +861,8 @@
       "hero": {
         "title": "Votre restaurant,\nsous contrôle.",
         "subtitle": "Caisse, commandes, cuisine et stock dans une seule application. Même quand internet coupe.",
-        "ctaPrimary": "Essayer gratuitement 14 jours",
-        "ctaWhatsapp": "Écrire sur WhatsApp",
+        "ctaPrimary": "Essai gratuit",
+        "ctaWhatsapp": "Nous contacter",
         "proof": "Ils tiennent leur service avec Attabl",
         "clientLogoAlt": "Radisson Blu N'Djamena"
       },
@@ -1045,8 +1045,8 @@
       "finalCta": {
         "title": "Votre commerce mérite mieux qu'un carnet et une calculette.",
         "subtitle": "Compte créé en 2 minutes. Votre menu en ligne aujourd'hui.",
-        "ctaPrimary": "Lancer mon restaurant, gratuitement",
-        "whatsapp": "Écrire sur WhatsApp"
+        "ctaPrimary": "Essai gratuit",
+        "whatsapp": "Nous contacter"
       }
     },
     "header": {

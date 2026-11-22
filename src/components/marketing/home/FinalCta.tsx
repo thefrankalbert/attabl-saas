@@ -21,7 +21,7 @@ export async function FinalCta() {
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               href="/signup"
-              className="inline-flex h-12 items-center justify-center rounded-full bg-encre px-7 text-[16px] font-medium text-white hover:bg-black max-sm:w-full dark:bg-white dark:text-encre dark:hover:bg-white/90"
+              className="inline-flex h-11 items-center justify-center rounded-full bg-encre px-6 text-[16px] font-medium text-white hover:bg-black max-sm:w-full dark:bg-white dark:text-encre dark:hover:bg-white/90"
             >
               {t('ctaPrimary')}
             </Link>
@@ -29,7 +29,7 @@ export async function FinalCta() {
               href="https://wa.me/237658651050"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-12 items-center justify-center rounded-full border border-encre/30 px-6 text-[16px] font-medium hover:border-encre max-sm:w-full dark:border-white/30 dark:hover:border-white"
+              className="inline-flex h-11 items-center justify-center rounded-full border border-encre/30 px-6 text-[16px] font-medium hover:border-encre max-sm:w-full dark:border-white/30 dark:hover:border-white"
             >
               {t('whatsapp')}
             </a>
