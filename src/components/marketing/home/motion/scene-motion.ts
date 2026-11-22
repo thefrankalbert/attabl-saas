@@ -1,4 +1,5 @@
 import { followScroll } from './follow-scroll';
+import { startSceneCompletion } from './scene-completion';
 import {
   HEADER_HEIGHT,
   NARROW,
@@ -8,6 +9,7 @@ import {
   between,
   clamp01,
   easeIn,
+  fieldEntryEnd,
   fieldWordEntry,
   heroWordExit,
   mediaFrame,
@@ -88,5 +90,14 @@ export function startSceneMotion(track: HTMLElement): () => void {
     actions.inert = false;
   };
 
-  return followScroll({ target: scene, query: SCENE_QUERY, read, reset });
+  // L'effet est fini quand le dernier mot du titre est en place, pas a la tuile.
+  const effectEnd = (): number =>
+    Math.ceil(fieldEntryEnd(fieldWords.length) * TRAVEL * scene.clientHeight) + 2;
+
+  const stopMotion = followScroll({ target: scene, query: SCENE_QUERY, read, reset });
+  const stopCompletion = startSceneCompletion(track, effectEnd);
+  return () => {
+    stopCompletion();
+    stopMotion();
+  };
 }

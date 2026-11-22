@@ -7,6 +7,7 @@ import {
   TRACK,
   TRAVEL,
   WIDE,
+  fieldEntryEnd,
   fieldWordEntry,
   mediaFrame,
   tileCenters,
@@ -37,6 +38,16 @@ describe('scene de la page d accueil', () => {
     expect((box.height - 2 * end.insetY) * end.scale).toBeCloseTo(box.side);
     expect(end.radius * end.scale).toBeCloseTo(20);
     expect(box.height / 2 + end.y).toBeCloseTo(box.endY);
+  });
+
+  it.each([
+    ['fr-FR', fr.marketing.home.mosaic.title],
+    ['en-US', en.marketing.home.mosaic.title],
+  ])('arrete la completion titre entier, scene encore collee (%s)', (_locale, title) => {
+    const words = title.split(' ').length;
+    const rest = fieldEntryEnd(words);
+    expect(fieldWordEntry(rest + 0.001, words - 1)).toBeCloseTo(1);
+    expect(rest).toBeLessThan((TRACK - 1) / TRAVEL);
   });
 
   it.each([

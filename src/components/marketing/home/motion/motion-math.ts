@@ -69,6 +69,8 @@ export const easeIn = (value: number): number => value * value;
 
 export const heroWordExit = (q: number, index: number): number =>
   easeIn(between(q, 0.06 + index * 0.035, 0.36 + index * 0.035));
+/** Valeur de q a laquelle le dernier mot du titre du champ est en place. */
+export const fieldEntryEnd = (words: number): number => 1 + Math.max(0, words - 1) * 0.035;
 export const fieldWordEntry = (q: number, index: number): number =>
   easeOut(between(q, 0.68 + index * 0.035, 1 + index * 0.035));
 
