@@ -24,7 +24,7 @@ export function HeroVideo({ src, poster }: { src: string; poster: string }) {
     <video
       ref={ref}
       data-video
-      className="absolute inset-0 -z-20 size-full object-cover"
+      className="absolute inset-0 size-full object-cover"
       src={src}
       poster={poster}
       muted
