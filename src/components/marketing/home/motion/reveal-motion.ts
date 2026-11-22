@@ -10,10 +10,11 @@ export function startRevealMotion(root: HTMLElement): () => void {
   }));
   // offset : translation deja posee, retranchee a la lecture de la position.
   const rises = findAll('[data-monte]').map((el) => ({ el, offset: 0 }));
+  // Cale sur la photo elle-meme : en colonne unique (sous 1024 px) elle arrive
+  // bien apres le haut de sa carte, et l'effet se jouait hors ecran.
   const reveals = findAll('[data-revele]').map((el) => ({
     el,
     image: el.querySelector('img'),
-    anchor: el.closest('article') ?? el,
   }));
 
   const read = (): (() => void) => {
@@ -26,9 +27,7 @@ export function startRevealMotion(root: HTMLElement): () => void {
     const riseProgress = rises.map(({ el, offset }) =>
       easeOut(between(entered(el, offset), 0, 0.36)),
     );
-    const revealProgress = reveals.map(({ anchor }) =>
-      easeOut(between(entered(anchor), 0.02, 0.6)),
-    );
+    const revealProgress = reveals.map(({ el }) => easeOut(between(entered(el), 0.02, 0.6)));
 
     return () => {
       titles.forEach(({ words }, i) => {
