@@ -31,7 +31,8 @@ export function AudiencePanels({ panels }: { panels: AudiencePanel[] }) {
             src={panel.image}
             alt={panel.imageAlt}
             fill
-            sizes="(min-width: 1024px) 60vw, 100vw"
+            // object-cover d'une photo 16:10 dans un panneau de 380 ou 540 px de haut.
+            sizes="(min-width: 1440px) 60vw, (min-width: 1024px) 864px, (min-width: 640px) 100vw, 608px"
           />
           <span className="home-panneau-voile" aria-hidden="true" />
           <div className="home-panneau-texte">

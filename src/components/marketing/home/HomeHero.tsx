@@ -29,7 +29,8 @@ export async function HomeHero({ videoSrc }: { videoSrc?: string }) {
             fill
             priority
             fetchPriority="high"
-            sizes="100vw"
+            // object-cover : en portrait, c'est la hauteur qui fixe la largeur utile.
+            sizes="(max-aspect-ratio: 1/1) calc(100svh - 64px), 100vw"
             className="object-cover"
             data-hero-image
           />
