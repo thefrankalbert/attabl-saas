@@ -869,10 +869,24 @@
       "mosaic": {
         "title": "Du premier couvert au dernier ticket, Attabl suit le rythme.",
         "images": {
-          "patron": "Patron d'un restaurant à Ouagadougou dans sa salle avant le service",
-          "grill": "Cuisinier qui retourne un poisson braisé sur le grill",
-          "serveuse": "Serveuse souriante, sa tablette en main",
-          "associes": "Une cheffe et un gérant associés devant leur cuisine"
+          "patron": "Patron d'un restaurant dans sa salle",
+          "poisson": "Filet de capitaine dressé",
+          "bar": "Barmaid au bar d'un hôtel",
+          "douceurs": "Vitrine de pâtisseries fines",
+          "comptoir": "Tablette Attabl au comptoir",
+          "chef": "Chef en veste blanche au passe",
+          "associes": "Une cheffe et un gérant associés",
+          "verres": "Verrerie d'un bar d'hôtel",
+          "accueil": "Hôtesse à l'accueil d'un restaurant",
+          "serveuse": "Serveuse, sa tablette en main",
+          "maitre": "Maître d'hôtel au passe",
+          "gerante": "Gérante d'une pâtisserie",
+          "bureau": "Gérante devant le tableau de bord Attabl",
+          "pintade": "Suprême de pintade dressé",
+          "rire": "Serveuse qui rit avec une cliente",
+          "laiton": "Lampe en laiton au-dessus du passe",
+          "tasses": "Cafés servis au comptoir",
+          "grill": "Cuisinier qui retourne un poisson braisé sur le grill"
         }
       },
       "range": {
@@ -964,15 +978,18 @@
         "items": {
           "restaurants": {
             "title": "Restaurants",
-            "body": "Salle, emporter et livraison dans une seule file. La cuisine et la caisse voient la même chose."
+            "body": "Salle, emporter et livraison dans une seule file. La cuisine et la caisse voient la même chose.",
+            "imageAlt": "Maître d'hôtel qui envoie deux assiettes"
           },
           "hotels": {
             "title": "Hôtels",
-            "body": "Restaurant, bar et room service. Chaque point de vente a sa caisse, un seul tableau de bord pour tout piloter."
+            "body": "Restaurant, bar et room service. Chaque point de vente a sa caisse, un seul tableau de bord pour tout piloter.",
+            "imageAlt": "Barmaid au bar d'un grand hôtel"
           },
           "bars": {
             "title": "Bars et cafés",
-            "body": "Des commandes rapides au comptoir et un stock de boissons qui tombe juste à la fin de la soirée."
+            "body": "Des commandes rapides au comptoir et un stock de boissons qui tombe juste à la fin de la soirée.",
+            "imageAlt": "Serveuse et cliente au bar à café"
           }
         }
       },

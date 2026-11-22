@@ -869,10 +869,24 @@
       "mosaic": {
         "title": "From the first cover to the last ticket, Attabl keeps pace.",
         "images": {
-          "patron": "Restaurant owner in Ouagadougou in his dining room before service",
-          "grill": "Cook turning a braised fish on the grill",
-          "serveuse": "Smiling waitress, tablet in hand",
-          "associes": "A chef and a manager, business partners, in front of their kitchen"
+          "patron": "Restaurant owner in the dining room",
+          "poisson": "Plated Nile perch fillet",
+          "bar": "Bartender at a hotel bar",
+          "douceurs": "Display of fine pastries",
+          "comptoir": "Attabl tablet at the counter",
+          "chef": "Chef in a white jacket at the pass",
+          "associes": "A chef and a manager, business partners",
+          "verres": "Glassware at a hotel bar",
+          "accueil": "Host at a restaurant front desk",
+          "serveuse": "Waitress, tablet in hand",
+          "maitre": "Maitre d' at the pass",
+          "gerante": "Manager of a pastry shop",
+          "bureau": "Manager in front of the Attabl dashboard",
+          "pintade": "Plated guinea fowl supreme",
+          "rire": "Waitress laughing with a guest",
+          "laiton": "Brass lamp above the pass",
+          "tasses": "Coffees served at the counter",
+          "grill": "Cook turning a braised fish on the grill"
         }
       },
       "range": {
@@ -964,15 +978,18 @@
         "items": {
           "restaurants": {
             "title": "Restaurants",
-            "body": "Dine-in, takeaway and delivery in a single queue. The kitchen and the register see the same thing."
+            "body": "Dine-in, takeaway and delivery in a single queue. The kitchen and the register see the same thing.",
+            "imageAlt": "Maitre d' sending out two plates"
           },
           "hotels": {
             "title": "Hotels",
-            "body": "Restaurant, bar and room service. Each outlet has its own register, one dashboard to run it all."
+            "body": "Restaurant, bar and room service. Each outlet has its own register, one dashboard to run it all.",
+            "imageAlt": "Bartender at the bar of a grand hotel"
           },
           "bars": {
             "title": "Bars and cafes",
-            "body": "Fast orders at the counter and a drinks stock that adds up at the end of the night."
+            "body": "Fast orders at the counter and a drinks stock that adds up at the end of the night.",
+            "imageAlt": "Waitress and guest at the coffee bar"
           }
         }
       },
