@@ -83,9 +83,9 @@ export async function HomeHero({ videoSrc }: { videoSrc?: string }) {
         {/* Preuve client en bas du hero */}
         <div
           data-sort="preuve"
-          className="mt-14 flex flex-col items-center gap-3 pt-6 sm:flex-row sm:justify-center sm:gap-6"
+          className="mt-14 flex flex-col items-center gap-3 border-t border-white/20 pt-6 sm:flex-row sm:justify-center sm:gap-6"
         >
-          <span className="surtitre text-white/90">{t('proof')}</span>
+          <span className="surtitre text-white/60">{t('proof')}</span>
           <Image
             src="/marketing/clients/radisson-blu-ndjamena-blanc.svg"
             alt={t('clientLogoAlt')}
