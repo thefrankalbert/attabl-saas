@@ -300,3 +300,10 @@
   object-fit: cover;
   pointer-events: none;
 }
+
+/* Au clavier, ce qui recoit le focus est lisible tout de suite, meme en pleine montee */
+[data-monte]:has(:focus-visible),
+[data-revele]:has(:focus-visible) {
+  opacity: 1 !important; /* le fondu est pose en style en ligne */
+  clip-path: none !important;
+}
