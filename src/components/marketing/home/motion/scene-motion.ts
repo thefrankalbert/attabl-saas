@@ -35,14 +35,15 @@ export function startSceneMotion(track: HTMLElement): () => void {
   const narrow = window.matchMedia('(max-width: 767.98px)');
 
   const read = (): (() => void) => {
-    // clientHeight (100svh - 64) et non innerHeight : ne bouge pas quand la barre
-    // d'adresse mobile se replie.
+    // clientHeight (100svh) et non innerHeight : ne bouge pas quand la barre
+    // d'adresse mobile se replie. Les tuiles vivent sous l'en-tete, le media dessous.
     const height = scene.clientHeight;
+    const field = height - HEADER_HEIGHT;
     const width = scene.clientWidth;
     const side = parseFloat(getComputedStyle(tiles[0].el).width);
-    const q = Math.max(0, HEADER_HEIGHT - track.getBoundingClientRect().top) / (TRAVEL * height);
+    const q = Math.max(0, -track.getBoundingClientRect().top) / (TRAVEL * field);
     const p = clamp01(q);
-    const endY = (narrow.matches ? NARROW : WIDE).y[2] * height;
+    const endY = HEADER_HEIGHT + (narrow.matches ? NARROW : WIDE).y[2] * field;
     const box = mediaFrame({ progress: p, width, height, side, endY });
 
     return () => {
@@ -92,7 +93,7 @@ export function startSceneMotion(track: HTMLElement): () => void {
 
   // L'effet est fini quand le dernier mot du titre est en place, pas a la tuile.
   const effectEnd = (): number =>
-    Math.ceil(fieldEntryEnd(fieldWords.length) * TRAVEL * scene.clientHeight) + 2;
+    Math.ceil(fieldEntryEnd(fieldWords.length) * TRAVEL * (scene.clientHeight - HEADER_HEIGHT)) + 2;
 
   const stopMotion = followScroll({ target: scene, query: SCENE_QUERY, read, reset });
   const stopCompletion = startSceneCompletion(track, effectEnd);

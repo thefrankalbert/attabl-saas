@@ -9,9 +9,9 @@ export const SCENE_QUERY =
 export const MOTION_QUERY = '(prefers-reduced-motion: no-preference)';
 
 export const HEADER_HEIGHT = 64;
-/** Part de la hauteur de scene a faire defiler pour que le media devienne une tuile. */
+/** Part de la zone sous l'en-tete a faire defiler pour que le media devienne une tuile. */
 export const TRAVEL = 0.35;
-/** Hauteur de la piste, en hauteurs de scene. */
+/** Piste : l'ecran, puis (TRACK - 1) fois la zone sous l'en-tete. */
 export const TRACK = 1.62;
 
 export const MOSAIC_TILES = [

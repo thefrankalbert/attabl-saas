@@ -1,5 +1,5 @@
 import { animate } from 'framer-motion';
-import { HEADER_HEIGHT, SCENE_QUERY, clamp01 } from './motion-math';
+import { SCENE_QUERY, clamp01 } from './motion-math';
 
 /** Pause du defilement avant de finir l'effet, en ms. */
 const IDLE_MS = 140;
@@ -24,7 +24,7 @@ export function startSceneCompletion(track: HTMLElement, effectEnd: () => number
 
   const complete = (): void => {
     if (held || !media.matches) return;
-    const travelled = HEADER_HEIGHT - track.getBoundingClientRect().top;
+    const travelled = -track.getBoundingClientRect().top;
     const end = effectEnd();
     if (travelled <= DEAD_ZONE || travelled >= end - 2) return;
 
@@ -38,6 +38,9 @@ export function startSceneCompletion(track: HTMLElement, effectEnd: () => number
       duration: 0.35 + 0.35 * clamp01(Math.abs(target - from) / end),
       ease: [0.45, 0, 0.25, 1],
       onUpdate: (top) => {
+        // A verifier avant d'ecrire : un scrollTo ecraserait le defilement d'une
+        // ancre ou de la molette avant meme que son evenement arrive.
+        if (yieldToUser()) return;
         expectedY = top;
         window.scrollTo({ top, behavior: 'instant' });
       },
@@ -55,14 +58,18 @@ export function startSceneCompletion(track: HTMLElement, effectEnd: () => number
     clearTimeout(timer);
     lastY = window.scrollY;
   };
-  const onScroll = (): void => {
+  // Ancre, barre de defilement, clavier, molette : la main reprend.
+  const yieldToUser = (): boolean => {
     const y = window.scrollY;
-    if (running) {
-      if (Math.abs(y - expectedY) <= FOREIGN_SCROLL) return;
-      stop(); // ancre, barre de defilement, clavier : la main reprend
-      goingUp = y < expectedY;
-      lastY = y;
-    }
+    if (!running || Math.abs(y - expectedY) <= FOREIGN_SCROLL) return false;
+    stop();
+    goingUp = y < expectedY;
+    wait();
+    return true;
+  };
+  const onScroll = (): void => {
+    if (yieldToUser() || running) return;
+    const y = window.scrollY;
     if (y !== lastY) goingUp = y < lastY;
     lastY = y;
     wait();

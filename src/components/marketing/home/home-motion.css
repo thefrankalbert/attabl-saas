@@ -21,6 +21,97 @@
   pointer-events: none;
 }
 
+/*
+ * Fondu releve sur squareup.com le 2026-11-22 : media assombri de 25 %, vignette
+ * circulaire, ombre douce sous les textes. Le degrade vertical s'y ajoute sous
+ * le texte, parce que notre photo a un ecran blanc juste derriere le titre.
+ */
+.home-hero-voile {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      180deg,
+      rgb(0 0 0 / 0) 4%,
+      rgb(0 0 0 / 0.3) 28%,
+      rgb(0 0 0 / 0.5) 56%,
+      rgb(0 0 0 / 0.6) 100%
+    ),
+    radial-gradient(circle, rgb(0 0 0 / 0) 20%, rgb(0 0 0 / 0.6) 100%), rgb(0 0 0 / 0.25);
+}
+@media (max-width: 767.98px) {
+  .home-hero-voile {
+    background:
+      linear-gradient(
+        180deg,
+        rgb(0 0 0 / 0) 2%,
+        rgb(0 0 0 / 0.4) 22%,
+        rgb(0 0 0 / 0.56) 42%,
+        rgb(0 0 0 / 0.62) 100%
+      ),
+      rgb(0 0 0 / 0.25);
+  }
+}
+[data-hero] h1,
+[data-hero] [data-sort='sous'] {
+  text-shadow: 0 0 10px rgb(0 0 0 / 0.16);
+}
+
+/*
+ * En-tete pose sur le hero : transparent, textes blancs, fondu noir derriere.
+ * Plein des que la page defile ou qu'un menu s'ouvre. Sans JS il reste plein,
+ * au-dessus du hero.
+ */
+@media (scripting: enabled) {
+  .home-piste {
+    margin-top: -65px; /* en-tete : 64 px et son filet */
+  }
+  header[data-nav-root]::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: -1;
+    height: 104px;
+    background: linear-gradient(
+      180deg,
+      rgb(0 0 0 / 0.78) 0%,
+      rgb(0 0 0 / 0.56) 48%,
+      rgb(0 0 0 / 0) 100%
+    );
+    opacity: 0;
+    transition: opacity 0.15s linear;
+    pointer-events: none;
+  }
+  header[data-nav-root][data-sur-hero] {
+    border-color: transparent;
+    background-color: transparent;
+    color: #fff;
+  }
+  header[data-nav-root][data-sur-hero]::before {
+    opacity: 1;
+  }
+  /* Les panneaux, blancs pendant leur fermeture, gardent leurs couleurs. */
+  header[data-sur-hero] :is(a, button):not([data-menu-panel] *) {
+    color: #fff;
+    border-color: rgb(255 255 255 / 0.4);
+  }
+  header[data-sur-hero] :is(a, button):not([data-menu-panel] *, [data-nav-cta]):hover {
+    background-color: rgb(255 255 255 / 0.14);
+  }
+  header[data-sur-hero] :is(a, button):not([data-menu-panel] *):focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+  header[data-sur-hero] a[href='/']:hover {
+    background-color: transparent;
+  }
+  header[data-sur-hero] [data-nav-cta]:not([data-menu-panel] *),
+  header[data-sur-hero] [data-brand-mark] {
+    background-color: #fff;
+    color: var(--color-encre);
+  }
+}
+
 /* Champ de tuiles, version fixe */
 .home-champ {
   padding: 80px 20px;
@@ -64,12 +155,12 @@
 /* Scene : le media du hero devient une tuile. Meme condition que SCENE_QUERY. */
 @media (prefers-reduced-motion: no-preference) and (min-height: 644px) and (scripting: enabled) {
   .home-piste {
-    height: calc((100svh - 64px) * 1.62);
+    height: calc(100svh + (100svh - 64px) * 0.62);
   }
   .home-scene {
     position: sticky;
-    top: 64px;
-    height: calc(100svh - 64px);
+    top: 0;
+    height: 100svh;
     overflow: hidden;
   }
   .home-scene > section {
@@ -88,7 +179,9 @@
     will-change: transform, clip-path;
     transform-origin: 50% 50%;
   }
-  .home-champ {
+  /* Le hero passe sous l'en-tete ; les tuiles restent dans la zone visible. */
+  .home-scene > .home-champ {
+    top: 64px;
     z-index: 1;
     padding: 0;
   }

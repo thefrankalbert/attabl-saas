@@ -15,7 +15,7 @@ export async function HomeHero({ videoSrc }: { videoSrc?: string }) {
   return (
     <section
       data-hero
-      className="relative isolate flex min-h-[640px] items-end overflow-hidden bg-nuit text-white sm:min-h-[760px] lg:h-[calc(100svh-64px)] lg:max-h-[900px]"
+      className="relative isolate flex min-h-[704px] items-end overflow-hidden bg-nuit text-white sm:min-h-[824px] lg:h-svh lg:max-h-[964px]"
       aria-labelledby="hero-titre"
     >
       {/* Media, voile et grain se reduisent ensemble quand le hero devient une tuile */}
@@ -30,17 +30,13 @@ export async function HomeHero({ videoSrc }: { videoSrc?: string }) {
             priority
             fetchPriority="high"
             // object-cover : en portrait, c'est la hauteur qui fixe la largeur utile.
-            sizes="(max-aspect-ratio: 1/1) calc(100svh - 64px), 100vw"
+            sizes="(max-aspect-ratio: 1/1) 100svh, 100vw"
             className="object-cover"
             data-hero-image
           />
         )}
         {/* Voile de lisibilite (fonctionnel, pas decoratif) */}
-        <div
-          data-hero-voile
-          className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.25)_0%,rgba(0,0,0,0.15)_40%,rgba(0,0,0,0.72)_100%)]"
-          aria-hidden="true"
-        />
+        <div data-hero-voile className="home-hero-voile" aria-hidden="true" />
         <div className="home-grain" aria-hidden="true" />
       </div>
 
@@ -60,7 +56,7 @@ export async function HomeHero({ videoSrc }: { videoSrc?: string }) {
           </h1>
           <p
             data-sort="sous"
-            className="mx-auto mt-6 max-w-[34rem] text-[17px] leading-[1.55] text-white/85 sm:text-[19px]"
+            className="mx-auto mt-6 max-w-[34rem] text-[17px] leading-[1.55] text-white sm:text-[19px]"
           >
             {t('subtitle')}
           </p>
@@ -87,9 +83,9 @@ export async function HomeHero({ videoSrc }: { videoSrc?: string }) {
         {/* Preuve client en bas du hero */}
         <div
           data-sort="preuve"
-          className="mt-14 flex flex-col items-center gap-3 border-t border-white/20 pt-6 sm:flex-row sm:justify-center sm:gap-6"
+          className="mt-14 flex flex-col items-center gap-3 pt-6 sm:flex-row sm:justify-center sm:gap-6"
         >
-          <span className="surtitre text-white/60">{t('proof')}</span>
+          <span className="surtitre text-white/90">{t('proof')}</span>
           <Image
             src="/marketing/clients/radisson-blu-ndjamena-blanc.svg"
             alt={t('clientLogoAlt')}

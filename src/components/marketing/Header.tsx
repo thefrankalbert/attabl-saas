@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
+import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ChevronDown, Menu, Search, Utensils } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,7 +19,7 @@ import { cn } from '@/lib/utils';
 import { LocaleToggle } from './LocaleToggle';
 
 const NAV_LINK =
-  'inline-flex items-center gap-1 rounded-full px-3 py-2 text-[15px] font-normal text-encre transition-colors hover:bg-gris dark:text-white';
+  'inline-flex items-center gap-1 whitespace-nowrap rounded-full px-3 py-2 text-[15px] lg:max-xl:px-2 font-normal text-encre transition-colors hover:bg-gris dark:text-white';
 const PANEL_BASE =
   'invisible absolute inset-x-0 top-full z-50 -translate-y-2.5 border-b border-trait bg-white text-encre opacity-0 shadow-[0_26px_44px_-30px_rgba(9,9,11,0.22)] transition-[opacity,transform,visibility] duration-200 motion-reduce:transition-none dark:bg-encre dark:text-white';
 const PANEL_OPEN = 'visible translate-y-0 opacity-100';
@@ -31,11 +32,23 @@ const CTA_PRIMARY =
 // Intention de survol : delai avant de fermer ou de basculer vers un autre
 // menu, pour descendre en diagonale vers les liens du panneau sans le perdre.
 const HOVER_GRACE_MS = 180;
+// Sur l'accueil, l'en-tete est transparent tant que l'image du hero est derriere
+// lui : au-dela de 28 px elle a quitte la bande de l'en-tete (home-motion.css).
+const OVER_HERO_MAX_SCROLL = 28;
+function subscribeScroll(onChange: () => void): () => void {
+  window.addEventListener('scroll', onChange, { passive: true });
+  return () => window.removeEventListener('scroll', onChange);
+}
+const isAtTop = (): boolean => window.scrollY < OVER_HERO_MAX_SCROLL;
+const isAtTopServer = (): boolean => true;
 
 function Brand() {
   return (
     <span className="inline-flex items-center gap-2">
-      <span className="inline-flex size-[30px] items-center justify-center rounded-[8px] bg-encre text-white dark:bg-white dark:text-encre">
+      <span
+        data-brand-mark
+        className="inline-flex size-[30px] items-center justify-center rounded-[8px] bg-encre text-white dark:bg-white dark:text-encre"
+      >
         <Utensils className="size-[17px]" strokeWidth={2} aria-hidden="true" />
       </span>
       <span className="text-[20px] font-semibold tracking-[-0.03em]">Attabl</span>
@@ -52,6 +65,8 @@ export default function Header() {
   const featId = useId();
   const newsId = useId();
   const searchId = useId();
+  const atTop = useSyncExternalStore(subscribeScroll, isAtTop, isAtTopServer);
+  const overHero = usePathname() === '/' && atTop && !open;
 
   const clearGrace = () => {
     if (graceTimer.current) {
@@ -166,6 +181,7 @@ export default function Header() {
     <header
       ref={rootRef}
       data-nav-root
+      data-sur-hero={overHero || undefined}
       className="sticky top-0 z-50 border-b border-trait bg-white text-encre dark:bg-encre dark:text-white"
     >
       {/* Frosted overlay dimming the page behind an open mega-menu */}
@@ -176,7 +192,7 @@ export default function Header() {
           open && 'opacity-100',
         )}
       />
-      <div className="mx-auto flex h-16 max-w-[1440px] items-center gap-6 px-5 lg:px-8">
+      <div className="mx-auto flex h-16 max-w-[1440px] items-center gap-6 px-5 lg:px-8 lg:max-xl:gap-3 lg:max-xl:px-5">
         <Link href="/" className="inline-flex shrink-0 items-center">
           <Brand />
         </Link>
@@ -251,7 +267,7 @@ export default function Header() {
         </nav>
 
         {/* Right actions */}
-        <div className="ml-auto flex items-center gap-1 sm:gap-2">
+        <div className="ml-auto flex items-center gap-1 sm:gap-2 lg:max-xl:gap-0.5">
           <Link href="/support" className={cn(NAV_LINK, 'hidden lg:inline-flex')}>
             {t('support')}
           </Link>
@@ -306,7 +322,7 @@ export default function Header() {
             </div>
           </div>
 
-          <Link href="/signup" className={cn(CTA_PRIMARY, 'hidden lg:inline-flex')}>
+          <Link href="/signup" data-nav-cta className={cn(CTA_PRIMARY, 'hidden lg:inline-flex')}>
             {t('getStarted')}
           </Link>
           <LocaleToggle className="h-10 rounded-full border-0 bg-transparent px-3 font-mono text-[13px] font-normal text-encre hover:bg-gris hover:text-encre dark:text-white dark:hover:bg-gris dark:hover:text-white" />
