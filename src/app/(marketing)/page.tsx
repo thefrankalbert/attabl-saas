@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { HeroScene } from '@/components/marketing/home/HeroScene';
+import { HomeMotion } from '@/components/marketing/home/HomeMotion';
 import { HomeHero } from '@/components/marketing/home/HomeHero';
 import { HomeMosaic } from '@/components/marketing/home/HomeMosaic';
 import { HomeRange } from '@/components/marketing/home/HomeRange';
@@ -32,12 +33,14 @@ export default function HomePage() {
         <HomeHero videoSrc={process.env.HOME_HERO_VIDEO || undefined} />
         <HomeMosaic />
       </HeroScene>
-      <HomeRange />
-      <HomeLocal />
-      <HomeAudience />
-      <PricingTeaser />
-      <HomeFaq />
-      <FinalCta />
+      <HomeMotion>
+        <HomeRange />
+        <HomeLocal />
+        <HomeAudience />
+        <PricingTeaser />
+        <HomeFaq />
+        <FinalCta />
+      </HomeMotion>
     </>
   );
 }

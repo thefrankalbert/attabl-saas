@@ -1,9 +1,22 @@
 import { getTranslations } from 'next-intl/server';
+import { AnimatedWords } from './AnimatedWords';
+import { AudiencePanels, type AudiencePanel } from './AudiencePanels';
 
-const ITEM_KEYS = ['restaurants', 'hotels', 'bars'] as const;
+const ITEMS = [
+  { key: 'restaurants', photo: 'service' },
+  { key: 'hotels', photo: 'bar' },
+  { key: 'bars', photo: 'salle' },
+] as const;
 
 export async function HomeAudience() {
   const t = await getTranslations('marketing.home.audience');
+  const panels: AudiencePanel[] = ITEMS.map(({ key, photo }) => ({
+    key,
+    title: t(`items.${key}.title`),
+    body: t(`items.${key}.body`),
+    image: `/marketing/home/pour-qui/${photo}.webp`,
+    imageAlt: t(`items.${key}.imageAlt`),
+  }));
 
   return (
     <section
@@ -12,21 +25,13 @@ export async function HomeAudience() {
     >
       <p className="surtitre text-encre/60 dark:text-white/60">{t('eyebrow')}</p>
       <h2
+        data-mots
         id="qui-titre"
         className="mt-4 max-w-[20ch] font-titre text-[36px] leading-[1.05] tracking-[-0.015em] sm:text-[52px]"
       >
-        {t('title')}
+        <AnimatedWords text={t('title')} masked />
       </h2>
-      <div className="mt-12 grid gap-10 md:grid-cols-3 md:gap-8">
-        {ITEM_KEYS.map((k) => (
-          <div key={k} className="border-t border-encre pt-6 dark:border-white">
-            <h3 className="text-[22px] font-medium tracking-[-0.01em]">{t(`items.${k}.title`)}</h3>
-            <p className="mt-3 text-[16px] leading-[1.6] text-encre/70 dark:text-white/70">
-              {t(`items.${k}.body`)}
-            </p>
-          </div>
-        ))}
-      </div>
+      <AudiencePanels panels={panels} />
     </section>
   );
 }

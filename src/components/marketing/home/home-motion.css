@@ -146,3 +146,157 @@
     }
   }
 }
+
+/* Photo qui se devoile : le cadre s'ouvre, la photo recule de 1,2 a 1 */
+.home-media-revele {
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+.home-media-revele > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+@media (max-width: 1023.98px) {
+  .home-media-revele {
+    aspect-ratio: 1;
+  }
+}
+
+/* Pour qui : panneaux toujours sombres */
+.home-panneaux {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.home-panneau {
+  position: relative;
+  overflow: hidden;
+  min-height: 380px;
+  border-radius: 18px;
+  color: #fff;
+  background: var(--color-nuit);
+}
+.home-panneau > img {
+  object-fit: cover;
+}
+.home-panneau:nth-child(2) > img {
+  object-position: 72% 50%;
+}
+.home-panneau:nth-child(3) > img {
+  object-position: 86% 50%;
+}
+.home-panneau-voile {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.82) 0,
+    rgba(0, 0, 0, 0.35) 45%,
+    rgba(0, 0, 0, 0) 72%
+  );
+}
+.home-panneau-texte {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 28px;
+}
+/* Remise a zero du Button shadcn. scale: none compte : une echelle, meme au
+   clic, ferait du bouton le repere de son ::after et le clic serait perdu. */
+.home-panneau-bouton,
+.home-panneau-bouton:hover,
+.home-panneau-bouton:active {
+  display: inline-block;
+  height: auto;
+  min-height: 32px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  white-space: normal;
+  cursor: pointer;
+  scale: none;
+}
+.home-panneau-bouton:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 4px;
+  box-shadow: none;
+}
+.home-panneau-corps {
+  max-width: 30rem;
+}
+@media (min-width: 1024px) {
+  .home-panneaux {
+    flex-direction: row;
+    height: 540px;
+    gap: 20px;
+  }
+  .home-panneau {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 0;
+    transition: flex-grow 0.4s cubic-bezier(0, 0, 0.2, 1);
+  }
+  .home-panneau[data-actif] {
+    flex-grow: 3.28;
+  }
+  .home-panneau-bouton::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 540px;
+  }
+  .home-panneau > img {
+    transition: filter 0.4s;
+  }
+  .home-panneau:not([data-actif]) > img {
+    filter: brightness(0.5);
+  }
+  .home-panneau-corps {
+    width: 420px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .home-panneau[data-actif] .home-panneau-corps {
+    opacity: 1;
+    transition: opacity 0.4s cubic-bezier(0, 0, 0.2, 1) 0.3s;
+  }
+}
+/* Sans JS ou en mouvement reduit : les trois panneaux sont lisibles, sans transition */
+@media (min-width: 1024px) and (prefers-reduced-motion: reduce),
+  (min-width: 1024px) and (scripting: none) {
+  .home-panneau,
+  .home-panneau[data-actif] {
+    flex-grow: 1;
+    transition: none;
+  }
+  .home-panneau > img,
+  .home-panneau:not([data-actif]) > img {
+    filter: none;
+    transition: none;
+  }
+  .home-panneau-corps,
+  .home-panneau[data-actif] .home-panneau-corps {
+    width: auto;
+    opacity: 1;
+    transition: none;
+  }
+}
+
+/* Trainee du CTA final */
+.home-trainee {
+  position: absolute;
+  z-index: 0;
+  width: 132px;
+  height: 132px;
+  margin: -66px 0 0 -66px;
+  border-radius: 20px;
+  object-fit: cover;
+  pointer-events: none;
+}

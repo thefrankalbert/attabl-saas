@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type ReactNode } from 'react';
+import { useLocale } from 'next-intl';
 import { startSceneMotion } from './motion/scene-motion';
 
 /**
@@ -9,10 +10,12 @@ import { startSceneMotion } from './motion/scene-motion';
  */
 export function HeroScene({ children }: { children: ReactNode }) {
   const trackRef = useRef<HTMLDivElement>(null);
+  // Le changement de langue remplace les mots sans remonter la page.
+  const locale = useLocale();
 
   useEffect(() => {
     if (trackRef.current) return startSceneMotion(trackRef.current);
-  }, []);
+  }, [locale]);
 
   return (
     <div ref={trackRef} data-piste className="home-piste">

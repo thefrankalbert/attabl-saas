@@ -126,14 +126,16 @@ function PileCard({
           {card.cta}
         </Link>
       </div>
-      <Image
-        src={`/marketing/home/${IMAGE_FILE[card.key] ?? card.key}.webp`}
-        alt={card.imageAlt}
-        width={1400}
-        height={1400}
-        sizes="(min-width: 1024px) 50vw, 100vw"
-        className={cn('size-full object-cover max-lg:aspect-square', IMAGE_CLASS[card.key])}
-      />
+      <div data-revele className="home-media-revele">
+        <Image
+          src={`/marketing/home/${IMAGE_FILE[card.key] ?? card.key}.webp`}
+          alt={card.imageAlt}
+          width={1400}
+          height={1400}
+          sizes="(min-width: 1024px) 50vw, 100vw"
+          className={IMAGE_CLASS[card.key] ?? 'object-center'}
+        />
+      </div>
     </motion.article>
   );
 }

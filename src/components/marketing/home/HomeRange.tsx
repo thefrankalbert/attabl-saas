@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { AnimatedWords } from './AnimatedWords';
 import { RangeCardStack, type RangeCard } from './RangeCardStack';
 
 const CARD_KEYS = ['comptoir', 'service', 'cuisine', 'bureau'] as const;
@@ -26,12 +27,16 @@ export async function HomeRange() {
         <p className="surtitre text-encre/60 dark:text-white/60">{t('eyebrow')}</p>
         <div className="mt-4 grid gap-6 lg:grid-cols-2 lg:items-end">
           <h2
+            data-mots
             id="gamme-titre"
             className="font-titre text-[36px] leading-[1.05] tracking-[-0.015em] sm:text-[52px]"
           >
-            {t('title')}
+            <AnimatedWords text={t('title')} masked />
           </h2>
-          <p className="max-w-[38rem] text-[17px] leading-[1.6] text-encre/70 lg:justify-self-end dark:text-white/70">
+          <p
+            data-monte
+            className="max-w-[38rem] text-[17px] leading-[1.6] text-encre/70 lg:justify-self-end dark:text-white/70"
+          >
             {t('intro')}
           </p>
         </div>
@@ -39,7 +44,10 @@ export async function HomeRange() {
         <RangeCardStack cards={cards} />
 
         {/* Attabl Menu : le cinquieme element de la gamme, cote client */}
-        <div className="mt-6 grid gap-6 rounded-[24px] bg-encre p-7 text-white sm:p-10 lg:grid-cols-[1fr_auto] lg:items-center lg:p-14">
+        <div
+          data-monte
+          className="mt-6 grid gap-6 rounded-[24px] bg-encre p-7 text-white sm:p-10 lg:grid-cols-[1fr_auto] lg:items-center lg:p-14"
+        >
           <div>
             <p className="surtitre text-white/55">{t('menu.name')}</p>
             <h3 className="mt-4 font-titre text-[32px] leading-[1.08] sm:text-[42px]">

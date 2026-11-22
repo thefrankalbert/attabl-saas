@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { PLAN_AMOUNTS } from '@/lib/billing/pricing';
 import { cn } from '@/lib/utils';
+import { AnimatedWords } from './AnimatedWords';
 
 const PLAN_KEYS = ['starter', 'pro', 'business'] as const;
 
@@ -19,10 +20,11 @@ export async function PricingTeaser() {
       <div className="mx-auto max-w-[1440px] px-5 py-20 lg:px-8 lg:py-28">
         <p className="surtitre text-white/55">{t('eyebrow')}</p>
         <h2
+          data-mots
           id="prix-titre"
           className="mt-4 font-titre text-[36px] leading-[1.05] tracking-[-0.015em] sm:text-[52px]"
         >
-          {t('title')}
+          <AnimatedWords text={t('title')} masked />
         </h2>
         <p className="mt-4 text-[17px] text-white/70">{t('trial')}</p>
         <div className="mt-14 grid gap-10 md:grid-cols-3 md:gap-0">
@@ -33,7 +35,7 @@ export async function PricingTeaser() {
                 ? t('plans.business.note')
                 : t('perDay', { perDay: `${fmt.format(Math.round(monthly / 30))} FCFA` });
             return (
-              <div key={k} className="border-white/20 md:border-l md:px-8">
+              <div key={k} data-monte className="border-white/20 md:border-l md:px-8">
                 {k === 'pro' ? (
                   <div className="flex items-center gap-3">
                     <h3 className="text-[20px] font-medium">{t('plans.pro.name')}</h3>
@@ -57,7 +59,10 @@ export async function PricingTeaser() {
             );
           })}
         </div>
-        <div className="mt-12 flex flex-col gap-4 border-t border-white/20 pt-8 sm:flex-row sm:items-center sm:justify-between">
+        <div
+          data-monte
+          className="mt-12 flex flex-col gap-4 border-t border-white/20 pt-8 sm:flex-row sm:items-center sm:justify-between"
+        >
           <p className="text-[16px] text-white/80">
             <span className="font-medium text-white">{t('enterprise.title')}</span>{' '}
             {t('enterprise.body')}
