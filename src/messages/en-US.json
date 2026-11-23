@@ -5281,7 +5281,20 @@
     "chooseFile": "Choose a file"
   },
   "authShell": {
-    "secure": "Secure connection"
+    "secure": "Secure connection",
+    "photoLabel": "Attabl at work",
+    "pause": "Pause the slideshow",
+    "play": "Resume the slideshow",
+    "phrases": {
+      "login": "Service picks up right where you left it.",
+      "signup": "Your restaurant, under control.",
+      "confirm": "One click away from your first service.",
+      "forgot": "It happens to the best of us.",
+      "reset": "A fresh password, and back to work.",
+      "invite": "Your team is waiting on the floor.",
+      "unauthorized": "Every venue has its own keys.",
+      "emailChange": "An up-to-date address, and on we go."
+    }
   },
   "accountDeletion": {
     "openButton": "Delete my account",

@@ -34,22 +34,18 @@ export default async function ConfirmEmailChangePage({
   const claims = done === 'current' ? null : readClaims(token);
 
   return (
-    <AuthShell>
+    <AuthShell scene="emailChange">
       <div className="w-full">
         <AuthCard>
           <div className="flex flex-col gap-3 py-2 text-center">
             {done === 'current' ? (
               <>
-                <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-[var(--heading)]">
-                  {t('doneTitle')}
-                </h1>
+                <h1 className="auth-serif auth-title">{t('doneTitle')}</h1>
                 <p className="text-sm text-[var(--secondary)]">{t('doneCurrentBody')}</p>
               </>
             ) : claims && token ? (
               <>
-                <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-[var(--heading)]">
-                  {t('title')}
-                </h1>
+                <h1 className="auth-serif auth-title">{t('title')}</h1>
                 <p className="text-sm text-[var(--secondary)]">
                   {claims.step === 'current'
                     ? t('currentBody', { email: claims.toEmail })
@@ -57,24 +53,16 @@ export default async function ConfirmEmailChangePage({
                 </p>
                 <form method="post" action="/auth/confirm">
                   <Input type="hidden" name="token" value={token} readOnly />
-                  <Button
-                    type="submit"
-                    className="mt-1 h-10 w-full rounded-lg bg-[var(--fg)] text-sm font-medium text-[var(--primary-fg)] transition-colors hover:bg-[var(--fg-hover)]"
-                  >
+                  <Button type="submit" className="auth-btn-primary mt-1">
                     {t('confirmButton')}
                   </Button>
                 </form>
               </>
             ) : (
               <>
-                <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-[var(--heading)]">
-                  {t('invalidTitle')}
-                </h1>
+                <h1 className="auth-serif auth-title">{t('invalidTitle')}</h1>
                 <p className="text-sm text-[var(--secondary)]">{t('invalidBody')}</p>
-                <Link
-                  href="/login"
-                  className="text-sm font-medium text-[var(--fg)] underline underline-offset-4"
-                >
+                <Link href="/login" className="auth-link self-center text-sm">
                   {t('backToLogin')}
                 </Link>
               </>
