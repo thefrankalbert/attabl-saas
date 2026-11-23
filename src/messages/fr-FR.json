@@ -4028,7 +4028,8 @@
     "dashCardTitle": "Codes QR",
     "dashCardDesc": "Créez et assignez un QR par table ou par zone",
     "dashCardDescCount": "{count} tables - créez et assignez leurs QR codes",
-    "dashCardCta": "Gérer"
+    "dashCardCta": "Gérer",
+    "qrColorsUnreadable": "Ces couleurs se scannent mal avec un téléphone. Le QR sera imprimé en noir pour rester lisible. Choisissez des points foncés sur un fond clair."
   },
   "service": {
     "readyAlertTable": "Commande prête - Table {table}",
