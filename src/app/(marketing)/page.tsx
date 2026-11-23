@@ -1,11 +1,15 @@
 import type { Metadata } from 'next';
+import { HeroScene } from '@/components/marketing/home/HeroScene';
+import { HomeMotion } from '@/components/marketing/home/HomeMotion';
 import { HomeHero } from '@/components/marketing/home/HomeHero';
-import { StockFeature } from '@/components/marketing/home/StockFeature';
-import { ShowcaseTabs } from '@/components/marketing/home/ShowcaseTabs';
-import { AllInOne } from '@/components/marketing/home/AllInOne';
+import { HomeMosaic } from '@/components/marketing/home/HomeMosaic';
+import { HomeRange } from '@/components/marketing/home/HomeRange';
+import { HomeLocal } from '@/components/marketing/home/HomeLocal';
+import { HomeAudience } from '@/components/marketing/home/HomeAudience';
 import { PricingTeaser } from '@/components/marketing/home/PricingTeaser';
 import { HomeFaq } from '@/components/marketing/home/HomeFaq';
 import { FinalCta } from '@/components/marketing/home/FinalCta';
+import '@/components/marketing/home/home-motion.css';
 
 export const revalidate = 3600; // ISR: regenerate every hour
 
@@ -24,13 +28,18 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
-      <HomeHero />
-      <StockFeature />
-      <ShowcaseTabs />
-      <AllInOne />
-      <PricingTeaser />
-      <HomeFaq />
-      <FinalCta />
+      <HeroScene>
+        <HomeHero />
+        <HomeMosaic />
+      </HeroScene>
+      <HomeMotion>
+        <HomeRange />
+        <HomeLocal />
+        <HomeAudience />
+        <PricingTeaser />
+        <HomeFaq />
+        <FinalCta />
+      </HomeMotion>
     </>
   );
 }
