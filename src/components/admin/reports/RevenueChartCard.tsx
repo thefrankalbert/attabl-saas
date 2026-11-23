@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { TrendingUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
+import { CHART_PALETTE } from '@/lib/design-tokens';
 import type { CurrencyFormatter, DailyStats } from './reports.types';
 
 interface RevenueChartCardProps {
@@ -71,7 +72,7 @@ export function RevenueChartCard({ dailyStats, periodDisplayLabel, fmt }: Revenu
               }}
               cursor={{ fill: 'var(--app-accent-muted)' }}
             />
-            <Bar dataKey="revenue" fill="var(--accent)" radius={[4, 4, 0, 0]} maxBarSize={40} />
+            <Bar dataKey="revenue" fill={CHART_PALETTE[3]} radius={[4, 4, 0, 0]} maxBarSize={40} />
           </BarChart>
         </ResponsiveContainer>
       )}

@@ -433,6 +433,7 @@
               "dashboard": "Dashboard (revenue, orders)",
               "salesReports": "Sales reports",
               "bestSellers": "Best-sellers",
+              "venueReports": "Reports by space (terrace, bar, poolside...)",
               "aiSuggestions": "Automatic suggestions (AI)"
             }
           },
@@ -2189,6 +2190,8 @@
     "upgradeWall": {
       "planRequired": "Pro Feature",
       "upgradeCta": "Upgrade to Pro",
+      "planRequiredBusiness": "Business Feature",
+      "upgradeCtaBusiness": "Upgrade to Business",
       "askOwner": "The restaurant owner can turn this on.",
       "back": "Back to dashboard",
       "kds": {
@@ -2214,6 +2217,10 @@
       "tables": {
         "title": "Table management",
         "desc": "Create your zones, number your tables, one QR per table. Every order lands with the right table number."
+      },
+      "venueReports": {
+        "title": "Reports by space",
+        "desc": "Terrace, bar, poolside: see what each space brings in. Revenue, orders, average ticket and best sellers, side by side."
       }
     }
   },
@@ -2861,6 +2868,7 @@
     "navSuppliers": "Suppliers",
     "navStockHistory": "Stock history",
     "navStockLosses": "Losses",
+    "navVenueReports": "By space",
     "navStockCounts": "Physical counts",
     "navAnnouncements": "Announcements",
     "navCoupons": "Coupons",
@@ -3178,6 +3186,24 @@
     "limitBannerCta": "See plans"
   },
   "reports": {
+    "venueReport": {
+      "title": "Reports by space",
+      "venueFilter": "Space",
+      "allVenues": "All spaces",
+      "unassigned": "No space",
+      "unassignedHint": "Orders without a table: takeaway, POS without a table, room.",
+      "comparisonTitle": "Spaces compared",
+      "colVenue": "Space",
+      "colRevenue": "Revenue",
+      "colShare": "Share of revenue",
+      "colOrders": "Orders",
+      "colAvgTicket": "Average ticket",
+      "colBestSeller": "Best seller",
+      "topTitle": "Best sellers: {venue}",
+      "noSales": "No sales in this period.",
+      "noVenues": "No spaces yet. Create them in Settings > Spaces.",
+      "salesCount": "{count, plural, one {# sold} other {# sold}}"
+    },
     "title": "Reports",
     "reportModel": "Report model",
     "model_simple": "Stock status - simple",
@@ -3220,6 +3246,7 @@
     "tabReports": "Reports",
     "tabStockHistory": "Stock History",
     "tabStockLosses": "Losses",
+    "tabVenueReports": "By space",
     "tabInvoices": "Invoices",
     "tabAuditLogs": "Audit Logs",
     "subtitleClient": "Analyze your restaurant's performance.",

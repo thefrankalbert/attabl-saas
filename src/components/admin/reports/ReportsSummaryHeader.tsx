@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { TrendBadge } from './TrendBadge';
-import { PERIOD_PILLS } from './reports.types';
+import { PeriodPills } from './PeriodPills';
 import type { CurrencyFormatter, Period, ReportSummary } from './reports.types';
 
 interface ReportsSummaryHeaderProps {
@@ -116,28 +116,10 @@ export function ReportsSummaryHeader({
         }
       />
 
-      {/* -- Period pills -- */}
-      <div className="flex items-center gap-1.5 md:gap-2.5 lg:gap-3 overflow-x-auto pb-0.5">
-        {PERIOD_PILLS.map((pill) => (
-          <Button
-            key={pill.value}
-            type="button"
-            variant="outline"
-            onClick={() => setPeriod(pill.value)}
-            className={cn(
-              'px-3 py-1.5 text-[11px] font-semibold rounded-lg whitespace-nowrap h-auto',
-              period === pill.value
-                ? 'bg-app-text text-app-bg border-app-text shadow-sm'
-                : 'bg-app-card text-app-text-secondary border-app-border/50 hover:border-app-border hover:bg-app-elevated',
-            )}
-          >
-            {t(pill.labelKey)}
-          </Button>
-        ))}
-      </div>
+      <PeriodPills period={period} setPeriod={setPeriod} />
 
       {/* -- KPI Cards -- */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {kpis.map(({ key, Icon, accent, label, value, trend, note }) => (
           <div
             key={key}
