@@ -108,7 +108,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus, designs }: Q
               {t('tabDownload')}
             </TabsTrigger>
           </TabsList>
-          <QRGuideDialog />
+          <QRGuideDialog tenantSlug={tenant.slug} />
         </div>
 
         {/* --- Tab: Choose --- */}
