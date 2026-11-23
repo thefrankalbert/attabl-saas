@@ -199,8 +199,39 @@ export function handleInvoicePaymentActionRequired(invoice: Stripe.Invoice): voi
 /** 9999-12-31: au-dela, `new Date(...).toISOString()` leve une RangeError. */
 const MAX_DATE_SECONDS = 253402300800;
 
+/**
+ * Audit B94: avant de lever un gel pour remboursement, l'abonnement de la
+ * facture est relu chez Stripe (seconde condition du degel, freeze-reason.ts).
+ * `true` seulement s'il est en regle (active, trialing). Introuvable ou absent:
+ * `false`, l'evenement est consomme. Panne de lecture: ServiceError INTERNAL,
+ * la route retire la ligne d'idempotence et Stripe rejoue.
+ */
+async function abonnementEnRegle(
+  stripe: StripeWebhookDeps['stripe'],
+  invoice: Stripe.Invoice,
+  customerId: string,
+): Promise<boolean> {
+  const abonnementId = abonnementDeLaFacture(invoice);
+  if (!abonnementId) return false;
+  try {
+    const abonnement = await stripe.subscriptions.retrieve(abonnementId);
+    return abonnement.status === 'active' || abonnement.status === 'trialing';
+  } catch (err) {
+    const introuvable =
+      typeof err === 'object' &&
+      err !== null &&
+      (err as { code?: string }).code === 'resource_missing';
+    if (introuvable) return false;
+    logger.error('invoice.paid: abonnement illisible, evenement a rejouer', err, {
+      customerId,
+      abonnementId,
+    });
+    throw new ServiceError('Subscription state unreadable', 'INTERNAL');
+  }
+}
+
 export async function handleInvoicePaid(
-  { supabase }: StripeWebhookDeps,
+  { supabase, stripe }: StripeWebhookDeps,
   invoice: Stripe.Invoice,
 ): Promise<void> {
   const customerId = invoice.customer as string;
@@ -284,6 +315,34 @@ export async function handleInvoicePaid(
   // et il n'est pas ferme ici.
   const argentNeuf = (invoice.amount_paid ?? 0) > 0;
 
+  // Audit B94: un gel pour remboursement n'est leve que si l'abonnement est
+  // encore en regle chez Stripe. Sans cette relecture, un restaurant gele dont
+  // l'abonnement a ete supprime repassait `active` sur un `invoice.paid`
+  // rejoue ou hors ordre. Stripe n'est relu que s'il y a un tel gel a lever.
+  let leverGelRemboursement = false;
+  if (argentNeuf && payeeLe) {
+    const { data: geleRemboursement, error: geleError } = await supabase
+      .from('tenants')
+      .select('id')
+      .eq('stripe_customer_id', customerId)
+      .eq('subscription_status', 'frozen')
+      .eq(FREEZE_REASON_COLUMN, FREEZE_REASONS.REFUND)
+      .maybeSingle();
+    if (geleError && !isMissingFreezeReasonColumnError(geleError)) {
+      logger.error('invoice.paid: lecture du gel pour remboursement echouee', geleError);
+      throw new ServiceError('DB read failed', 'INTERNAL');
+    }
+    if (geleRemboursement) {
+      leverGelRemboursement = await abonnementEnRegle(stripe, invoice, customerId);
+      if (!leverGelRemboursement) {
+        logger.warn('invoice.paid: abonnement plus en regle, gel pour remboursement maintenu', {
+          customerId,
+          tenantId: geleRemboursement.id,
+        });
+      }
+    }
+  }
+
   // CHEMIN DE SORTIE DU GEL POUR REMBOURSEMENT. Une facture payee est une
   // preuve d'ARGENT NEUF, et c'est la seule chose qui doit lever ce gel:
   // `customer.subscription.updated` ne le leve pas (un remboursement ne change
@@ -296,7 +355,7 @@ export async function handleInvoicePaid(
   // litige. Elargir son filtre aurait relache cette garde. Celle-ci ne cible
   // QUE la cause `refund`.
   const { error: refundError } =
-    !argentNeuf || !payeeLe
+    !argentNeuf || !payeeLe || !leverGelRemboursement
       ? { error: null }
       : await updateTolerantToMissingFreezeReason(
           {

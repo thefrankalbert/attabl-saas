@@ -184,7 +184,10 @@ export async function GET(request: Request) {
           const { error: trialErr } = await adminSupabase
             .from('tenants')
             .update({ trial_ends_at: trialEndsAt })
-            .eq('id', result.tenantId);
+            .eq('id', result.tenantId)
+            // Audit B13: le cookie n'est pas signe. La variante ne fait que
+            // RACCOURCIR: jamais repousser un essai partage ou deja termine.
+            .gt('trial_ends_at', trialEndsAt);
           if (trialErr) {
             logger.warn('AB test: failed to apply 7d trial', { tenantId: result.tenantId });
           }

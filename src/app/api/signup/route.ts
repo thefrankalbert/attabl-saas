@@ -148,12 +148,14 @@ export async function POST(request: Request) {
     const trialVariant = parseAbTrialFromCookieHeader(cookieHeader);
     if (trialVariant === '7d') {
       const trialEndsAt = new Date(Date.now() + 7 * 86400000).toISOString();
-      const { data: updated, error: trialErr } = await supabase
+      const { error: trialErr } = await supabase
         .from('tenants')
         .update({ trial_ends_at: trialEndsAt })
         .eq('id', result.tenantId)
-        .select('id');
-      if (trialErr || !updated?.length) {
+        // Audit B13: le cookie n'est pas signe. La variante ne fait que
+        // RACCOURCIR: jamais repousser un essai partage ou deja termine.
+        .gt('trial_ends_at', trialEndsAt);
+      if (trialErr) {
         logger.warn('AB test: failed to apply 7d trial', {
           error: trialErr,
           tenantId: result.tenantId,

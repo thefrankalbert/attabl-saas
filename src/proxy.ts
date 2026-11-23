@@ -229,8 +229,8 @@ export async function proxy(request: NextRequest) {
         const lockedUrl = await lockedTenantRedirectUrl(customDomainGate, request.nextUrl.origin);
         if (lockedUrl) {
           const redirectResponse = NextResponse.redirect(lockedUrl);
-          sessionResponse.cookies.getAll().forEach((cookie: { name: string; value: string }) => {
-            redirectResponse.cookies.set(cookie.name, cookie.value);
+          sessionResponse.cookies.getAll().forEach((cookie) => {
+            redirectResponse.cookies.set(cookie);
           });
           return redirectResponse;
         }
@@ -240,8 +240,8 @@ export async function proxy(request: NextRequest) {
         const response = NextResponse.next({
           request: { headers: request.headers },
         });
-        sessionResponse.cookies.getAll().forEach((cookie: { name: string; value: string }) => {
-          response.cookies.set(cookie.name, cookie.value);
+        sessionResponse.cookies.getAll().forEach((cookie) => {
+          response.cookies.set(cookie);
         });
         // CSP-CUSTOM-DOMAIN. Cette sortie anticipee etait la SEULE des huit a ne
         // pas poser la CSP. Or `isAppRootOnlyPath` couvre /login, /signup,
@@ -256,8 +256,8 @@ export async function proxy(request: NextRequest) {
       const response = NextResponse.rewrite(url, {
         request: { headers: request.headers },
       });
-      sessionResponse.cookies.getAll().forEach((cookie: { name: string; value: string }) => {
-        response.cookies.set(cookie.name, cookie.value);
+      sessionResponse.cookies.getAll().forEach((cookie) => {
+        response.cookies.set(cookie);
       });
       response.headers.set('Content-Security-Policy', buildCspHeader(nonce));
       return response;
@@ -319,7 +319,7 @@ export async function proxy(request: NextRequest) {
       const redirectResponse = NextResponse.redirect(loginUrl);
       // Copier les cookies de session rafraîchie vers la redirection
       sessionResponse.cookies.getAll().forEach((cookie) => {
-        redirectResponse.cookies.set(cookie.name, cookie.value);
+        redirectResponse.cookies.set(cookie);
       });
       return redirectResponse;
     }
@@ -340,7 +340,7 @@ export async function proxy(request: NextRequest) {
       loginUrl.searchParams.set('error', 'email_not_confirmed');
       const redirectResponse = NextResponse.redirect(loginUrl);
       sessionResponse.cookies.getAll().forEach((cookie) => {
-        redirectResponse.cookies.set(cookie.name, cookie.value);
+        redirectResponse.cookies.set(cookie);
       });
       return redirectResponse;
     }
@@ -357,7 +357,7 @@ export async function proxy(request: NextRequest) {
       if (lockedUrl) {
         const redirectResponse = NextResponse.redirect(lockedUrl);
         sessionResponse.cookies.getAll().forEach((cookie) => {
-          redirectResponse.cookies.set(cookie.name, cookie.value);
+          redirectResponse.cookies.set(cookie);
         });
         return redirectResponse;
       }
@@ -382,7 +382,7 @@ export async function proxy(request: NextRequest) {
           const unauthorizedUrl = new URL('/unauthorized', mainDomain);
           const redirectResponse = NextResponse.redirect(unauthorizedUrl);
           sessionResponse.cookies.getAll().forEach((cookie) => {
-            redirectResponse.cookies.set(cookie.name, cookie.value);
+            redirectResponse.cookies.set(cookie);
           });
           return redirectResponse;
         }
@@ -404,8 +404,8 @@ export async function proxy(request: NextRequest) {
       const response = NextResponse.next({
         request: { headers: request.headers },
       });
-      sessionResponse.cookies.getAll().forEach((cookie: { name: string; value: string }) => {
-        response.cookies.set(cookie.name, cookie.value);
+      sessionResponse.cookies.getAll().forEach((cookie) => {
+        response.cookies.set(cookie);
       });
       response.headers.set('Content-Security-Policy', buildCspHeader(nonce));
       return response;
@@ -457,8 +457,8 @@ export async function proxy(request: NextRequest) {
       request: { headers: request.headers },
     });
     // Copy session cookies to the new response
-    sessionResponse.cookies.getAll().forEach((cookie: { name: string; value: string }) => {
-      response.cookies.set(cookie.name, cookie.value);
+    sessionResponse.cookies.getAll().forEach((cookie) => {
+      response.cookies.set(cookie);
     });
     response.headers.set('Content-Security-Policy', buildCspHeader(nonce));
     return response;
@@ -474,8 +474,8 @@ export async function proxy(request: NextRequest) {
       const response = NextResponse.next({
         request: { headers: request.headers },
       });
-      sessionResponse.cookies.getAll().forEach((cookie: { name: string; value: string }) => {
-        response.cookies.set(cookie.name, cookie.value);
+      sessionResponse.cookies.getAll().forEach((cookie) => {
+        response.cookies.set(cookie);
       });
       return response;
     }
@@ -484,8 +484,8 @@ export async function proxy(request: NextRequest) {
       const response = NextResponse.next({
         request: { headers: request.headers },
       });
-      sessionResponse.cookies.getAll().forEach((cookie: { name: string; value: string }) => {
-        response.cookies.set(cookie.name, cookie.value);
+      sessionResponse.cookies.getAll().forEach((cookie) => {
+        response.cookies.set(cookie);
       });
       response.headers.set('Content-Security-Policy', buildCspHeader(nonce));
       return response;
@@ -505,8 +505,8 @@ export async function proxy(request: NextRequest) {
     });
 
     // Copier les cookies de session vers la nouvelle réponse
-    sessionResponse.cookies.getAll().forEach((cookie: { name: string; value: string }) => {
-      response.cookies.set(cookie.name, cookie.value);
+    sessionResponse.cookies.getAll().forEach((cookie) => {
+      response.cookies.set(cookie);
     });
 
     response.headers.set('Content-Security-Policy', buildCspHeader(nonce));

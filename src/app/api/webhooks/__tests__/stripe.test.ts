@@ -124,6 +124,14 @@ function setupSupabaseChain(options: {
     if (table === 'stripe_events') {
       return {
         insert: idempotencyInsert,
+        // Lecture d'aboutissement d'un rejeu (audit B64): ligne deja aboutie.
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi
+              .fn()
+              .mockResolvedValue({ data: { completed_at: '2026-01-01T00:00:00Z' }, error: null }),
+          }),
+        }),
         update: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             // Marquage d'aboutissement: update().eq() attendu directement.
@@ -350,20 +358,24 @@ describe('Stripe Webhook - POST /api/webhooks/stripe', () => {
       const response = await POST(makeRequest());
       expect(response.status).toBe(200);
 
-      expect(chain.updateFn).toHaveBeenCalledWith({
-        subscription_status: 'active',
-        // Audit: is_active suit le statut dans les DEUX sens, sinon un tenant
-        // gele qui repaie reste eteint sans que rien ne le signale.
-        is_active: true,
-        // F3: la date d'entree en impaye est effacee des que le statut redevient
-        // sain, sinon le cron de gel finirait par geler un tenant qui a paye.
-        past_due_since: null,
-        // LOT 7: statut sain, donc aucune cause de gel.
-        freeze_reason: null,
-        billing_interval: 'monthly',
-        subscription_current_period_start: new Date(periodStart * 1000).toISOString(),
-        subscription_current_period_end: new Date(periodEnd * 1000).toISOString(),
-      });
+      expect(chain.updateFn).toHaveBeenCalledWith(
+        {
+          subscription_status: 'active',
+          // Audit: is_active suit le statut dans les DEUX sens, sinon un tenant
+          // gele qui repaie reste eteint sans que rien ne le signale.
+          is_active: true,
+          // F3: la date d'entree en impaye est effacee des que le statut redevient
+          // sain, sinon le cron de gel finirait par geler un tenant qui a paye.
+          past_due_since: null,
+          // LOT 7: statut sain, donc aucune cause de gel.
+          freeze_reason: null,
+          billing_interval: 'monthly',
+          subscription_current_period_start: new Date(periodStart * 1000).toISOString(),
+          subscription_current_period_end: new Date(periodEnd * 1000).toISOString(),
+        },
+        // Audit B98: garde optimiste, le nombre de lignes touchees est lu.
+        { count: 'exact' },
+      );
       expect(chain.eqAfterUpdate).toHaveBeenCalledWith('id', 'tenant-xyz');
     });
   });

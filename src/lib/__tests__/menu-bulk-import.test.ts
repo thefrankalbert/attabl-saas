@@ -28,9 +28,11 @@ function unknownColumn(row: Record<string, unknown>): string | undefined {
 interface MockOptions {
   categories?: Array<{ id: string; name: string; display_order: number }>;
   items?: Array<{ id: string; category_id: string; name: string }>;
+  /** Ligne que la base refuse (ex: debordement numeric(10,2)): tout le lot echoue. */
+  rejectRow?: (row: Record<string, unknown>) => boolean;
 }
 
-function createMock({ categories = [], items = [] }: MockOptions = {}) {
+function createMock({ categories = [], items = [], rejectRow }: MockOptions = {}) {
   const inserted: Record<string, unknown>[] = [];
   const updated: Array<{ id: string; patch: Record<string, unknown> }> = [];
 
@@ -54,6 +56,9 @@ function createMock({ categories = [], items = [] }: MockOptions = {}) {
         const bad = rows.map(unknownColumn).find(Boolean);
         if (bad) {
           return { error: { code: 'PGRST204', message: `Could not find the '${bad}' column` } };
+        }
+        if (rejectRow && rows.some(rejectRow)) {
+          return { error: { code: '22003', message: 'numeric field overflow' } };
         }
         inserted.push(...rows);
         return { error: null };
@@ -218,5 +223,29 @@ describe('bulkImportMenuRows', () => {
 
     expect(result.categoriesCreated).toBe(1);
     expect(inserted[0].category_id).toBe('new-cat-0');
+  });
+
+  it('un lot refuse est repris ligne par ligne: seule la ligne fautive est ecartee (audit B46)', async () => {
+    // Avant: une seule ligne fautive faisait echouer tout le lot de 50, et les
+    // 49 plats valides etaient rejetes avec le meme message.
+    const { supabase, inserted } = createMock({
+      categories: [{ id: 'cat-1', name: 'Plats', display_order: 0 }],
+      rejectRow: (r) => (r.price as number) >= 100_000_000,
+    });
+
+    const result = await bulkImportMenuRows(
+      supabase,
+      'tenant-1',
+      'menu-1',
+      group([
+        row({ rowKey: 2, name: 'Riz', price: 1500 }),
+        row({ rowKey: 3, name: 'Faute', price: 150_000_000 }),
+        row({ rowKey: 4, name: 'Poulet', price: 6500 }),
+      ]),
+    );
+
+    expect(result).toMatchObject({ itemsCreated: 2, itemsSkipped: 1 });
+    expect(result.errors.map((e) => e.key)).toEqual([3]);
+    expect(inserted.map((r) => r.name)).toEqual(['Riz', 'Poulet']);
   });
 });

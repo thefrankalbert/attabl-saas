@@ -53,22 +53,38 @@ async function enforceTenantPermission(
     custom_permissions: customPermissions,
   } as AdminUser;
 
+  const required: readonly PermissionCode[] =
+    typeof requiredPermission === 'string' ? [requiredPermission] : requiredPermission;
+
   // Owner short-circuits inside hasPermission; skip the override lookup.
   let override: RolePermissions | null = null;
   if (principal.role !== 'owner') {
-    const { data: roleOverride } = await supabase
+    const { data: roleOverride, error: roleOverrideError } = await supabase
       .from('role_permissions')
       .select('permissions')
       .eq('tenant_id', tenantId)
       .eq('role', principal.role)
       .maybeSingle();
+    // ECHEC FERME (audit B22), meme regle que resolve-admin-permission.ts:
+    // une panne de lecture retombait sur la matrice par defaut et
+    // REACCORDAIT une permission retiree par le restaurant. On ne refuse que
+    // si la surcharge de role decide: une permission individuelle passe avant
+    // elle (ordre de `hasPermission`).
+    const overrideDecides = required.some(
+      (perm) => (customPermissions as Record<string, boolean> | null)?.[perm] === undefined,
+    );
+    if (roleOverrideError && overrideDecides) {
+      logger.error('role_permissions read failed, refusing (fail-closed)', roleOverrideError, {
+        tenantId,
+        role: principal.role,
+      });
+      throw new AuthError('Permissions insuffisantes', 403);
+    }
     override = roleOverride
       ? ({ permissions: roleOverride.permissions } as unknown as RolePermissions)
       : null;
   }
 
-  const required: readonly PermissionCode[] =
-    typeof requiredPermission === 'string' ? [requiredPermission] : requiredPermission;
   if (!required.every((perm) => hasPermission(principal, perm, override))) {
     throw new AuthError('Permissions insuffisantes', 403);
   }
@@ -122,6 +138,11 @@ export async function getAuthenticatedUserWithTenant(
       .select('id')
       .eq('slug', tenantSlug)
       .maybeSingle();
+    // Audit B23: tout ce bloc se terminait par un refus SAUF quand la ligne
+    // `tenants` etait cachee par la RLS (restaurant inactif ou suspendu): on
+    // retombait alors sur le repli, et l'ecriture partait sur l'appartenance la
+    // plus ancienne, un autre restaurant. Avec un slug, on ne sort d'ici que
+    // par un retour scope au tenant du slug ou par un refus.
     if (tenant?.id) {
       const { data: scoped } = await supabase
         .from('admin_users')
@@ -152,58 +173,65 @@ export async function getAuthenticatedUserWithTenant(
           supabase,
         };
       }
-
-      // SESSION-FALLBACK, cas super_admin. Un operateur plateforme n'a en general
-      // AUCUNE ligne admin_users sur les tenants clients: le layout admin lui
-      // fabrique un owner virtuel sans creer de ligne. Sans cette resolution, il
-      // tomberait dans le refus ci-dessous et la console plateforme casserait.
-      // Une seule requete: elle etablit le statut ET fournit la ligne dont on a
-      // besoin pour `adminUserId`. Seules les appartenances VIVANTES conferent
-      // le god mode, un operateur revoque doit le perdre.
-      const { data: superRow } = await supabase
-        .from('admin_users')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .is('deleted_at', null)
-        .or('is_super_admin.eq.true,role.eq.super_admin')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (superRow) {
-        if (requiredPermission) {
-          await enforceTenantPermission(supabase, tenant.id, 'owner', null, requiredPermission);
-        }
-        // Owner virtuel SUR LE TENANT DU HEADER, comme le layout: l'operateur
-        // opere bien sur l'etablissement qu'il regarde.
-        return {
-          user,
-          tenantId: tenant.id,
-          role: 'owner',
-          adminUserId: superRow.id,
-          supabase,
-        };
-      }
-
-      // SESSION-FALLBACK. Avant, on retombait ici sur l'appartenance la plus
-      // ANCIENNE de l'utilisateur. Il n'y avait pas d'elevation cross-tenant,
-      // mais un deputy confus: l'action partait en silence sur le mauvais
-      // etablissement. Le scenario mesure dans l'audit: un super_admin ouvre
-      // /sites/client-b/admin/settings, modifie le nom, le domaine custom ou les
-      // taux de TVA, et la modification atterrit sur SON tenant a lui, sans
-      // erreur ni alerte. Meme mecanique pour les moyens de paiement, les
-      // designs QR, la creation d'etablissement et /api/admin/reset (destructif).
-      //
-      // Le slug designe un tenant qui existe et dont l'utilisateur n'est pas
-      // membre actif: on refuse. Le repli reste reserve au cas ou aucun slug
-      // n'accompagne la requete.
-      logger.warn('Tenant scope refuse: utilisateur non membre du tenant demande', {
-        userId: user.id,
-        tenantSlug,
-      });
-      throw new AuthError('Acces non autorise pour ce tenant', 403);
     }
+
+    // SESSION-FALLBACK, cas super_admin. Un operateur plateforme n'a en general
+    // AUCUNE ligne admin_users sur les tenants clients: le layout admin lui
+    // fabrique un owner virtuel sans creer de ligne. Sans cette resolution, il
+    // tomberait dans le refus ci-dessous et la console plateforme casserait.
+    // Une seule requete: elle etablit le statut ET fournit la ligne dont on a
+    // besoin pour `adminUserId`. Seules les appartenances VIVANTES conferent
+    // le god mode, un operateur revoque doit le perdre.
+    const { data: superRow } = await supabase
+      .from('admin_users')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .is('deleted_at', null)
+      .or('is_super_admin.eq.true,role.eq.super_admin')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    // Les politiques SELECT de `tenants` cachent un restaurant inactif meme au
+    // super_admin (audit B23): son id est alors resolu par la lecture du
+    // layout admin (`getTenant`, service_role, voit les inactifs). Import
+    // paresseux: ce chemin est rare et `@/lib/cache` tire `next/cache`.
+    const superTenantId = superRow
+      ? (tenant?.id ?? (await (await import('@/lib/cache')).getTenant(tenantSlug))?.id)
+      : undefined;
+    if (superRow && superTenantId) {
+      if (requiredPermission) {
+        await enforceTenantPermission(supabase, superTenantId, 'owner', null, requiredPermission);
+      }
+      // Owner virtuel SUR LE TENANT DU HEADER, comme le layout: l'operateur
+      // opere bien sur l'etablissement qu'il regarde.
+      return {
+        user,
+        tenantId: superTenantId,
+        role: 'owner',
+        adminUserId: superRow.id,
+        supabase,
+      };
+    }
+
+    // SESSION-FALLBACK. Avant, on retombait ici sur l'appartenance la plus
+    // ANCIENNE de l'utilisateur. Il n'y avait pas d'elevation cross-tenant,
+    // mais un deputy confus: l'action partait en silence sur le mauvais
+    // etablissement. Le scenario mesure dans l'audit: un super_admin ouvre
+    // /sites/client-b/admin/settings, modifie le nom, le domaine custom ou les
+    // taux de TVA, et la modification atterrit sur SON tenant a lui, sans
+    // erreur ni alerte. Meme mecanique pour les moyens de paiement, les
+    // designs QR, la creation d'etablissement et /api/admin/reset (destructif).
+    //
+    // Le slug designe un tenant qui existe et dont l'utilisateur n'est pas
+    // membre actif: on refuse. Le repli reste reserve au cas ou aucun slug
+    // n'accompagne la requete.
+    logger.warn('Tenant scope refuse: utilisateur non membre du tenant demande', {
+      userId: user.id,
+      tenantSlug,
+    });
+    throw new AuthError('Acces non autorise pour ce tenant', 403);
   }
 
   // Fallback (no tenant header, or user not a member of the header's tenant):
