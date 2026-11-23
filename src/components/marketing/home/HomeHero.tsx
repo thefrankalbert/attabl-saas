@@ -2,11 +2,16 @@ import { Fragment } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { DEFAULT_SUPPORT_CONTACT } from '@/lib/support-contact';
 import { AnimatedWords } from './AnimatedWords';
 import { HeroVideo } from './HeroVideo';
 
 // ponytail: affiche provisoire (photo du comptoir) tant que la video Attabl n'existe pas.
 const HERO_POSTER = '/marketing/home/comptoir.webp';
+
+// ponytail: numero par defaut du projet, page statique. Le lire dans
+// platform_settings si le numero change souvent depuis la console.
+const WHATSAPP_LINK = `https://wa.me/${DEFAULT_SUPPORT_CONTACT.digits}`;
 
 export async function HomeHero({ videoSrc }: { videoSrc?: string }) {
   const t = await getTranslations('marketing.home.hero');
@@ -71,7 +76,7 @@ export async function HomeHero({ videoSrc }: { videoSrc?: string }) {
               {t('ctaPrimary')}
             </Link>
             <a
-              href="https://wa.me/237658651050"
+              href={WHATSAPP_LINK}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex h-11 items-center justify-center rounded-full border border-white/60 px-6 text-[16px] font-medium hover:bg-white/10 max-sm:w-full"

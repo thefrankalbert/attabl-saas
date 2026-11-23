@@ -1,7 +1,12 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { DEFAULT_SUPPORT_CONTACT } from '@/lib/support-contact';
 import { AnimatedWords } from './AnimatedWords';
 import { CtaTrail } from './CtaTrail';
+
+// ponytail: numero par defaut du projet, page statique. Le lire dans
+// platform_settings si le numero change souvent depuis la console.
+const WHATSAPP_LINK = `https://wa.me/${DEFAULT_SUPPORT_CONTACT.digits}`;
 
 export async function FinalCta() {
   const t = await getTranslations('marketing.home.finalCta');
@@ -26,7 +31,7 @@ export async function FinalCta() {
               {t('ctaPrimary')}
             </Link>
             <a
-              href="https://wa.me/237658651050"
+              href={WHATSAPP_LINK}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex h-11 items-center justify-center rounded-full border border-encre/30 px-6 text-[16px] font-medium hover:border-encre max-sm:w-full dark:border-white/30 dark:hover:border-white"
