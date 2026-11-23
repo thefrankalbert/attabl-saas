@@ -25,7 +25,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(39);
+select plan(41);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 select ('e1000000-0000-4000-8000-00000000000' || n)::uuid, '00000000-0000-0000-0000-000000000000',
@@ -302,6 +302,12 @@ select is(has_function_privilege('anon',
 select is(has_function_privilege('authenticated',
   'public.assert_tenant_reports_view(uuid)', 'EXECUTE'),
   false, 'les fonctions de verrou ne sont pas appelables par les clients');
+select is(has_function_privilege('anon',
+  'public.get_daily_revenue(uuid, timestamptz, timestamptz, text)', 'EXECUTE'),
+  false, 'anon n execute pas get_daily_revenue (nouvelle signature)');
+select is((select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+            where n.nspname = 'public' and p.proname = 'get_daily_revenue'),
+  1, 'get_daily_revenue: une seule surcharge (l ancienne a 3 arguments est supprimee)');
 
 select * from finish();
 rollback;
