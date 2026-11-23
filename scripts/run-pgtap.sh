@@ -75,7 +75,9 @@ if [ "$MODE" = "local" ]; then
 
   # TCP et PAS de socket unix: un chemin de socket dans un repertoire temporaire
   # depasse souvent la limite de 103 octets, et le serveur ne demarre pas.
-  initdb -D "$CLEANUP_DIR/pgdata" -U postgres --auth=trust --locale=C \
+  # --encoding=UTF8: la production est en UTF8. Avec --locale=C seul, la base
+  # nait en SQL_ASCII et refuse tout echappement Unicode (U&'\00E0').
+  initdb -D "$CLEANUP_DIR/pgdata" -U postgres --auth=trust --locale=C --encoding=UTF8 \
     >"$CLEANUP_DIR/initdb.log" 2>&1 \
     || { echo "pgtap: ERROR - initdb"; tail -5 "$CLEANUP_DIR/initdb.log"; exit 1; }
 
