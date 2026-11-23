@@ -5281,7 +5281,20 @@
     "chooseFile": "Choisir un fichier"
   },
   "authShell": {
-    "secure": "Connexion sécurisée"
+    "secure": "Connexion sécurisée",
+    "photoLabel": "Attabl en situation",
+    "pause": "Mettre en pause le diaporama",
+    "play": "Relancer le diaporama",
+    "phrases": {
+      "login": "Le service reprend là où vous l'avez laissé.",
+      "signup": "Votre restaurant, sous contrôle.",
+      "confirm": "Plus qu'un clic avant votre premier service.",
+      "forgot": "Ça arrive même aux meilleurs.",
+      "reset": "Un mot de passe neuf, et on reprend.",
+      "invite": "Votre équipe vous attend en salle.",
+      "unauthorized": "Chaque établissement a ses clés.",
+      "emailChange": "Une adresse à jour, et on continue."
+    }
   },
   "accountDeletion": {
     "openButton": "Supprimer mon compte",
