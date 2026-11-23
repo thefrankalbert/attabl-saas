@@ -53,12 +53,18 @@ export function VenueComparisonTable({
 
   const lines = useMemo<Line[]>(() => {
     const total = rows.reduce((s, r) => s + r.revenue, 0);
-    let paletteIndex = 0;
+    // Couleur fixe par espace, d'apres l'ordre alphabetique (puis l'id) et non
+    // le classement: un espace garde sa couleur d'une periode a l'autre.
+    const colorOrder = rows
+      .filter((r) => r.venueId)
+      .map((r) => ({ id: r.venueId as string, name: r.venueName ?? '' }))
+      .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id))
+      .map((v) => v.id);
     return rows.map((r) => {
       const key = venueKey(r);
       // Ligne "sans espace": gris neutre, ce n'est pas un vrai espace.
       const color = r.venueId
-        ? CHART_PALETTE[paletteIndex++ % CHART_PALETTE.length]
+        ? CHART_PALETTE[colorOrder.indexOf(r.venueId) % CHART_PALETTE.length]
         : CHART_NEUTRAL;
       const best = topItems.find((i) => venueKey(i) === key);
       return {

@@ -11,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { CHART_PALETTE } from '@/lib/design-tokens';
 import type { CurrencyFormatter, ServerStats } from './reports.types';
 
 interface ServerPerformanceCardProps {
@@ -65,7 +66,7 @@ export function ServerPerformanceCard({ serverStats, fmt }: ServerPerformanceCar
                   return [`${Number.isFinite(numericValue) ? numericValue : 0}`, t('ordersCount')];
                 }}
               />
-              <Bar dataKey="orders" fill="var(--accent)" radius={[0, 4, 4, 0]} maxBarSize={28} />
+              <Bar dataKey="orders" fill={CHART_PALETTE[3]} radius={[0, 4, 4, 0]} maxBarSize={28} />
             </BarChart>
           </ResponsiveContainer>
 

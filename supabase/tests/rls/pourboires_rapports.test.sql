@@ -35,7 +35,10 @@ values
 insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, custom_permissions)
 values
   ('db000000-0000-4000-8000-000000000003', 'da000000-0000-4000-8000-00000000000b',
-   'd3333333-3333-3333-3333-333333333333', 'caissier-pro@test.local', 'cashier', true, null),
+   'd3333333-3333-3333-3333-333333333333', 'caissier-pro@test.local', 'cashier', true,
+   -- Droit donne par le proprietaire: les rapports exigent reports.view en base
+   -- depuis 20261123100000 (le caissier ne l'a pas par defaut).
+   '{"reports.view": true}'),
   ('db000000-0000-4000-8000-000000000005', 'da000000-0000-4000-8000-00000000000b',
    'd5555555-5555-5555-5555-555555555555', 'serveur-pro@test.local', 'waiter', true, null),
   ('db000000-0000-4000-8000-000000000006', 'da000000-0000-4000-8000-00000000000b',
