@@ -25,7 +25,12 @@ const qrConfigSchema = z.object({
   x: z.number().min(0).max(21.7),
   y: z.number().min(0).max(11),
   width: z.number().min(2).max(10),
-  style: z.enum(['classic', 'branded', 'inverted', 'dark']),
+  // Light-on-dark QR styles were removed on 2026-11-23 (many phone cameras
+  // cannot read them); a saved config that still holds one prints "classic".
+  style: z.preprocess(
+    (v) => (v === 'inverted' || v === 'dark' ? 'classic' : v),
+    z.enum(['classic', 'branded']),
+  ),
   menuUrl: z.string().url(),
 });
 

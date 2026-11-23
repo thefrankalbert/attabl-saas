@@ -88,6 +88,13 @@ function createLimiter(
 
       try {
         const result = await rl.limit(identifier);
+        // La bibliotheque ne LEVE pas quand Redis met plus de 5 s a repondre:
+        // elle rend `{ success: true, reason: 'timeout' }`. Sans ce test, un
+        // compartiment fail-closed laissait tout passer pendant une lenteur
+        // d'Upstash (audit B20). Un delai depasse est une panne comme une autre.
+        if (result.reason === 'timeout') {
+          throw new Error('Rate limiter timeout (Redis did not answer in time)');
+        }
         return {
           success: result.success,
           limit: result.limit,
@@ -253,13 +260,6 @@ export function minutesAvantLiberation(reset: number): number {
  * automatisees est Turnstile et le honeypot, qui s'executent avant.
  */
 export const signupLimiter = createLimiter('signup', Ratelimit.slidingWindow(15, '10 m'), true);
-
-/** OAuth signup: 5 requests / 10 minutes per IP (fail-closed: brute-force protection) */
-export const oauthSignupLimiter = createLimiter(
-  'signup-oauth',
-  Ratelimit.slidingWindow(5, '10 m'),
-  true,
-);
 
 /**
  * Commandes: 20 par minute et par (IP, tenant). FAIL-OPEN, deliberement.
@@ -565,9 +565,6 @@ export const restaurantCreateLimiter = createLimiter(
   Ratelimit.slidingWindow(5, '10 m'),
   true,
 );
-
-/** Stock alerts: 10 requests / minute per IP */
-export const stockAlertLimiter = createLimiter('stock-alert', Ratelimit.slidingWindow(10, '1 m'));
 
 /** Auth signout: 10 requests / minute per IP */
 export const signoutLimiter = createLimiter('signout', Ratelimit.slidingWindow(10, '1 m'));

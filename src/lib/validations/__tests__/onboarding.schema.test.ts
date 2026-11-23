@@ -204,10 +204,21 @@ describe('onboardingCompleteSchema - champs qui etaient perdus (2026-11-08)', ()
 
   it('garde le choix du QR', () => {
     const r = onboardingCompleteSchema.safeParse({
-      data: { qrTemplate: 'carte', qrStyle: 'dark', qrCta: 'Commandez', qrDescription: 'Wifi' },
+      data: { qrTemplate: 'carte', qrStyle: 'branded', qrCta: 'Commandez', qrDescription: 'Wifi' },
     });
     expect(r.success).toBe(true);
-    if (r.success) expect(r.data.data.qrTemplate).toBe('carte');
+    if (r.success) {
+      expect(r.data.data.qrTemplate).toBe('carte');
+      expect(r.data.data.qrStyle).toBe('branded');
+    }
+  });
+
+  it('ramene un ancien style clair sur fonce (inverse, sombre) au style classique', () => {
+    for (const ancien of ['inverted', 'dark']) {
+      const r = onboardingCompleteSchema.safeParse({ data: { qrStyle: ancien } });
+      expect(r.success).toBe(true);
+      if (r.success) expect(r.data.data.qrStyle).toBe('classic');
+    }
   });
 
   it('accepte un brouillon ancien (modele "elegant") en le ramenant comme l apercu', () => {

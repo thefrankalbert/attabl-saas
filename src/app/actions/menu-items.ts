@@ -18,6 +18,11 @@ import '@/lib/validations/zod-fr-error-map';
 
 const tenantIdSchema = z.string().uuid();
 const itemIdSchema = z.string().uuid();
+// Audit B42: ces trois actions sont des POST appelables directement; le prix
+// (FCFA, entier, borne de la colonne numeric(10,2)) et les drapeaux etaient
+// ecrits sans validation.
+const itemPriceSchema = z.number().int().min(0).max(99_999_999);
+const itemFlagSchema = z.boolean();
 
 type CreateMenuItemResponse = {
   itemId?: string;
@@ -219,7 +224,11 @@ export async function actionToggleMenuItemAvailable(
 ): Promise<WriteResponse> {
   const parsedTenant = tenantIdSchema.safeParse(tenantId);
   const parsedItem = itemIdSchema.safeParse(itemId);
-  if (!parsedTenant.success || !parsedItem.success) {
+  if (
+    !parsedTenant.success ||
+    !parsedItem.success ||
+    !itemFlagSchema.safeParse(isAvailable).success
+  ) {
     return { error: 'Invalid input' };
   }
 
@@ -265,7 +274,11 @@ export async function actionToggleMenuItemFeatured(
 ): Promise<WriteResponse> {
   const parsedTenant = tenantIdSchema.safeParse(tenantId);
   const parsedItem = itemIdSchema.safeParse(itemId);
-  if (!parsedTenant.success || !parsedItem.success) {
+  if (
+    !parsedTenant.success ||
+    !parsedItem.success ||
+    !itemFlagSchema.safeParse(isFeatured).success
+  ) {
     return { error: 'Invalid input' };
   }
 
@@ -311,7 +324,7 @@ export async function actionUpdateMenuItemPrice(
 ): Promise<WriteResponse> {
   const parsedTenant = tenantIdSchema.safeParse(tenantId);
   const parsedItem = itemIdSchema.safeParse(itemId);
-  if (!parsedTenant.success || !parsedItem.success) {
+  if (!parsedTenant.success || !parsedItem.success || !itemPriceSchema.safeParse(price).success) {
     return { error: 'Invalid input' };
   }
 

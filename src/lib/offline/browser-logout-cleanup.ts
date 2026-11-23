@@ -19,50 +19,56 @@ import { clearAdminSessionStorage } from '@/lib/admin-session-storage';
 export async function prepareLogoutInBrowser(
   options: PrepareLogoutOptions = {},
 ): Promise<LogoutCleanupResult> {
-  const outbox = getOrderOutbox();
+  // Panier de caisse, table choisie, cle d'idempotence: rien ne doit rester
+  // pour la personne suivante sur ce poste. Vide dans un `finally` (audit B65):
+  // chaque etape ci-dessous peut lever, et l'appelant deconnecte quand meme.
+  // Seule exception: une deconnexion BLOQUEE, ou l'utilisateur reste connecte.
+  let blocked = false;
+  try {
+    const outbox = getOrderOutbox();
 
-  // Pas d'IndexedDB (navigateur ancien, mode restreint): il n'y a alors pas de
-  // file d'attente possible, donc rien a perdre. On purge et on laisse partir.
-  if (!outbox) {
-    await deleteQueryCacheDb();
-    clearAdminSessionStorage();
-    return { blocked: false, pending: 0, lost: 0 };
-  }
+    // Pas d'IndexedDB (navigateur ancien, mode restreint): il n'y a alors pas de
+    // file d'attente possible, donc rien a perdre. On purge et on laisse partir.
+    if (!outbox) {
+      await deleteQueryCacheDb();
+      return { blocked: false, pending: 0, lost: 0 };
+    }
 
-  const identity = getOutboxIdentity();
+    const identity = getOutboxIdentity();
 
-  const result = await prepareLogout(
-    {
-      // countDrainable et NON count: on ne bloque la deconnexion que sur ce que
-      // CETTE session peut envoyer. Compter les entrees d'un autre serveur
-      // piegerait l'utilisateur, incapable de les drainer comme de se deconnecter.
-      countPending: () =>
-        outbox.countDrainable({ userId: identity?.userId, tenantId: identity?.tenantId }),
-      drain: async () => {
-        const drainResult = await outbox.drain(replayOrderEntry, {
-          currentUserId: identity?.userId,
-          currentTenantId: identity?.tenantId,
-        });
-        // permanentlyFailed inclut les entrees EXPIREES, que le drain vient de
-        // supprimer. C'est la derniere occasion de les signaler.
-        return { lost: drainResult.permanentlyFailed.length };
+    const result = await prepareLogout(
+      {
+        // countDrainable et NON count: on ne bloque la deconnexion que sur ce que
+        // CETTE session peut envoyer. Compter les entrees d'un autre serveur
+        // piegerait l'utilisateur, incapable de les drainer comme de se deconnecter.
+        countPending: () =>
+          outbox.countDrainable({ userId: identity?.userId, tenantId: identity?.tenantId }),
+        drain: async () => {
+          const drainResult = await outbox.drain(replayOrderEntry, {
+            currentUserId: identity?.userId,
+            currentTenantId: identity?.tenantId,
+          });
+          // permanentlyFailed inclut les entrees EXPIREES, que le drain vient de
+          // supprimer. C'est la derniere occasion de les signaler.
+          return { lost: drainResult.permanentlyFailed.length };
+        },
+        deleteQueryCache: deleteQueryCacheDb,
+        isOnline: () => (typeof navigator === 'undefined' ? true : navigator.onLine),
       },
-      deleteQueryCache: deleteQueryCacheDb,
-      isOnline: () => (typeof navigator === 'undefined' ? true : navigator.onLine),
-    },
-    options,
-  );
+      options,
+    );
 
-  // Deconnexion effective: on efface l'identite persistee, sinon le service
-  // worker continuerait de drainer au nom d'une session terminee - sans cookie,
-  // chaque rejeu partirait en 401. Les entrees, elles, gardent leur proprietaire
-  // et repartiront a la prochaine connexion de cette personne sur cette tablette.
-  if (!result.blocked) {
-    await persistOutboxIdentity(null);
-    // Panier de caisse, table choisie, cle d'idempotence: rien ne doit rester
-    // pour la personne suivante sur ce poste.
-    clearAdminSessionStorage();
+    // Deconnexion effective: on efface l'identite persistee, sinon le service
+    // worker continuerait de drainer au nom d'une session terminee - sans cookie,
+    // chaque rejeu partirait en 401. Les entrees, elles, gardent leur proprietaire
+    // et repartiront a la prochaine connexion de cette personne sur cette tablette.
+    blocked = result.blocked;
+    if (!result.blocked) {
+      await persistOutboxIdentity(null);
+    }
+
+    return result;
+  } finally {
+    if (!blocked) clearAdminSessionStorage();
   }
-
-  return result;
 }

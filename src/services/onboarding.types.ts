@@ -56,7 +56,7 @@ export interface OnboardingCompleteData {
   totalCapacity?: number;
   // QR choice (stored as the tenant's default qr_designs row)
   qrTemplate?: 'minimal' | 'carte' | 'chevalet';
-  qrStyle?: 'classic' | 'branded' | 'inverted' | 'dark';
+  qrStyle?: 'classic' | 'branded';
   qrCta?: string;
   qrDescription?: string;
 }

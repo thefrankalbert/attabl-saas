@@ -234,7 +234,6 @@ describe('classement de toutes les routes API', () => {
     'invitations/[id]/resend',
     'permissions',
     'orders/[id]/claim',
-    'stock-alerts/check',
     'admin/reset',
     // Verrou propre, deja en place avant A-02.
     'orders/mutations',
@@ -282,7 +281,6 @@ describe('classement de toutes les routes API', () => {
     'auth/signout',
     'login',
     'signup',
-    'signup-oauth',
     'forgot-password',
     'reset-password',
     'resend-confirmation',

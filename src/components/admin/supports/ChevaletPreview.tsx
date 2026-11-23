@@ -29,10 +29,6 @@ function Panel({
   label: string;
   isVersoBgOnly?: boolean;
 }) {
-  const qrDark =
-    config.qrCode.style === 'inverted' || config.qrCode.style === 'dark' ? '#FFFFFF' : '#000000';
-  const qrLight = config.qrCode.style === 'inverted' ? '#000000' : 'transparent';
-
   return (
     <div className="flex flex-col items-center gap-1">
       <span className="text-[10px] font-semibold text-app-text-muted tracking-widest uppercase">
@@ -130,8 +126,8 @@ function Panel({
               <QRCodeSVG
                 value={config.qrCode.menuUrl || 'https://attabl.com'}
                 size={config.qrCode.width * SCALE}
-                fgColor={qrDark}
-                bgColor={qrLight}
+                fgColor="#000000"
+                bgColor="#FFFFFF"
               />
             </div>
           </>

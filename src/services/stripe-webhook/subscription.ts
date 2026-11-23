@@ -3,6 +3,8 @@ import { logger } from '@/lib/logger';
 import { getPlanFromPriceId, getIntervalFromPriceId } from '@/lib/stripe/server';
 import {
   FREEZE_REASONS,
+  FREEZE_REASON_COLUMN,
+  isMissingFreezeReasonColumnError,
   selectTolerantToMissingFreezeReason,
   updateTolerantToMissingFreezeReason,
 } from '@/lib/billing/freeze-reason';
@@ -252,9 +254,28 @@ export async function handleSubscriptionUpdated(
   // Le court-circuit sur un payload vide a disparu avec CTR-2: les deux
   // branches ecrivent desormais au moins `is_active`, il etait devenu
   // inatteignable.
-  const { error: updateError } = await updateTolerantToMissingFreezeReason(
+  //
+  // Audit B98: GARDE OPTIMISTE. Entre la lecture du restaurant et cette
+  // ecriture, des appels reseau a Stripe ont lieu; un autre evenement a pu
+  // geler le restaurant (litige, remboursement, cron). L'ecriture ne part donc
+  // que si le statut est toujours celui qu'on a lu (`is null` si NULL).
+  const { error: updateError, count: updatedCount } = await updateTolerantToMissingFreezeReason(
     updateData,
-    (payload) => supabase.from('tenants').update(payload).eq('id', tenant.id),
+    (payload) => {
+      let q = supabase.from('tenants').update(payload, { count: 'exact' }).eq('id', tenant.id);
+      q =
+        tenant.subscription_status === null
+          ? q.is('subscription_status', null)
+          : q.eq('subscription_status', tenant.subscription_status);
+      // Contre-audit D6: la cause du gel aussi. Un litige qui remplace une
+      // cause d'impaye sans changer le statut doit faire echouer l'ecriture.
+      // `undefined` = colonne absente (lecture tolerante): pas de filtre.
+      if (tenant.freeze_reason === null) q = q.is(FREEZE_REASON_COLUMN, null);
+      else if (tenant.freeze_reason !== undefined) {
+        q = q.eq(FREEZE_REASON_COLUMN, tenant.freeze_reason);
+      }
+      return q;
+    },
     { tenantId: tenant.id, handler: 'customer.subscription.updated' },
   );
 
@@ -265,6 +286,16 @@ export async function handleSubscriptionUpdated(
     });
     // La route retire la ligne d'idempotence pour que Stripe retraite.
     throw new ServiceError('DB update failed', 'INTERNAL');
+  }
+
+  if (updatedCount === 0) {
+    // Le statut a change depuis la lecture: rien n'est ecrit sur un etat
+    // perime. Stripe rejoue l'evenement, qui relira la ligne a jour.
+    logger.warn('customer.subscription.updated: statut modifie entre-temps, evenement a rejouer', {
+      tenantId: tenant.id,
+      statutLu: tenant.subscription_status,
+    });
+    throw new ServiceError('Tenant changed concurrently', 'INTERNAL');
   }
 
   logger.info('Subscription updated', {
@@ -281,11 +312,19 @@ export async function handleSubscriptionDeleted(
   const customerId = subscription.customer as string;
 
   // Geler le tenant
-  const { data: tenant, error: tenantDeleteError } = await supabase
-    .from('tenants')
-    .select('id, subscription_status, stripe_subscription_id')
-    .eq('stripe_customer_id', customerId)
-    .single();
+  // Contre-audit D6: meme tolerance que les autres gestionnaires si la
+  // colonne `freeze_reason` manque (lecture rejouee sans elle).
+  const { data: tenant, error: tenantDeleteError } = await selectTolerantToMissingFreezeReason(
+    'id, subscription_status, stripe_subscription_id, freeze_reason',
+    (columns) =>
+      supabase.from('tenants').select(columns).eq('stripe_customer_id', customerId).single<{
+        id: string;
+        subscription_status: string | null;
+        stripe_subscription_id: string | null;
+        freeze_reason?: string | null;
+      }>(),
+    { customerId, handler: 'customer.subscription.deleted' },
+  );
 
   if (tenantDeleteError || !tenant) {
     logger.warn('Subscription deleted: tenant not found', { customerId });
@@ -325,6 +364,35 @@ export async function handleSubscriptionDeleted(
 
   // Idempotency: skip if tenant is already frozen
   if (tenant.subscription_status === 'frozen') {
+    // Audit B94: un gel pour REMBOURSEMENT se leve sur une facture payee
+    // (invoice.paid). L'abonnement n'existant plus, aucune facture de lui ne
+    // doit pouvoir le lever: on passe la cause a `subscription_deleted` et on
+    // efface l'identifiant, exactement l'etat d'une suppression ordinaire. Le
+    // gel reste (invariant de freeze-reason.ts tenu: statut `frozen`, cause non
+    // nulle); seule une nouvelle souscription le leve. Les autres causes
+    // (litige, impaye...) ne sont pas touchees: le filtre porte sur `refund`.
+    const { error: refundSwitchError } =
+      tenant.freeze_reason !== FREEZE_REASONS.REFUND
+        ? { error: null }
+        : await supabase
+            .from('tenants')
+            .update({
+              freeze_reason: FREEZE_REASONS.SUBSCRIPTION_DELETED,
+              stripe_subscription_id: null,
+            })
+            .eq('id', tenant.id)
+            .eq('subscription_status', 'frozen')
+            .eq(FREEZE_REASON_COLUMN, FREEZE_REASONS.REFUND);
+    if (refundSwitchError && !isMissingFreezeReasonColumnError(refundSwitchError)) {
+      logger.error(
+        'subscription.deleted: bascule du gel pour remboursement echouee',
+        refundSwitchError,
+        {
+          tenantId: tenant.id,
+        },
+      );
+      throw new ServiceError('DB update failed', 'INTERNAL');
+    }
     logger.info('customer.subscription.deleted already processed, skipping', {
       tenantId: tenant.id,
     });
@@ -359,9 +427,10 @@ export async function handleSubscriptionDeleted(
 
 /**
  * Stripe envoie cet evenement 3 jours avant la fin de l'essai. Il ne touche NI
- * le statut NI l'acces: il pose seulement le drapeau d'affichage. Une ecriture
- * en echec ne fait donc PAS rejouer Stripe - ce serait disproportionne pour un
- * bandeau.
+ * le statut NI l'acces, et il n'ecrit plus rien (audit B99): il posait un
+ * drapeau `trial_warning_sent`, colonne absente en production et que rien ne
+ * lisait, donc une erreur journalisee a chaque evenement. Le bandeau d'essai
+ * (TrialBanner) calcule les jours restants par `useSubscription`.
  */
 export async function handleTrialWillEnd(
   { supabase }: StripeWebhookDeps,
@@ -380,18 +449,5 @@ export async function handleTrialWillEnd(
     return;
   }
 
-  // Mark trial warning so UI can display urgent banner
-  const { error: updateError } = await supabase
-    .from('tenants')
-    .update({ trial_warning_sent: true })
-    .eq('id', tenant.id);
-
-  if (updateError) {
-    logger.error('DB update failed for trial_will_end', updateError, {
-      tenantId: tenant.id,
-    });
-    return;
-  }
-
-  logger.info('Trial ending soon, warning sent', { tenantId: tenant.id });
+  logger.info('Trial ending soon', { tenantId: tenant.id });
 }

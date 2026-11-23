@@ -9,6 +9,7 @@ import { updateSubscriptionSchema } from '@/lib/validations/checkout.schema';
 import { withStripeBreaker } from '@/lib/stripe/circuit-breaker';
 import { getTenantBillingIds } from '@/lib/billing/tenant-billing-ids';
 import { refuseIfPaidByFlutterwave } from '@/lib/billing/flutterwave/guard';
+import { refusDEtat } from '@/lib/billing/tenant-billing-state';
 
 export async function POST(request: Request) {
   try {
@@ -46,13 +47,22 @@ export async function POST(request: Request) {
 
     const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
-      .select('id')
+      .select('id, suspended_at, deleted_at')
       .eq('slug', tenantSlug)
       .maybeSingle();
 
     if (tenantError || !tenant) {
       logger.error('Update subscription: tenant not found', tenantError, { tenantSlug });
       return NextResponse.json({ error: 'Tenant non trouve' }, { status: 404 });
+    }
+
+    // Audit B15: un changement de formule facture tout de suite
+    // (`always_invoice`). Restaurant ferme ou suspendu par la plateforme: le
+    // webhook ne leve pas la suspension, l'argent serait pris pour un acces qui
+    // reste ferme. Meme regle que la caisse d'abonnement.
+    const refusEtat = refusDEtat(tenant, false);
+    if (refusEtat) {
+      return NextResponse.json({ error: refusEtat.error }, { status: refusEtat.status });
     }
 
     const { data: adminUser, error: adminUserError } = await supabase

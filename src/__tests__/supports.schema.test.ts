@@ -38,6 +38,17 @@ describe('chevaletConfigSchema', () => {
     expect(result.success).toBe(false);
   });
 
+  it('reads an old light-on-dark QR style (inverted, dark) as classic', () => {
+    for (const style of ['inverted', 'dark']) {
+      const r = chevaletConfigSchema.safeParse({
+        ...validConfig,
+        qrCode: { ...validConfig.qrCode, style },
+      });
+      expect(r.success).toBe(true);
+      if (r.success) expect(r.data.qrCode.style).toBe('classic');
+    }
+  });
+
   it('rejects invalid verso mode', () => {
     const result = chevaletConfigSchema.safeParse({ ...validConfig, verso: 'both' });
     expect(result.success).toBe(false);

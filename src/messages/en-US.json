@@ -3903,7 +3903,7 @@
     "tabAssign": "Assign",
     "tabDownload": "Download",
     "guideButton": "Guide",
-    "guideTitle": "How to use your QR codes",
+    "guideTitle": "Your QR codes in 4 steps",
     "guideIntro": "One QR per table. The guest scans it and your menu opens on their phone. Here are the 4 steps.",
     "guideStep1Title": "Pick the table and menu",
     "guideStep1Body": "Select a table and the menu to show. The QR will point to that menu, for that table.",
@@ -3915,6 +3915,12 @@
     "guideStep4Body": "Download as PNG, SVG or PDF. One table or all at once for printing.",
     "guideTipTitle": "On each table",
     "guideTipBody": "Print it, laminate it, place it on the table. Test with your phone before service.",
+    "guideStart": "Follow the guide",
+    "guideSkip": "Skip",
+    "guideNext": "Next",
+    "guidePrevious": "Back",
+    "guideDone": "Done",
+    "guideStepOf": "Step {current} of {total}",
     "formatA4": "A4 Format",
     "assignIntro": "Save a design then assign it to a zone or a table. Every table can have its own code.",
     "savedDesigns": "Saved designs",
@@ -4006,7 +4012,8 @@
     "dashCardTitle": "QR codes",
     "dashCardDesc": "Create and assign a QR per table or zone",
     "dashCardDescCount": "{count} tables - create and assign their QR codes",
-    "dashCardCta": "Manage"
+    "dashCardCta": "Manage",
+    "qrColorsUnreadable": "Phones struggle to scan these colors. The QR code will print in black so it stays readable. Choose dark dots on a light background."
   },
   "service": {
     "readyAlertTable": "Order ready - Table {table}",

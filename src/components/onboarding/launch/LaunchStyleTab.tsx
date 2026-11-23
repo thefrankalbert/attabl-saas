@@ -19,8 +19,6 @@ const QR_STYLES: Array<{
 }> = [
   { id: 'classic', fg: '#000000', bg: '#FFFFFF' },
   { id: 'branded', fg: 'primary', bg: '#FFFFFF' },
-  { id: 'inverted', fg: '#FFFFFF', bg: '#000000' },
-  { id: 'dark', fg: '#FFFFFF', bg: '#1a1a1a' },
 ];
 
 interface LaunchStyleTabProps {
