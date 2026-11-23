@@ -32,6 +32,7 @@ const SEGMENT_LABEL_MAP: Record<string, string> = {
   kitchen: 'navKitchen',
   service: 'navService',
   reports: 'navReports',
+  venues: 'navVenueReports',
   'stock-history': 'navStockHistory',
   'stock-losses': 'navStockLosses',
   counts: 'navStockCounts',

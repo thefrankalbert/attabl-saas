@@ -31,6 +31,8 @@ export interface PlanLimits {
   canAccessRoomService: boolean;
   canAccessDelivery: boolean;
   canAccessAIAnalytics: boolean;
+  /** Rapports par espace (terrasse, bar...) d'un meme restaurant. Business et plus. */
+  canAccessVenueReports: boolean;
 }
 
 export type FeatureKey = keyof PlanLimits;
@@ -56,6 +58,7 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     canAccessRoomService: false,
     canAccessDelivery: false,
     canAccessAIAnalytics: false,
+    canAccessVenueReports: false,
   },
   pro: {
     maxVenues: 2,
@@ -77,6 +80,7 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     canAccessRoomService: false,
     canAccessDelivery: false,
     canAccessAIAnalytics: false,
+    canAccessVenueReports: false,
   },
   business: {
     maxVenues: 10,
@@ -98,6 +102,7 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     canAccessRoomService: true,
     canAccessDelivery: true,
     canAccessAIAnalytics: true,
+    canAccessVenueReports: true,
   },
   enterprise: {
     maxVenues: -1,
@@ -119,6 +124,7 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     canAccessRoomService: true,
     canAccessDelivery: true,
     canAccessAIAnalytics: true,
+    canAccessVenueReports: true,
   },
 };
 
@@ -220,6 +226,7 @@ export function canAccessFeature(
     | 'canAccessRoomService'
     | 'canAccessDelivery'
     | 'canAccessAIAnalytics'
+    | 'canAccessVenueReports'
   >,
   plan?: SubscriptionPlan | null,
   status?: SubscriptionStatus | null,
