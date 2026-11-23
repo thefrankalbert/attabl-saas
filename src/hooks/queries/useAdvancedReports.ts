@@ -140,7 +140,7 @@ export function useAdvancedReports(tenantId: string, period: Period, timezone: s
   return useQuery<AdvancedReportData>({
     queryKey: ['advanced-reports', tenantId, period, timezone],
     queryFn: async () => {
-      const { startDate, endDate } = getDateRange(period);
+      const { startDate, endDate } = getDateRange(period, timezone);
       const range = { p_tenant_id: tenantId, p_start_date: startDate, p_end_date: endDate };
       const [margins, heatmap, methods, losses] = await Promise.all([
         rpcOrThrow('get_dish_margins', range),

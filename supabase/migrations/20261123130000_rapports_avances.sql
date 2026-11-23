@@ -8,7 +8,7 @@
 --   5. get_stock_losses_report    pertes et gaspillage par ingredient
 --
 -- VERROUS: chaque fonction appelle assert_tenant_business_reports
--- (20261123100000): appartenance au restaurant D'ABORD, puis droit
+-- (20261123120000): appartenance au restaurant D'ABORD, puis droit
 -- reports.view (comme la page), puis plan Business ou Enterprise (l'essai actif
 -- compte comme Business). anon n'execute rien.
 --

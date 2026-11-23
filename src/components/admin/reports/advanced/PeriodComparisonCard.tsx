@@ -58,7 +58,7 @@ export function PeriodComparisonCard({ tenantId, timezone, fmt }: PeriodComparis
               aria-pressed={mode === m}
               onClick={() => setMode(m)}
               className={cn(
-                'h-8 text-xs font-semibold',
+                'h-8 min-h-[44px] sm:min-h-0 text-xs font-semibold',
                 mode === m && 'bg-app-text text-app-bg border-app-text',
               )}
             >

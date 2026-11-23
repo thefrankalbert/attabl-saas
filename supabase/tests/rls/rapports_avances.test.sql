@@ -1,4 +1,4 @@
--- Rapports avances (migration 20261123110000, lot 4 PR B).
+-- Rapports avances (migration 20261123130000, lot 4 PR B).
 --
 -- Donnees: un restaurant Business. Deux commandes reglees le mercredi
 -- 2026-11-18 a 11 h 30 UTC (12 h 30 a Douala):
@@ -155,28 +155,28 @@ set local request.jwt.claims = '{"sub":"f1100000-0000-4000-8000-000000000002"}';
 select lives_ok(
   $$select * from public.get_order_summary('f1200000-0000-4000-8000-000000000002', now() - interval '1 day', now())$$,
   'temoin: le membre Pro lit les rapports Pro');
-select throws_ok($$select * from public.get_dish_margins('f1200000-0000-4000-8000-000000000002', now() - interval '1 day', now())$$,
-  '42501', null, 'Pro: marge par plat refusee');
-select throws_ok($$select * from public.get_sales_heatmap('f1200000-0000-4000-8000-000000000002', now() - interval '1 day', now(), 'Africa/Douala')$$,
-  '42501', null, 'Pro: heures fortes refusees');
-select throws_ok($$select * from public.get_period_comparison('f1200000-0000-4000-8000-000000000002', 'week', 'Africa/Douala')$$,
-  '42501', null, 'Pro: comparaison refusee');
-select throws_ok($$select * from public.get_payment_method_report('f1200000-0000-4000-8000-000000000002', now() - interval '1 day', now())$$,
-  '42501', null, 'Pro: moyens de paiement refuses');
-select throws_ok($$select * from public.get_stock_losses_report('f1200000-0000-4000-8000-000000000002', now() - interval '1 day', now())$$,
-  '42501', null, 'Pro: pertes refusees');
+select throws_like($$select * from public.get_dish_margins('f1200000-0000-4000-8000-000000000002', now() - interval '1 day', now())$$,
+  '%Business plan%', 'Pro: marge par plat refusee (par le plan)');
+select throws_like($$select * from public.get_sales_heatmap('f1200000-0000-4000-8000-000000000002', now() - interval '1 day', now(), 'Africa/Douala')$$,
+  '%Business plan%', 'Pro: heures fortes refusees (par le plan)');
+select throws_like($$select * from public.get_period_comparison('f1200000-0000-4000-8000-000000000002', 'week', 'Africa/Douala')$$,
+  '%Business plan%', 'Pro: comparaison refusee (par le plan)');
+select throws_like($$select * from public.get_payment_method_report('f1200000-0000-4000-8000-000000000002', now() - interval '1 day', now())$$,
+  '%Business plan%', 'Pro: moyens de paiement refuses (par le plan)');
+select throws_like($$select * from public.get_stock_losses_report('f1200000-0000-4000-8000-000000000002', now() - interval '1 day', now())$$,
+  '%Business plan%', 'Pro: pertes refusees (par le plan)');
 
 set local request.jwt.claims = '{"sub":"f1100000-0000-4000-8000-000000000003"}';
-select throws_ok($$select * from public.get_dish_margins('f1200000-0000-4000-8000-000000000003', now() - interval '1 day', now())$$,
-  '42501', null, 'Starter: marge par plat refusee');
-select throws_ok($$select * from public.get_sales_heatmap('f1200000-0000-4000-8000-000000000003', now() - interval '1 day', now(), 'Africa/Douala')$$,
-  '42501', null, 'Starter: heures fortes refusees');
-select throws_ok($$select * from public.get_period_comparison('f1200000-0000-4000-8000-000000000003', 'week', 'Africa/Douala')$$,
-  '42501', null, 'Starter: comparaison refusee');
-select throws_ok($$select * from public.get_payment_method_report('f1200000-0000-4000-8000-000000000003', now() - interval '1 day', now())$$,
-  '42501', null, 'Starter: moyens de paiement refuses');
-select throws_ok($$select * from public.get_stock_losses_report('f1200000-0000-4000-8000-000000000003', now() - interval '1 day', now())$$,
-  '42501', null, 'Starter: pertes refusees');
+select throws_like($$select * from public.get_dish_margins('f1200000-0000-4000-8000-000000000003', now() - interval '1 day', now())$$,
+  '%Business plan%', 'Starter: marge par plat refusee (par le plan)');
+select throws_like($$select * from public.get_sales_heatmap('f1200000-0000-4000-8000-000000000003', now() - interval '1 day', now(), 'Africa/Douala')$$,
+  '%Business plan%', 'Starter: heures fortes refusees (par le plan)');
+select throws_like($$select * from public.get_period_comparison('f1200000-0000-4000-8000-000000000003', 'week', 'Africa/Douala')$$,
+  '%Business plan%', 'Starter: comparaison refusee (par le plan)');
+select throws_like($$select * from public.get_payment_method_report('f1200000-0000-4000-8000-000000000003', now() - interval '1 day', now())$$,
+  '%Business plan%', 'Starter: moyens de paiement refuses (par le plan)');
+select throws_like($$select * from public.get_stock_losses_report('f1200000-0000-4000-8000-000000000003', now() - interval '1 day', now())$$,
+  '%Business plan%', 'Starter: pertes refusees (par le plan)');
 -- Le membre Starter sur le restaurant Business: refuse (appartenance).
 select throws_ok($$select * from public.get_dish_margins('f1200000-0000-4000-8000-000000000001', now() - interval '1 day', now())$$,
   '42501', null, 'autre restaurant: refuse');
