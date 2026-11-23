@@ -13,7 +13,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(14);
+select plan(17);
 
 -- Plan pro: le module de stock est reserve aux plans Pro et plus (declencheur).
 insert into public.tenants (id, slug, name, is_active, currency, subscription_status, subscription_plan) values
@@ -50,11 +50,12 @@ select is(
     join pg_namespace n on n.oid = p.pronamespace and n.nspname = 'public'
     where p.proname in ('adjust_ingredient_stock_tx','record_loss_tx','set_recipe_tx',
                         'set_opening_stock','open_stock_count','save_stock_count_lines',
-                        'commit_stock_count','cancel_stock_count','import_recipes_tx')
+                        'commit_stock_count','cancel_stock_count','import_recipes_tx',
+                        'reconcile_stock_ledger')
       and p.prosrc like '%assert_inventory_edit(p_tenant_id)%'
       and p.prosrc not like '%assert_tenant_member%'),
-  9,
-  'les 9 RPC de stock (dont import_recipes_tx) passent par la garde inventory.edit');
+  10,
+  'les 10 RPC de stock (dont import_recipes_tx et reconcile_stock_ledger) passent par la garde inventory.edit');
 
 -- Le serveur (waiter, sans inventory.edit), avec sa session.
 set local role authenticated;
@@ -93,6 +94,12 @@ select throws_ok(
   $$select public.import_recipes_tx('b51a0000-0000-0000-0000-00000000000a',
     '[{"menu_item_id":"a51a0000-0000-0000-0000-00000000000a","ingredient_name":"Riz","unit":"kg","quantity_needed":0.2}]'::jsonb)$$,
   '42501', NULL, 'serveur: import des fiches techniques refuse');
+-- Audit B126: le rattrapage du registre de stock (ecart entre le stock et la
+-- somme des mouvements: l'ingredient a ete cree a 10 sans mouvement).
+select throws_ok(
+  $$select public.reconcile_stock_ledger('b51a0000-0000-0000-0000-00000000000a',
+    'e51a0000-0000-0000-0000-00000000000a')$$,
+  '42501', NULL, 'serveur: rattrapage du registre de stock refuse (en signant au nom du proprietaire)');
 
 -- Le gerant (manager: inventory.edit par la matrice par defaut).
 set local "request.jwt.claims" = '{"sub":"e51c0000-0000-0000-0000-00000000000c","role":"authenticated"}';
@@ -100,6 +107,11 @@ select lives_ok(
   $$select public.import_recipes_tx('b51a0000-0000-0000-0000-00000000000a',
     '[{"menu_item_id":"a51a0000-0000-0000-0000-00000000000a","ingredient_name":"Riz","unit":"kg","quantity_needed":0.2}]'::jsonb)$$,
   'temoin: un membre avec inventory.edit importe les fiches techniques');
+-- Le gerant rattrape le registre en tentant de signer au nom du serveur.
+select lives_ok(
+  $$select public.reconcile_stock_ledger('b51a0000-0000-0000-0000-00000000000a',
+    'e51b0000-0000-0000-0000-00000000000b')$$,
+  'temoin: un membre avec inventory.edit rattrape le registre de stock');
 
 -- Le proprietaire, qui tente d'attribuer le mouvement au serveur.
 set local "request.jwt.claims" = '{"sub":"e51a0000-0000-0000-0000-00000000000a","role":"authenticated"}';
@@ -116,6 +128,12 @@ select is(
     where tenant_id = 'b51a0000-0000-0000-0000-00000000000a' and movement_type = 'opening'),
   'e51a0000-0000-0000-0000-00000000000a'::uuid,
   'l auteur enregistre est la session, pas le p_created_by envoye');
+
+select is(
+  (select array_agg(distinct created_by::text) from public.stock_movements
+    where tenant_id = 'b51a0000-0000-0000-0000-00000000000a' and reason_code = 'reconcile'),
+  array['e51c0000-0000-0000-0000-00000000000c'],
+  'rattrapage: l auteur enregistre est l appelant (le gerant), pas le p_created_by envoye');
 
 select is(
   has_function_privilege('authenticated',

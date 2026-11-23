@@ -19,7 +19,7 @@ vi.mock('@/lib/logger', () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: 
 type Row = Record<string, unknown>;
 type Filtre = [string, string, unknown];
 
-function fausseBase(row: Row) {
+function fausseBase(row: Row, options: { sansColonneFreezeReason?: boolean } = {}) {
   const rows = [row];
   const match = (r: Row, f: Filtre[]) =>
     f.every(([op, c, v]) => {
@@ -33,11 +33,19 @@ function fausseBase(row: Row) {
     });
   const ecritures: Row[] = [];
   const from = () => ({
-    select: () => {
+    select: (columns?: string) => {
       const f: Filtre[] = [];
+      // Colonne absente (fenetre avant migration): PostgREST rend 42703.
+      const absente =
+        options.sansColonneFreezeReason === true && (columns ?? '').includes('freeze_reason');
+      const resultat = () =>
+        absente
+          ? { data: null, error: { code: '42703', message: 'column does not exist' } }
+          : { data: rows.find((r) => match(r, f)) ?? null, error: null };
       const ch: Record<string, unknown> = {
         eq: (c: string, v: unknown) => (f.push(['eq', c, v]), ch),
-        single: async () => ({ data: rows.find((r) => match(r, f)) ?? null, error: null }),
+        or: (v: string) => (f.push(['or', '', v]), ch),
+        single: async () => resultat(),
         maybeSingle: async () => ({ data: rows.find((r) => match(r, f)) ?? null, error: null }),
       };
       return ch;
@@ -137,6 +145,23 @@ describe('invoice.paid: levee du gel pour remboursement (B94)', () => {
     expect(row.subscription_status).toBe('frozen');
   });
 
+  it('une facture payee AVANT le gel est consommee sans appel a Stripe, meme en panne', async () => {
+    // Contre-audit D5: le filtre de date passe AVANT la relecture Stripe. Un
+    // ancien invoice.paid rejoue pendant une panne Stripe n'a rien a lever: il
+    // ne doit pas etre rejoue lui aussi.
+    const { supabase, row } = fausseBase(geleRemboursement());
+    const { stripe, retrieve } = fauxStripe(panne);
+    const avant = Math.floor(Date.parse('2026-10-20T10:00:00.000Z') / 1000);
+    await expect(
+      handleInvoicePaid(
+        { supabase, stripe },
+        facture({ created: avant, status_transitions: { paid_at: avant } }),
+      ),
+    ).resolves.toBeUndefined();
+    expect(retrieve).not.toHaveBeenCalled();
+    expect(row.subscription_status).toBe('frozen');
+  });
+
   it('temoin: le filtre de date reste: une facture payee AVANT le gel ne leve rien', async () => {
     const { supabase, row } = fausseBase(geleRemboursement());
     const { stripe } = fauxStripe(statut('active'));
@@ -212,5 +237,19 @@ describe('customer.subscription.deleted sur un restaurant gele pour remboursemen
       customer: 'cus_1',
     } as unknown as Stripe.Subscription);
     expect(row).toMatchObject({ freeze_reason: 'dispute', stripe_subscription_id: 'sub_1' });
+  });
+
+  it('lit freeze_reason avec la meme tolerance que les autres gestionnaires (D6)', async () => {
+    // Colonne absente: la lecture est rejouee sans elle, et la suppression
+    // gele quand meme le restaurant au lieu de conclure "introuvable".
+    const r = geleRemboursement();
+    Object.assign(r, { subscription_status: 'active', freeze_reason: null, is_active: true });
+    const { supabase, row } = fausseBase(r, { sansColonneFreezeReason: true });
+    const { stripe } = fauxStripe(statut('active'));
+    await handleSubscriptionDeleted({ supabase, stripe }, {
+      id: 'sub_1',
+      customer: 'cus_1',
+    } as unknown as Stripe.Subscription);
+    expect(row.subscription_status).toBe('frozen');
   });
 });

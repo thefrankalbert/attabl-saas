@@ -1,0 +1,26 @@
+-- ============================================================================
+-- Audit B117 (Haute): l'adresse d'un restaurant (`tenants.slug`) n'est plus
+-- modifiable par une session utilisateur.
+--
+-- CE QUI NE TENAIT PAS. `20260420000002_restrict_tenant_billing_updates.sql`
+-- accordait `UPDATE (slug, ...)` a `authenticated`. Tout proprietaire (un essai
+-- gratuit suffit) pouvait, par appel direct a PostgREST avec sa session,
+-- renommer l'adresse de son restaurant en un nom reserve (`login`, `admin`,
+-- `auth`, `support`, `status`...). Le proxy sert tout sous-domaine autre que
+-- `www` comme une vitrine: `login.attabl.com` aurait affiche une page choisie
+-- par lui, sur un sous-domaine officiel. La liste des noms reserves n'existe
+-- que dans `src/services/slug.service.ts` (inscription), aucune garde en base.
+--
+-- LA CORRECTION. Le droit d'ecriture de la colonne est retire a
+-- `authenticated`, comme `custom_domain` (meme raison: le routage en depend).
+-- Le slug reste fixe par l'inscription (fonction SECURITY DEFINER et
+-- service_role, non concernes). Aucun ecran de l'application ne le modifie
+-- (verifie dans le code: aucune ecriture de `tenants.slug` avec une session).
+--
+-- ORDRE DE DEPLOIEMENT: peut passer AVANT le code en ligne. Elle ne retire
+-- rien qu'un parcours de l'application utilise.
+--
+-- ROLLBACK: GRANT UPDATE (slug) ON public.tenants TO authenticated;
+-- ============================================================================
+
+REVOKE UPDATE (slug) ON public.tenants FROM authenticated;

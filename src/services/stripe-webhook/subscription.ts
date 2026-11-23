@@ -262,10 +262,19 @@ export async function handleSubscriptionUpdated(
   const { error: updateError, count: updatedCount } = await updateTolerantToMissingFreezeReason(
     updateData,
     (payload) => {
-      const q = supabase.from('tenants').update(payload, { count: 'exact' }).eq('id', tenant.id);
-      return tenant.subscription_status === null
-        ? q.is('subscription_status', null)
-        : q.eq('subscription_status', tenant.subscription_status);
+      let q = supabase.from('tenants').update(payload, { count: 'exact' }).eq('id', tenant.id);
+      q =
+        tenant.subscription_status === null
+          ? q.is('subscription_status', null)
+          : q.eq('subscription_status', tenant.subscription_status);
+      // Contre-audit D6: la cause du gel aussi. Un litige qui remplace une
+      // cause d'impaye sans changer le statut doit faire echouer l'ecriture.
+      // `undefined` = colonne absente (lecture tolerante): pas de filtre.
+      if (tenant.freeze_reason === null) q = q.is(FREEZE_REASON_COLUMN, null);
+      else if (tenant.freeze_reason !== undefined) {
+        q = q.eq(FREEZE_REASON_COLUMN, tenant.freeze_reason);
+      }
+      return q;
     },
     { tenantId: tenant.id, handler: 'customer.subscription.updated' },
   );
@@ -303,11 +312,19 @@ export async function handleSubscriptionDeleted(
   const customerId = subscription.customer as string;
 
   // Geler le tenant
-  const { data: tenant, error: tenantDeleteError } = await supabase
-    .from('tenants')
-    .select('id, subscription_status, stripe_subscription_id, freeze_reason')
-    .eq('stripe_customer_id', customerId)
-    .single();
+  // Contre-audit D6: meme tolerance que les autres gestionnaires si la
+  // colonne `freeze_reason` manque (lecture rejouee sans elle).
+  const { data: tenant, error: tenantDeleteError } = await selectTolerantToMissingFreezeReason(
+    'id, subscription_status, stripe_subscription_id, freeze_reason',
+    (columns) =>
+      supabase.from('tenants').select(columns).eq('stripe_customer_id', customerId).single<{
+        id: string;
+        subscription_status: string | null;
+        stripe_subscription_id: string | null;
+        freeze_reason?: string | null;
+      }>(),
+    { customerId, handler: 'customer.subscription.deleted' },
+  );
 
   if (tenantDeleteError || !tenant) {
     logger.warn('Subscription deleted: tenant not found', { customerId });

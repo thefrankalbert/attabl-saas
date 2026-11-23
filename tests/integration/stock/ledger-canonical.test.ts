@@ -123,6 +123,13 @@ afterAll(async () => {
   await teardownTenantBySlug(SLUG);
 });
 
+// Audits B51 et B126 (migration 20261123100100): l'auteur d'un mouvement vient
+// de la SESSION (`auth.uid()`) pour un appelant authentifie, et le parametre
+// `p_created_by` n'est honore que pour service_role (scripts, taches, et ce
+// banc). Tous les cas ci-dessous passent par `db` = client service_role: un
+// identifiant quelconque y est donc enregistre tel quel, et c'est voulu. Le cas
+// d'une session qui tenterait de signer au nom d'un autre est couvert par
+// supabase/tests/rls/stock_rpc_inventory_edit.test.sql.
 describe('canonical stock ledger (real Postgres)', () => {
   it('stamps created_by on order_destock when passed, NULL for the system path', async () => {
     const actor = randomUUID();
@@ -344,6 +351,8 @@ describe('canonical stock ledger (real Postgres)', () => {
 
       const r = await outsider.rpc('reconcile_stock_ledger', { p_tenant_id: tenantId });
       expect(r.error).not.toBeNull();
+      // Depuis 20261123100100 la garde est `assert_inventory_edit`
+      // ("access denied: inventory.edit required ..."), toujours "access denied".
       expect(r.error?.message).toMatch(/access denied|not a member/i);
     },
   );

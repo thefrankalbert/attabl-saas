@@ -132,6 +132,7 @@ describe('customer.subscription.updated: garde optimiste sur le statut lu (B98)'
     expect(filtresVus.at(-1)).toEqual([
       ['id', 't1'],
       ['subscription_status', 'active'],
+      ['freeze_reason', null],
     ]);
     expect(ligne.subscription_status).toBe('past_due');
   });
@@ -149,5 +150,47 @@ describe('customer.subscription.updated: garde optimiste sur le statut lu (B98)'
 
     expect(filtresVus.at(-1)).toContainEqual(['subscription_status', null]);
     expect(ligne.subscription_status).toBe('active');
+  });
+
+  it('garde aussi la cause du gel: un changement de freeze_reason seul est detecte (D6)', async () => {
+    // Statut inchange (frozen), mais un litige remplace la cause pendant la
+    // relecture Stripe. Sans garde sur la cause, la levee du gel "impaye"
+    // effacait le gel pour litige.
+    const { supabase, ligne } = baseVivante({
+      ...actif(),
+      subscription_status: 'frozen',
+      freeze_reason: 'stripe_unpaid',
+      is_active: false,
+    });
+    const stripe = {
+      subscriptions: {
+        retrieve: vi.fn(async () => {
+          Object.assign(ligne, { freeze_reason: 'dispute' });
+          return { id: 'sub_1', status: 'active', items: { data: [] } };
+        }),
+      },
+      ...litigeOuvert,
+    } as unknown as Stripe;
+
+    const err = await handleSubscriptionUpdated({ supabase, stripe }, evenement).catch(
+      (e: unknown) => e,
+    );
+
+    expect(err).toBeInstanceOf(ServiceError);
+    expect(ligne).toMatchObject({ subscription_status: 'frozen', freeze_reason: 'dispute' });
+  });
+
+  it('cause lue NULL: la garde utilise `is null` sur freeze_reason (D6)', async () => {
+    const { supabase, filtresVus } = baseVivante(actif());
+    const stripe = {
+      subscriptions: {
+        retrieve: vi.fn(async () => ({ id: 'sub_1', status: 'past_due', items: { data: [] } })),
+      },
+      ...litigeOuvert,
+    } as unknown as Stripe;
+
+    await handleSubscriptionUpdated({ supabase, stripe }, evenement);
+
+    expect(filtresVus.at(-1)).toContainEqual(['freeze_reason', null]);
   });
 });

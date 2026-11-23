@@ -41,6 +41,16 @@ export async function disputeCustomerId(
     const intent = await stripe.paymentIntents.retrieve(pi);
     return typeof intent.customer === 'string' ? intent.customer : null;
   } catch (err) {
+    // Contre-audit D5: un paiement INTROUVABLE est permanent, comme un paiement
+    // sans client. Le rejouer pendant trois jours ne changerait rien.
+    if (
+      typeof err === 'object' &&
+      err !== null &&
+      (err as { code?: string }).code === 'resource_missing'
+    ) {
+      logger.warn('Paiement du litige introuvable chez Stripe', { disputeId: dispute.id });
+      return null;
+    }
     logger.error('Impossible de resoudre le client du litige', err, { disputeId: dispute.id });
     return DISPUTE_CUSTOMER_UNREADABLE;
   }

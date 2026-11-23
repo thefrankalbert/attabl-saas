@@ -3,6 +3,7 @@
 -- droit `inventory.edit`, et l'auteur d'un mouvement vient de la session.
 -- Une neuvieme fonction, `import_recipes_tx`, avait le meme defaut (signalee
 -- par l'orchestrateur): elle est traitee ici de la meme facon (section 11).
+-- Une dixieme, `reconcile_stock_ledger` (audit B126), aussi (section 12).
 --
 -- CE QUI NE TENAIT PAS (verifie EN BASE par l'orchestrateur). Les fonctions
 --   adjust_ingredient_stock_tx, record_loss_tx, set_recipe_tx, set_opening_stock,
@@ -40,7 +41,8 @@
 -- (REVOKE PUBLIC, EXECUTE a authenticated et service_role).
 --
 -- ROLLBACK: reposer les corps de 20261108160000, de 20260703190000
--- (import_recipes_tx) et de supabase/schema.sql (instantane 20261105120000),
+-- (import_recipes_tx), de 20260702130000 (reconcile_stock_ledger) et de
+-- supabase/schema.sql (instantane 20261105120000),
 -- puis DROP FUNCTION public.assert_inventory_edit(uuid).
 -- ============================================================================
 
@@ -501,3 +503,43 @@ $$;
 
 REVOKE ALL ON FUNCTION public.import_recipes_tx(uuid, jsonb) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.import_recipes_tx(uuid, jsonb) TO authenticated, service_role;
+
+-- 12. reconcile_stock_ledger (audit B126, dixieme fonction, oubliee au premier passage)
+-- Meme defaut que les 8 premieres: seule l'appartenance etait verifiee, et
+-- l'auteur des mouvements de rattrapage venait du parametre `p_created_by`.
+-- Corps repris du texte STOCKE en production (extrait par l'orchestrateur,
+-- contre-audit-lot-b1/prod-reconcile_stock_ledger.sql); seules changent la
+-- ligne d'acces et la source de l'auteur. Signature, type de retour, SECURITY
+-- DEFINER, search_path et droits identiques.
+CREATE OR REPLACE FUNCTION public.reconcile_stock_ledger(p_tenant_id uuid, p_created_by uuid DEFAULT NULL::uuid)
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_row RECORD;
+  v_n INT := 0;
+  v_author uuid := CASE WHEN auth.role() = 'service_role' THEN p_created_by ELSE auth.uid() END;
+BEGIN
+  PERFORM public.assert_inventory_edit(p_tenant_id);
+  FOR v_row IN
+    SELECT i.id, (i.current_stock - COALESCE(SUM(sm.quantity), 0))::numeric(10, 3) AS drift
+    FROM public.ingredients i
+    LEFT JOIN public.stock_movements sm
+      ON sm.ingredient_id = i.id AND sm.tenant_id = p_tenant_id
+    WHERE i.tenant_id = p_tenant_id AND i.is_active = true
+    GROUP BY i.id, i.current_stock
+    HAVING (i.current_stock - COALESCE(SUM(sm.quantity), 0)) <> 0
+  LOOP
+    INSERT INTO public.stock_movements (tenant_id, ingredient_id, movement_type, quantity, notes, created_by, reason_code)
+    VALUES (p_tenant_id, v_row.id, 'adjustment', v_row.drift, 'Reconciliation ledger', v_author, 'reconcile');
+    v_n := v_n + 1;
+  END LOOP;
+  RETURN v_n;
+END;
+$function$;
+
+-- ACL de production: {postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+REVOKE ALL ON FUNCTION public.reconcile_stock_ledger(uuid, uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.reconcile_stock_ledger(uuid, uuid) TO authenticated, service_role;

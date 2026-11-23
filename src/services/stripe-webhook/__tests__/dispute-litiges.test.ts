@@ -74,6 +74,22 @@ describe('handleDisputeCreated: client du litige lu chez Stripe (B91)', () => {
     });
   });
 
+  it('paiement introuvable chez Stripe (resource_missing, permanent): consomme, pas rejoue', async () => {
+    // Contre-audit D5: une erreur PERMANENTE rejouee pendant trois jours ne
+    // changerait rien et fatiguerait l'endpoint.
+    const db = fakeDb({ id: 't1', subscription_status: 'active', freeze_reason: null });
+    const stripe = fakeStripe(async () => {
+      throw Object.assign(new Error('No such payment_intent'), { code: 'resource_missing' });
+    });
+    await expect(
+      handleDisputeCreated(
+        { supabase: db.client, stripe: stripe as unknown as Stripe },
+        dispute('needs_response'),
+      ),
+    ).resolves.toBeUndefined();
+    expect(db.updates).toEqual([]);
+  });
+
   it('temoin: paiement sans client (permanent), evenement consomme sans erreur', async () => {
     const db = fakeDb({ id: 't1', subscription_status: 'active', freeze_reason: null });
     const stripe = fakeStripe(async () => ({ customer: null }));

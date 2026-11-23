@@ -327,6 +327,10 @@ export async function handleInvoicePaid(
       .eq('stripe_customer_id', customerId)
       .eq('subscription_status', 'frozen')
       .eq(FREEZE_REASON_COLUMN, FREEZE_REASONS.REFUND)
+      // Contre-audit D5: le filtre de date de l'ecriture est applique ICI,
+      // avant toute relecture Stripe. Un ancien paiement, anterieur au gel,
+      // n'a rien a lever: il est consomme sans appel a Stripe.
+      .or(`refund_frozen_at.is.null,refund_frozen_at.lt."${payeeLe}"`)
       .maybeSingle();
     if (geleError && !isMissingFreezeReasonColumnError(geleError)) {
       logger.error('invoice.paid: lecture du gel pour remboursement echouee', geleError);

@@ -10,11 +10,11 @@
 -- pour tous les autres chemins.
 --
 -- PRUDENCE SUR LES DONNEES EXISTANTES. La contrainte est posee NOT VALID: elle
--- s'applique tout de suite a toute nouvelle ecriture, sans relire la table. On
--- tente ensuite de la VALIDER; si une ligne existante est negative, la
--- validation est abandonnee (la contrainte reste active pour les ecritures) et
--- un NOTICE le dit. Le nombre de lignes fautives se lit par:
---   select count(*) from public.menu_items where price < 0;
+-- s'applique tout de suite a toute nouvelle ecriture, sans relire la table.
+-- L'ajout prend un verrou exclusif sur `menu_items`, bref puisqu'aucune ligne
+-- n'est relue. La VALIDATION est faite par la migration SUIVANTE
+-- (20261123100210), dans sa propre transaction, pour ne pas garder ce verrou
+-- exclusif pendant le parcours de la table (contre-audit D4).
 --
 -- ADDITIVE. Peut passer AVANT ou APRES le deploiement du code. Seule
 -- consequence: une ecriture d'un prix negatif, qui etait un defaut, echoue.
@@ -32,11 +32,5 @@ BEGIN
     ALTER TABLE public.menu_items
       ADD CONSTRAINT menu_items_price_non_negative CHECK (price >= 0) NOT VALID;
   END IF;
-
-  BEGIN
-    ALTER TABLE public.menu_items VALIDATE CONSTRAINT menu_items_price_non_negative;
-  EXCEPTION WHEN check_violation THEN
-    RAISE NOTICE 'menu_items_price_non_negative: des prix negatifs existent, contrainte laissee NOT VALID (active pour les nouvelles ecritures)';
-  END;
 END;
 $$;
