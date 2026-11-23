@@ -19,7 +19,8 @@ export const MOSAIC_TILES = [
   'poisson',
   'bar',
   'douceurs',
-  'comptoir',
+  // dressage tant que l'affiche du hero est la photo du comptoir (sinon doublon).
+  'dressage',
   'chef',
   'associes',
   'verres',
