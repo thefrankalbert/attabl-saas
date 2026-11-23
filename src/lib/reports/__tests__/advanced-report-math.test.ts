@@ -24,6 +24,19 @@ describe('computeDishMargin', () => {
     expect(computeDishMargin(jus, 'XOF')).toEqual({ cost: null, margin: null, marginPct: null });
   });
 
+  it('fiche dont un ingredient n a pas de cout: aucune marge (sinon 100 %, gonflee)', () => {
+    expect(computeDishMargin(riz, 'XOF')).toEqual({ cost: null, margin: null, marginPct: null });
+  });
+
+  it('un seul arrondi sur le cout total: 1 000 portions a 52,5 XOF = 52 500, pas 53 000', () => {
+    expect(
+      computeDishMargin(
+        { quantity: 1000, revenue: 100000, hasRecipe: true, costComplete: true, unitCost: 52.5 },
+        'XOF',
+      ).cost,
+    ).toBe(52500);
+  });
+
   it('marge negative quand le cout depasse le prix', () => {
     const r = computeDishMargin(
       { quantity: 1, revenue: 1000, hasRecipe: true, costComplete: true, unitCost: 1500 },

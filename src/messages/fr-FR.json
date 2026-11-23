@@ -3210,7 +3210,7 @@
       "metricAvgBasket": "Ticket moyen",
       "metricTips": "Pourboires",
       "comparisonHintWeek": "Semaine en cours depuis lundi, comparée au même nombre de jours et d'heures de la semaine dernière.",
-      "comparisonHintMonth": "Mois en cours depuis le 1er, comparé à la même durée du mois dernier.",
+      "comparisonHintMonth": "Mois en cours depuis le 1er, comparé à la même durée du mois dernier (ou au mois dernier entier, s'il est plus court).",
       "heatmapTitle": "Heures fortes",
       "noSales": "Aucune vente sur la période.",
       "peakRank": "Créneau n°{rank}",

@@ -3210,7 +3210,7 @@
       "metricAvgBasket": "Average ticket",
       "metricTips": "Tips",
       "comparisonHintWeek": "Current week since Monday, compared with the same number of days and hours last week.",
-      "comparisonHintMonth": "Current month since the 1st, compared with the same length of time last month.",
+      "comparisonHintMonth": "Current month since the 1st, compared with the same length of time last month (or the whole of last month, if it was shorter).",
       "heatmapTitle": "Busy hours",
       "noSales": "No sales in this period.",
       "peakRank": "Slot #{rank}",

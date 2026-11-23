@@ -16,7 +16,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(35);
+select plan(37);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -54,7 +54,9 @@ insert into public.menu_items (id, tenant_id, category_id, name, price) values
   ('f1500000-0000-4000-8000-000000000002', 'f1200000-0000-4000-8000-000000000001',
    'f1400000-0000-4000-8000-000000000001', 'Jus', 1000),
   ('f1500000-0000-4000-8000-000000000003', 'f1200000-0000-4000-8000-000000000001',
-   'f1400000-0000-4000-8000-000000000001', 'Riz', 2000);
+   'f1400000-0000-4000-8000-000000000001', 'Riz', 2000),
+  ('f1500000-0000-4000-8000-000000000004', 'f1200000-0000-4000-8000-000000000001',
+   'f1400000-0000-4000-8000-000000000001', 'Salade', 1500);
 
 insert into public.ingredients (id, tenant_id, name, unit, cost_per_unit) values
   ('f1600000-0000-4000-8000-000000000001', 'f1200000-0000-4000-8000-000000000001', 'Poulet cru', 'kg', 2500),
@@ -70,11 +72,16 @@ values
   ('f1700000-0000-4000-8000-000000000001', 'f1200000-0000-4000-8000-000000000001', 'AV-1', 10000, 10000,
    'served', 'partial', '2026-11-18 11:30+00', '2026-11-18 11:00+00'),
   ('f1700000-0000-4000-8000-000000000002', 'f1200000-0000-4000-8000-000000000001', 'AV-2', 8000, 8000,
+   'served', 'paid', '2026-11-18 11:30+00', '2026-11-18 11:00+00'),
+  -- C3: 1 Riz (fiche dont l'ingredient n'a pas de cout), sans ligne au
+  -- registre: n'entre que dans les ventes par plat.
+  ('f1700000-0000-4000-8000-000000000003', 'f1200000-0000-4000-8000-000000000001', 'AV-3', 2000, 2000,
    'served', 'paid', '2026-11-18 11:30+00', '2026-11-18 11:00+00');
 insert into public.order_items (tenant_id, order_id, menu_item_id, item_name, price_at_order, quantity) values
   ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000001', 'f1500000-0000-4000-8000-000000000001', 'Poulet', 5000, 2),
   ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000002', 'f1500000-0000-4000-8000-000000000001', 'Poulet', 5000, 1),
-  ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000002', 'f1500000-0000-4000-8000-000000000002', 'Jus', 1000, 3);
+  ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000002', 'f1500000-0000-4000-8000-000000000002', 'Jus', 1000, 3),
+  ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000003', 'f1500000-0000-4000-8000-000000000003', 'Riz', 2000, 1);
 insert into public.payments (tenant_id, order_id, amount, method, status, created_at) values
   ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000001', 10000, 'cash', 'completed', '2026-11-18 11:30+00'),
   ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000001', 2000, 'cash', 'refunded', '2026-11-18 11:40+00'),
@@ -96,7 +103,9 @@ select is((select revenue from m where item_name = 'Poulet'), 15000::bigint, 'ma
 select is((select unit_cost from m where item_name = 'Poulet'), 1310.000::numeric, 'marge: cout de fiche 0,5 x 2500 + 0,05 x 1200');
 select is((select has_recipe from m where item_name = 'Jus'), false, 'plat sans fiche: signale, pas de marge inventee');
 select is((select unit_cost from m where item_name = 'Jus'), null::numeric, 'plat sans fiche: cout absent');
-select is((select count(*)::int from m where item_name = 'Riz'), 0, 'plat non vendu: absent');
+select is((select cost_complete from m where item_name = 'Riz'), false,
+  'fiche dont un ingredient n a pas de cout: signalee incomplete');
+select is((select count(*)::int from m where item_name = 'Salade'), 0, 'plat jamais vendu: absent');
 
 -- 2. Heures fortes, a l'heure de Douala (UTC+1).
 create temp table h as select * from public.get_sales_heatmap('f1200000-0000-4000-8000-000000000001',
@@ -108,6 +117,9 @@ select is((select count(*)::int from h where hour_of_day = 11), 0, 'heures forte
 select throws_ok(
   $$select * from public.get_sales_heatmap('f1200000-0000-4000-8000-000000000001', now() - interval '1 day', now(), 'Mars/Olympus')$$,
   '22023', null, 'fuseau inconnu: refuse');
+select throws_ok(
+  $$select * from public.get_sales_heatmap('f1200000-0000-4000-8000-000000000001', now() - interval '1 day', now(), null)$$,
+  '22023', null, 'fuseau absent: refuse');
 
 -- 3. Comparaison: deux lignes, chiffres identiques au resume sur les memes bornes.
 create temp table c as select * from public.get_period_comparison('f1200000-0000-4000-8000-000000000001', 'month', 'Africa/Douala');

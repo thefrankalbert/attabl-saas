@@ -30,7 +30,10 @@ export function SalesHeatmapCard({ cells, fmt }: SalesHeatmapCardProps) {
   const { byKey, max, top } = useMemo(() => {
     const map = new Map(cells.map((c) => [`${c.day}-${c.hour}`, c]));
     const peak = cells.reduce((m, c) => Math.max(m, c.revenue), 0);
-    const best = [...cells].sort((a, b) => b.revenue - a.revenue).slice(0, 3);
+    const best = cells
+      .filter((c) => c.revenue > 0)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 3);
     return { byKey: map, max: peak, top: best };
   }, [cells]);
 
@@ -85,14 +88,13 @@ export function SalesHeatmapCard({ cells, fmt }: SalesHeatmapCardProps) {
                   {HOURS.map((h) => {
                     const c = byKey.get(`${d}-${h}`);
                     const ratio = c && max > 0 ? Math.max(c.revenue, 0) / max : 0;
+                    const label = c
+                      ? `${t('slot', { day: dayLabel(d), hour: h })}: ${fmt(c.revenue)}, ${t('ordersCount', { count: c.orders })}`
+                      : undefined;
                     return (
                       <TableCell
                         key={h}
-                        title={
-                          c
-                            ? `${t('slot', { day: dayLabel(d), hour: h })}: ${fmt(c.revenue)}, ${t('ordersCount', { count: c.orders })}`
-                            : undefined
-                        }
+                        title={label}
                         className="h-6 rounded-sm bg-app-elevated p-0"
                         // Intensite proportionnelle au chiffre: valeur dynamique, style inline voulu.
                         style={
@@ -100,7 +102,10 @@ export function SalesHeatmapCard({ cells, fmt }: SalesHeatmapCardProps) {
                             ? { backgroundColor: HEAT_COLOR, opacity: 0.15 + 0.85 * ratio }
                             : undefined
                         }
-                      />
+                      >
+                        {/* La couleur ne suffit pas: le montant est lu par les lecteurs d'ecran. */}
+                        {label && <span className="sr-only">{label}</span>}
+                      </TableCell>
                     );
                   })}
                 </TableRow>

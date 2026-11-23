@@ -1,4 +1,4 @@
-import { multiplyMinor, sumMinor, toMinorUnits } from '@/lib/utils/money';
+import { sumMinor, toMinorUnits } from '@/lib/utils/money';
 import type { CurrencyCode } from '@/types/admin.types';
 
 /**
@@ -18,9 +18,9 @@ export interface DishMarginInput {
 }
 
 export interface DishMarginResult {
-  /** Cout matiere total des portions vendues, unites mineures; null sans fiche. */
+  /** Cout matiere total des portions vendues, unites mineures; null sans fiche complete. */
   cost: number | null;
-  /** Ventes moins cout matiere, unites mineures; null sans fiche. */
+  /** Ventes moins cout matiere, unites mineures; null sans fiche complete. */
   margin: number | null;
   /** Marge en pourcentage des ventes, arrondie a l'unite; null si non calculable. */
   marginPct: number | null;
@@ -30,10 +30,14 @@ export function computeDishMargin(
   row: DishMarginInput,
   currency: CurrencyCode | string,
 ): DishMarginResult {
-  if (!row.hasRecipe || row.unitCost === null) {
+  // Sans fiche, ou avec un ingredient sans cout: le cout serait sous-estime et
+  // la marge gonflee. Rien n'est affiche plutot qu'un chiffre faux.
+  if (!row.hasRecipe || !row.costComplete || row.unitCost === null) {
     return { cost: null, margin: null, marginPct: null };
   }
-  const cost = multiplyMinor(toMinorUnits(row.unitCost, currency), row.quantity, currency);
+  // Un seul arrondi, sur le cout total: arrondir la portion puis multiplier
+  // accumulerait l'erreur (52,5 XOF -> 53, soit 500 XOF de trop sur 1 000).
+  const cost = toMinorUnits(row.unitCost * row.quantity, currency);
   const margin = sumMinor([row.revenue, -cost], currency);
   return {
     cost,

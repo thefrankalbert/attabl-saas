@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ResponsiveDataTable } from '@/components/admin/ResponsiveDataTable';
 import { sumMinor, toMinorUnits } from '@/lib/utils/money';
+import { INGREDIENT_UNITS } from '@/types/inventory.types';
 import type { LossRow } from '@/hooks/queries/useAdvancedReports';
 import type { CurrencyCode } from '@/types/admin.types';
 import type { CurrencyFormatter } from '../reports.types';
@@ -18,6 +19,10 @@ interface StockLossesCardProps {
 type Line = LossRow & { valueMinor: number };
 
 const qty = (v: number) => v.toLocaleString(undefined, { maximumFractionDigits: 3 });
+
+/** Unite courte, comme l'inventaire (kg, L, pcs, bout....). */
+const unitLabel = (unit: string) =>
+  INGREDIENT_UNITS[unit as keyof typeof INGREDIENT_UNITS]?.labelShort || unit;
 
 /** Libelle d'un motif de perte (cles losses.reason_*), le code brut a defaut. */
 function reasonLabel(
@@ -56,7 +61,7 @@ export function StockLossesCard({ rows, currency, fmt }: StockLossesCardProps) {
         header: () => <div className="text-right">{t('colQuantity')}</div>,
         cell: ({ row }) => (
           <div className="text-right tabular-nums whitespace-nowrap">
-            {qty(row.original.quantity)} {row.original.unit}
+            {qty(row.original.quantity)} {unitLabel(row.original.unit)}
           </div>
         ),
       },
@@ -105,7 +110,7 @@ export function StockLossesCard({ rows, currency, fmt }: StockLossesCardProps) {
                 <span className="font-bold tabular-nums text-app-text">{fmt(l.valueMinor)}</span>
               </div>
               <p className="text-xs tabular-nums text-app-text-secondary">
-                {qty(l.quantity)} {l.unit} - {reasonLabel(tl, l.mainReason)} -{' '}
+                {qty(l.quantity)} {unitLabel(l.unit)} - {reasonLabel(tl, l.mainReason)} -{' '}
                 {t('lossCount', { count: l.movements })}
               </p>
             </div>

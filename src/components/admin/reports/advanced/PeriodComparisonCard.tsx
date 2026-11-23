@@ -120,12 +120,7 @@ export function PeriodComparisonCard({ tenantId, timezone, fmt }: PeriodComparis
                   const prev = previous[key];
                   const { diff, pct } = computeDelta(cur, prev);
                   const show = (v: number) => (money ? fmt(v) : String(v));
-                  const tone =
-                    diff > 0
-                      ? 'text-status-success'
-                      : diff < 0
-                        ? 'text-status-error'
-                        : 'text-app-text-muted';
+                  const tone = toneOf(diff);
                   return (
                     <TableRow key={key}>
                       <TableCell className="font-medium">{t(labelKey)}</TableCell>
