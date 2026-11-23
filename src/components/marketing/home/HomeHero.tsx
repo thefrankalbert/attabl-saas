@@ -31,7 +31,9 @@ export async function HomeHero({ videoSrc }: { videoSrc?: string }) {
             priority
             fetchPriority="high"
             // object-cover : en portrait, c'est la hauteur qui fixe la largeur utile.
-            sizes="(max-aspect-ratio: 1/1) 100svh, 100vw"
+            // Pas d'unite svh ici : le prechargement la lisait autrement que
+            // l'image et telechargeait une deuxieme taille (117 Ko de trop).
+            sizes="(max-aspect-ratio: 1/1) 200vw, 100vw"
             className="object-cover"
             data-hero-image
           />
