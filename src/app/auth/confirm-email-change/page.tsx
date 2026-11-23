@@ -62,7 +62,7 @@ export default async function ConfirmEmailChangePage({
               <>
                 <h1 className="auth-serif auth-title">{t('invalidTitle')}</h1>
                 <p className="text-sm text-[var(--secondary)]">{t('invalidBody')}</p>
-                <Link href="/login" className="auth-link text-sm">
+                <Link href="/login" className="auth-link self-center text-sm">
                   {t('backToLogin')}
                 </Link>
               </>

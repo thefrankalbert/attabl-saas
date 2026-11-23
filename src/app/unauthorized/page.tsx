@@ -30,7 +30,7 @@ export default async function UnauthorizedPage() {
             <Link href="/admin/tenants" className="auth-btn-primary">
               Mes établissements
             </Link>
-            <Link href="/login" className="auth-link text-sm">
+            <Link href="/login" className="auth-link self-center text-sm">
               Se reconnecter
             </Link>
           </div>
