@@ -3,7 +3,6 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/logger';
 import { formatCurrency } from '@/lib/utils/currency';
 import { getTranslations } from 'next-intl/server';
-import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
 import { determineOrderEventKey, sendOrderEmailForKey } from '@/services/trigger-emails.service';
 import { createPushService } from '@/services/push.service';
 
@@ -69,14 +68,6 @@ export function titreNouvelleCommande(tableNumber: string | undefined): string {
     .trim();
   return propre.length > 0 ? `Nouvelle commande - Table ${propre}` : 'Nouvelle commande';
 }
-
-// Tenant shape accepted by getMonthlyOrderUsage (subset of the validated tenant).
-type QuotaTenant = {
-  id: string;
-  subscription_plan?: string | null;
-  subscription_status?: string | null;
-  trial_ends_at?: string | null;
-};
 
 // 9. Notification aux equipes du restaurant: ligne dans l'application ET push.
 // Programmees via after() pour que Vercel les execute apres la reponse au lieu
@@ -197,42 +188,3 @@ export function scheduleTriggerEmails(
 
 // 11. Auto-destock inventory: see ./schedule-destock.ts (shared with the POS
 // channel, so the scheduling fix lands once for both).
-
-// 12. Monthly order quota check (NON-blocking - never rejects an order).
-// Scheduled via after() so it survives serverless freeze, like the blocks above.
-// Warns admins once per month when the plan's monthly order quota is exceeded.
-export function scheduleMonthlyQuotaCheck(
-  adminSupabase: SupabaseClient,
-  params: { tenant: QuotaTenant; tenantId: string },
-): void {
-  const { tenant, tenantId } = params;
-  after(async () => {
-    try {
-      const now = new Date();
-      const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-      const enforcement = createPlanEnforcementService(adminSupabase);
-      const usage = await enforcement.getMonthlyOrderUsage(tenant, monthStart);
-      if (!usage.exceeded) return;
-
-      const monthKey = `monthly_quota_exceeded_${now.getUTCFullYear()}_${now.getUTCMonth() + 1}`;
-      // Atomically claim the monthly slot server-side - merges into the live row,
-      // so a concurrent writer's key is never clobbered. Notify once per month.
-      const { data: claimed } = await adminSupabase.rpc('claim_activation_event', {
-        p_tenant_id: tenantId,
-        p_event_key: monthKey,
-      });
-      if (claimed) {
-        await adminSupabase.from('notifications').insert({
-          tenant_id: tenantId,
-          user_id: null,
-          type: 'warning',
-          title: 'Quota de commandes mensuel atteint',
-          body: `Votre plan inclut ${usage.limit} commandes par mois. Passez au plan superieur pour lever cette limite.`,
-          link: `/admin/subscription`,
-        });
-      }
-    } catch (quotaErr) {
-      logger.warn('Monthly quota check failed (non-blocking)', { err: quotaErr });
-    }
-  });
-}

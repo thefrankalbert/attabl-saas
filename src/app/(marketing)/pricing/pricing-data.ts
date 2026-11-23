@@ -57,14 +57,7 @@ export const featureCategories: { key: CategoryKey; features: FeatureRow[] }[] =
       { labelKey: 'salesReports', starter: false, pro: true, business: true, enterprise: true },
       { labelKey: 'bestSellers', starter: false, pro: true, business: true, enterprise: true },
       {
-        labelKey: 'advancedReports',
-        starter: false,
-        pro: false,
-        business: true,
-        enterprise: true,
-      },
-      {
-        labelKey: 'multiSiteReports',
+        labelKey: 'aiSuggestions',
         starter: false,
         pro: false,
         business: true,
@@ -122,13 +115,6 @@ export const featureCategories: { key: CategoryKey; features: FeatureRow[] }[] =
   {
     key: 'volumes',
     features: [
-      {
-        labelKey: 'monthlyOrders',
-        starter: { kind: 'text', value: '500' },
-        pro: { kind: 'text', value: '3 000' },
-        business: { kind: 'text', value: '20 000' },
-        enterprise: { kind: 'unlimited' },
-      },
       {
         labelKey: 'menus',
         starter: { kind: 'unlimited' },

@@ -1,5 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createPlanEnforcementService } from '../plan-enforcement.service';
+import {
+  assertOrderFeaturesAllowed,
+  createPlanEnforcementService,
+} from '../plan-enforcement.service';
+import { getPlanLimits } from '@/lib/plans/features';
 import { ServiceError } from '../errors';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Tenant } from '@/types/admin.types';
@@ -243,50 +247,6 @@ describe('unlimited limits (-1 guard)', () => {
   });
 });
 
-describe('getMonthlyOrderUsage', () => {
-  const monthStart = new Date(Date.UTC(2026, 5, 1));
-
-  it('returns not exceeded when under the limit (starter = 500)', async () => {
-    const supabase = createMockSupabase({
-      orders: { count: 120, error: null },
-    });
-    const service = createPlanEnforcementService(supabase);
-    const usage = await service.getMonthlyOrderUsage(makeTenant(), monthStart);
-    expect(usage).toEqual({ count: 120, limit: 500, exceeded: false });
-  });
-
-  it('returns exceeded when at or over the limit (starter = 500)', async () => {
-    const supabase = createMockSupabase({
-      orders: { count: 500, error: null },
-    });
-    const service = createPlanEnforcementService(supabase);
-    const usage = await service.getMonthlyOrderUsage(makeTenant(), monthStart);
-    expect(usage.exceeded).toBe(true);
-  });
-
-  it('enterprise maxMonthlyOrders = -1 -> never exceeded, no query', async () => {
-    const supabase = createMockSupabase({
-      orders: { count: 999999, error: null },
-    });
-    const service = createPlanEnforcementService(supabase);
-    const usage = await service.getMonthlyOrderUsage(
-      makeTenant({ subscription_plan: 'enterprise' }),
-      monthStart,
-    );
-    expect(usage).toEqual({ count: 0, limit: -1, exceeded: false });
-  });
-
-  it('throws INTERNAL on database error', async () => {
-    const supabase = createMockSupabase({
-      orders: { count: null, error: { message: 'DB error' } },
-    });
-    const service = createPlanEnforcementService(supabase);
-    await expect(service.getMonthlyOrderUsage(makeTenant(), monthStart)).rejects.toThrow(
-      ServiceError,
-    );
-  });
-});
-
 describe('getUsageCounts', () => {
   it('returns counts from all tables', async () => {
     const supabase = createMockSupabase({
@@ -310,5 +270,60 @@ describe('getUsageCounts', () => {
     const service = createPlanEnforcementService(supabase);
     const result = await service.getUsageCounts('tenant-1');
     expect(result).toEqual({ admins: 0, items: 0, venues: 0, menus: 0, categories: 0 });
+  });
+});
+
+/**
+ * Audit des offres 2026-11-20: la garde commune des deux routes qui creent une
+ * commande (vitrine et caisse) n'avait aucun test propre: elle etait simulee
+ * partout. Chaque cas ci-dessous echoue si la ligne correspondante saute.
+ */
+describe('assertOrderFeaturesAllowed', () => {
+  const limits = (plan: 'starter' | 'pro' | 'business') => getPlanLimits(plan, 'active', null);
+
+  it('livraison et room service: refuses en Starter et Pro, ouverts en Business', () => {
+    for (const service_type of ['delivery', 'room_service']) {
+      expect(() => assertOrderFeaturesAllowed(limits('starter'), { service_type }, 'XOF')).toThrow(
+        ServiceError,
+      );
+      expect(() => assertOrderFeaturesAllowed(limits('pro'), { service_type }, 'XOF')).toThrow(
+        ServiceError,
+      );
+      expect(() =>
+        assertOrderFeaturesAllowed(limits('business'), { service_type }, 'XOF'),
+      ).not.toThrow();
+    }
+  });
+
+  it('pourboire: refuse en Starter, ouvert en Pro', () => {
+    expect(() => assertOrderFeaturesAllowed(limits('starter'), { tip_amount: 500 }, 'XOF')).toThrow(
+      ServiceError,
+    );
+    expect(() =>
+      assertOrderFeaturesAllowed(limits('pro'), { tip_amount: 500 }, 'XOF'),
+    ).not.toThrow();
+    expect(() =>
+      assertOrderFeaturesAllowed(limits('starter'), { tip_amount: 0 }, 'XOF'),
+    ).not.toThrow();
+  });
+
+  it('devise etrangere: refusee en Starter, ouverte en Pro; la devise du restaurant passe partout', () => {
+    expect(() =>
+      assertOrderFeaturesAllowed(limits('starter'), { display_currency: 'EUR' }, 'XOF'),
+    ).toThrow(ServiceError);
+    expect(() =>
+      assertOrderFeaturesAllowed(limits('pro'), { display_currency: 'EUR' }, 'XOF'),
+    ).not.toThrow();
+    expect(() =>
+      assertOrderFeaturesAllowed(limits('starter'), { display_currency: 'XOF' }, 'XOF'),
+    ).not.toThrow();
+  });
+
+  it('sur place et a emporter: ouverts a tous les plans', () => {
+    for (const service_type of ['dine_in', 'takeaway']) {
+      expect(() =>
+        assertOrderFeaturesAllowed(limits('starter'), { service_type }, 'XOF'),
+      ).not.toThrow();
+    }
   });
 });

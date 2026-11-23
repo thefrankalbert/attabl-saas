@@ -18,7 +18,7 @@ const PLANS: {
 }[] = [
   { key: 'starter', featCount: 5, cta: 'button', href: '/signup', dark: false },
   { key: 'pro', featCount: 10, cta: 'button', href: '/signup', dark: true },
-  { key: 'business', featCount: 7, cta: 'primaryButton', href: '/signup', dark: false },
+  { key: 'business', featCount: 5, cta: 'primaryButton', href: '/signup', dark: false },
   { key: 'enterprise', featCount: 6, cta: 'button', href: '/contact', dark: false },
 ];
 
@@ -81,7 +81,7 @@ export function PlanCards({ effectivePeriod }: { effectivePeriod: BillingPeriod 
                 {/* Price */}
                 {perMonth != null ? (
                   <>
-                    <div className="mt-5 flex items-baseline gap-1.5">
+                    <div className="mt-5 flex flex-wrap items-baseline gap-x-1.5">
                       <span
                         className={cn(
                           'text-[32px] font-semibold tracking-[-0.025em]',
@@ -94,7 +94,7 @@ export function PlanCards({ effectivePeriod }: { effectivePeriod: BillingPeriod 
                       </span>
                       <span
                         className={cn(
-                          'text-sm font-medium',
+                          'whitespace-nowrap text-sm font-medium',
                           plan.dark
                             ? 'text-zinc-400 dark:text-zinc-500'
                             : 'text-zinc-500 dark:text-zinc-400',
