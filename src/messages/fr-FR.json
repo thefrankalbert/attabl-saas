@@ -3201,6 +3201,8 @@
       "colBestSeller": "Meilleure vente",
       "topTitle": "Meilleures ventes : {venue}",
       "noSales": "Aucune vente sur la période.",
+      "singleVenue": "Vous n'avez qu'un espace pour l'instant. Ajoutez un deuxième espace (terrasse, bar, bord de piscine...) pour comparer ce que chacun rapporte.",
+      "manageVenues": "Gérer mes espaces",
       "noVenues": "Aucun espace. Créez vos espaces dans Paramètres > Espaces.",
       "salesCount": "{count, plural, one {# vendu} other {# vendus}}"
     },

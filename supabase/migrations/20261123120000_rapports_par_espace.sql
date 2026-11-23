@@ -10,8 +10,11 @@
 --    commande ne l'ecrivait. Un declencheur l'inscrit desormais a la creation
 --    (et quand la commande change de table), depuis la zone de sa table: un
 --    deplacement de table ou une suppression de zone ne reecrit plus le
---    chiffre passe des espaces (constat de la relecture adversariale). Les
---    commandes existantes sont completees une fois. Une commande sans table
+--    chiffre passe des espaces (constat de la relecture adversariale).
+--    Les commandes ANTERIEURES a cette migration ne sont pas reecrites: un
+--    rattrapage par UPDATE modifierait leur updated_at et emettrait un
+--    evenement temps reel par commande (contre-audit). Pour elles seules, les
+--    rapports lisent l'espace de la zone actuelle de leur table. Une commande sans table
 --    (a emporter, caisse sans table, chambre) n'a pas d'espace: elle est rangee
 --    dans une ligne "sans espace" (venue_id NULL). Un espace qui n'appartient
 --    pas au restaurant est traite de la meme facon. La somme des lignes egale
@@ -82,17 +85,6 @@ CREATE TRIGGER trg_inscrire_espace_commande
   BEFORE INSERT OR UPDATE OF table_id ON public.orders
   FOR EACH ROW
   EXECUTE FUNCTION public.inscrire_espace_commande();
-
--- Commandes existantes: espace de leur table, une fois. Les gardes de orders
--- ne s'appliquent qu'aux roles clients (authenticated, anon), pas a la
--- migration. Rejouable: ne touche que les commandes encore sans espace.
-UPDATE public.orders o
-   SET venue_id = z.venue_id
-  FROM public.tables t
-  JOIN public.zones z ON z.id = t.zone_id AND z.tenant_id = t.tenant_id
- WHERE o.venue_id IS NULL
-   AND t.id = o.table_id
-   AND t.tenant_id = o.tenant_id;
 
 -- ----------------------------------------------------------------------------
 -- 2. Droit reports.view en base.
@@ -227,7 +219,10 @@ BEGIN
            p.amount
       FROM payments p
       JOIN orders o ON o.id = p.order_id AND o.tenant_id = p.tenant_id
-      LEFT JOIN venues ve ON ve.id = o.venue_id AND ve.tenant_id = o.tenant_id
+      -- Commandes anterieures a la migration (venue_id vide): zone de leur table.
+      LEFT JOIN tables t ON o.venue_id IS NULL AND t.id = o.table_id AND t.tenant_id = o.tenant_id
+      LEFT JOIN zones z ON z.id = t.zone_id AND z.tenant_id = o.tenant_id
+      LEFT JOIN venues ve ON ve.id = COALESCE(o.venue_id, z.venue_id) AND ve.tenant_id = o.tenant_id
      WHERE p.tenant_id = p_tenant_id
        AND p.created_at >= p_start_date
        AND p.created_at <= p_end_date
@@ -288,7 +283,10 @@ BEGIN
            SUM(oi.quantity * oi.price_at_order)::bigint AS ca
       FROM order_items oi
       JOIN orders o ON o.id = oi.order_id
-      LEFT JOIN venues ve ON ve.id = o.venue_id AND ve.tenant_id = o.tenant_id
+      -- Commandes anterieures a la migration (venue_id vide): zone de leur table.
+      LEFT JOIN tables t ON o.venue_id IS NULL AND t.id = o.table_id AND t.tenant_id = o.tenant_id
+      LEFT JOIN zones z ON z.id = t.zone_id AND z.tenant_id = o.tenant_id
+      LEFT JOIN venues ve ON ve.id = COALESCE(o.venue_id, z.venue_id) AND ve.tenant_id = o.tenant_id
      WHERE o.tenant_id = p_tenant_id
        AND o.created_at >= p_start_date
        AND o.created_at <= p_end_date

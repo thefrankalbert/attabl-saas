@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { BarChart3, CreditCard, DollarSign, ShoppingBag } from 'lucide-react';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
@@ -26,11 +27,17 @@ const ALL = '__all__';
 interface VenueReportsClientProps {
   tenantId: string;
   currency?: CurrencyCode;
+  /** Fuseau du restaurant (resolveTenantTimezone): bornes des periodes. */
+  timezone: string;
+  /** Lien vers Parametres > Espaces, propose quand il n'y a qu'un espace. */
+  spacesHref: string;
 }
 
 export default function VenueReportsClient({
   tenantId,
   currency = 'XAF',
+  timezone,
+  spacesHref,
 }: VenueReportsClientProps) {
   const t = useTranslations('reports');
   const tv = useTranslations('reports.venueReport');
@@ -41,7 +48,7 @@ export default function VenueReportsClient({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const { data, isLoading, error, refetch } = useVenueReport(tenantId, period);
+  const { data, isLoading, error, refetch } = useVenueReport(tenantId, period, timezone);
   const rows = useMemo(() => data?.rows ?? [], [data]);
   const topItems = useMemo(() => data?.topItems ?? [], [data]);
 
@@ -91,7 +98,10 @@ export default function VenueReportsClient({
           title={tv('title')}
           actions={
             <Select value={scope} onValueChange={setSelected}>
-              <SelectTrigger className="h-8 w-56 max-w-full text-xs" aria-label={tv('venueFilter')}>
+              <SelectTrigger
+                className="h-8 min-h-[44px] sm:min-h-0 w-56 max-w-full text-xs"
+                aria-label={tv('venueFilter')}
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -119,7 +129,7 @@ export default function VenueReportsClient({
                 <p className="text-xs font-medium text-app-text-muted uppercase tracking-wide">
                   {label}
                 </p>
-                <p className="mt-0.5 text-lg lg:text-xl font-bold text-app-text tabular-nums leading-tight truncate">
+                <p className="mt-0.5 text-lg lg:text-xl font-bold text-app-text tabular-nums leading-tight whitespace-nowrap">
                   {value}
                 </p>
               </div>
@@ -132,6 +142,14 @@ export default function VenueReportsClient({
         <div className="space-y-4">
           {rows.length === 0 ? (
             <p className="py-10 text-center text-sm text-app-text-muted">{tv('noVenues')}</p>
+          ) : rows.filter((r) => r.venueId).length < 2 ? (
+            // Un seul espace: un tableau d'une ligne a 100 % ne compare rien.
+            <div className="bg-app-card border border-app-border/60 rounded-xl p-6 text-center space-y-3">
+              <p className="text-sm text-app-text">{tv('singleVenue')}</p>
+              <Button asChild variant="outline" className="min-h-[44px] sm:min-h-0">
+                <Link href={spacesHref}>{tv('manageVenues')}</Link>
+              </Button>
+            </div>
           ) : (
             <VenueComparisonTable
               rows={rows}

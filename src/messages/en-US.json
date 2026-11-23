@@ -3201,6 +3201,8 @@
       "colBestSeller": "Best seller",
       "topTitle": "Best sellers: {venue}",
       "noSales": "No sales in this period.",
+      "singleVenue": "You only have one space for now. Add a second space (terrace, bar, poolside...) to compare what each one brings in.",
+      "manageVenues": "Manage my spaces",
       "noVenues": "No spaces yet. Create them in Settings > Spaces.",
       "salesCount": "{count, plural, one {# sold} other {# sold}}"
     },

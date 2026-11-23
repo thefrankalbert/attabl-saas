@@ -5,6 +5,7 @@ import VenueReportsClient from '@/components/admin/reports/VenueReportsClient';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 import { FeatureUpgradeWall } from '@/components/admin/FeatureUpgradeWall';
 import { canAccessFeature } from '@/lib/plans/features';
+import { resolveTenantTimezone } from '@/lib/timezones';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 
 export const dynamic = 'force-dynamic';
@@ -43,7 +44,12 @@ export default async function VenueReportsPage({ params }: { params: Promise<{ s
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">
-      <VenueReportsClient tenantId={tenant.id} currency={tenant.currency || 'XAF'} />
+      <VenueReportsClient
+        tenantId={tenant.id}
+        currency={tenant.currency || 'XAF'}
+        timezone={resolveTenantTimezone(tenant)}
+        spacesHref={`/sites/${tenantSlug}/admin/settings/espaces`}
+      />
     </div>
   );
 }

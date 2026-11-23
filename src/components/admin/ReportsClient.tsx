@@ -41,11 +41,17 @@ const ServerPerformanceCard = dynamic(
 interface ReportsClientProps {
   tenantId: string;
   currency?: CurrencyCode;
+  /** Fuseau du restaurant (resolveTenantTimezone): bornes des periodes. */
+  timezone: string;
 }
 
 // --- Component ------------------------------------------
 
-export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsClientProps) {
+export default function ReportsClient({
+  tenantId,
+  currency = 'XAF',
+  timezone,
+}: ReportsClientProps) {
   const t = useTranslations('reports');
   // All report amounts (revenue, avg basket, avg order, daily/category/server
   // revenue, RPC sums of order.total + price_at_order) are integer MINOR units.
@@ -57,7 +63,12 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const { data: reportData, isLoading: loading, error, refetch } = useReportData(tenantId, period);
+  const {
+    data: reportData,
+    isLoading: loading,
+    error,
+    refetch,
+  } = useReportData(tenantId, period, timezone);
 
   const dailyStats = reportData?.dailyStats ?? [];
   const topItems = reportData?.topItems ?? [];

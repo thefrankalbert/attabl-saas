@@ -76,12 +76,12 @@ export function parseVenueTopItems(data: unknown): VenueTopItem[] {
  * Rapports par espace (Business et plus). Les deux fonctions SQL verifient
  * l'appartenance puis le plan: un appel hors Business est refuse en base.
  */
-export function useVenueReport(tenantId: string, period: Period) {
+export function useVenueReport(tenantId: string, period: Period, timezone: string) {
   return useQuery<VenueReportData>({
-    queryKey: ['venue-report', tenantId, period],
+    queryKey: ['venue-report', tenantId, period, timezone],
     queryFn: async () => {
       const supabase = createClient();
-      const { startDate, endDate } = getDateRange(period);
+      const { startDate, endDate } = getDateRange(period, timezone);
       const range = { p_tenant_id: tenantId, p_start_date: startDate, p_end_date: endDate };
       const [rowsRes, topRes] = await Promise.all([
         supabase.rpc('get_venue_report', range),
