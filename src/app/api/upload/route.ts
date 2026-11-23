@@ -67,13 +67,16 @@ export async function POST(request: Request) {
     }
     const pageSite = explicitSite ? null : readTenantSlug(request.headers).slug;
 
+    // Audit B16: un televersement n'a pas a creer de restaurant. Le
+    // provisionnement d'un compte sans etablissement reste le role des routes
+    // d'onboarding (state, save, complete), appelees avant tout envoi d'image.
     let session = await resolveSessionAdminUser({
       requireActive: true,
-      provisionIfMissing: true,
+      provisionIfMissing: false,
       siteSlug: explicitSite ?? pageSite,
     });
     if (!session.ok && pageSite) {
-      session = await resolveSessionAdminUser({ requireActive: true, provisionIfMissing: true });
+      session = await resolveSessionAdminUser({ requireActive: true, provisionIfMissing: false });
     }
     if (!session.ok) {
       return NextResponse.json({ error: session.error }, { status: session.status });

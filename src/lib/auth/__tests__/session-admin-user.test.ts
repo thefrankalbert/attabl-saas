@@ -175,7 +175,9 @@ describe('recuperation apres inscription partielle', () => {
     // reste bloque a l'onboarding sans aucun moyen d'en sortir.
     let appel = 0;
     Object.defineProperty(query, 'rows', {
-      get: () => (appel++ === 0 ? [] : [tenantRow('t-neuf')]),
+      // 2 lectures vides avant creation: les lignes actives, puis TOUTES les
+      // lignes (audit B16: un compte banni n'est pas un compte sans restaurant).
+      get: () => (appel++ < 2 ? [] : [tenantRow('t-neuf')]),
       configurable: true,
     });
     ensureTenantForOnboarding.mockResolvedValue(undefined);

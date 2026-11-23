@@ -82,7 +82,21 @@ export async function resolveSessionAdminUser(options?: {
       return { data: null, error: qErr, hasAnyMembership: false };
     }
     if (!data || data.length === 0) {
-      return { data: null, error: null, hasAnyMembership: false };
+      if (!requireActive) {
+        return { data: null, error: null, hasAnyMembership: false };
+      }
+      // Audit B16: "aucune ligne ACTIVE" n'est pas "aucun etablissement". Un
+      // membre banni ou desactive n'a plus que des lignes inactives: le
+      // provisionnement lui creait un restaurant neuf dont il devenait
+      // proprietaire, et le bannissement etait contourne.
+      const { data: anyRows, error: anyErr } = await adminSupabase
+        .from('admin_users')
+        .select('tenant_id')
+        .eq('user_id', user!.id);
+      if (anyErr) {
+        return { data: null, error: anyErr, hasAnyMembership: false };
+      }
+      return { data: null, error: null, hasAnyMembership: (anyRows ?? []).length > 0 };
     }
     // Fermer un restaurant ne desactive pas la ligne admin_users du proprietaire:
     // sans ce filtre, l'onboarding choisissait un restaurant FERME (le plus

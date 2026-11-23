@@ -13,11 +13,15 @@ import type { Tenant } from '@/types/admin.types';
 import type { PdfExtractedItem } from '@/services/pdf-import.service';
 import { z } from 'zod';
 
+// Bornes alignees sur l'extraction (pdf-import.service.ts) et le formulaire de
+// plat (audit B6): ce chemin recoit la liste renvoyee par le navigateur, qui
+// n'est pas une entree de confiance. `nullish`: l'apercu produit
+// `description: null` pour un plat sans description (audit B5).
 const pdfItemSchema = z.object({
-  category: z.string(),
-  name: z.string(),
-  price: z.number(),
-  description: z.string().optional(),
+  category: z.string().trim().min(1).max(100),
+  name: z.string().trim().min(1).max(200),
+  price: z.number().finite().min(0).max(99_999_999),
+  description: z.string().max(1000).nullish(),
 });
 
 const pdfItemsSchema = z.array(pdfItemSchema).min(1).max(500);

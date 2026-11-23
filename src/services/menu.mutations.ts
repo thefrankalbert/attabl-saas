@@ -13,6 +13,53 @@ import type { MenuRow } from './menu.service.types';
  */
 
 /**
+ * Audit B24 (CRITIQUE): `parent_menu_id` et `venue_id` doivent designer une
+ * carte et un espace DU MEME restaurant. Une cle etrangere ignore la RLS, et la
+ * vitrine charge les sous-cartes par jointure: sans ce controle, l'admin du
+ * restaurant A faisait apparaitre une carte a lui dans la vitrine de B. Une
+ * carte ne peut pas non plus etre son propre parent. La base porte la meme
+ * garde (declencheur `menus_same_tenant_links`).
+ */
+async function assertMenuLinksInTenant(
+  supabase: SupabaseClient,
+  tenantId: string,
+  links: { venue_id?: string | null; parent_menu_id?: string | null },
+  menuId?: string,
+): Promise<void> {
+  if (links.parent_menu_id && links.parent_menu_id === menuId) {
+    throw new ServiceError('Une carte ne peut pas être sa propre carte parente.', 'VALIDATION');
+  }
+  const checks: Array<{ table: 'menus' | 'venues'; id: string; message: string }> = [];
+  if (links.parent_menu_id) {
+    checks.push({
+      table: 'menus',
+      id: links.parent_menu_id,
+      message: 'Carte parente introuvable dans ce restaurant.',
+    });
+  }
+  if (links.venue_id) {
+    checks.push({
+      table: 'venues',
+      id: links.venue_id,
+      message: 'Espace introuvable dans ce restaurant.',
+    });
+  }
+  for (const check of checks) {
+    const { data, error } = await supabase
+      .from(check.table)
+      .select('id')
+      .eq('id', check.id)
+      .eq('tenant_id', tenantId)
+      .maybeSingle();
+    if (error) {
+      logger.error('Failed to verify menu link', { table: check.table, error: error.message });
+      throw new ServiceError('Erreur lors de la vérification de la carte', 'INTERNAL');
+    }
+    if (!data) throw new ServiceError(check.message, 'VALIDATION');
+  }
+}
+
+/**
  * Create a new menu (carte).
  * Generates a unique slug from the name.
  */
@@ -21,6 +68,8 @@ export async function createMenu(
   tenantId: string,
   input: CreateMenuInput,
 ): Promise<MenuRow> {
+  await assertMenuLinksInTenant(supabase, tenantId, input);
+
   await assertNameAvailable(supabase, {
     table: 'menus',
     tenantId,
@@ -110,6 +159,7 @@ export async function updateMenu(
   input: UpdateMenuInput,
 ): Promise<MenuRow> {
   const { id, ...updates } = input;
+  await assertMenuLinksInTenant(supabase, tenantId, updates, id);
 
   // The slug is fixed at creation and never follows a rename: printed QR codes
   // and shared links carry it (audit C-059, renaming broke every printed QR).

@@ -342,12 +342,16 @@ describe('CTR7-1 - le webhook ne leve jamais une suspension plateforme', () => {
     // `past_due`): la garde ne peut etre qu'un filtre d'ecriture. Son payload
     // est exclusivement un bloc d'acces, donc rien n'est perdu a le filtrer.
     const chain = setupMock({ tenant: { id: 'tenant-1', subscription_status: 'past_due' } });
+    // Audit B94: la levee du gel pour remboursement exige un abonnement en
+    // regle chez Stripe, relu au moment de lever.
+    mockSubscriptionsRetrieve.mockResolvedValue({ id: 'sub_1', status: 'active' });
     mockConstructEvent.mockReturnValue(
       makeStripeEvent('invoice.paid', {
         customer: 'cus_1',
         id: 'in_2',
         amount_paid: 29000,
         status_transitions: { paid_at: 1800000000 },
+        parent: { subscription_details: { subscription: 'sub_1' } },
       }),
     );
 

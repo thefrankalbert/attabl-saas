@@ -33,7 +33,10 @@ export const excelRowSchema = z.object({
     .optional(),
   price: z
     .number({ error: 'Prix manquant ou illisible' })
-    .positive('Le prix doit etre superieur a zero'),
+    .positive('Le prix doit etre superieur a zero')
+    // Audit B46: colonne numeric(10,2). Sans borne, une faute de frappe passait
+    // ici et Postgres refusait tout le lot de 50 plats a l'insertion.
+    .max(99_999_999, 'Prix trop eleve (99 999 999 maximum)'),
   // null = case laissee vide (voir le parser).
   isAvailable: z.boolean().nullable(),
   isFeatured: z.boolean().nullable(),
