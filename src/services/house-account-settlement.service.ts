@@ -82,7 +82,13 @@ export function createHouseAccountSettlementService(supabase: SupabaseClient) {
         .eq('tenant_id', tenantId)
         .eq('house_account_id', accountId)
         .neq('status', 'cancelled')
-        .in('payment_status', ['pending', 'partial']);
+        // Meme population que get_house_account_balances et que la garde en
+        // base (guard_house_account_settle): tout sauf 'paid' et 'comp', un
+        // statut NULL valant 'pending' (la colonne est nullable; `in` seul
+        // excluait NULL et l'ardoise ne se soldait jamais). Une commande
+        // 'refunded' etait sautee ici alors que les soldes la comptaient
+        // encore due (revue L007, B50).
+        .or('payment_status.is.null,payment_status.in.(pending,partial,refunded)');
 
       if (ordersError) {
         throw new ServiceError(
@@ -98,15 +104,19 @@ export function createHouseAccountSettlementService(supabase: SupabaseClient) {
       for (const order of orders ?? []) {
         const summary = await payments.getSummary(order.id as string, tenantId);
         const remaining = summary.due - summary.net;
+        // Rien a encaisser (commande a 0, ou deja reglee au registre): elle ne
+        // bloque pas le solde. La garde en base applique la meme regle.
         if (remaining <= 0) continue;
-        // Un remboursement laisse aussi la commande 'partial'. Ce reste est-il
-        // une dette ou de l'argent rendu volontairement ? Le code ne peut pas
-        // le savoir: encaisser ferait repayer le client, ignorer fermerait
-        // l'ardoise sur un solde non regle. On refuse donc de solder et on
-        // laisse la decision a un humain, sur la fiche de la commande.
+        // Un remboursement (partiel: 'partial', ou total: 'refunded') laisse un
+        // reste. Ce reste est-il une dette ou de l'argent rendu volontairement ?
+        // Le code ne peut pas le savoir: encaisser ferait repayer le client,
+        // ignorer fermerait l'ardoise sur un solde non regle. On refuse donc de
+        // solder et on laisse la decision a un humain, sur la fiche de la
+        // commande: encaisser le reste (OrderPaymentPanel) ou l'annuler (bouton
+        // "Annuler la commande", CancelOrderButton).
         if (summary.refunded > 0) {
           throw new ServiceError(
-            'Une commande de cette ardoise a ete remboursee en partie. Encaissez son solde depuis sa fiche, puis soldez.',
+            "Une commande de cette ardoise a ete remboursee. Encaissez son reste ou annulez-la depuis sa fiche, puis soldez l'ardoise.",
             'CONFLICT',
           );
         }

@@ -28,8 +28,9 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
    * `orders.table_id` est ON DELETE SET NULL et `table_sessions` est rattachee
    * par numero de table: supprimer la table detachait ses commandes sans fermer
    * la session, la note restait ouverte sans table en salle.
-   * ponytail: verification puis suppression, sans verrou; une commande arrivee
-   * entre les deux reste possible, plafond accepte pour un geste de reglage.
+   * La course (une commande arrivee entre cette verification et la
+   * suppression) est fermee en base: le declencheur de 20261121200300 prend le
+   * verrou de la table et refuse lui aussi. Ici: un message clair, sans ecrire.
    */
   async function assertNoOpenSession(tenantId: string, tableNumbers: string[]): Promise<void> {
     if (tableNumbers.length === 0) return;
@@ -49,6 +50,30 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
         'CONFLICT',
       );
     }
+  }
+
+  /**
+   * Erreur d'une suppression de table ou de zone. Les deux refus du declencheur
+   * de 20261121200300 sont des conflits attendus, pas des pannes: ils gardent un
+   * message francais clair, sans prefixe technique (troisieme contre-audit).
+   * Toute autre erreur reste interne.
+   */
+  function deleteError(error: { code?: string; message: string }, label: string): ServiceError {
+    if (error.code === '55P03') {
+      return new ServiceError(
+        "Cette table est en cours d'utilisation. Reessayez dans un instant.",
+        'CONFLICT',
+        error,
+      );
+    }
+    if (error.code === '23514') {
+      return new ServiceError(
+        'Une table est occupee. Encaissez et liberez-la avant de la supprimer.',
+        'CONFLICT',
+        error,
+      );
+    }
+    return new ServiceError(`Erreur suppression ${label}: ${error.message}`, 'INTERNAL', error);
   }
 
   /** Numeros des tables visees, lus cote serveur et bornes au restaurant. */
@@ -318,7 +343,7 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
       const { error } = await supabase.from('zones').delete().eq('id', zoneId);
 
       if (error) {
-        throw new ServiceError(`Erreur suppression zone: ${error.message}`, 'INTERNAL', error);
+        throw deleteError(error, 'zone');
       }
     },
 
@@ -438,7 +463,7 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
       const { error } = await supabase.from('tables').delete().eq('id', tableId);
 
       if (error) {
-        throw new ServiceError(`Erreur suppression table: ${error.message}`, 'INTERNAL', error);
+        throw deleteError(error, 'table');
       }
     },
 

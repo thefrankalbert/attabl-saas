@@ -15,22 +15,40 @@
 --      MEME restaurant. La lecture prend `FOR SHARE` sur l'ardoise: si un solde
 --      est en cours (verrou de ligne pose par son UPDATE), l'attache attend sa
 --      fin et voit alors 'settled'.
---   2. sur `house_accounts` : passer a 'settled' est refuse s'il reste une
---      commande non annulee `pending` ou `partial` sur l'ardoise. Une attache
---      validee juste avant le solde est donc vue par le solde, qui echoue au
---      lieu de fermer une ardoise qui doit encore de l'argent.
+--   2. sur `house_accounts` : passer a 'settled' est refuse s'il reste sur
+--      l'ardoise une commande qui doit REELLEMENT de l'argent. Meme calcul que
+--      get_house_account_balances: commande non annulee, ni 'paid' ni 'comp',
+--      et (total + pourboire) - net du registre > 0. Une commande a 0 (prix 0
+--      permis) ne bloque donc pas le solde; une commande 'refunded' dont le
+--      reste est positif le bloque, comme dans les soldes affiches et dans
+--      settle() (CONFLICT explicite). Une attache validee juste avant le solde
+--      est vue par le solde, qui echoue au lieu de fermer une ardoise qui doit
+--      encore de l'argent.
 --
 -- SECURITY DEFINER: les fonctions lisent `house_accounts` et `orders` sans
 -- dependre des politiques RLS de l'appelant (le `FOR SHARE` exigerait sinon un
 -- droit UPDATE que le caissier n'a pas). Elles ne lisent que la ligne visee par
--- NEW et n'utilisent pas `current_user`. EXECUTE retire a tous: une fonction de
--- declencheur n'a pas a etre appelable directement.
+-- NEW et n'utilisent pas `current_user`. EXECUTE est retire a PUBLIC, anon et
+-- authenticated; service_role le garde (droits par defaut de Supabase), sans
+-- effet: une fonction de declencheur ne s'appelle pas directement.
+--
+-- 3. get_house_account_balances (soldes affiches): meme regle que la garde
+--    pour un `payment_status` NULL (colonne nullable, defaut 'pending'). Avec
+--    `payment_status NOT IN (...)`, un NULL donnait NULL, donc une commande
+--    exclue: l'ardoise affichait 0 du alors que la garde refusait de la solder.
+--    Un NULL vaut desormais 'pending' dans les trois regles (garde, soldes,
+--    settle()). Mesure en production par l'orchestrateur le 2026-11-23: 0 ligne
+--    NULL sur 745; aucune contrainte NOT NULL n'est posee dans ce lot. Corps
+--    repris du corps stocke (supabase/schema.sql, cree par 20260703200000,
+--    inchange depuis): seules les deux expressions `payment_status` changent.
 --
 -- Rollback:
 --   DROP TRIGGER IF EXISTS trg_orders_house_account_open ON public.orders;
 --   DROP TRIGGER IF EXISTS trg_house_accounts_settle_guard ON public.house_accounts;
 --   DROP FUNCTION IF EXISTS public.guard_order_house_account_open();
 --   DROP FUNCTION IF EXISTS public.guard_house_account_settle();
+--   et rejouer get_house_account_balances telle que supabase/schema.sql la
+--   definit (`o.payment_status NOT IN ('paid','comp')`, deux fois).
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION public.guard_order_house_account_open()
@@ -91,7 +109,13 @@ BEGIN
         WHERE o.house_account_id = NEW.id
           AND o.tenant_id = NEW.tenant_id
           AND coalesce(o.status, '') <> 'cancelled'
-          AND o.payment_status IN ('pending', 'partial')
+          AND coalesce(o.payment_status, 'pending') NOT IN ('paid', 'comp')
+          AND (coalesce(o.total, 0) + coalesce(o.tip_amount, 0))
+              - coalesce((
+                  SELECT sum(CASE WHEN p.status = 'refunded' THEN -p.amount ELSE p.amount END)
+                    FROM public.payments p
+                   WHERE p.order_id = o.id
+                ), 0) > 0
      ) THEN
     RAISE EXCEPTION 'Une commande de cette ardoise reste a encaisser'
       USING ERRCODE = '23514', HINT = 'house_account_unsettled_orders';
@@ -107,3 +131,29 @@ CREATE TRIGGER trg_house_accounts_settle_guard
   BEFORE UPDATE OF status ON public.house_accounts
   FOR EACH ROW
   EXECUTE FUNCTION public.guard_house_account_settle();
+
+CREATE OR REPLACE FUNCTION public.get_house_account_balances(p_tenant_id uuid)
+RETURNS TABLE(account_id uuid, name text, status text, open_orders bigint, outstanding bigint)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+BEGIN
+  PERFORM public.assert_tenant_member(p_tenant_id);
+  RETURN QUERY
+  SELECT ha.id, ha.name, ha.status,
+    COUNT(o.id) FILTER (
+      WHERE coalesce(o.payment_status, 'pending') NOT IN ('paid','comp') AND o.status <> 'cancelled'
+    )::bigint AS open_orders,
+    COALESCE(SUM(
+      CASE WHEN coalesce(o.payment_status, 'pending') NOT IN ('paid','comp') AND o.status <> 'cancelled'
+        THEN (o.total + COALESCE(o.tip_amount,0))
+             - COALESCE((SELECT SUM(CASE WHEN p.status='refunded' THEN -p.amount ELSE p.amount END)
+                         FROM payments p WHERE p.order_id = o.id), 0)
+        ELSE 0 END), 0)::bigint AS outstanding
+  FROM house_accounts ha
+  LEFT JOIN orders o ON o.house_account_id = ha.id AND o.tenant_id = ha.tenant_id
+  WHERE ha.tenant_id = p_tenant_id
+  GROUP BY ha.id, ha.name, ha.status, ha.created_at
+  ORDER BY ha.created_at DESC;
+END; $$;

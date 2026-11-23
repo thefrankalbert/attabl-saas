@@ -14,7 +14,10 @@
 -- alors que l'action exige `orders.manage`; EXECUTE est accorde a
 -- authenticated, donc un membre sans ce droit deplacait une commande par l'API
 -- directe. Ajout du meme controle que close_table_session_if_settled
--- (has_tenant_write_permission, service_role exempte).
+-- (has_tenant_write_permission, service_role exempte). Le super administrateur
+-- (public.is_super_admin(), revoque = plus super administrateur depuis
+-- 20261112210000) reste admis, comme dans l'action (get-session.ts, qui le
+-- traite en proprietaire virtuel) et comme dans assert_tenant_member.
 --
 -- Corps repris de 20260711140000_reassign_order_table.sql (seule definition du
 -- depot, identique au corps stocke de supabase/schema.sql). Seuls les deux
@@ -48,6 +51,7 @@ BEGIN
   -- A15: meme droit que l'action serveur (`orders.manage`). Sans ce controle,
   -- un membre sans ce droit deplacait une commande par l'API directe.
   IF coalesce(auth.role(), '') <> 'service_role'
+     AND NOT public.is_super_admin()
      AND NOT public.has_tenant_write_permission(p_tenant_id, 'orders.manage') THEN
     RAISE EXCEPTION 'access denied: reassigning an order requires orders.manage'
       USING ERRCODE = '42501';

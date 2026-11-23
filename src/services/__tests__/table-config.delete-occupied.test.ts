@@ -18,6 +18,8 @@ import { createTableConfigService } from '../table-config.service';
 
 const TENANT = 'tenant-A';
 const state = {
+  // Erreur renvoyee par la base au DELETE (refus du declencheur, ou panne).
+  deleteError: null as { code?: string; message: string } | null,
   openSessions: [] as Array<{ id: string }>,
   deleted: [] as string[],
   sessionFilters: [] as Array<[string, unknown]>,
@@ -42,6 +44,7 @@ function makeSupabase(): SupabaseClient {
     };
     chain.delete = () => ({
       eq: async () => {
+        if (state.deleteError) return { error: state.deleteError };
         state.deleted.push(table);
         return { error: null };
       },
@@ -55,6 +58,7 @@ function makeSupabase(): SupabaseClient {
 
 describe('table-config: suppression d une table occupee', () => {
   beforeEach(() => {
+    state.deleteError = null;
     state.openSessions = [];
     state.deleted = [];
     state.sessionFilters = [];
@@ -84,5 +88,26 @@ describe('table-config: suppression d une table occupee', () => {
     const service = createTableConfigService(makeSupabase());
     await service.deleteTable(TENANT, 'table-1');
     expect(state.deleted).toEqual(['tables']);
+  });
+
+  // Troisieme contre-audit: les refus du declencheur de la base (course que la
+  // verification applicative n'a pas vue) sont des conflits au message clair.
+  it.each([
+    ['55P03', 'table', "Cette table est en cours d'utilisation. Reessayez dans un instant."],
+    ['23514', 'table', 'Une table est occupee. Encaissez et liberez-la avant de la supprimer.'],
+    ['55P03', 'zone', "Cette table est en cours d'utilisation. Reessayez dans un instant."],
+    ['23514', 'zone', 'Une table est occupee. Encaissez et liberez-la avant de la supprimer.'],
+  ])('refus %s de la base sur une %s: CONFLICT, message sans prefixe', async (code, cible, msg) => {
+    state.deleteError = { code, message: 'texte brut du declencheur' };
+    const service = createTableConfigService(makeSupabase());
+    const run =
+      cible === 'table' ? service.deleteTable(TENANT, 't-1') : service.deleteZone(TENANT, 'z-1');
+    await expect(run).rejects.toMatchObject({ code: 'CONFLICT', message: msg });
+  });
+
+  it('temoin: une autre erreur de la base reste interne', async () => {
+    state.deleteError = { code: '08006', message: 'connexion perdue' };
+    const service = createTableConfigService(makeSupabase());
+    await expect(service.deleteTable(TENANT, 't-1')).rejects.toMatchObject({ code: 'INTERNAL' });
   });
 });

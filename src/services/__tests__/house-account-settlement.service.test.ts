@@ -43,9 +43,9 @@ function client(opts: {
     chain.eq = note('eq');
     chain.neq = note('neq');
     chain.maybeSingle = vi.fn(async () => ({ data: opts.account, error: null }));
-    // La liste des commandes se termine par `.in(...)`.
-    chain.in = vi.fn(async (col: string, val: unknown) => {
-      filtres.push([table, `in:${col}`, val]);
+    // La liste des commandes se termine par `.or(...)` (statut NULL compris).
+    chain.or = vi.fn(async (expr: string) => {
+      filtres.push([table, 'or', expr]);
       return { data: opts.orders ?? [], error: null };
     });
     return chain;
@@ -103,7 +103,13 @@ describe('house-account-settlement.service', () => {
     expect(commandes).toContainEqual(['orders', 'eq:tenant_id', TENANT]);
     expect(commandes).toContainEqual(['orders', 'eq:house_account_id', ACCOUNT]);
     expect(commandes).toContainEqual(['orders', 'neq:status', 'cancelled']);
-    expect(commandes).toContainEqual(['orders', 'in:payment_status', ['pending', 'partial']]);
+    // Meme population que get_house_account_balances: 'refunded' compris (B50),
+    // et un statut NULL traite comme 'pending' (second contre-audit).
+    expect(commandes).toContainEqual([
+      'orders',
+      'or',
+      'payment_status.is.null,payment_status.in.(pending,partial,refunded)',
+    ]);
   });
 
   it('laisse l ardoise OUVERTE si un encaissement echoue', async () => {
@@ -130,14 +136,46 @@ describe('house-account-settlement.service', () => {
 
     await expect(
       createHouseAccountSettlementService(supabase).settle(ACCOUNT, TENANT, {}),
-    ).rejects.toThrow(/remboursee en partie/);
+    ).rejects.toThrow(/remboursee/);
     // Le message ne renvoie plus vers "retirer de l ardoise": aucun ecran ne le
     // permet (actionDetachOrder etait sans appelant, revue L007 A5).
     await expect(
       createHouseAccountSettlementService(supabase).settle(ACCOUNT, TENANT, {}),
-    ).rejects.toThrow(/^(?!.*retirez).*Encaissez son solde depuis sa fiche/);
+    ).rejects.toThrow(
+      "Une commande de cette ardoise a ete remboursee. Encaissez son reste ou annulez-la depuis sa fiche, puis soldez l'ardoise.",
+    );
     expect(recordTender).not.toHaveBeenCalled();
     // L'ardoise ne se ferme jamais sur un solde non regle.
+    expect(markSettled).not.toHaveBeenCalled();
+  });
+
+  // Contre-audit du lot A: une commande a 0 ne doit pas bloquer le solde, et
+  // une commande remboursee EN TOTALITE ('refunded') suit la meme regle qu'un
+  // remboursement partiel.
+  it('commande a 0 (rien a encaisser): sautee, l ardoise se solde', async () => {
+    const { supabase } = client({
+      account: { id: ACCOUNT, status: 'open' },
+      orders: [{ id: 'o-zero' }],
+    });
+    getSummary.mockResolvedValue({ due: 0, net: 0, refunded: 0 });
+
+    await createHouseAccountSettlementService(supabase).settle(ACCOUNT, TENANT, {});
+    expect(recordTender).not.toHaveBeenCalled();
+    expect(markSettled).toHaveBeenCalled();
+  });
+
+  it('commande remboursee en totalite: CONFLICT explicite, rien encaisse, ardoise ouverte', async () => {
+    const { supabase } = client({
+      account: { id: ACCOUNT, status: 'open' },
+      orders: [{ id: 'o-rembourse' }],
+    });
+    // 3 500 encaisses puis 3 500 rendus: net 0, reste du 3 500 selon les soldes.
+    getSummary.mockResolvedValue({ due: 3500, net: 0, refunded: 3500 });
+
+    await expect(
+      createHouseAccountSettlementService(supabase).settle(ACCOUNT, TENANT, {}),
+    ).rejects.toMatchObject({ code: 'CONFLICT' });
+    expect(recordTender).not.toHaveBeenCalled();
     expect(markSettled).not.toHaveBeenCalled();
   });
 

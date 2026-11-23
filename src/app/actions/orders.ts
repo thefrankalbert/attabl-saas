@@ -203,37 +203,62 @@ export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResp
   }
   if ((ledgerRows ?? []).length > 0) {
     return {
-      error:
-        'Impossible de supprimer une commande qui a deja recu un paiement. Remboursez-la ou annulez-la depuis sa fiche.',
+      error: 'Cette commande a recu des paiements, elle ne peut pas etre supprimee.',
     };
   }
 
-  // Step 1: Delete order_items for these orders
-  const { error: itemsError } = await supabase
-    .from('order_items')
-    .delete()
-    .in('order_id', foundIds);
-
-  if (itemsError) {
-    logger.error('Failed to delete order_items', itemsError, { orderIds: foundIds });
-    return { error: 'La suppression a echoue. Reessayez.' };
-  }
-
-  // Step 2: Delete the orders
-  const { error: deleteError } = await supabase.from('orders').delete().in('id', foundIds);
+  // Les articles partent avec leur commande (`order_items.order_id` ON DELETE
+  // CASCADE). On ne les supprime plus a part, AVANT la commande: si la base
+  // refusait ensuite la commande (paiement arrive entre la verification et la
+  // suppression, politique DELETE de 20261121200000), elle restait sans ses
+  // articles alors que l'ecran annoncait "supprimee" (second contre-audit du
+  // lot A). `count` dit combien de commandes la base a vraiment supprimees.
+  const { error: deleteError, count: deletedCount } = await supabase
+    .from('orders')
+    .delete({ count: 'exact' })
+    .in('id', foundIds);
 
   if (deleteError) {
     logger.error('Failed to delete orders', deleteError, { orderIds: foundIds });
     return { error: 'La suppression a echoue. Reessayez.' };
   }
 
-  logger.info('Orders deleted successfully', { count: foundIds.length, orderIds: foundIds });
+  // Un DELETE refuse par la RLS ne leve aucune erreur: on relit ce qui reste
+  // pour ne journaliser que les commandes vraiment supprimees.
+  let deletedOrders = orders;
+  if (deletedCount !== foundIds.length) {
+    const { data: remaining, error: remainingError } = await supabase
+      .from('orders')
+      .select('id')
+      .in('id', foundIds);
+    // Sans relecture fiable, on ne sait pas lesquelles sont parties: rien de
+    // journalise d'incertain, et une reponse honnete (troisieme contre-audit).
+    if (remainingError) {
+      logger.error('Orders deletion incomplete and re-read failed', remainingError, {
+        requested: foundIds.length,
+        deletedCount,
+      });
+      return {
+        error:
+          "Une partie des commandes n'a peut-etre pas ete supprimee. Rechargez la page pour voir la liste a jour.",
+      };
+    }
+    const remainingIds = new Set((remaining ?? []).map((o) => o.id as string));
+    deletedOrders = orders.filter((o) => !remainingIds.has(o.id));
+  }
+
+  logger.info('Orders deleted', {
+    requested: foundIds.length,
+    deleted: deletedOrders.length,
+    orderIds: deletedOrders.map((o) => o.id),
+  });
 
   // Fire-and-forget audit log for each tenant. Snapshot the financial fields of
   // each deleted order so the record is reconstructable (audit C7) - the row is
   // gone but its totals survive in the audit trail.
   for (const tid of tenantIds) {
-    const ordersForTenant = orders.filter((o) => o.tenant_id === tid);
+    const ordersForTenant = deletedOrders.filter((o) => o.tenant_id === tid);
+    if (ordersForTenant.length === 0) continue;
     const audit = createAuditService(supabase, {
       tenantId: tid,
       userId: user.id,
@@ -257,7 +282,13 @@ export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResp
     });
   }
 
-  return { success: true, deletedCount: foundIds.length };
+  if (deletedOrders.length !== foundIds.length) {
+    return {
+      error: `${foundIds.length - deletedOrders.length} commande(s) sur ${foundIds.length} n'ont pas ete supprimees : elles ont recu un paiement entre-temps, ou votre role ne le permet pas.`,
+      deletedCount: deletedOrders.length,
+    };
+  }
+  return { success: true, deletedCount: deletedOrders.length };
 }
 
 /**
@@ -527,9 +558,10 @@ export async function actionSetCourseHeld(
 }
 
 /**
- * Encaisse le solde d'une commande `partial` (A2). Renvoie `null` quand la
- * commande n'a pas de solde a encaisser (vraiment deja reglee, annulee, offerte):
- * l'appelant garde alors sa reponse "deja reglee".
+ * Encaisse le solde d'une commande `partial` (A2), au registre. Plafonne par
+ * recordTender: un rejeu trouve un solde nul et n'encaisse rien (il repond
+ * alors `paid: false`, "deja reglee"). Le solde est lu cote serveur, jamais
+ * recu du client.
  */
 async function settlePartialBalance(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -538,11 +570,11 @@ async function settlePartialBalance(
   method: string,
   tipAmount: number | undefined,
   adminUserId: string,
-): Promise<{ success?: boolean; paid?: boolean; error?: string } | null> {
+): Promise<{ success?: boolean; paid?: boolean; error?: string }> {
   const paymentService = createPaymentService(supabase);
   const summary = await paymentService.getSummary(orderId, tenantId);
   const balance = summary.due - summary.net;
-  if (summary.paymentStatus !== 'partial' || balance <= 0) return null;
+  if (balance <= 0) return { success: true, paid: false };
   if ((tipAmount ?? 0) > 0) {
     return {
       error:
@@ -551,12 +583,25 @@ async function settlePartialBalance(
   }
   const parsedMethod = paymentMethodSchema.safeParse(method);
   if (!parsedMethod.success) return { error: 'Moyen de paiement invalide' };
-  const after = await paymentService.recordTender(orderId, tenantId, {
-    amount: balance,
-    method: parsedMethod.data,
-    createdBy: adminUserId,
-  });
-  return { success: true, paid: after.paymentStatus === 'paid' };
+  try {
+    const after = await paymentService.recordTender(orderId, tenantId, {
+      amount: balance,
+      method: parsedMethod.data,
+      createdBy: adminUserId,
+    });
+    return { success: true, paid: after.paymentStatus === 'paid' };
+  } catch (err) {
+    // Course entre deux caisses: l'autre a encaisse le solde entre notre
+    // lecture et notre ecriture, et la garde du registre refuse "Montant
+    // superieur au solde du". Si le solde relu est nul, la commande est
+    // reglee: on repond "deja reglee" au lieu d'une erreur (second
+    // contre-audit du lot A). Sinon l'erreur reste vraie.
+    if (err instanceof ServiceError && err.code === 'VALIDATION') {
+      const reread = await paymentService.getSummary(orderId, tenantId);
+      if (reread.due - reread.net <= 0) return { success: true, paid: false };
+    }
+    throw err;
+  }
 }
 
 /**
@@ -593,6 +638,32 @@ export async function actionMarkOrderPaid(
         return { error: 'Les pourboires ne sont pas inclus dans votre plan.' };
       }
     }
+    // Une commande `partial` (acompte deja pris) ne passe PAS par markPaid, qui
+    // ne bascule qu'une commande `pending` (et selon sa version repond
+    // "deja reglee" ou leve une erreur): la caisse encaissait le solde sans
+    // qu'il entre au registre (revue L011, A2). Le statut est lu ici, borne au
+    // restaurant, AVANT tout appel a markPaid.
+    const { data: current, error: currentError } = await supabase
+      .from('orders')
+      .select('payment_status')
+      .eq('id', parsed.data.orderId)
+      .eq('tenant_id', parsed.data.tenantId)
+      .maybeSingle();
+    if (currentError) {
+      logger.error('actionMarkOrderPaid: order lookup failed', currentError, { tenantId, orderId });
+      return { error: 'Erreur interne' };
+    }
+    if (current?.payment_status === 'partial') {
+      return await settlePartialBalance(
+        supabase,
+        parsed.data.orderId,
+        parsed.data.tenantId,
+        parsed.data.method,
+        parsed.data.tipAmount,
+        adminUserId,
+      );
+    }
+
     // paid=false means the order was already settled (idempotent no-op). The call
     // still succeeds; callers can use `paid` to skip duplicate side-effects.
     const { paid } = await createOrderService(supabase).markPaid(
@@ -603,22 +674,6 @@ export async function actionMarkOrderPaid(
         tipAmount: parsed.data.tipAmount,
       },
     );
-    if (!paid) {
-      // markPaid ne bascule qu'une commande `pending`. Une commande `partial`
-      // (acompte deja pris) repondait `paid: false`, que la caisse lit "deja
-      // reglee": le solde n'etait jamais encaisse alors que le caissier tenait
-      // l'argent (revue L011, A2). On encaisse donc le solde restant au registre,
-      // plafonne par recordTender: un rejeu trouve un solde nul et n'encaisse rien.
-      const settled = await settlePartialBalance(
-        supabase,
-        parsed.data.orderId,
-        parsed.data.tenantId,
-        parsed.data.method,
-        parsed.data.tipAmount,
-        adminUserId,
-      );
-      if (settled) return settled;
-    }
     return { success: true, paid };
   } catch (err) {
     if (err instanceof AuthError) {

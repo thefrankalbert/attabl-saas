@@ -1,4 +1,15 @@
 -- ============================================================================
+-- ORDRE DE DEPLOIEMENT OBLIGATOIRE : appliquer cette migration APRES le
+-- deploiement du code de ce lot (fix/revue-lignes-lot-a), jamais avant.
+-- L'ancien code en ligne supprime d'abord les articles (`order_items`), puis la
+-- commande, sans compter les lignes. Avec cette politique, la base refuserait
+-- la commande a acompte sans erreur: elle garderait son paiement mais perdrait
+-- tous ses articles, et l'ecran afficherait "supprimee" (prouve par le second
+-- contre-audit du lot A). Le nouveau code refuse avant toute ecriture et ne
+-- supprime plus les articles a part.
+-- Les trois autres migrations du lot (20261121200100, 200200, 200300) peuvent
+-- passer avant le code.
+-- ============================================================================
 -- Une commande qui porte de l'argent au registre ne se supprime pas (revue L011, A1).
 -- ============================================================================
 --
@@ -19,7 +30,12 @@
 -- employes connectes (authenticated), pas a ces chemins systeme.
 --
 -- Corps repris de 20261107200000_garde_argent_statut_et_parite.sql (section 3),
--- seule la clause NOT EXISTS est ajoutee.
+-- seule la clause NOT EXISTS est ajoutee. Elle REMPLACE la politique de meme
+-- nom, "Money managers can delete own tenant orders" (PERMISSIVE, condition
+-- has_tenant_money_permission(tenant_id)), seule politique DELETE de `orders`
+-- en production d'apres l'orchestrateur. Aucune autre politique permissive
+-- DELETE ou ALL ne reste a cote (sinon elle s'ajouterait par OU et annulerait
+-- la garde): verifie par revue_lot_a.test.sql (assertion 18).
 --
 -- Rollback:
 --   DROP POLICY IF EXISTS "Money managers can delete own tenant orders" ON public.orders;

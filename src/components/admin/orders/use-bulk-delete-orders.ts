@@ -67,6 +67,10 @@ export function useBulkDeleteOrders({
           description: result.error,
           variant: 'destructive',
         });
+        // Suppression partielle: une partie est bien partie, relire la liste.
+        if (result.deletedCount) {
+          queryClient.invalidateQueries({ queryKey: ['orders', tenantId] });
+        }
         return;
       }
 
