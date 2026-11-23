@@ -61,7 +61,12 @@ interface MockResult<T> {
   error: { message: string } | null;
 }
 
-type TenantRow = { id: string; stripe_subscription_id: string | null };
+type TenantRow = {
+  id: string;
+  stripe_subscription_id: string | null;
+  suspended_at?: string | null;
+  deleted_at?: string | null;
+};
 type AdminRow = { role: string };
 
 interface MockSupabaseClient {
@@ -481,5 +486,49 @@ describe('POST /api/update-subscription', () => {
     // Read via the service role, for the verified tenant only.
     expect(getTenantBillingIds).toHaveBeenCalledWith('tenant-abc');
     expect(stripe.subscriptions.retrieve).toHaveBeenCalledWith('sub_test_123');
+  });
+
+  // Audit B15: changer de formule facture tout de suite (`always_invoice`). Un
+  // restaurant suspendu par la plateforme payait pour un acces qui reste
+  // ferme (le webhook ne leve pas la suspension). Meme regle que la caisse.
+  it('refuse 409 sans toucher a Stripe quand le restaurant est suspendu', async () => {
+    setupAuthenticatedMocks({
+      tenant: {
+        data: {
+          id: 'tenant-abc',
+          stripe_subscription_id: 'sub_test_123',
+          suspended_at: '2026-11-01T00:00:00Z',
+          deleted_at: null,
+        },
+        error: null,
+      },
+    });
+    mockActiveSubscription();
+
+    const res = await POST(buildRequest({ plan: 'pro' }));
+
+    expect(res.status).toBe(409);
+    expect(stripe.subscriptions.retrieve).not.toHaveBeenCalled();
+    expect(stripe.subscriptions.update).not.toHaveBeenCalled();
+  });
+
+  it('refuse 404 sans toucher a Stripe quand le restaurant est ferme', async () => {
+    setupAuthenticatedMocks({
+      tenant: {
+        data: {
+          id: 'tenant-abc',
+          stripe_subscription_id: 'sub_test_123',
+          suspended_at: null,
+          deleted_at: '2026-11-01T00:00:00Z',
+        },
+        error: null,
+      },
+    });
+    mockActiveSubscription();
+
+    const res = await POST(buildRequest({ plan: 'pro' }));
+
+    expect(res.status).toBe(404);
+    expect(stripe.subscriptions.update).not.toHaveBeenCalled();
   });
 });

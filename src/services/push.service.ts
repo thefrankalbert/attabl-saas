@@ -86,6 +86,12 @@ interface ResultatEnvoiPush {
   echecs: number;
   /** Abonnements ignores: destination hors de la liste des services de push. */
   refuses: number;
+  /**
+   * Vrai quand rien n'a pu etre tente: cles VAPID absentes ou invalides, base
+   * illisible, panne imprevue. Distingue "personne n'est abonne" d'une panne,
+   * pour que le bouton de test ne renvoie pas vers une fausse cause (revue L012).
+   */
+  indisponible?: true;
 }
 
 export interface ServicePush {
@@ -97,6 +103,7 @@ export interface ServicePush {
 }
 
 const RESULTAT_VIDE: ResultatEnvoiPush = { envoyees: 0, expirees: 0, echecs: 0, refuses: 0 };
+const RESULTAT_INDISPONIBLE: ResultatEnvoiPush = { ...RESULTAT_VIDE, indisponible: true };
 
 /** Contact joignable si nos envois posent probleme: exigence du protocole VAPID. */
 const SUJET_VAPID = 'mailto:contact@attabl.com';
@@ -200,7 +207,7 @@ export function createPushService(supabase: SupabaseClient): ServicePush {
         const cles = lireClesVapid();
         if (!cles) {
           logger.warn('Push non configure ou cles invalides: aucun envoi', { tenantId });
-          return RESULTAT_VIDE;
+          return RESULTAT_INDISPONIBLE;
         }
 
         // 1. Les membres VIVANTS du restaurant. Memes criteres que la garde
@@ -218,7 +225,7 @@ export function createPushService(supabase: SupabaseClient): ServicePush {
 
         if (erreurMembres) {
           logger.error('Lecture des membres du restaurant impossible', erreurMembres, { tenantId });
-          return RESULTAT_VIDE;
+          return RESULTAT_INDISPONIBLE;
         }
         const idsMembres = [...new Set((membres ?? []).map((m) => m.user_id as string))];
         if (idsMembres.length === 0) return RESULTAT_VIDE;
@@ -233,7 +240,7 @@ export function createPushService(supabase: SupabaseClient): ServicePush {
 
         if (error) {
           logger.error('Lecture des abonnements push impossible', error, { tenantId });
-          return RESULTAT_VIDE;
+          return RESULTAT_INDISPONIBLE;
         }
 
         const toutes = (data ?? []) as LigneAbonnement[];
@@ -375,7 +382,7 @@ export function createPushService(supabase: SupabaseClient): ServicePush {
         // Filet de securite: aucune action metier ne doit tomber a cause d'une
         // notification, meme sur une panne imprevue de la bibliotheque.
         logger.error('Envoi push interrompu par une erreur inattendue', erreur, { tenantId });
-        return RESULTAT_VIDE;
+        return RESULTAT_INDISPONIBLE;
       }
     },
   };

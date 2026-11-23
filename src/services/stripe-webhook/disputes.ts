@@ -21,11 +21,18 @@ import type { CurrentFreeze } from './status';
  *
  * `payment_intent` est `string | PaymentIntent` cote Stripe: on gere les deux
  * plutot que de mentir au typage avec un `as string`.
+ *
+ * Audit B91: `null` veut dire "ce litige n'a PAS de client" (permanent: on
+ * consomme l'evenement). Une panne passagere de Stripe rend desormais
+ * `DISPUTE_CUSTOMER_UNREADABLE`, distinct: l'ouverture d'un litige doit alors
+ * etre rejouee, sinon le gel n'est jamais pose. Chaque appelant decide.
  */
+export const DISPUTE_CUSTOMER_UNREADABLE = 'unreadable' as const;
+
 export async function disputeCustomerId(
   stripe: Stripe,
   dispute: Stripe.Dispute,
-): Promise<string | null> {
+): Promise<string | null | typeof DISPUTE_CUSTOMER_UNREADABLE> {
   const pi = dispute.payment_intent;
   if (!pi) return null;
   if (typeof pi !== 'string') return typeof pi.customer === 'string' ? pi.customer : null;
@@ -34,8 +41,18 @@ export async function disputeCustomerId(
     const intent = await stripe.paymentIntents.retrieve(pi);
     return typeof intent.customer === 'string' ? intent.customer : null;
   } catch (err) {
+    // Contre-audit D5: un paiement INTROUVABLE est permanent, comme un paiement
+    // sans client. Le rejouer pendant trois jours ne changerait rien.
+    if (
+      typeof err === 'object' &&
+      err !== null &&
+      (err as { code?: string }).code === 'resource_missing'
+    ) {
+      logger.warn('Paiement du litige introuvable chez Stripe', { disputeId: dispute.id });
+      return null;
+    }
     logger.error('Impossible de resoudre le client du litige', err, { disputeId: dispute.id });
-    return null;
+    return DISPUTE_CUSTOMER_UNREADABLE;
   }
 }
 
@@ -51,7 +68,7 @@ export async function disputeCustomerId(
  * parti. Enumerer ce qui LIBERE, et bloquer sur tout le reste, est la seule
  * formulation qui resiste a un etat ajoute par Stripe demain.
  */
-const SETTLED_DISPUTE_STATUSES: readonly string[] = ['won', 'warning_closed'];
+export const SETTLED_DISPUTE_STATUSES: readonly string[] = ['won', 'warning_closed'];
 
 /**
  * Reste-t-il, pour ce client, un litige qui retient de l'argent - autre que

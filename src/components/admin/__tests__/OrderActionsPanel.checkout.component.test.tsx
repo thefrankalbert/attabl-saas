@@ -9,6 +9,8 @@ import type { Order } from '@/types/admin.types';
 import { OrderActionsPanel } from '../order-details/OrderActionsPanel';
 
 vi.mock('../OrderPaymentPanel', () => ({ default: () => null }));
+// Le bouton d'annulation de la fiche appelle une action serveur: simulee ici.
+vi.mock('@/app/actions/orders', () => ({ actionUpdateOrderStatus: vi.fn() }));
 
 type Overrides = Partial<Pick<Order, 'status' | 'payment_status'>>;
 

@@ -88,6 +88,13 @@ function createLimiter(
 
       try {
         const result = await rl.limit(identifier);
+        // La bibliotheque ne LEVE pas quand Redis met plus de 5 s a repondre:
+        // elle rend `{ success: true, reason: 'timeout' }`. Sans ce test, un
+        // compartiment fail-closed laissait tout passer pendant une lenteur
+        // d'Upstash (audit B20). Un delai depasse est une panne comme une autre.
+        if (result.reason === 'timeout') {
+          throw new Error('Rate limiter timeout (Redis did not answer in time)');
+        }
         return {
           success: result.success,
           limit: result.limit,
@@ -254,13 +261,6 @@ export function minutesAvantLiberation(reset: number): number {
  */
 export const signupLimiter = createLimiter('signup', Ratelimit.slidingWindow(15, '10 m'), true);
 
-/** OAuth signup: 5 requests / 10 minutes per IP (fail-closed: brute-force protection) */
-export const oauthSignupLimiter = createLimiter(
-  'signup-oauth',
-  Ratelimit.slidingWindow(5, '10 m'),
-  true,
-);
-
 /**
  * Commandes: 20 par minute et par (IP, tenant). FAIL-OPEN, deliberement.
  *
@@ -419,6 +419,27 @@ export const pdfImportLimiter = createLimiter(
   true,
 );
 
+/**
+ * Resolution des designs QR pour l'impression des tables: 30 / minute par IP.
+ * Lecture ouverte a tout membre (revue L013, A9). Fail-open assume: c'est une
+ * lecture bornee (500 tables, requetes groupees), le plafond limite l'abus.
+ */
+export const qrDesignResolveLimiter = createLimiter(
+  'qr-design-resolve',
+  Ratelimit.slidingWindow(30, '1 m'),
+);
+
+/**
+ * Console plateforme (Command Center du super administrateur): 60 / minute par
+ * IP. La page rafraichit chaque minute et a chaque changement de periode.
+ * Fail-closed: la route lit tous les restaurants avec le client service_role.
+ */
+export const commandCenterLimiter = createLimiter(
+  'command-center',
+  Ratelimit.slidingWindow(60, '1 m'),
+  true,
+);
+
 /** Assignments: 30 requests / minute per IP */
 export const assignmentLimiter = createLimiter('assignment', Ratelimit.slidingWindow(30, '1 m'));
 
@@ -544,9 +565,6 @@ export const restaurantCreateLimiter = createLimiter(
   Ratelimit.slidingWindow(5, '10 m'),
   true,
 );
-
-/** Stock alerts: 10 requests / minute per IP */
-export const stockAlertLimiter = createLimiter('stock-alert', Ratelimit.slidingWindow(10, '1 m'));
 
 /** Auth signout: 10 requests / minute per IP */
 export const signoutLimiter = createLimiter('signout', Ratelimit.slidingWindow(10, '1 m'));

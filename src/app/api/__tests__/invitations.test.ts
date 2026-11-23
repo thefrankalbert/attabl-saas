@@ -451,6 +451,41 @@ describe('POST /api/invitations', () => {
     expect(canAddAdmin).not.toHaveBeenCalled();
   });
 
+  // Decision du proprietaire du 2026-11-21: au-dela de la limite du plan,
+  // l'invitation est refusee cote serveur, avec un code dedie qui fait
+  // afficher le bandeau "plan superieur" sur l'ecran Equipe.
+  it('refuse une invitation au-dela de la limite avec le code PLAN_LIMIT, sans rien creer', async () => {
+    mockRateLimit(true);
+    const mock = createMockSupabase();
+    vi.mocked(createClient).mockResolvedValue(mock as never);
+    setupMockAdminClient();
+    const createInvitation = vi.fn();
+    vi.mocked(createInvitationService).mockReturnValue({
+      getPendingInvitations: vi.fn(),
+      assertNotAlreadyMember: vi.fn().mockResolvedValue(undefined),
+      createInvitation,
+      cancelInvitation: vi.fn(),
+      resendInvitation: vi.fn(),
+    } as never);
+    const canAddStaff = vi
+      .fn()
+      .mockRejectedValue(
+        new ServiceError("Limite atteinte : 3 membre(s) d'equipe maximum.", 'VALIDATION'),
+      );
+    vi.mocked(createPlanEnforcementService).mockReturnValue({
+      canAddAdmin: vi.fn(),
+      canAddStaff,
+    } as never);
+
+    const res = await POST(buildPostRequest({ email: 'cook@test.com', role: 'chef' }));
+    const body = (await res.json()) as { error: string; code?: string };
+
+    expect(res.status).toBe(400);
+    expect(body.code).toBe('PLAN_LIMIT');
+    expect(body.error).toMatch(/Limite atteinte/);
+    expect(createInvitation).not.toHaveBeenCalled();
+  });
+
   it('passes the actor admin_users.id (membership PK) as invitedBy, never the auth user id', async () => {
     // Regression guard for the FK bug: invitations.invited_by references
     // admin_users(id), NOT auth.users(id). Passing user.id (== admin_users.user_id)

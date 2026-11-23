@@ -1,4 +1,5 @@
 import type { QRDesignConfig, QRTemplateId } from '@/types/qr-design.types';
+import { scannableQrColors } from './qr-contrast';
 import {
   createDefaultQRDesignConfig,
   QR_MESSAGE_MAX_LENGTH,
@@ -21,12 +22,13 @@ export interface OnboardingQrInput {
   logoUrl?: string;
 }
 
-/** QR style → fg/bg color mapping */
+/**
+ * QR style -> fg/bg color mapping. Light-on-dark styles ("inverted", "dark")
+ * were removed on 2026-11-23: many phone cameras cannot read them.
+ */
 const QR_STYLE_COLORS: Record<string, { fg: string; bg: string }> = {
   classic: { fg: '#000000', bg: '#FFFFFF' },
   branded: { fg: 'primary', bg: '#FFFFFF' },
-  inverted: { fg: '#FFFFFF', bg: '#000000' },
-  dark: { fg: '#FFFFFF', bg: '#1a1a1a' },
 };
 
 // Map any legacy onboarding template id (from an old saved draft) onto the
@@ -56,8 +58,12 @@ export function onboardingDataToQRConfig(
   // Resolve QR fg/bg colors
   const styleKey = data.qrStyle || 'branded';
   const styleColors = QR_STYLE_COLORS[styleKey] ?? QR_STYLE_COLORS.branded;
-  const qrFg = styleColors.fg === 'primary' ? primary : styleColors.fg;
-  const qrBg = styleColors.bg;
+  // A light brand color (the ATTABL lime, for one) would print a code phones
+  // cannot read: fall back to black dots so the saved design stays scannable.
+  const { fg: qrFg, bg: qrBg } = scannableQrColors(
+    styleColors.fg === 'primary' ? primary : styleColors.fg,
+    styleColors.bg,
+  );
 
   // Same scheme rule as the saved design (qr-design.schema.ts logo.src): a logo
   // the save would refuse is left out instead of failing the whole design.

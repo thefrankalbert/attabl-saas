@@ -21,12 +21,18 @@ interface FeatureUpgradeWallProps {
   feature: GatedFeature;
   checkoutUrl: string;
   tenantId?: string;
+  /**
+   * Lien de retour, pour les pages plein ecran sans menu (ecran cuisine): sans
+   * lui, le mur serait une impasse, la seule sortie etant "Passer au Pro".
+   */
+  backHref?: string;
 }
 
 export async function FeatureUpgradeWall({
   feature,
   checkoutUrl,
   tenantId,
+  backHref,
 }: FeatureUpgradeWallProps) {
   const t = await getTranslations('admin.upgradeWall');
   // Le bouton mene a /subscription (settings.view): le personnel ne peut pas
@@ -65,14 +71,16 @@ export async function FeatureUpgradeWall({
       </div>
       <div className="flex flex-col items-center gap-2">
         {canUpgrade ? (
-          <>
-            <Button asChild size="lg">
-              <Link href={checkoutUrl}>{t('upgradeCta')}</Link>
-            </Button>
-            <p className="text-xs text-muted-foreground">{t('trialNote')}</p>
-          </>
+          <Button asChild size="lg">
+            <Link href={checkoutUrl}>{t('upgradeCta')}</Link>
+          </Button>
         ) : (
           <p className="text-sm text-muted-foreground">{t('askOwner')}</p>
+        )}
+        {backHref && (
+          <Button asChild variant="ghost" size="lg">
+            <Link href={backHref}>{t('back')}</Link>
+          </Button>
         )}
       </div>
     </div>

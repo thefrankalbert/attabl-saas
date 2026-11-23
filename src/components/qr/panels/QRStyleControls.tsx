@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ColorPicker } from '@/components/qr/ColorPicker';
+import { isQrScannable } from '@/lib/qr/qr-contrast';
 import type {
   QRDesignConfig,
   QRDotStyle,
@@ -88,6 +89,14 @@ export function QRStyleControls({ config, updateField }: QRStyleControlsProps) {
           onChange={(c) => updateField('qrBgColor', c)}
         />
       </div>
+      {!isQrScannable(config.qrFgColor, config.qrBgColor) && (
+        <p
+          role="status"
+          className="rounded-lg bg-status-warning-bg px-3 py-2 text-xs leading-relaxed text-status-warning"
+        >
+          {t('qrColorsUnreadable')}
+        </p>
+      )}
 
       <div className="space-y-1.5">
         <Label htmlFor="qr-error-correction" className="text-xs text-app-text-secondary">

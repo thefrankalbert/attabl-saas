@@ -53,7 +53,7 @@ describe('account deletion actions', () => {
     await expect(actionDeleteOwnerAccount({ confirmation: 'Chez alpha' })).rejects.toThrow(
       /NEXT_REDIRECT:.*\/login\?deleted=true$/,
     );
-    expect(signOut).toHaveBeenCalled();
+    expect(signOut).toHaveBeenCalledWith({ scope: 'local' });
     expect(redirect).toHaveBeenCalledTimes(1);
   });
 

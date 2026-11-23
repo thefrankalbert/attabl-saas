@@ -33,7 +33,6 @@ vi.mock('@/lib/auth/get-session', () => ({
 const mockSettle = vi.fn();
 const mockCreate = vi.fn();
 const mockAttach = vi.fn();
-const mockDetach = vi.fn();
 // Solder passe par le service de reglement (il encaisse au registre avant de
 // fermer l'ardoise): c'est LUI qui ne doit jamais etre atteint sous coupure.
 vi.mock('@/services/house-account-settlement.service', () => ({
@@ -43,7 +42,6 @@ vi.mock('@/services/order-annotation.service', () => ({
   createOrderAnnotationService: vi.fn(() => ({
     createHouseAccount: mockCreate,
     attachOrderToHouseAccount: mockAttach,
-    detachOrderFromHouseAccount: mockDetach,
   })),
 }));
 

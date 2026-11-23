@@ -43,6 +43,8 @@ export interface UseUsersDataReturn {
   inviteRole: string;
   setInviteRole: (role: string) => void;
   inviting: boolean;
+  /** Message du dernier refus d'invitation pour limite de plan (bandeau). */
+  planLimitMessage: string | null;
 
   // Pending invitations
   pendingInvitations: Invitation[];
@@ -125,6 +127,7 @@ export function useUsersData({
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<string>('waiter');
   const [inviting, setInviting] = useState(false);
+  const [planLimitMessage, setPlanLimitMessage] = useState<string | null>(null);
 
   // Pending invitations state
   const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>([]);
@@ -190,6 +193,17 @@ export function useUsersData({
           errorData && typeof errorData === 'object' && 'error' in errorData
             ? String((errorData as { error: string }).error)
             : tc('unknownError');
+        // Limite du plan: le refus vient du serveur, le bandeau propose le
+        // plan superieur (decision du proprietaire du 2026-11-21).
+        if (
+          errorData &&
+          typeof errorData === 'object' &&
+          (errorData as { code?: string }).code === 'PLAN_LIMIT'
+        ) {
+          setPlanLimitMessage(errorMessage);
+          setIsModalOpen(false);
+          return;
+        }
         throw new Error(errorMessage);
       }
 
@@ -325,6 +339,7 @@ export function useUsersData({
     inviteRole,
     setInviteRole,
     inviting,
+    planLimitMessage,
 
     pendingInvitations,
     loadingInvitations,

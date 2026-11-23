@@ -268,6 +268,12 @@
     "statusButtonReady": "Prêt à servir",
     "statusButtonCheckout": "Encaisser",
     "statusButtonServed": "Marquer servie",
+    "cancelOrderButton": "Annuler la commande",
+    "cancelOrderTitle": "Annuler cette commande ?",
+    "cancelOrderDescription": "La commande passe en annulée. Les paiements déjà reçus restent au registre.",
+    "cancelOrderKeep": "Garder la commande",
+    "cancelOrderDone": "Commande annulée",
+    "cancelOrderFailed": "Annulation impossible",
     "statusLabel": "Statut",
     "printLabel": "Impression",
     "printKitchenTicket": "Ticket Cuisine",
@@ -307,10 +313,10 @@
   "marketing": {
     "pricing": {
       "metaTitle": "Attabl - Tarifs simples pour la restauration",
-      "metaDescription": "Des prix clairs pour chaque établissement. Starter, Pro, Business ou Enterprise. Essai gratuit 14 jours sur le plan Pro.",
+      "metaDescription": "Des prix clairs pour chaque établissement. Starter, Pro, Business ou Enterprise. Essai gratuit 14 jours avec toutes les fonctionnalités.",
       "hero": {
         "title": "Un prix clair. Pas de surprise.",
-        "subtitle": "14 jours d'essai gratuit, quel que soit le plan choisi. Pendant l'essai, vous avez tout le plan Pro : caisse, écran cuisine, stock, tables, rapports.",
+        "subtitle": "14 jours d'essai gratuit, quel que soit le plan choisi. Pendant l'essai, vous avez tout : caisse, écran cuisine, stock, tables, rapports, livraison, service en chambre.",
         "eyebrow": "Tarifs"
       },
       "billing": {
@@ -328,18 +334,12 @@
           "subtitle": "Pour les restaurateurs qui veulent digitaliser sans se compliquer la vie.",
           "button": "Essayer gratuitement",
           "featuresTitle": "Inclus dans STARTER",
-          "benefits": {
-            "b1": "Menu QR bilingue (FR/EN)",
-            "b2": "POS basique (cash + carte)",
-            "b3": "1 admin, 3 staff",
-            "b4": "Support email"
-          },
           "features": {
             "f1": "Menu QR digital bilingue",
             "f2": "Commandes sur place et à emporter",
             "f3": "POS cash et carte bancaire",
             "f4": "Dashboard (CA, commandes)",
-            "f5": "1 établissement, 2 menus"
+            "f5": "1 établissement, 1 admin, 3 employés"
           }
         },
         "pro": {
@@ -348,12 +348,6 @@
           "subtitle": "Pour ceux qui servent plus de 50 couverts par jour et veulent tout contrôler.",
           "button": "Essayer gratuitement",
           "featuresTitle": "Inclus dans PRO",
-          "benefits": {
-            "b1": "Tout STARTER + KDS, tables, stock",
-            "b2": "Multi-devises (XAF, EUR, USD)",
-            "b3": "Essai gratuit 14 jours sans CB",
-            "b4": "Support WhatsApp 24h"
-          },
           "features": {
             "f1": "Tout ce qui est dans STARTER",
             "f2": "KDS (écran cuisine)",
@@ -361,33 +355,25 @@
             "f4": "Gestion de stock et alertes",
             "f5": "Fiches techniques (coût matière)",
             "f6": "Suivi fournisseurs",
-            "f7": "Mobile money et pourboires",
+            "f7": "Pourboires et multi-devises",
             "f8": "Rapports de vente et best-sellers",
             "f9": "Gestion équipe (rôles, permissions)",
-            "f10": "10 menus, 10 staff"
+            "f10": "2 établissements, 2 admins, 15 employés"
           }
         },
         "business": {
           "badge": "Multi-sites",
           "title": "BUSINESS",
-          "subtitle": "Hôtel, chaîne ou multi-sites : un seul dashboard pour tout piloter.",
+          "subtitle": "Hôtel, livraison, plusieurs établissements : tout est inclus.",
           "primaryButton": "Essayer gratuitement",
           "secondaryButton": "Demander une démo",
           "featuresTitle": "Inclus dans BUSINESS",
-          "benefits": {
-            "b1": "Tout PRO + jusqu'à 10 sites",
-            "b2": "Room service et delivery",
-            "b3": "Rapports avancés et multi-sites",
-            "b4": "Support prioritaire 4h"
-          },
           "features": {
             "f1": "Tout ce qui est dans PRO",
             "f2": "Room service digital",
             "f3": "Commandes delivery",
-            "f4": "Rapports avancés",
-            "f5": "Rapports multi-sites",
-            "f6": "Jusqu'à 10 établissements",
-            "f7": "99 admins, 999 staff, 99 menus"
+            "f4": "Jusqu'à 10 établissements",
+            "f5": "Admins et employés illimités"
           }
         },
         "enterprise": {
@@ -396,12 +382,6 @@
           "subtitle": "Pour les groupes, franchises et chaînes qui gèrent plusieurs sites.",
           "button": "Contactez-nous",
           "featuresTitle": "Inclus dans ENTERPRISE",
-          "benefits": {
-            "b1": "Tout BUSINESS + sites illimités",
-            "b2": "SLA 99.9% garanti",
-            "b3": "Account manager dédié",
-            "b4": "Support téléphone 1h + API sur mesure"
-          },
           "features": {
             "f1": "Tout ce qui est dans BUSINESS",
             "f2": "Établissements illimités",
@@ -432,7 +412,6 @@
             "title": "Encaissement",
             "features": {
               "pos": "POS (cash + carte)",
-              "mobileMoney": "Mobile money",
               "multiCurrency": "Multi-devises (XAF, EUR, USD)",
               "tips": "Pourboires intégrés"
             }
@@ -460,8 +439,7 @@
               "dashboard": "Dashboard (CA, commandes)",
               "salesReports": "Rapports de vente",
               "bestSellers": "Best-sellers",
-              "advancedReports": "Rapports avancés",
-              "multiSiteReports": "Rapports multi-sites"
+              "aiSuggestions": "Suggestions automatiques (IA)"
             }
           },
           "team": {
@@ -487,7 +465,6 @@
           "volumes": {
             "title": "Volumes",
             "features": {
-              "monthlyOrders": "Commandes / mois",
               "menus": "Menus",
               "items": "Articles"
             }
@@ -499,7 +476,7 @@
         "items": {
           "q1": {
             "question": "Comment fonctionne l'essai gratuit ?",
-            "answer": "14 jours avec tout le plan Pro, sans carte bancaire : caisse, écran cuisine, stock, tables, rapports. La livraison, le service en chambre et les analyses IA restent réservés au plan Business."
+            "answer": "Pendant 14 jours, vous testez tout, sans carte bancaire : caisse, écran cuisine, stock, tables, rapports, livraison, service en chambre et analyses IA. Ensuite, vous choisissez votre plan ou vous arrêtez."
           },
           "q2": {
             "question": "Que se passe-t-il après les 14 jours ?",
@@ -554,8 +531,8 @@
       "billedTotal": "{total} FCFA au total",
       "perDay": "soit ~{amount} FCFA par jour",
       "essai": {
-        "title": "Pendant 14 jours, vous testez le plan Pro en entier.",
-        "body": "L'essai donne un accès complet à l'offre Pro, sans carte bancaire. Vous jugez sur votre propre service.",
+        "title": "Pendant 14 jours, vous testez tout.",
+        "body": "Toutes les fonctionnalités sont ouvertes, sans carte bancaire. Vous jugez sur votre propre service.",
         "f1": "Écran cuisine",
         "f2": "Caisse",
         "f3": "Stock et recettes",
@@ -605,7 +582,7 @@
         "p2cta": "Prenez Pro",
         "p3tag": "Vous grandissez",
         "p3title": "Hôtel, plusieurs établissements",
-        "p3body": "Service en chambre, livraison, rapports multi-sites et support prioritaire. Une console pour tout.",
+        "p3body": "Service en chambre, livraison, jusqu'à 10 établissements et support prioritaire.",
         "p3cta": "Passez en Business",
         "help": "Un doute sur le bon choix ?",
         "helpLink": "On vous aide à décider"
@@ -690,7 +667,6 @@
       "cookieAuth": "Cookies de connexion (Supabase) : gardent votre session ouverte. Indispensables.",
       "cookieLocale": "NEXT_LOCALE : retient la langue choisie, un an.",
       "cookieRecovery": "attabl_recovery : sécurise le changement de mot de passe, 15 minutes, invisible pour les scripts du site.",
-      "cookieAb": "attabl_ab_id et attabl_ab_trial : une seule fois, pour tester la durée de l'essai gratuit (7 ou 14 jours) sur les pages d'inscription, 60 jours. Aucune information sur vous n'est associée.",
       "cookieStorage": "Stockage local du navigateur : thème clair ou sombre, préférences d'affichage, devise, panier d'un client. Ces données restent sur votre appareil.",
       "cookieSentry": "Si une erreur survient, Sentry peut enregistrer la session en cours pour nous aider à la corriger.",
       "section8Title": "8. Combien de temps nous gardons vos données",
@@ -1296,7 +1272,7 @@
           "points": {
             "p1": "Service en chambre depuis la chambre",
             "p2": "Plusieurs points de vente (resto, bar)",
-            "p3": "Rapports avancés multi-établissements",
+            "p3": "Jusqu'à 10 établissements dans un seul compte",
             "p4": "Livraison intégrée"
           },
           "offerWhy": "Service en chambre, livraison et multi-établissements arrivent avec l'offre Business."
@@ -1354,7 +1330,7 @@
         "subtitle": "Compte créé en 2 minutes. Votre menu en ligne aujourd'hui.",
         "s1": {
           "title": "Créez votre compte",
-          "body": "2 minutes, sans carte bancaire. 14 jours d'accès complet à l'offre Pro."
+          "body": "2 minutes, sans carte bancaire. 14 jours pour tout tester."
         },
         "s2": {
           "title": "Montez votre carte",
@@ -2323,9 +2299,9 @@
     },
     "upgradeWall": {
       "planRequired": "Fonctionnalité Pro",
-      "upgradeCta": "Passer au Pro - 14j gratuits",
+      "upgradeCta": "Passer au Pro",
       "askOwner": "Le propriétaire du restaurant peut activer cette fonction.",
-      "trialNote": "Disponible gratuitement pendant votre essai Pro",
+      "back": "Retour au tableau de bord",
       "kds": {
         "title": "Écran cuisine (KDS)",
         "desc": "Les commandes arrivent directement sur l'écran de votre cuisine. Vos cuisiniers ne lisent plus les tickets. Moins d'erreurs, service plus rapide."
@@ -2781,7 +2757,6 @@
     "reactivate": "Réactiver",
     "required": "Requis",
     "principal": "Principal",
-    "limitReached": "Limite du plan atteinte. Passer au plan supérieur",
     "newSpace": "Nouvel espace",
     "renameSpace": "Renommer l'espace",
     "nameLabel": "Nom de l'espace",
@@ -2799,7 +2774,9 @@
     "newSpaceHint": "Donnez un nom clair à ce lieu de service.",
     "renameHint": "Choisissez un nouveau nom pour cet espace.",
     "reactivateLimit": "Limite du plan atteinte",
-    "empty": "Aucun espace pour le moment."
+    "empty": "Aucun espace pour le moment.",
+    "limitBanner": "Votre plan inclut {max, plural, one {# espace actif} other {# espaces actifs}}, et vous en avez {count}. Ceux qui existent continuent de fonctionner normalement. Pour en ajouter un, passez au plan supérieur.",
+    "limitBannerCta": "Voir les plans"
   },
   "commandPalette": {
     "placeholder": "Rechercher une page ou une action...",
@@ -3034,13 +3011,14 @@
     "newOrder": "Nouvelle commande",
     "secCatalogue": "Catalogue",
     "secGestion": "Gestion",
-    "usageMonthlyOrders": "Commandes / mois",
     "accountMenu": "Mon compte",
     "planLabel": "Plan {plan}",
-    "planFree": "Gratuit",
     "planCardTitle": "Plan actuel",
     "planCardCta": "Passer au {plan}",
     "planCardUpsellPro": "Débloquez le point de vente complet, la cuisine et le stock.",
+    "planTrial": "Essai",
+    "planCardTrial": "Pendant l'essai, tout est ouvert. Choisissez votre plan avant la fin.",
+    "planCardTrialCta": "Choisir mon plan",
     "navSupports": "Supports",
     "navInventoryCounts": "Inventaires physiques",
     "supports": {
@@ -3307,7 +3285,8 @@
     "durationLessThanHour": "moins d'une heure",
     "durationHours": "{count, plural, one {# heure} other {# heures}}",
     "durationDays": "{count, plural, one {# jour} other {# jours}}",
-    "invitationExpired": "Invitation expirée"
+    "invitationExpired": "Invitation expirée",
+    "limitBannerCta": "Voir les plans"
   },
   "reports": {
     "title": "Rapports",
@@ -3389,6 +3368,8 @@
     "serverPerformance": "Performance par serveur",
     "serverName": "Serveur",
     "ordersCount": "Commandes",
+    "tipsLabel": "Pourboires",
+    "tipsLine": "Pourboires des commandes soldées sur la période : {amount}",
     "avgOrderValue": "Panier moyen",
     "noServerData": "Aucune donnée serveur pour cette période",
     "noDataTitle": "Aucun rapport disponible",
@@ -3922,6 +3903,8 @@
     "totalWithTip": "Total avec pourboire",
     "amountDue": "Montant dû",
     "received": "Reçu",
+    "tipFromCustomer": "Pourboire laissé par le client : {amount}",
+    "tipAddMore": "Ajouter un pourboire",
     "customTip": "Personnalisé",
     "numpadClear": "Effacer",
     "numpadBackspace": "Retour arrière",
@@ -3973,7 +3956,6 @@
     "attach": "Mettre sur l'ardoise",
     "choose": "Choisir une ardoise",
     "attached": "Commande portée sur l'ardoise",
-    "detach": "Retirer de l'ardoise",
     "onTab": "Sur l'ardoise",
     "openOrders": "Commandes ouvertes",
     "outstanding": "Reste du",
@@ -4026,18 +4008,24 @@
     "tabAssign": "Assigner",
     "tabDownload": "Télécharger",
     "guideButton": "Guide",
-    "guideTitle": "Comment utiliser vos QR codes",
+    "guideTitle": "Vos QR codes en 4 étapes",
     "guideIntro": "Un QR par table. Le client scanne, votre carte s'ouvre sur son téléphone. Voici les 4 étapes.",
     "guideStep1Title": "Choisir la table et la carte",
     "guideStep1Body": "Sélectionnez une table et la carte à afficher. Le QR pointera vers cette carte, pour cette table.",
     "guideStep2Title": "Personnaliser le QR",
     "guideStep2Body": "Mettez vos couleurs et votre logo au centre. Le QR reste scannable.",
     "guideStep3Title": "Assigner un design",
-    "guideStep3Body": "Appliquez un design à une zone entiere ou table par table, d'un coup.",
+    "guideStep3Body": "Appliquez un design à une zone entière ou table par table, d'un coup.",
     "guideStep4Title": "Télécharger et imprimer",
     "guideStep4Body": "Téléchargez en PNG, SVG ou PDF. Une table ou toutes d'un coup pour l'impression.",
     "guideTipTitle": "Sur chaque table",
     "guideTipBody": "Imprimez, plastifiez, posez sur la table. Testez avec votre téléphone avant le service.",
+    "guideStart": "Suivre le guide",
+    "guideSkip": "Passer",
+    "guideNext": "Suivant",
+    "guidePrevious": "Précédent",
+    "guideDone": "Terminer",
+    "guideStepOf": "Étape {current} sur {total}",
     "formatA4": "Format A4",
     "assignIntro": "Sauvegardez un design puis assignez-le à une zone ou à une table. Chaque table peut avoir son propre code.",
     "savedDesigns": "Designs sauvegardes",
@@ -4129,7 +4117,8 @@
     "dashCardTitle": "Codes QR",
     "dashCardDesc": "Créez et assignez un QR par table ou par zone",
     "dashCardDescCount": "{count} tables - créez et assignez leurs QR codes",
-    "dashCardCta": "Gérer"
+    "dashCardCta": "Gérer",
+    "qrColorsUnreadable": "Ces couleurs se scannent mal avec un téléphone. Le QR sera imprimé en noir pour rester lisible. Choisissez des points foncés sur un fond clair."
   },
   "service": {
     "readyAlertTable": "Commande prête - Table {table}",

@@ -110,13 +110,16 @@ export const onboardingCompleteSchema = z.object({
         z.enum(['minimal', 'carte', 'chevalet']),
       )
       .optional(),
+    // "inverted" and "dark" (light dots on a dark background) were removed on
+    // 2026-11-23 because many phone cameras cannot read them: an old draft that
+    // still holds one is printed dark-on-light ("classic").
     qrStyle: z
       .preprocess(
-        (v) =>
-          typeof v === 'string' && !['classic', 'branded', 'inverted', 'dark'].includes(v)
-            ? 'branded'
-            : v,
-        z.enum(['classic', 'branded', 'inverted', 'dark']),
+        (v) => {
+          if (v === 'inverted' || v === 'dark') return 'classic';
+          return typeof v === 'string' && !['classic', 'branded'].includes(v) ? 'branded' : v;
+        },
+        z.enum(['classic', 'branded']),
       )
       .optional(),
     qrCta: z.string().max(120).optional(),

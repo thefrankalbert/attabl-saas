@@ -22,8 +22,12 @@ import {
   chartWindow,
   sumLocations,
   toMajorAmount,
-  type DerivableOrder,
 } from './command-center.derive';
+import {
+  createCommandCenterService,
+  type CommandCenterChart,
+  type CommandCenterOverview,
+} from '@/services/command-center.service';
 
 const AUTO_REFRESH_MS = 60_000;
 
@@ -38,6 +42,13 @@ interface UseCommandCenterDataParams {
   serverTotalLocations?: number;
   /** True platform-wide count of active tenants, computed server-side. */
   serverActiveLocations?: number;
+  /**
+   * Super administrateur: les chiffres passent par la route serveur
+   * /api/admin/command-center (service_role apres requireSuperAdmin), car la RLS
+   * de `orders` ne lui ouvre que ses propres restaurants (revue L017, A19).
+   * Proprietaire: lecture directe avec sa session, bornee a ses restaurants.
+   */
+  superAdmin: boolean;
 }
 
 export interface CommandCenterData {
@@ -51,11 +62,17 @@ export interface CommandCenterData {
   isChartLoading: boolean;
   isRefreshing: boolean;
   refresh: () => Promise<void>;
-  fetchChartFor: (period: ChartPeriod) => Promise<void>;
 }
 
-interface RecentOrderRow extends DerivableOrder {
-  tenants: { name: string; slug: string } | null;
+async function fetchFromPlatformRoute<T>(body: unknown): Promise<T> {
+  const res = await fetch('/api/admin/command-center', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`command-center route ${res.status}`);
+  const json = (await res.json()) as { data: T };
+  return json.data;
 }
 
 export function useCommandCenterData(
@@ -64,6 +81,7 @@ export function useCommandCenterData(
     logoBySlug,
     serverTotalLocations,
     serverActiveLocations,
+    superAdmin,
   }: UseCommandCenterDataParams,
   currentPeriod: ChartPeriod,
 ): CommandCenterData {
@@ -108,6 +126,27 @@ export function useCommandCenterData(
     [tAlerts],
   );
 
+  const loadOverview = useCallback(
+    (todayStart: string, yesterdayStart: string): Promise<CommandCenterOverview> =>
+      superAdmin
+        ? fetchFromPlatformRoute<CommandCenterOverview>({
+            kind: 'overview',
+            tenantIds,
+            todayStart,
+            yesterdayStart,
+          })
+        : createCommandCenterService(supabase).loadOverview(tenantIds, todayStart, yesterdayStart),
+    [superAdmin, supabase, tenantIds],
+  );
+
+  const loadChart = useCallback(
+    (start: string): Promise<CommandCenterChart> =>
+      superAdmin
+        ? fetchFromPlatformRoute<CommandCenterChart>({ kind: 'chart', tenantIds, start })
+        : createCommandCenterService(supabase).loadChart(tenantIds, start),
+    [superAdmin, supabase, tenantIds],
+  );
+
   const fetchAll = useCallback(async () => {
     if (tenantIds.length === 0) {
       setLoading(false);
@@ -118,44 +157,22 @@ export function useCommandCenterData(
     const startYesterday = new Date(startToday);
     startYesterday.setDate(startYesterday.getDate() - 1);
 
-    const [todayRes, yesterdayRes, recentRes] = await Promise.all([
-      supabase
-        .from('orders')
-        .select('id, order_number, total, status, created_at, tenant_id, display_currency')
-        .in('tenant_id', tenantIds)
-        .gte('created_at', startToday.toISOString()),
-      supabase
-        .from('orders')
-        .select('id, total, status, tenant_id, created_at, display_currency')
-        .in('tenant_id', tenantIds)
-        .gte('created_at', startYesterday.toISOString())
-        .lt('created_at', startToday.toISOString()),
-      supabase
-        .from('orders')
-        .select(
-          'id, order_number, total, status, created_at, tenant_id, display_currency, tenants(name, slug)',
-        )
-        .in('tenant_id', tenantIds)
-        .order('created_at', { ascending: false })
-        .limit(8),
-    ]);
-
-    if (todayRes.error || yesterdayRes.error || recentRes.error) {
-      logger.error(
-        'command-center fetch failed',
-        todayRes.error || yesterdayRes.error || recentRes.error,
-        { scope: 'fetchAll', tenantCount: tenantIds.length },
-      );
+    let overview: CommandCenterOverview;
+    try {
+      overview = await loadOverview(startToday.toISOString(), startYesterday.toISOString());
+    } catch (err) {
+      logger.error('command-center fetch failed', err, {
+        scope: 'fetchAll',
+        tenantCount: tenantIds.length,
+      });
       setError(true);
       setLoading(false);
       return;
     }
+    const { todayOrders, yesterdayOrders, todayPayments, yesterdayPayments } = overview;
 
-    const todayOrders = (todayRes.data || []) as DerivableOrder[];
-    const yesterdayOrders = (yesterdayRes.data || []) as DerivableOrder[];
-
-    const today = bucketToday(todayOrders, tenantIds);
-    const yesterday = bucketYesterday(yesterdayOrders, tenantIds);
+    const today = bucketToday(todayOrders, todayPayments, tenantIds);
+    const yesterday = bucketYesterday(yesterdayOrders, yesterdayPayments, tenantIds);
     const sortedLocations = buildLocations(
       baseTenants,
       today,
@@ -178,9 +195,8 @@ export function useCommandCenterData(
       alerts_count: allAlerts.length,
     });
 
-    const recentRaw = (recentRes.data || []) as unknown as RecentOrderRow[];
     setRecentOrders(
-      recentRaw.map((o) => {
+      overview.recentOrders.map((o) => {
         const joined = o.tenants;
         return {
           id: o.id,
@@ -197,7 +213,7 @@ export function useCommandCenterData(
     setError(false);
     setLoading(false);
   }, [
-    supabase,
+    loadOverview,
     tenantIds,
     baseTenants,
     logoBySlug,
@@ -207,23 +223,25 @@ export function useCommandCenterData(
     activeLocations,
   ]);
 
+  // Garde de requete (revue L017, A20): seule la DERNIERE demande de graphique
+  // ecrit l'etat. Sans elle, la reponse tardive d'une periode precedente
+  // ("mois") ecrasait le graphique de la periode choisie ("jour").
+  const chartRequestRef = useRef(0);
+
   const fetchChartFor = useCallback(
     async (period: ChartPeriod) => {
       if (tenantIds.length === 0) return;
+      const requestId = ++chartRequestRef.current;
       setIsChartLoading(true);
       const now = new Date();
       const { startDate, groupBy } = chartWindow(period, now);
 
-      const { data, error: chartError } = await supabase
-        .from('orders')
-        .select('total, created_at, status, display_currency')
-        .in('tenant_id', tenantIds)
-        .gte('created_at', startDate.toISOString())
-        .neq('status', 'cancelled')
-        .order('created_at', { ascending: true });
-
-      if (chartError) {
-        logger.error('command-center fetch failed', chartError, {
+      let chart: CommandCenterChart;
+      try {
+        chart = await loadChart(startDate.toISOString());
+      } catch (err) {
+        if (requestId !== chartRequestRef.current) return;
+        logger.error('command-center fetch failed', err, {
           scope: 'fetchChart',
           tenantCount: tenantIds.length,
         });
@@ -231,18 +249,12 @@ export function useCommandCenterData(
         setIsChartLoading(false);
         return;
       }
+      if (requestId !== chartRequestRef.current) return;
 
-      setChartData(
-        bucketChart(
-          (data || []) as Array<Pick<DerivableOrder, 'total' | 'created_at' | 'display_currency'>>,
-          startDate,
-          now,
-          groupBy,
-        ),
-      );
+      setChartData(bucketChart(chart.payments, chart.orders, startDate, now, groupBy));
       setIsChartLoading(false);
     },
-    [supabase, tenantIds],
+    [loadChart, tenantIds],
   );
 
   const refresh = useCallback(async () => {
@@ -289,6 +301,5 @@ export function useCommandCenterData(
     isChartLoading,
     isRefreshing,
     refresh,
-    fetchChartFor,
   };
 }

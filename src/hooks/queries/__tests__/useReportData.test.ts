@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { getDateRange, parseOrderSummary } from '../useReportData';
+import { getDateRange, parseOrderSummary, parseServerPerformance } from '../useReportData';
 
 /**
  * Characterization + regression tests for getDateRange, the report period math.
@@ -90,15 +90,16 @@ describe('parseOrderSummary', () => {
       revenue: 14_613_500,
       orders: 618,
       avgBasket: 23_646,
+      tips: 0,
     });
   });
 
   it('returns zeros for an empty result set', () => {
-    expect(parseOrderSummary([])).toEqual({ revenue: 0, orders: 0, avgBasket: 0 });
+    expect(parseOrderSummary([])).toEqual({ revenue: 0, orders: 0, avgBasket: 0, tips: 0 });
   });
 
   it('returns zeros for null', () => {
-    expect(parseOrderSummary(null)).toEqual({ revenue: 0, orders: 0, avgBasket: 0 });
+    expect(parseOrderSummary(null)).toEqual({ revenue: 0, orders: 0, avgBasket: 0, tips: 0 });
   });
 
   it('tolerates a bare object (in case a caller uses .single())', () => {
@@ -106,6 +107,31 @@ describe('parseOrderSummary', () => {
       revenue: 100,
       orders: 2,
       avgBasket: 50,
+      tips: 0,
     });
+  });
+
+  // Constat C (audit pourboires 2026-11-20): `total_tips` etait renvoye par la
+  // base mais lu par personne, si bien qu'aucun rapport ne montrait les pourboires.
+  it('lit les pourboires de la periode (total_tips)', () => {
+    const data = [{ total_revenue: 5500, total_orders: 1, avg_basket: 5500, total_tips: 500 }];
+    expect(parseOrderSummary(data).tips).toBe(500);
+  });
+});
+
+// Constat D: pourboires par serveur, colonne `tips` de get_server_performance.
+describe('parseServerPerformance', () => {
+  it('lit les pourboires de chaque serveur et calcule le panier moyen', () => {
+    const rows = [{ server_id: 's1', server_name: 'Awa', orders: 2, revenue: 11000, tips: 1000 }];
+    expect(parseServerPerformance(rows)).toEqual([
+      { serverName: 'Awa', orders: 2, revenue: 11000, avgOrder: 5500, tips: 1000 },
+    ]);
+  });
+
+  it('vaut zero quand la colonne manque (ancienne fonction) ou sans donnees', () => {
+    expect(
+      parseServerPerformance([{ server_id: 's1', server_name: 'Awa', orders: 0, revenue: 0 }]),
+    ).toEqual([{ serverName: 'Awa', orders: 0, revenue: 0, avgOrder: 0, tips: 0 }]);
+    expect(parseServerPerformance(null)).toEqual([]);
   });
 });

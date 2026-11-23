@@ -326,6 +326,10 @@ function getOrCreateMenuDataCache(tenantId: string): CachedMenuDataFn {
               'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, is_transversal_menu, display_order, created_at, updated_at, children:menus!parent_menu_id(id, name, name_en, slug, description, is_active, display_order)',
             )
             .eq('tenant_id', id)
+            // Audit B24: client service_role, aucune RLS. Sans ce filtre, une
+            // carte d'un AUTRE restaurant accrochee a une carte d'ici sortait
+            // comme onglet de cette vitrine.
+            .eq('children.tenant_id', id)
             .eq('is_active', true)
             .eq('is_transversal_menu', false)
             .is('parent_menu_id', null)
