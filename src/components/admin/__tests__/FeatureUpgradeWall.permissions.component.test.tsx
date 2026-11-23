@@ -86,6 +86,18 @@ describe('FeatureUpgradeWall - fonction Business', () => {
     expect(screen.queryByText('upgradeCta')).toBeNull();
   });
 
+  it('libelle Business pour les rapports avances', async () => {
+    mockGetPermission.mockResolvedValue(true);
+    render(
+      await FeatureUpgradeWall({
+        feature: 'advancedReports',
+        checkoutUrl: '/sites/resto/admin/subscription',
+      }),
+    );
+    expect(screen.getByText('planRequiredBusiness')).toBeInTheDocument();
+    expect(screen.getByText('upgradeCtaBusiness')).toBeInTheDocument();
+  });
+
   it('temoin: une fonction Pro garde le libelle Pro', async () => {
     mockGetPermission.mockResolvedValue(true);
     await renderWall();
