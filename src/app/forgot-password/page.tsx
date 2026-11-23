@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <AuthShell>
+    <AuthShell scene="forgot">
       <div className="w-full">
         <div className="mb-7 text-center">
           <h1 className="mb-1.5 text-[22px] font-semibold tracking-[-0.02em] text-[var(--heading)]">

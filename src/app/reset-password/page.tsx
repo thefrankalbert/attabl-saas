@@ -32,7 +32,7 @@ export default function ResetPasswordPage() {
   return (
     <Suspense
       fallback={
-        <AuthShell>
+        <AuthShell scene="reset">
           <ResetPasswordLoadingFallback />
         </AuthShell>
       }
@@ -145,7 +145,7 @@ function ResetPasswordContent() {
   };
 
   return (
-    <AuthShell>
+    <AuthShell scene="reset">
       <div className="w-full">
         {success ? (
           <AuthCard>

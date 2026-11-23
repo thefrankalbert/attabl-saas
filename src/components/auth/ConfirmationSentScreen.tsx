@@ -1,10 +1,12 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Loader2, MailCheck, RefreshCw, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { AuthCard } from './AuthCard';
+import { setAuthSceneOverride } from './auth-scenes';
 
 interface ConfirmationSentScreenProps {
   email: string;
@@ -27,6 +29,13 @@ function ConfirmationSentScreen({
   onResend,
 }: ConfirmationSentScreenProps) {
   const tConfirm = useTranslations('auth.confirm');
+
+  // Cet ecran remplace le formulaire d'inscription sans changer de route: il
+  // demande sa propre photo et sa propre phrase au cadre, et les rend en partant.
+  useEffect(() => {
+    setAuthSceneOverride('confirm');
+    return () => setAuthSceneOverride(null);
+  }, []);
 
   return (
     <div>

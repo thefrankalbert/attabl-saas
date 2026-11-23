@@ -34,7 +34,7 @@ export default async function ConfirmEmailChangePage({
   const claims = done === 'current' ? null : readClaims(token);
 
   return (
-    <AuthShell>
+    <AuthShell scene="emailChange">
       <div className="w-full">
         <AuthCard>
           <div className="flex flex-col gap-3 py-2 text-center">
