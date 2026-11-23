@@ -5,7 +5,6 @@ import { logger } from '@/lib/logger';
 import { hashEmail } from '@/lib/hash-email';
 import { createSignupService } from '@/services/signup.service';
 import { ServiceError } from '@/services/errors';
-import { parseAbTrialFromCookieHeader } from '@/lib/ab-testing';
 import { pickOnboardingTenantIndex } from '@/lib/onboarding/select-onboarding-tenant';
 import { mapMembershipRows, postLoginDestination } from '@/lib/auth/post-login-destination';
 import {
@@ -169,26 +168,12 @@ export async function GET(request: Request) {
         const adminSupabase = createAdminClient();
         const signupService = createSignupService(adminSupabase);
 
-        const result = await signupService.completeOAuthSignup({
+        await signupService.completeOAuthSignup({
           userId: session.user.id,
           email: session.user.email ?? '',
           restaurantName: signupName,
           plan: signupPlan,
         });
-
-        // A/B test: shorten trial to 7d if the visitor was assigned that variant
-        // (parity with the former /api/signup-oauth route).
-        const trialVariant = parseAbTrialFromCookieHeader(request.headers.get('cookie') ?? '');
-        if (trialVariant === '7d') {
-          const trialEndsAt = new Date(Date.now() + 7 * 86400000).toISOString();
-          const { error: trialErr } = await adminSupabase
-            .from('tenants')
-            .update({ trial_ends_at: trialEndsAt })
-            .eq('id', result.tenantId);
-          if (trialErr) {
-            logger.warn('AB test: failed to apply 7d trial', { tenantId: result.tenantId });
-          }
-        }
 
         return NextResponse.redirect(`${requestUrl.origin}/onboarding`);
       } catch (signupError) {

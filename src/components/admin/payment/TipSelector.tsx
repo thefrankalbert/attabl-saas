@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils/currency';
 
 interface TipSelectorProps {
   presets: readonly number[];
@@ -13,6 +14,9 @@ interface TipSelectorProps {
   onFixed: (amount: number) => void;
   onCustom: () => void;
   onCustomChange: (value: string) => void;
+  /** Tip the customer already left (major units): the buttons choose what to ADD. */
+  recordedTip: number;
+  currency: string;
   /** Section title above the buttons (desktop column); the phone row has none. */
   withTitle?: boolean;
   className?: string;
@@ -35,6 +39,8 @@ export function TipSelector({
   onFixed,
   onCustom,
   onCustomChange,
+  recordedTip,
+  currency,
   withTitle = false,
   className,
 }: TipSelectorProps) {
@@ -61,7 +67,12 @@ export function TipSelector({
     <div className={cn('space-y-2', className)} role="group" aria-label={t('tip')}>
       {withTitle && (
         <p className="text-xs font-medium uppercase tracking-widest text-app-text-muted">
-          {t('tip')}
+          {recordedTip > 0 ? t('tipAddMore') : t('tip')}
+        </p>
+      )}
+      {recordedTip > 0 && (
+        <p className="text-xs text-app-text-secondary">
+          {t('tipFromCustomer', { amount: formatCurrency(recordedTip, currency) })}
         </p>
       )}
       <div className="flex flex-wrap gap-1.5">

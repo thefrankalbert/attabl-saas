@@ -17,7 +17,7 @@ import type { CurrencyCode, Order } from '@/types/admin.types';
  * client, et le detail des unites (mineures en base, majeures a l'ecran) est
  * exactement le genre de regle qu'on ne verifie pas a l'oeil.
  */
-export interface AmountToCollectInput {
+export interface OrderTotalInput {
   /**
    * Mode PANIER (caisse, commande pas encore creee): total deja calcule cote
    * navigateur, en unites MAJEURES. Prioritaire quand il est fourni.
@@ -28,7 +28,12 @@ export interface AmountToCollectInput {
   currency: CurrencyCode;
 }
 
-export function amountToCollectMajor({ totalProp, order, currency }: AmountToCollectInput): number {
+/**
+ * Total de la commande, POURBOIRE EXCLU (`orders.total` exclut le pourboire).
+ * Le montant reclame au client y ajoute le pourboire: voir `collectTotals`
+ * dans `payment-amounts.ts`.
+ */
+export function orderTotalMajor({ totalProp, order, currency }: OrderTotalInput): number {
   if (totalProp != null) return totalProp;
 
   const isOrderMode = !!order?.id;
@@ -39,4 +44,22 @@ export function amountToCollectMajor({ totalProp, order, currency }: AmountToCol
   // repli puisqu'il vit au seul endroit ou l'argent est reclame.
   const minor = order?.total_price ?? order?.total;
   return fromMinorUnits(Number(minor ?? 0), currency);
+}
+
+/**
+ * Pourboire DEJA enregistre sur la commande (laisse par le client sur la
+ * vitrine), en unites MAJEURES. Zero en mode panier: la commande n'existe pas.
+ *
+ * POURQUOI. La caisse ne le lisait pas: avec 5 000 de commande et 500 de
+ * pourboire, l'ecran reclamait et controlait 5 000, alors que le registre
+ * `payments` inscrivait 5 500 (`total + tip_amount`). Constat A de l'audit
+ * pourboires du 2026-11-20.
+ */
+export function recordedTipMajor(
+  order: Pick<Order, 'id' | 'tip_amount'> | undefined,
+  currency: CurrencyCode,
+): number {
+  if (!order?.id) return 0;
+  const minor = Number(order.tip_amount ?? 0);
+  return minor > 0 ? fromMinorUnits(minor, currency) : 0;
 }

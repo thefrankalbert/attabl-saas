@@ -240,10 +240,23 @@ export async function POST(request: Request) {
       if (tenant) {
         const enforcement = createPlanEnforcementService(adminClient);
         // Staff roles count against maxStaff; admin/owner count against maxAdmins
-        if ((STAFF_ROLES as readonly string[]).includes(parsed.data.role)) {
-          await enforcement.canAddStaff(tenant as Tenant);
-        } else {
-          await enforcement.canAddAdmin(tenant as Tenant);
+        try {
+          if ((STAFF_ROLES as readonly string[]).includes(parsed.data.role)) {
+            await enforcement.canAddStaff(tenant as Tenant);
+          } else {
+            await enforcement.canAddAdmin(tenant as Tenant);
+          }
+        } catch (limitError) {
+          // Limite du plan: code dedie pour que l'ecran Equipe affiche le
+          // bandeau "plan superieur". Les membres deja presents ne sont jamais
+          // touches, seul l'ajout est refuse.
+          if (limitError instanceof ServiceError && limitError.code === 'VALIDATION') {
+            return NextResponse.json(
+              { error: limitError.message, code: 'PLAN_LIMIT' },
+              { status: serviceErrorToStatus(limitError.code) },
+            );
+          }
+          throw limitError;
         }
       }
 

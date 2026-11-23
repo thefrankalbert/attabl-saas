@@ -63,8 +63,13 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
   const topItems = reportData?.topItems ?? [];
   const categories = reportData?.categories ?? [];
   const serverStats = reportData?.serverStats ?? [];
-  const summary = reportData?.summary ?? { revenue: 0, orders: 0, avgBasket: 0 };
-  const previousSummary = reportData?.previousSummary ?? { revenue: 0, orders: 0, avgBasket: 0 };
+  const summary = reportData?.summary ?? { revenue: 0, orders: 0, avgBasket: 0, tips: 0 };
+  const previousSummary = reportData?.previousSummary ?? {
+    revenue: 0,
+    orders: 0,
+    avgBasket: 0,
+    tips: 0,
+  };
 
   const periodDisplayLabel = useMemo(() => {
     const map: Record<Period, string> = {

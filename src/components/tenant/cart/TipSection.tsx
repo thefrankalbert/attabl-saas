@@ -102,8 +102,8 @@ export function TipSection({
               className={cn(
                 'h-auto flex-[1_0_28%] rounded-[var(--radius-search)] border py-[11px] text-[12.5px] font-semibold tabular-nums',
                 active
-                  ? 'border-[var(--color-ink)] bg-[var(--color-ink)] text-white hover:bg-[var(--color-ink)]'
-                  : 'border-[var(--color-divider)] bg-white text-[var(--color-ink-2)] hover:bg-white',
+                  ? 'border-[var(--color-ink)] bg-[var(--color-ink)] text-white hover:bg-[var(--color-ink)] hover:text-white'
+                  : 'border-[var(--color-divider)] bg-white text-[var(--color-ink-2)] hover:bg-white hover:text-[var(--color-ink-2)]',
               )}
             >
               {opt.label}

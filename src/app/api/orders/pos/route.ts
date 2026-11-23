@@ -1,5 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
-import { NextResponse, after } from 'next/server';
+import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { createPOSOrderSchema } from '@/lib/validations/order.schema';
 import { orderLimiter } from '@/lib/rate-limit';
@@ -9,16 +9,12 @@ import { createCouponService } from '@/services/coupon.service';
 import { createAssignmentService } from '@/services/assignment.service';
 import { calculateOrderTotal } from '@/lib/pricing/tax';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
-import {
-  createPlanEnforcementService,
-  assertOrderFeaturesAllowed,
-} from '@/services/plan-enforcement.service';
+import { assertOrderFeaturesAllowed } from '@/services/plan-enforcement.service';
 import { fetchMenuItemsByIds } from '@/lib/menu-items-query';
 import { scheduleDestock } from '../schedule-destock';
 import { applyPosPayment, type PosPaymentOutcome } from './apply-pos-payment';
 import { checkDineInTable } from '@/services/order/dine-in-table';
 import { canAccessFeature, getPlanLimits } from '@/lib/plans/features';
-import type { Tenant } from '@/types/admin.types';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
 import { TENANT_LOCK_COLUMNS, tenantLockReason } from '@/lib/billing/tenant-lock';
@@ -271,15 +267,12 @@ export async function POST(request: Request) {
     // Plan gate: reject paid service modes (delivery/room service) and tips the
     // tenant's plan does not include. POS orders always use the tenant currency,
     // so display_currency is not part of this check. Throws ServiceError -> 403.
-    assertOrderFeaturesAllowed(
-      getPlanLimits(
-        tenant.subscription_plan as SubscriptionPlan | null,
-        tenant.subscription_status as SubscriptionStatus | null,
-        tenant.trial_ends_at,
-      ),
-      { service_type, tip_amount },
-      tenant.currency || 'XAF',
+    const planLimits = getPlanLimits(
+      tenant.subscription_plan as SubscriptionPlan | null,
+      tenant.subscription_status as SubscriptionStatus | null,
+      tenant.trial_ends_at,
     );
+    assertOrderFeaturesAllowed(planLimits, { service_type, tip_amount }, tenant.currency || 'XAF');
 
     type PosMenuRow = {
       id: string;
@@ -468,7 +461,7 @@ export async function POST(request: Request) {
     // Concurrent replay deduped at the DB unique index: the winning request
     // already created this order and destocked. Undo the coupon claim we made
     // above (the deduped result is a success, so the catch never unclaimed),
-    // heal the payment/status idempotently, and skip destock/notif/quota.
+    // heal the payment/status idempotently, and skip destock/notif.
     if (result.deduplicated) {
       if (couponResult?.couponId) {
         try {
@@ -516,7 +509,9 @@ export async function POST(request: Request) {
     // kitchen becomes that table's server (unless it already has one), so the
     // Service floor shows who to call when it is ready. Best-effort: an
     // assignment problem must never fail an order that is already created.
-    if (service_type === 'dine_in' && adminUser.role === 'waiter') {
+    // Server assignment is a Pro feature (canAccessService): on Starter there is
+    // no Service floor to show it on, and the database refuses the row.
+    if (service_type === 'dine_in' && adminUser.role === 'waiter' && planLimits.canAccessService) {
       try {
         const { data: placed } = await adminSupabase
           .from('orders')
@@ -588,41 +583,6 @@ export async function POST(request: Request) {
         channel: 'pos',
       });
     }
-
-    // 13. Monthly order quota check (NON-blocking - never rejects an order).
-    // Scheduled via after() so it survives serverless freeze.
-    after(async () => {
-      try {
-        const now = new Date();
-        const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-        const enforcement = createPlanEnforcementService(adminSupabase);
-        const usage = await enforcement.getMonthlyOrderUsage(
-          { ...tenant, id: tenant_id } as Tenant,
-          monthStart,
-        );
-        if (!usage.exceeded) return;
-
-        const monthKey = `monthly_quota_exceeded_${now.getUTCFullYear()}_${now.getUTCMonth() + 1}`;
-        // Atomically claim the monthly slot server-side - merges into the live row,
-        // so a concurrent writer's key is never clobbered. Notify once per month.
-        const { data: claimed } = await adminSupabase.rpc('claim_activation_event', {
-          p_tenant_id: tenant_id,
-          p_event_key: monthKey,
-        });
-        if (claimed) {
-          await adminSupabase.from('notifications').insert({
-            tenant_id,
-            user_id: null,
-            type: 'warning',
-            title: 'Quota de commandes mensuel atteint',
-            body: `Votre plan inclut ${usage.limit} commandes par mois. Passez au plan superieur pour lever cette limite.`,
-            link: `/admin/subscription`,
-          });
-        }
-      } catch (quotaErr) {
-        logger.warn('POS order: monthly quota check failed (non-blocking)', { err: quotaErr });
-      }
-    });
 
     return orderResponse(
       { orderId: result.orderId, orderNumber: result.orderNumber, total: result.total },
