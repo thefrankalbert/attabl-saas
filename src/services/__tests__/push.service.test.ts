@@ -373,7 +373,7 @@ describe('createPushService', () => {
 
     const r = await createPushService(fausseBase()).envoyerAuxAppareilsDuTenant(TENANT, CHARGE);
 
-    expect(r).toEqual({ envoyees: 0, expirees: 0, echecs: 0, refuses: 0 });
+    expect(r).toEqual({ envoyees: 0, expirees: 0, echecs: 0, refuses: 0, indisponible: true });
     expect(appels).toHaveLength(0);
     expect(envoyer).not.toHaveBeenCalled();
   });
@@ -394,7 +394,7 @@ describe('createPushService', () => {
 
     const r = await createPushService(fausseBase()).envoyerAuxAppareilsDuTenant(TENANT, CHARGE);
 
-    expect(r).toEqual({ envoyees: 0, expirees: 0, echecs: 0, refuses: 0 });
+    expect(r).toEqual({ envoyees: 0, expirees: 0, echecs: 0, refuses: 0, indisponible: true });
     expect(appels).toHaveLength(0);
     expect(poserCles).not.toHaveBeenCalled();
   });
@@ -403,14 +403,14 @@ describe('createPushService', () => {
     reponseMembres = { data: null, error: { message: 'base indisponible' } };
     await expect(
       createPushService(fausseBase()).envoyerAuxAppareilsDuTenant(TENANT, CHARGE),
-    ).resolves.toEqual({ envoyees: 0, expirees: 0, echecs: 0, refuses: 0 });
+    ).resolves.toEqual({ envoyees: 0, expirees: 0, echecs: 0, refuses: 0, indisponible: true });
   });
 
   it('une base muette sur les abonnements rend un compte rendu a zero', async () => {
     reponseAbonnements = { data: null, error: { message: 'base indisponible' } };
     await expect(
       createPushService(fausseBase()).envoyerAuxAppareilsDuTenant(TENANT, CHARGE),
-    ).resolves.toEqual({ envoyees: 0, expirees: 0, echecs: 0, refuses: 0 });
+    ).resolves.toEqual({ envoyees: 0, expirees: 0, echecs: 0, refuses: 0, indisponible: true });
     expect(envoyer).not.toHaveBeenCalled();
   });
 
@@ -429,7 +429,7 @@ describe('createPushService', () => {
 
     await expect(
       createPushService(fausseBase()).envoyerAuxAppareilsDuTenant(TENANT, CHARGE),
-    ).resolves.toEqual({ envoyees: 0, expirees: 0, echecs: 0, refuses: 0 });
+    ).resolves.toEqual({ envoyees: 0, expirees: 0, echecs: 0, refuses: 0, indisponible: true });
   });
 
   it('tous les appareils refusent: toujours pas de levee', async () => {

@@ -185,10 +185,13 @@ export function useReportData(tenantId: string, period: Period, timezone: string
       let dailyRes, topRes, summaryRes, prevSummaryRes;
       try {
         [dailyRes, topRes, summaryRes, prevSummaryRes] = await Promise.all([
+          // Jours au calendrier du restaurant (pas en UTC): une vente a 0 h 30
+          // heure locale tombe sur la bonne barre.
           supabase.rpc('get_daily_revenue', {
             p_tenant_id: tenantId,
             p_start_date: startDate,
             p_end_date: endDate,
+            p_timezone: timezone,
           }),
           supabase.rpc('get_top_items', {
             p_tenant_id: tenantId,

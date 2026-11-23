@@ -13,6 +13,11 @@ const getUser = vi.fn();
 const signInWithPassword = vi.fn();
 const acceptInvitation = vi.fn();
 const validateToken = vi.fn();
+const { tenantRead, canAddStaff } = vi.hoisted(() => ({
+  tenantRead: { value: { data: null as unknown, error: null as unknown } },
+  canAddStaff: vi.fn(),
+}));
+const ACTIVE_TENANT = { id: 'tenant-1', is_active: true, subscription_plan: 'pro' };
 
 vi.mock('@/lib/rate-limit', () => ({
   invitationAcceptLimiter: { check: vi.fn().mockResolvedValue({ success: true }) },
@@ -25,7 +30,7 @@ vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => ({
     from: () => ({
       select: () => ({
-        eq: () => ({ single: () => Promise.resolve({ data: null, error: null }) }),
+        eq: () => ({ single: () => Promise.resolve(tenantRead.value) }),
       }),
     }),
   }),
@@ -47,7 +52,7 @@ vi.mock('@/services/invitation.service', () => ({
 
 vi.mock('@/services/plan-enforcement.service', () => ({
   createPlanEnforcementService: () => ({
-    canAddStaff: vi.fn(),
+    canAddStaff,
     canAddAdmin: vi.fn(),
   }),
   STAFF_ROLES: ['manager', 'cashier', 'chef', 'waiter'],
@@ -72,6 +77,7 @@ function buildRequest(body: Record<string, unknown>): Request {
 describe('POST /api/invitations/accept - session du titulaire', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    tenantRead.value = { data: ACTIVE_TENANT, error: null };
     validateToken.mockResolvedValue({
       id: 'inv-1',
       tenant_id: 'tenant-1',
@@ -171,5 +177,40 @@ describe('POST /api/invitations/accept - session du titulaire', () => {
       buildRequest({ token: TOKEN, full_name: 'Awa Traore', password: 'motdepasse-solide' }),
     );
     expect(res.status).toBe(200);
+  });
+
+  // Revue L022 (A24, A25).
+  it('lecture du restaurant en echec: refus, sans acceptation ni limites sautees', async () => {
+    getUser.mockResolvedValue({ data: { user: null } });
+    tenantRead.value = { data: null, error: { message: 'timeout' } };
+    const res = await POST(buildRequest({ token: TOKEN }));
+    expect(res.status).toBe(500);
+    expect(acceptInvitation).not.toHaveBeenCalled();
+  });
+
+  it('restaurant inactif: refus 409, sans acceptation', async () => {
+    getUser.mockResolvedValue({ data: { user: null } });
+    tenantRead.value = { data: { ...ACTIVE_TENANT, is_active: false }, error: null };
+    const res = await POST(buildRequest({ token: TOKEN }));
+    expect(res.status).toBe(409);
+    expect(acceptInvitation).not.toHaveBeenCalled();
+  });
+
+  it('temoin: restaurant actif, la limite du plan est appliquee', async () => {
+    getUser.mockResolvedValue({ data: { user: null } });
+    acceptInvitation.mockResolvedValue({ tenantSlug: 'resto' });
+    await POST(buildRequest({ token: TOKEN }));
+    expect(canAddStaff).toHaveBeenCalledWith(ACTIVE_TENANT);
+  });
+
+  it('corps non JSON: 400, pas une erreur serveur', async () => {
+    const res = await POST(
+      new Request('http://localhost:3000/api/invitations/accept', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{pas du json',
+      }),
+    );
+    expect(res.status).toBe(400);
   });
 });

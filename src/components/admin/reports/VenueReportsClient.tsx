@@ -16,7 +16,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useVenueReport, venueKey, type VenueRow } from '@/hooks/queries/useVenueReport';
+import {
+  comparableRows,
+  useVenueReport,
+  venueKey,
+  type VenueRow,
+} from '@/hooks/queries/useVenueReport';
 import { useSessionState } from '@/hooks/useSessionState';
 import { formatCurrencyMinor } from '@/lib/utils/money';
 import type { CurrencyCode } from '@/types/admin.types';
@@ -116,7 +121,7 @@ export default function VenueReportsClient({
           }
         />
         <PeriodPills period={period} setPeriod={setPeriod} />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
           {kpis.map(({ key, Icon, label, value }) => (
             <div
               key={key}
@@ -142,8 +147,9 @@ export default function VenueReportsClient({
         <div className="space-y-4">
           {rows.length === 0 ? (
             <p className="py-10 text-center text-sm text-app-text-muted">{tv('noVenues')}</p>
-          ) : rows.filter((r) => r.venueId).length < 2 ? (
-            // Un seul espace: un tableau d'une ligne a 100 % ne compare rien.
+          ) : comparableRows(rows) < 2 ? (
+            // Une seule ligne a comparer: un tableau d'une ligne a 100 % ne
+            // compare rien. La ligne "Sans espace" compte quand elle a vendu.
             <div className="bg-app-card border border-app-border/60 rounded-xl p-6 text-center space-y-3">
               <p className="text-sm text-app-text">{tv('singleVenue')}</p>
               <Button asChild variant="outline" className="min-h-[44px] sm:min-h-0">

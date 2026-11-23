@@ -70,7 +70,11 @@ export async function actionCreateVenue(input: unknown) {
     return { success: true as const, data };
   } catch (error) {
     if (error instanceof AuthError) return { success: false as const, error: error.message };
-    if (error instanceof ServiceError) return { success: false as const, error: error.message };
+    // Une erreur INTERNAL porte le texte brut de la base: elle reste au journal,
+    // l'utilisateur lit le message generique (revue L016, A21).
+    if (error instanceof ServiceError && error.code !== 'INTERNAL') {
+      return { success: false as const, error: error.message };
+    }
     logger.error('Error creating venue', error);
     return { success: false as const, error: 'Impossible de creer l espace.' };
   }
@@ -97,7 +101,11 @@ export async function actionRenameVenue(input: unknown) {
     return { success: true as const };
   } catch (error) {
     if (error instanceof AuthError) return { success: false as const, error: error.message };
-    if (error instanceof ServiceError) return { success: false as const, error: error.message };
+    // Une erreur INTERNAL porte le texte brut de la base: elle reste au journal,
+    // l'utilisateur lit le message generique (revue L016, A21).
+    if (error instanceof ServiceError && error.code !== 'INTERNAL') {
+      return { success: false as const, error: error.message };
+    }
     logger.error('Error renaming venue', error);
     return { success: false as const, error: 'Impossible de renommer l espace.' };
   }
@@ -138,7 +146,11 @@ export async function actionReactivateVenue(input: unknown) {
     return { success: true as const };
   } catch (error) {
     if (error instanceof AuthError) return { success: false as const, error: error.message };
-    if (error instanceof ServiceError) return { success: false as const, error: error.message };
+    // Une erreur INTERNAL porte le texte brut de la base: elle reste au journal,
+    // l'utilisateur lit le message generique (revue L016, A21).
+    if (error instanceof ServiceError && error.code !== 'INTERNAL') {
+      return { success: false as const, error: error.message };
+    }
     logger.error('Error reactivating venue', error);
     return { success: false as const, error: 'Impossible de reactiver l espace.' };
   }
@@ -165,7 +177,11 @@ export async function actionDeactivateVenue(input: unknown) {
     return { success: true as const };
   } catch (error) {
     if (error instanceof AuthError) return { success: false as const, error: error.message };
-    if (error instanceof ServiceError) return { success: false as const, error: error.message };
+    // Une erreur INTERNAL porte le texte brut de la base: elle reste au journal,
+    // l'utilisateur lit le message generique (revue L016, A21).
+    if (error instanceof ServiceError && error.code !== 'INTERNAL') {
+      return { success: false as const, error: error.message };
+    }
     logger.error('Error deactivating venue', error);
     return { success: false as const, error: 'Impossible de desactiver l espace.' };
   }

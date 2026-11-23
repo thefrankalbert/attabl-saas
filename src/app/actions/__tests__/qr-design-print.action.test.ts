@@ -2,7 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Coupure du restaurant (A-02): la garde est simulee ici, sa logique est testee
 // dans lib/billing/__tests__/assert-tenant-serving.test.ts.
-const { mockAssertServing } = vi.hoisted(() => ({ mockAssertServing: vi.fn() }));
+const { mockAssertServing, mockResolve, mockResolveLimit } = vi.hoisted(() => ({
+  mockAssertServing: vi.fn(),
+  mockResolve: vi.fn(),
+  mockResolveLimit: vi.fn(),
+}));
 vi.mock('@/lib/billing/assert-tenant-serving', async () => {
   const { AuthError } = await import('@/lib/auth/get-session');
   class TenantLockedError extends AuthError {
@@ -34,16 +38,16 @@ vi.mock('@/lib/logger', () => ({
 vi.mock('@/lib/rate-limit', () => ({
   uploadLimiter: { check: vi.fn(async () => ({ success: true })) },
   assignmentLimiter: { check: vi.fn(async () => ({ success: true })) },
+  qrDesignResolveLimiter: { check: mockResolveLimit },
   getClientIpFromHeaders: () => '127.0.0.1',
 }));
 vi.mock('@/lib/plans/assert-feature', () => ({ isFeatureEntitled: async () => true }));
 vi.mock('@/services/audit.service', () => ({ createAuditService: () => ({ log: vi.fn() }) }));
 
-const mockResolve = vi.fn();
 const mockAssignTable = vi.fn();
 vi.mock('@/services/qr-design.service', () => ({
   createQrDesignService: () => ({
-    resolveDesignForTable: mockResolve,
+    resolveDesignsForTables: mockResolve,
     assignDesignToTable: mockAssignTable,
   }),
 }));
@@ -72,7 +76,8 @@ const TABLE_ID = '550e8400-e29b-41d4-a716-446655440001';
 beforeEach(() => {
   vi.clearAllMocks();
   member.role = 'manager';
-  mockResolve.mockResolvedValue({ size: 200 });
+  mockResolve.mockResolvedValue({ [TABLE_ID]: { size: 200 } });
+  mockResolveLimit.mockResolvedValue({ success: true });
 });
 
 describe('QR: imprimer oui, modifier non sans settings.edit', () => {
@@ -83,7 +88,7 @@ describe('QR: imprimer oui, modifier non sans settings.edit', () => {
       const { actionResolveDesignsForTables } = await import('@/app/actions/qr-design');
       const res = await actionResolveDesignsForTables([TABLE_ID]);
       expect(res.success).toBe(true);
-      expect(mockResolve).toHaveBeenCalledWith('tenant-1', TABLE_ID);
+      expect(mockResolve).toHaveBeenCalledWith('tenant-1', [TABLE_ID]);
     },
   );
 
@@ -92,5 +97,22 @@ describe('QR: imprimer oui, modifier non sans settings.edit', () => {
     const res = await actionAssignQrDesign({ target: 'table', targetId: TABLE_ID, designId: null });
     expect(res.success).toBe(false);
     expect(mockAssignTable).not.toHaveBeenCalled();
+  });
+
+  // Revue L013 (A9): lecture ouverte a tout membre, donc bornee et limitee.
+  it('refuse un tableau trop grand ou des identifiants non UUID, sans rien resoudre', async () => {
+    const { actionResolveDesignsForTables } = await import('@/app/actions/qr-design');
+    const trop = Array.from({ length: 501 }, () => TABLE_ID);
+    expect((await actionResolveDesignsForTables(trop)).success).toBe(false);
+    expect((await actionResolveDesignsForTables(['pas-un-uuid'])).success).toBe(false);
+    expect(mockResolve).not.toHaveBeenCalled();
+  });
+
+  it('passe par le limiteur de debit et refuse au-dela', async () => {
+    mockResolveLimit.mockResolvedValueOnce({ success: false });
+    const { actionResolveDesignsForTables } = await import('@/app/actions/qr-design');
+    const res = await actionResolveDesignsForTables([TABLE_ID]);
+    expect(res).toEqual({ success: false, error: 'rateLimited' });
+    expect(mockResolve).not.toHaveBeenCalled();
   });
 });

@@ -40,6 +40,7 @@ vi.mock('@/lib/logger', () => ({
 vi.mock('@/lib/rate-limit', () => ({
   uploadLimiter: { check: async () => ({ success: true }) },
   assignmentLimiter: { check: async () => ({ success: true }) },
+  qrDesignResolveLimiter: { check: async () => ({ success: true }) },
   restaurantCreateLimiter: { check: async () => ({ success: true }) },
   getClientIpFromHeaders: () => '127.0.0.1',
 }));
@@ -220,7 +221,6 @@ const writes: Call[] = [
   ],
 
   ['actionSaveQrDesign', () => qrDesign.actionSaveQrDesign({})],
-  ['actionDeleteQrDesign', () => qrDesign.actionDeleteQrDesign(X)],
   ['actionAssignQrDesign', () => qrDesign.actionAssignQrDesign({})],
 
   ['actionOpenStockCount', () => stockCount.actionOpenStockCount(T, {})],
@@ -331,7 +331,6 @@ describe('restaurant coupe: aucune ecriture par Server Action (A-02)', () => {
       'actionAddOrderNote',
       'actionCreateHouseAccount',
       'actionAttachOrderToHouseAccount',
-      'actionDetachOrder',
       'actionSettleHouseAccount',
       'actionAssignServer',
       'actionReleaseAssignment',

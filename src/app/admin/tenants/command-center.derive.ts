@@ -5,6 +5,7 @@ import type {
   Tenant,
 } from '@/types/command-center.types';
 import { fromMinorUnits } from '@/lib/utils/money';
+import { ledgerValue } from '@/lib/orders/revenue';
 
 /**
  * Pure, deterministic reducers and helpers for the Command Center data layer.
@@ -24,6 +25,30 @@ export interface DerivableOrder {
   created_at: string;
   tenant_id: string;
   display_currency?: string | null;
+}
+
+/**
+ * One row of the `payments` ledger, with the currency of its order. The Command
+ * Center revenue is read from here, like every other money figure of the
+ * product (src/lib/orders/revenue.ts, revue L016 A18): a comped, unpaid or
+ * refunded order no longer inflates the figure.
+ */
+export interface DerivablePayment {
+  tenant_id: string;
+  /** payments.amount in integer MINOR units (refund rows are positive). */
+  amount: number | string | null;
+  /** 'completed' adds, 'refunded' subtracts. */
+  status: string | null;
+  created_at: string;
+  display_currency?: string | null;
+}
+
+/** Signed major-unit value of one ledger row (+ received, - refunded). */
+export function paymentMajorAmount(p: DerivablePayment): number {
+  return fromMinorUnits(
+    ledgerValue({ amount: toAmount(p.amount), status: p.status }),
+    p.display_currency,
+  );
 }
 
 /** Per-tenant aggregate for the current day, including a 24-bucket sparkline. */
@@ -74,12 +99,14 @@ export function toMajorAmount(order: Pick<DerivableOrder, 'total' | 'display_cur
 }
 
 /**
- * Bucket today's orders per tenant: revenue, order count, and an hourly
- * sparkline. Cancelled orders are skipped. Orders whose tenant_id is not in
- * `tenantIds` are ignored (defensive - the query already filters by tenant).
+ * Bucket today per tenant: order count (cancelled skipped) from the orders,
+ * revenue and the hourly sparkline from the payments ledger (money received
+ * today). Rows whose tenant_id is not in `tenantIds` are ignored (defensive -
+ * the query already filters by tenant).
  */
 export function bucketToday(
   orders: DerivableOrder[],
+  payments: DerivablePayment[],
   tenantIds: string[],
 ): Map<string, TenantToday> {
   const byTenant = new Map<string, TenantToday>();
@@ -89,11 +116,14 @@ export function bucketToday(
   for (const o of orders) {
     if (o.status === 'cancelled') continue;
     const bucket = byTenant.get(o.tenant_id);
+    if (bucket) bucket.orders += 1;
+  }
+  for (const p of payments) {
+    const bucket = byTenant.get(p.tenant_id);
     if (!bucket) continue;
-    const amount = toMajorAmount(o);
+    const amount = paymentMajorAmount(p);
     bucket.revenue += amount;
-    bucket.orders += 1;
-    const h = new Date(o.created_at).getHours();
+    const h = new Date(p.created_at).getHours();
     if (h >= 0 && h < HOURS_IN_DAY) {
       bucket.sparkline[h] = (bucket.sparkline[h] || 0) + amount;
     }
@@ -102,11 +132,12 @@ export function bucketToday(
 }
 
 /**
- * Bucket yesterday's orders per tenant (revenue + count only). Cancelled
- * orders are skipped.
+ * Bucket yesterday per tenant: order count (cancelled skipped) from the
+ * orders, revenue from the payments ledger.
  */
 export function bucketYesterday(
   orders: DerivableOrder[],
+  payments: DerivablePayment[],
   tenantIds: string[],
 ): Map<string, TenantYesterday> {
   const byTenant = new Map<string, TenantYesterday>();
@@ -116,9 +147,11 @@ export function bucketYesterday(
   for (const o of orders) {
     if (o.status === 'cancelled') continue;
     const bucket = byTenant.get(o.tenant_id);
-    if (!bucket) continue;
-    bucket.revenue += toMajorAmount(o);
-    bucket.orders += 1;
+    if (bucket) bucket.orders += 1;
+  }
+  for (const p of payments) {
+    const bucket = byTenant.get(p.tenant_id);
+    if (bucket) bucket.revenue += paymentMajorAmount(p);
   }
   return byTenant;
 }
@@ -241,46 +274,44 @@ export function chartWindow(
 }
 
 /**
- * Bucket chart orders into hourly (00h..current hour) or daily (start..now)
- * series. Input orders are assumed already filtered to the window and to
- * exclude cancelled rows (the query does that), but we stay defensive.
+ * Bucket the chart into hourly (00h..current hour) or daily (start..now)
+ * series: revenue from the payments ledger, order count from the orders.
+ * Inputs are assumed already filtered to the window, and the orders to exclude
+ * cancelled rows (the query does that).
  */
 export function bucketChart(
-  orders: Array<Pick<DerivableOrder, 'total' | 'created_at' | 'display_currency'>>,
+  payments: DerivablePayment[],
+  orders: Array<Pick<DerivableOrder, 'created_at'>>,
   startDate: Date,
   now: Date,
   groupBy: 'hour' | 'day',
 ): ChartDataPoint[] {
   const buckets = new Map<string, { revenue: number; orders: number }>();
+  const keyOf = (iso: string): string => {
+    const d = new Date(iso);
+    return groupBy === 'hour'
+      ? `${String(d.getHours()).padStart(2, '0')}h`
+      : `${d.getDate()}/${d.getMonth() + 1}`;
+  };
 
   if (groupBy === 'hour') {
     for (let h = 0; h <= now.getHours(); h++) {
       buckets.set(`${String(h).padStart(2, '0')}h`, { revenue: 0, orders: 0 });
     }
-    for (const o of orders) {
-      const key = `${String(new Date(o.created_at).getHours()).padStart(2, '0')}h`;
-      const b = buckets.get(key);
-      if (b) {
-        b.revenue += toMajorAmount(o);
-        b.orders += 1;
-      }
-    }
   } else {
     const cursor = new Date(startDate);
     while (cursor <= now) {
-      const key = `${cursor.getDate()}/${cursor.getMonth() + 1}`;
-      buckets.set(key, { revenue: 0, orders: 0 });
+      buckets.set(`${cursor.getDate()}/${cursor.getMonth() + 1}`, { revenue: 0, orders: 0 });
       cursor.setDate(cursor.getDate() + 1);
     }
-    for (const o of orders) {
-      const d = new Date(o.created_at);
-      const key = `${d.getDate()}/${d.getMonth() + 1}`;
-      const b = buckets.get(key);
-      if (b) {
-        b.revenue += toMajorAmount(o);
-        b.orders += 1;
-      }
-    }
+  }
+  for (const p of payments) {
+    const b = buckets.get(keyOf(p.created_at));
+    if (b) b.revenue += paymentMajorAmount(p);
+  }
+  for (const o of orders) {
+    const b = buckets.get(keyOf(o.created_at));
+    if (b) b.orders += 1;
   }
 
   return Array.from(buckets.entries()).map(([label, v]) => ({

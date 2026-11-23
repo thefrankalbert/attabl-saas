@@ -121,37 +121,6 @@ export async function actionAttachOrderToHouseAccount(
   }
 }
 
-/** Detach an order from its house account. Money staff. */
-export async function actionDetachOrder(
-  tenantId: string,
-  orderId: string,
-): Promise<{ success?: boolean; error?: string }> {
-  const parsedTenant = tenantIdSchema.safeParse(tenantId);
-  const parsedOrder = z.string().uuid().safeParse(orderId);
-  if (!parsedTenant.success || !parsedOrder.success) {
-    return { error: 'Donnees invalides' };
-  }
-
-  try {
-    const { supabase } = await getAuthenticatedUserForTenant(
-      parsedTenant.data,
-      ALL_ADMIN_ROLES,
-      ORDER_PAY_PERMISSIONS,
-    );
-    // Coupure du restaurant: solder une ardoise est un encaissement, et ces
-    // actions sont appelees en direct par l'interface. Voir
-    // assert-tenant-serving.ts.
-    await assertTenantServing(parsedTenant.data);
-    await createOrderAnnotationService(supabase).detachOrderFromHouseAccount(
-      parsedOrder.data,
-      parsedTenant.data,
-    );
-    return { success: true };
-  } catch (err) {
-    return mapError(err, 'actionDetachOrder', tenantId);
-  }
-}
-
 /** Settle (solder) a house account. Manager or above. */
 export async function actionSettleHouseAccount(
   tenantId: string,

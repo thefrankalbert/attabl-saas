@@ -120,9 +120,14 @@ export default function TenantsPageClient({
     isChartLoading,
     isRefreshing,
     refresh,
-    fetchChartFor,
   } = useCommandCenterData(
-    { baseTenants, logoBySlug, serverTotalLocations, serverActiveLocations },
+    {
+      baseTenants,
+      logoBySlug,
+      serverTotalLocations,
+      serverActiveLocations,
+      superAdmin: serverMode === 'superadmin',
+    },
     chartPeriod,
   );
 
@@ -156,13 +161,11 @@ export default function TenantsPageClient({
     return directory.length > 0 ? [...locations, ...directory] : locations;
   }, [serverDirectory, baseTenants, locations]);
 
-  const handlePeriodChange = useCallback(
-    (period: ChartPeriod) => {
-      setChartPeriod(period);
-      void fetchChartFor(period);
-    },
-    [fetchChartFor],
-  );
+  const handlePeriodChange = useCallback((period: ChartPeriod) => {
+    // Le changement de periode relance l'effet du crochet: un second appel
+    // ici envoyait deux requetes identiques (revue L017).
+    setChartPeriod(period);
+  }, []);
 
   const handleOpenDashboard = useCallback(
     (slug: string) => router.push(`/sites/${slug}/admin`),

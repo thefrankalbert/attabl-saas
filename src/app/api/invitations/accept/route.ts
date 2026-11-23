@@ -15,7 +15,12 @@ export async function POST(request: Request) {
     const originErr = verifyOrigin(request);
     if (originErr) return originErr;
 
-    const body: unknown = await request.json();
+    // Un corps qui n'est pas du JSON est une requete invalide (400), pas une
+    // erreur serveur journalisee a chaque appel (revue L022, A25).
+    const body: unknown = await request.json().catch(() => undefined);
+    if (body === undefined) {
+      return NextResponse.json({ error: 'Donnees invalides' }, { status: 400 });
+    }
 
     // Rate-limit per token+IP, not per IP alone: scoping the budget to a single
     // invitation prevents neighbours behind the same NAT/CGNAT from collectively
@@ -70,7 +75,7 @@ export async function POST(request: Request) {
     // Validate token first, then check plan limits before accepting
     const invitation = await service.validateToken(parsed.data.token);
 
-    const { data: tenant } = await adminClient
+    const { data: tenant, error: tenantError } = await adminClient
       .from('tenants')
       .select(
         'id, name, slug, subscription_plan, subscription_status, trial_ends_at, is_active, created_at',
@@ -78,14 +83,26 @@ export async function POST(request: Request) {
       .eq('id', invitation.tenant_id)
       .single();
 
-    if (tenant) {
-      const enforcement = createPlanEnforcementService(adminClient);
-      // Staff roles count against maxStaff; admin/owner count against maxAdmins
-      if ((STAFF_ROLES as readonly string[]).includes(invitation.role)) {
-        await enforcement.canAddStaff(tenant as Tenant);
-      } else {
-        await enforcement.canAddAdmin(tenant as Tenant);
-      }
+    // Echec ferme (revue L022, A24): sans le restaurant, les limites du plan
+    // etaient sautees et l'acceptation continuait. Un restaurant ferme ou
+    // suspendu ne gagne pas de membre avec une invitation emise avant.
+    if (tenantError || !tenant) {
+      throw new ServiceError(
+        'Impossible de verifier le restaurant. Reessayez dans un instant.',
+        'INTERNAL',
+        tenantError,
+      );
+    }
+    if (tenant.is_active === false) {
+      throw new ServiceError("Ce restaurant n'accepte plus de nouveaux membres.", 'CONFLICT');
+    }
+
+    const enforcement = createPlanEnforcementService(adminClient);
+    // Staff roles count against maxStaff; admin/owner count against maxAdmins
+    if ((STAFF_ROLES as readonly string[]).includes(invitation.role)) {
+      await enforcement.canAddStaff(tenant as Tenant);
+    } else {
+      await enforcement.canAddAdmin(tenant as Tenant);
     }
 
     const { tenantSlug } = await service.acceptInvitation({
