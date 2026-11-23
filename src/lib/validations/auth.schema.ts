@@ -3,7 +3,7 @@ import { passwordSchema } from './common.schema';
 
 /**
  * Zod schemas for authentication-related validation.
- * Used in /api/signup and /api/signup-oauth routes.
+ * Used in the /api/signup route.
  */
 
 export const signupSchema = z.object({
@@ -13,17 +13,6 @@ export const signupSchema = z.object({
     .max(100, 'Le nom du restaurant ne doit pas dépasser 100 caractères'),
   email: z.string().email('Email invalide'),
   password: passwordSchema,
-  phone: z.string().max(20).optional(),
-  plan: z.enum(['starter', 'pro', 'business']).optional(),
-});
-
-export const signupOAuthSchema = z.object({
-  userId: z.string().uuid('User ID invalide'),
-  email: z.string().email('Email invalide'),
-  restaurantName: z
-    .string()
-    .min(2, 'Le nom du restaurant doit contenir au moins 2 caractères')
-    .max(100, 'Le nom du restaurant ne doit pas dépasser 100 caractères'),
   phone: z.string().max(20).optional(),
   plan: z.enum(['starter', 'pro', 'business']).optional(),
 });

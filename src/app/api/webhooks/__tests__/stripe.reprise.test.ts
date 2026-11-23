@@ -32,6 +32,7 @@ const ledger = {
   inserted: true,
   existing: null as { completed_at: string | null; processed_at: string } | null,
   takeoverError: null as { message: string } | null,
+  readError: null as { message: string } | null,
   completedUpdates: [] as Array<Record<string, unknown>>,
   insertedRows: [] as Array<Record<string, unknown>>,
 };
@@ -77,6 +78,19 @@ vi.mock('@/lib/supabase/admin', () => ({
         }),
       }),
       delete: () => ({ eq: async () => ({ error: null }) }),
+      // Lecture d'aboutissement quand la reprise ne trouve rien (audit B64):
+      // select('completed_at').eq('id').maybeSingle().
+      select: () => ({
+        eq: () => ({
+          maybeSingle: async () =>
+            ledger.readError
+              ? { data: null, error: ledger.readError }
+              : {
+                  data: ledger.existing ? { completed_at: ledger.existing.completed_at } : null,
+                  error: null,
+                },
+        }),
+      }),
     }),
   }),
 }));
@@ -97,6 +111,7 @@ beforeEach(() => {
   ledger.inserted = true;
   ledger.existing = null;
   ledger.takeoverError = null;
+  ledger.readError = null;
   ledger.completedUpdates = [];
   ledger.insertedRows = [];
   mockConstructEvent.mockReturnValue({
@@ -139,13 +154,28 @@ describe('webhook Stripe - reprise d un evenement jamais abouti', () => {
     expect(ledger.completedUpdates).toHaveLength(1);
   });
 
-  it('un traitement encore en cours (ligne recente) n est pas double', async () => {
+  it('un traitement encore en cours (ligne recente) n est pas double, et Stripe rejouera', async () => {
+    // Audit B64: une ligne recente sans `completed_at` peut aussi etre celle
+    // d'une fonction TUEE en plein traitement. Un 200 arretait les rejeux de
+    // Stripe et l'evenement etait perdu. 409: pas de double traitement, mais
+    // Stripe rejoue plus tard et trouvera une ligne aboutie ou reprenable.
     ledger.inserted = false;
     ledger.existing = { completed_at: null, processed_at: minutesAgo(1) };
 
     const res = await call();
 
-    expect(await res.json()).toEqual({ received: true, idempotent: true });
+    expect(res.status).toBe(409);
+    expect(mockHandleEvent).not.toHaveBeenCalled();
+  });
+
+  it('si la lecture d aboutissement echoue, 500 pour que Stripe rejoue', async () => {
+    ledger.inserted = false;
+    ledger.existing = { completed_at: null, processed_at: minutesAgo(1) };
+    ledger.readError = { message: 'timeout' };
+
+    const res = await call();
+
+    expect(res.status).toBe(500);
     expect(mockHandleEvent).not.toHaveBeenCalled();
   });
 
@@ -159,7 +189,9 @@ describe('webhook Stripe - reprise d un evenement jamais abouti', () => {
     const second = await call();
 
     expect(await first.json()).toEqual({ received: true });
-    expect(await second.json()).toEqual({ received: true, idempotent: true });
+    // La fausse base ne pose pas `completed_at`: le second voit une ligne
+    // recente non aboutie. Il ne la retraite pas et demande un rejeu ulterieur.
+    expect(second.status).toBe(409);
     expect(mockHandleEvent).toHaveBeenCalledTimes(1);
   });
 

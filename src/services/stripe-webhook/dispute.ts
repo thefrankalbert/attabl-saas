@@ -9,7 +9,12 @@ import {
 import { ServiceError } from '../errors';
 import type { SubscriptionStatus } from '@/types/billing';
 import type { StripeWebhookDeps } from './deps';
-import { disputeCustomerId, unsettledDisputeBlocksUnfreeze } from './disputes';
+import {
+  DISPUTE_CUSTOMER_UNREADABLE,
+  disputeCustomerId,
+  SETTLED_DISPUTE_STATUSES,
+  unsettledDisputeBlocksUnfreeze,
+} from './disputes';
 import {
   isActiveUnlessLocked,
   isHealthySubscriptionStatus,
@@ -32,6 +37,12 @@ export async function handleDisputeCreated(
 ): Promise<void> {
   const customerId = await disputeCustomerId(stripe, dispute);
 
+  if (customerId === DISPUTE_CUSTOMER_UNREADABLE) {
+    // Audit B91: Stripe illisible n'est pas "pas de client". Consommer
+    // l'evenement ici sautait le gel pour toujours (l'argent est en jeu): on
+    // leve, la route retire la ligne d'idempotence et Stripe rejoue.
+    throw new ServiceError('Stripe unavailable while resolving dispute customer', 'INTERNAL');
+  }
   if (!customerId) {
     logger.warn('Dispute created without resolvable customer', { disputeId: dispute.id });
     return;
@@ -113,8 +124,10 @@ export async function handleDisputeClosed(
 ): Promise<void> {
   // Le degel n'est PAS automatique quand le litige est perdu: l'argent est
   // parti, le tenant reste gele jusqu'a regularisation. Il ne l'est que si
-  // le litige est gagne ('won'), c'est-a-dire si le paiement tient.
-  if (dispute.status !== 'won') {
+  // le litige ne retient plus d'argent: gagne ('won'), ou demande de
+  // renseignement classee sans suite ('warning_closed', audit B92). Meme
+  // liste que pour les autres litiges du client (disputes.ts).
+  if (!SETTLED_DISPUTE_STATUSES.includes(dispute.status)) {
     logger.warn('Dispute closed against us, tenant stays frozen', {
       disputeId: dispute.id,
       status: dispute.status,
@@ -124,7 +137,8 @@ export async function handleDisputeClosed(
 
   const customerId = await disputeCustomerId(stripe, dispute);
 
-  if (!customerId) return;
+  // Stripe illisible: on reste gele (fail-closed), comme avant.
+  if (!customerId || customerId === DISPUTE_CUSTOMER_UNREADABLE) return;
 
   // ACT-18: 'frozen' est l'etat de gel GENERIQUE du projet. Il est pose
   // par ce litige, mais aussi par customer.subscription.deleted, par le

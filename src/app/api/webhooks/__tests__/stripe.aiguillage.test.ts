@@ -133,6 +133,14 @@ function setupMock(options: MockOptions = {}) {
 
     if (table === 'stripe_events') {
       return {
+        // Lecture d'aboutissement d'un rejeu (audit B64): ligne deja aboutie.
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi
+              .fn()
+              .mockResolvedValue({ data: { completed_at: '2026-01-01T00:00:00Z' }, error: null }),
+          }),
+        }),
         update: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             // Marquage d'aboutissement: update().eq() attendu directement.
@@ -385,11 +393,12 @@ describe('evenements sans effet de bord', () => {
 
 // ---------------------------------------------------------------------------
 // customer.subscription.trial_will_end - le seul gestionnaire qui ne touche
-// NI le statut, NI l'acces: il pose uniquement le drapeau d'avertissement.
+// NI le statut, NI l'acces. Il n'ecrit plus rien (audit B99): la colonne
+// `trial_warning_sent` n'existe pas en production et aucun code ne la lisait.
 // ---------------------------------------------------------------------------
 
 describe('customer.subscription.trial_will_end', () => {
-  it('pose trial_warning_sent et rien d autre', async () => {
+  it('n ecrit rien en base et journalise la fin d essai prochaine', async () => {
     const chain = setupMock({ tenant: { id: 'tenant-1' } });
 
     const response = await fire('customer.subscription.trial_will_end', {
@@ -398,9 +407,8 @@ describe('customer.subscription.trial_will_end', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(chain.updatePayloads).toEqual([{ trial_warning_sent: true }]);
-    expect(chain.updateFilters).toEqual([['id', 'tenant-1']]);
-    expect(logger.info).toHaveBeenCalledWith('Trial ending soon, warning sent', {
+    expect(chain.updatePayloads).toEqual([]);
+    expect(logger.info).toHaveBeenCalledWith('Trial ending soon', {
       tenantId: 'tenant-1',
     });
   });
@@ -418,25 +426,6 @@ describe('customer.subscription.trial_will_end', () => {
     expect(logger.warn).toHaveBeenCalledWith('Trial will end: tenant not found', {
       customerId: 'cus_ghost',
     });
-  });
-
-  it('reste en 200 et GARDE la ligne d idempotence quand l ecriture du drapeau echoue', async () => {
-    // Un drapeau d'affichage n'est pas de l'argent: faire rejouer Stripe
-    // pendant trois jours pour ca serait disproportionne.
-    const chain = setupMock({ tenant: { id: 'tenant-1' }, updateErrors: [{ message: 'db down' }] });
-
-    const response = await fire('customer.subscription.trial_will_end', {
-      customer: 'cus_1',
-      status: 'trialing',
-    });
-
-    expect(response.status).toBe(200);
-    expect(chain.deletedEventIds).toEqual([]);
-    expect(logger.error).toHaveBeenCalledWith(
-      'DB update failed for trial_will_end',
-      { message: 'db down' },
-      { tenantId: 'tenant-1' },
-    );
   });
 });
 
@@ -508,11 +497,15 @@ describe('invoice.paid', () => {
 
   it('ecrit le bloc de retour a la normale, scope aux seuls impayes non coupes', async () => {
     const chain = setupMock();
+    // Audit B94: la levee du gel pour remboursement exige un abonnement en
+    // regle chez Stripe, relu au moment de lever.
+    mockSubscriptionsRetrieve.mockResolvedValue({ id: 'sub_1', status: 'active' });
 
     const response = await fire('invoice.paid', {
       customer: 'cus_1',
       amount_paid: 29000,
       status_transitions: { paid_at: 1800000000 },
+      parent: { subscription_details: { subscription: 'sub_1' } },
     });
 
     expect(response.status).toBe(200);

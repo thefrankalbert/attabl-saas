@@ -1,6 +1,6 @@
 import { ServiceError } from '../errors';
-import { findHeaderRow, readFirstSheetRows } from '@/lib/excel-parse';
-import { COLUMN_ALIASES, mapHeaders } from './columns';
+import { findHeaderRow, mapHeaders, readFirstSheetRows } from '@/lib/excel-parse';
+import { COLUMN_ALIASES } from './columns';
 import { excelRowSchema } from './row-schema';
 import { parseBooleanCell, parseNumericCell } from './cells';
 import type { ParsedRow, ImportRowError } from './types';
@@ -38,7 +38,10 @@ export async function parseExcelBuffer(
     );
   }
 
-  const headerMapping = mapHeaders((rawData[headerIndex] ?? []).map((c) => String(c ?? '')));
+  const headerMapping = mapHeaders(
+    COLUMN_ALIASES,
+    (rawData[headerIndex] ?? []).map((c) => String(c ?? '')),
+  );
   const rows: ParsedRow[] = [];
   const errors: ImportRowError[] = [];
 

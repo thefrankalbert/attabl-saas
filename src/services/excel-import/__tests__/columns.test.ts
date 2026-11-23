@@ -9,7 +9,12 @@
  * Ce module n'avait aucun test.
  */
 import { describe, it, expect } from 'vitest';
-import { normalizeHeader, mapHeaders, COLUMN_ALIASES } from '../columns';
+import { normalizeHeader, mapHeaders as mapHeadersPartage } from '@/lib/excel-parse';
+import { COLUMN_ALIASES } from '../columns';
+
+// La lecture des en-tetes est celle de `@/lib/excel-parse` (audit B45): on teste
+// ici les ALIAS de la carte a travers elle.
+const mapHeaders = (headers: string[]) => mapHeadersPartage(COLUMN_ALIASES, headers);
 
 describe('normalizeHeader', () => {
   it('ignore la casse', () => {
@@ -88,8 +93,14 @@ describe('mapHeaders', () => {
   });
 
   it('accepte les synonymes courants du prix', () => {
-    for (const entete of ['Prix', 'Price', 'Tarif', 'Cout', 'Cost']) {
+    for (const entete of ['Prix', 'Price', 'Tarif']) {
       expect(mapHeaders([entete]).get(0)).toBe('price');
+    }
+  });
+
+  it('le cout matiere n est PAS le prix de vente (audit B45)', () => {
+    for (const entete of ['Cout', 'Coût', 'Cost']) {
+      expect(mapHeaders([entete]).get(0)).toBeUndefined();
     }
   });
 
