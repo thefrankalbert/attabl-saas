@@ -19,14 +19,14 @@ export const MOSAIC_TILES = [
   'poisson',
   'bar',
   'douceurs',
-  // dressage tant que l'affiche du hero est la photo du comptoir (sinon doublon).
   'dressage',
   'chef',
   'associes',
   'verres',
   'accueil',
   'serveuse',
-  'maitre',
+  // pas de tuile 'maitre' : c'est la personne de l'affiche du hero (doublon).
+  'comptoir',
   'gerante',
   'bureau',
   'pintade',

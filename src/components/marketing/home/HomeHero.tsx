@@ -6,8 +6,8 @@ import { AnimatedWords } from './AnimatedWords';
 import { HeroVideo } from './HeroVideo';
 import { WHATSAPP_LINK } from './whatsapp';
 
-// ponytail: affiche provisoire (photo du comptoir) tant que la video Attabl n'existe pas.
-const HERO_POSTER = '/marketing/home/comptoir.webp';
+// Affiche du hero (et de la video quand elle existera).
+const HERO_POSTER = '/marketing/home/hero-service.webp';
 
 export async function HomeHero({ videoSrc }: { videoSrc?: string }) {
   const t = await getTranslations('marketing.home.hero');

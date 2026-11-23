@@ -3,7 +3,7 @@ import { AnimatedWords } from './AnimatedWords';
 import { AudiencePanels, type AudiencePanel } from './AudiencePanels';
 
 const ITEMS = [
-  { key: 'restaurants', photo: 'service' },
+  { key: 'restaurants', photo: 'accueil' },
   { key: 'hotels', photo: 'bar' },
   { key: 'bars', photo: 'salle' },
 ] as const;

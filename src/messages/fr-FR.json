@@ -899,7 +899,7 @@
           "verres": "Verrerie d'un bar d'hôtel",
           "accueil": "Hôtesse à l'accueil d'un restaurant",
           "serveuse": "Serveuse, sa tablette en main",
-          "maitre": "Maître d'hôtel au passe",
+          "comptoir": "Tablette Attabl au comptoir",
           "gerante": "Gérante d'une pâtisserie",
           "bureau": "Gérante devant le tableau de bord Attabl",
           "pintade": "Suprême de pintade dressé",
@@ -998,7 +998,7 @@
           "restaurants": {
             "title": "Restaurants",
             "body": "Salle, emporter et livraison dans une seule file. La cuisine et la caisse voient la même chose.",
-            "imageAlt": "Maître d'hôtel qui envoie deux assiettes"
+            "imageAlt": "Hôtesse qui encaisse un client à l'accueil du restaurant"
           },
           "hotels": {
             "title": "Hôtels",

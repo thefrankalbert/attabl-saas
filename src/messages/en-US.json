@@ -899,7 +899,7 @@
           "verres": "Glassware at a hotel bar",
           "accueil": "Host at a restaurant front desk",
           "serveuse": "Waitress, tablet in hand",
-          "maitre": "Maitre d' at the pass",
+          "comptoir": "Attabl tablet at the counter",
           "gerante": "Manager of a pastry shop",
           "bureau": "Manager in front of the Attabl dashboard",
           "pintade": "Plated guinea fowl supreme",
@@ -998,7 +998,7 @@
           "restaurants": {
             "title": "Restaurants",
             "body": "Dine-in, takeaway and delivery in a single queue. The kitchen and the register see the same thing.",
-            "imageAlt": "Maitre d' sending out two plates"
+            "imageAlt": "Host taking a guest's payment at the restaurant front desk"
           },
           "hotels": {
             "title": "Hotels",
