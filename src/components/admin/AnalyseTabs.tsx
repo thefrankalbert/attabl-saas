@@ -3,12 +3,21 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { BarChart3, History, MapPin, Receipt, ScrollText, TrendingDown } from 'lucide-react';
+import {
+  BarChart3,
+  ChartNoAxesCombined,
+  History,
+  MapPin,
+  Receipt,
+  ScrollText,
+  TrendingDown,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const ANALYSE_TABS = [
   { path: '/reports', labelKey: 'tabReports', icon: BarChart3 },
   { path: '/reports/venues', labelKey: 'tabVenueReports', icon: MapPin },
+  { path: '/reports/advanced', labelKey: 'tabAdvancedReports', icon: ChartNoAxesCombined },
   { path: '/stock-history', labelKey: 'tabStockHistory', icon: History },
   { path: '/stock-losses', labelKey: 'tabStockLosses', icon: TrendingDown },
   { path: '/invoices', labelKey: 'tabInvoices', icon: Receipt },

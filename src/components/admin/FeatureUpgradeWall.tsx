@@ -7,7 +7,14 @@ import { logger } from '@/lib/logger';
 import { getAdminPermission } from '@/lib/auth/require-admin-permission';
 
 type GatedFeature =
-  'kds' | 'inventory' | 'recipes' | 'reports' | 'service' | 'tables' | 'venueReports';
+  | 'kds'
+  | 'inventory'
+  | 'recipes'
+  | 'reports'
+  | 'service'
+  | 'tables'
+  | 'venueReports'
+  | 'advancedReports';
 
 const FEATURE_EVENT_KEY: Record<GatedFeature, string> = {
   kds: 'kds_access_attempted',
@@ -17,10 +24,11 @@ const FEATURE_EVENT_KEY: Record<GatedFeature, string> = {
   service: 'service_access_attempted',
   tables: 'tables_access_attempted',
   venueReports: 'venue_reports_access_attempted',
+  advancedReports: 'advanced_reports_access_attempted',
 };
 
 // Plan minimal de chaque fonction: le libelle et le bouton le disent.
-const BUSINESS_FEATURES: ReadonlySet<GatedFeature> = new Set(['venueReports']);
+const BUSINESS_FEATURES: ReadonlySet<GatedFeature> = new Set(['venueReports', 'advancedReports']);
 
 interface FeatureUpgradeWallProps {
   feature: GatedFeature;

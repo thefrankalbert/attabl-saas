@@ -16,6 +16,7 @@ import {
   UserCheck,
   BarChart3,
   MapPin,
+  ChartNoAxesCombined,
   History,
   TrendingDown,
   Receipt,
@@ -182,6 +183,11 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         path: '/reports/venues',
         icon: MapPin,
         labelKey: 'navVenueReports',
+      },
+      {
+        path: '/reports/advanced',
+        icon: ChartNoAxesCombined,
+        labelKey: 'navAdvancedReports',
       },
       {
         path: '/stock-history',

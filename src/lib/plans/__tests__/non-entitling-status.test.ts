@@ -35,6 +35,7 @@ describe('statuts non entitlants', () => {
     expect(canAccessFeature('canAccessRoomService', 'starter', 'trial', future)).toBe(true);
     expect(canAccessFeature('canAccessAIAnalytics', 'starter', 'trial', future)).toBe(true);
     expect(canAccessFeature('canAccessVenueReports', 'starter', 'trial', future)).toBe(true);
+    expect(canAccessFeature('canAccessAdvancedReports', 'starter', 'trial', future)).toBe(true);
   });
 
   it('un essai expire ne donne plus rien de payant', () => {
