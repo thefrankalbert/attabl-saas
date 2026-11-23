@@ -24,6 +24,15 @@ interface CircuitBreakerOptions {
   callTimeout?: number;
 }
 
+/** L'erreur est-elle une reponse du service a une requete fautive (4xx hors 429) ? */
+function isClientError(error: unknown): boolean {
+  const status =
+    typeof error === 'object' && error !== null
+      ? (error as { statusCode?: unknown }).statusCode
+      : undefined;
+  return typeof status === 'number' && status >= 400 && status < 500 && status !== 429;
+}
+
 class CircuitBreaker {
   private state: CircuitState = 'closed';
   private failureCount = 0;
@@ -50,25 +59,38 @@ class CircuitBreaker {
       }
     }
 
+    let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       // Race the actual call against a timeout (Stripe SDK does not support AbortSignal)
       const result = await Promise.race([
         fn(),
-        new Promise<never>((_, reject) =>
-          setTimeout(
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(
             () =>
               reject(
                 new Error(`Circuit breaker [${this.name}] timeout after ${this.callTimeout}ms`),
               ),
             this.callTimeout,
-          ),
-        ),
+          );
+        }),
       ]);
       this.onSuccess();
       return result;
     } catch (error) {
-      this.onFailure();
+      // Une reponse 4xx (identifiant inconnu, carte refusee, requete invalide)
+      // prouve que le service REPOND: ce n'est pas une panne. La compter
+      // permettait a trois identifiants bidon de couper la facturation de tous
+      // les restaurants pendant 30 s. Seuls comptent le reseau, le delai
+      // depasse, les 5xx et le 429.
+      if (isClientError(error)) {
+        this.onSuccess();
+      } else {
+        this.onFailure();
+      }
       throw error;
+    } finally {
+      // Sans cela chaque appel laissait une minuterie de 10 s en vie.
+      clearTimeout(timer);
     }
   }
 

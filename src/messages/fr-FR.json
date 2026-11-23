@@ -145,14 +145,34 @@
     "retry": "Réessayer",
     "page": {
       "title": "ATTABL - Abonnement",
-      "subscribingTo": "Vous souscrivez à",
-      "monthly": "/ mois",
-      "yearly": "/ an",
-      "securePayment": "Paiement sécurisé par Stripe - vos données bancaires sont protégées",
-      "loading": "Chargement du formulaire de paiement...",
-      "errorTitle": "Impossible de charger le paiement",
-      "errorDescription": "Une erreur est survenue. Veuillez réessayer ou contacter le support.",
-      "retry": "Retour"
+      "securePayment": "Paiement sécurisé par Stripe. ATTABL ne voit jamais votre numéro de carte.",
+      "errorTitle": "Le paiement ne s'est pas chargé",
+      "errorDescription": "Revenez en arrière et réessayez. Si le problème continue, écrivez-nous depuis la page Support.",
+      "amount": "{amount} F",
+      "perMonth": "par mois",
+      "perYear": "par an",
+      "back": "Retour",
+      "heading": "Passer à {plan}",
+      "interval": "Période de facturation",
+      "monthlyOption": "Mensuel",
+      "yearlyOption": "Annuel",
+      "savings": "-{pct} %",
+      "perMonthAmount": "{amount} F / mois",
+      "summary": "Récapitulatif",
+      "lineItem": "ATTABL {plan}",
+      "billedMonthly": "Facturé chaque mois",
+      "billedYearly": "Facturé chaque année",
+      "trialUntil": "Votre essai gratuit continue jusqu'au {date}.",
+      "dueToday": "Total dû aujourd'hui",
+      "thenCharged": "Puis {amount} {period}, à partir du {date}.",
+      "paymentMethod": "Moyen de paiement",
+      "subscribe": "S'abonner",
+      "subscribing": "Paiement en cours...",
+      "legal": "En vous abonnant, vous acceptez que ATTABL prélève ce montant à chaque échéance. Vous pouvez résilier à tout moment depuis la page Abonnement.",
+      "confirmError": "Le paiement n'a pas abouti. Vérifiez votre carte et réessayez.",
+      "methodCard": "Carte bancaire",
+      "comingSoon": "Bientôt disponible",
+      "loadError": "Le formulaire de paiement ne s'est pas chargé. Rechargez la page. Si vous avez ouvert le paiement dans un autre onglet, fermez-le d'abord."
     }
   },
   "menu": {
@@ -290,7 +310,7 @@
       "metaDescription": "Des prix clairs pour chaque établissement. Starter, Pro, Business ou Enterprise. Essai gratuit 14 jours sur le plan Pro.",
       "hero": {
         "title": "Un prix clair. Pas de surprise.",
-        "subtitle": "14 jours d'essai gratuit sur tous les plans. Vous testez tout avant de payer.",
+        "subtitle": "14 jours d'essai gratuit, quel que soit le plan choisi. Pendant l'essai, vous avez tout le plan Pro : caisse, écran cuisine, stock, tables, rapports.",
         "eyebrow": "Tarifs"
       },
       "billing": {
@@ -479,11 +499,11 @@
         "items": {
           "q1": {
             "question": "Comment fonctionne l'essai gratuit ?",
-            "answer": "14 jours d'accès complet au plan PRO. Sans carte bancaire. Vous testez tout : KDS, POS, stock, tables."
+            "answer": "14 jours avec tout le plan Pro, sans carte bancaire : caisse, écran cuisine, stock, tables, rapports. La livraison, le service en chambre et les analyses IA restent réservés au plan Business."
           },
           "q2": {
             "question": "Que se passe-t-il après les 14 jours ?",
-            "answer": "Votre menu reste visible pour vos clients. Votre dashboard passe en lecture seule. Choisissez un plan pour reprendre le contrôle."
+            "answer": "Les nouvelles commandes s'arrêtent. Votre espace de gestion se ferme et vous mène au choix d'un plan. Vos clients voient encore votre carte pendant 7 jours, sans pouvoir commander. Vos données restent intactes : choisissez un plan et tout repart."
           },
           "q3": {
             "question": "Puis-je changer de plan ?",
@@ -495,7 +515,7 @@
           },
           "q5": {
             "question": "Comment je paie ?",
-            "answer": "Par carte bancaire (Visa, Mastercard) via Stripe. Paiement sécurisé."
+            "answer": "Par mobile money (Orange Money, MTN MoMo, Moov, Wave) ou par carte bancaire (Visa, Mastercard). Paiement sécurisé."
           },
           "q6": {
             "question": "Je dois acheter du matériel ?",
@@ -534,7 +554,7 @@
       "billedTotal": "{total} FCFA au total",
       "perDay": "soit ~{amount} FCFA par jour",
       "essai": {
-        "title": "Pendant les 14 jours, vous testez tout.",
+        "title": "Pendant 14 jours, vous testez le plan Pro en entier.",
         "body": "L'essai donne un accès complet à l'offre Pro, sans carte bancaire. Vous jugez sur votre propre service.",
         "f1": "Écran cuisine",
         "f2": "Caisse",
@@ -1586,7 +1606,7 @@
           },
           "q6": {
             "q": "Y a-t-il un engagement ?",
-            "a": "Non. Vous testez 14 jours gratuitement, puis vous payez au mois. Sans contrat sur le matériel."
+            "a": "Non. Vous testez 14 jours gratuitement, puis vous payez au mois ou à l'année. Sans contrat sur le matériel."
           }
         }
       },
@@ -2195,7 +2215,6 @@
       "featureKDS": "Écran cuisine (KDS)",
       "featureInventory": "Gestion de stock",
       "feature10Spaces": "10 espaces inclus",
-      "featureAllProFeatures": "Toutes les fonctionnalités Pro",
       "featureRoomService": "Service en chambre",
       "featureDelivery": "Livraison",
       "featureAIAnalytics": "Analytics IA",
@@ -2419,6 +2438,7 @@
     "recipeSaveError": "Erreur lors de l'enregistrement de la recette",
     "recipeQtyRequired": "Indiquez une quantité supérieure à 0 pour chaque ingrédient",
     "recipeDuplicateIngredient": "Chaque ingrédient ne peut apparaitre qu'une fois",
+    "recipeIngredientLabel": "Ingrédient",
     "recipeAllIngredientsUsed": "Tous vos produits sont déjà dans cette fiche",
     "recipeReadOnlyHint": "Vous pouvez consulter les fiches. Seuls les responsables stock peuvent les modifier.",
     "goToInventory": "Gérer les produits en stock",
@@ -2793,11 +2813,127 @@
     "users": "Utilisateurs"
   },
   "adminSupport": {
-    "whatsappTitle": "Un souci ? Écrivez-nous ou appelez-nous",
-    "whatsappBody": "Une personne de l'équipe ATTABL vous répond au {phone}. Dites-nous ce qui bloque, on s'en occupe.",
+    "heading": "Comment peut-on vous aider ?",
+    "intro": "Un guide pour chaque tâche courante. Et si ça bloque, une personne de l'équipe vous répond.",
+    "contactTitle": "Parlez à quelqu'un de l'équipe",
+    "contactBodyPhone": "Écrivez-nous sur WhatsApp au {phone}. On répond en général sous 24 heures, du lundi au vendredi.",
+    "contactBodyEmail": "Écrivez-nous à support@attabl.com. On répond en général sous 24 heures, du lundi au vendredi.",
     "whatsappCta": "Écrire sur WhatsApp",
     "whatsappMessage": "Bonjour ATTABL, j'ai besoin d'aide pour mon restaurant {restaurant}.",
-    "callCta": "Appeler"
+    "copyNumber": "Copier le numéro",
+    "numberCopied": "Numéro copié",
+    "copyFailed": "Copie impossible. Le numéro est {phone}.",
+    "callCta": "Appeler",
+    "emailCta": "Écrire un e-mail",
+    "noWhatsappHint": "WhatsApp n'est pas installé sur cet appareil ? Copiez le numéro pour l'utiliser sur votre téléphone, ou écrivez-nous par e-mail.",
+    "guidesTitle": "Guides",
+    "openPage": "Ouvrir {page}",
+    "faqTitle": "Questions fréquentes",
+    "guides": {
+      "menu": {
+        "title": "Créer votre carte",
+        "page": "Cartes & Menus",
+        "steps": {
+          "s1": "Dans le menu de gauche, ouvrez \"Cartes & Menus\", puis \"Nouvelle carte\".",
+          "s2": "Donnez un nom à la carte (par exemple \"Carte du midi\") et enregistrez.",
+          "s3": "Ajoutez vos catégories : Entrées, Plats, Boissons. Bouton \"Nouvelle catégorie\".",
+          "s4": "Ouvrez \"Plats\" et créez chaque plat avec son prix et sa photo.",
+          "s5": "Vous avez déjà votre carte dans Excel ? Utilisez \"Importer Excel\" et partez du modèle proposé."
+        }
+      },
+      "orders": {
+        "title": "Recevoir et préparer les commandes",
+        "page": "Cuisine (KDS)",
+        "steps": {
+          "s1": "Chaque commande arrive dans \"Commandes\" et sur l'écran \"Cuisine (KDS)\", en temps réel.",
+          "s2": "En cuisine, touchez \"Démarrer\" sur le ticket quand vous lancez le plat.",
+          "s3": "Quand c'est prêt, touchez \"Terminer\" : la salle le voit tout de suite.",
+          "s4": "Besoin d'un papier ? Depuis la commande, imprimez le ticket cuisine ou le reçu client."
+        }
+      },
+      "pos": {
+        "title": "Encaisser à la caisse",
+        "page": "Caisse (POS)",
+        "steps": {
+          "s1": "Ouvrez \"Caisse (POS)\" dans le menu de gauche.",
+          "s2": "Touchez les plats commandés : ils s'ajoutent au panier.",
+          "s3": "Touchez \"Encaisser\", choisissez comment le client paie, puis validez.",
+          "s4": "Plus de réseau ? Le paiement est gardé sur l'appareil et part dès que la connexion revient."
+        }
+      },
+      "qr": {
+        "title": "Imprimer les QR codes des tables",
+        "page": "QR Codes",
+        "steps": {
+          "s1": "Ouvrez \"QR Codes\" dans le menu de gauche.",
+          "s2": "Choisissez les tables, puis le style du QR code.",
+          "s3": "Téléchargez le PDF ou imprimez directement. Un QR code par table.",
+          "s4": "Le client scanne, voit votre carte et commande depuis sa table."
+        }
+      },
+      "stock": {
+        "title": "Suivre le stock et les fournisseurs",
+        "page": "Inventaire",
+        "steps": {
+          "s1": "Ouvrez \"Inventaire\", puis \"Ajouter un produit\" pour chaque ingrédient.",
+          "s2": "Dans \"Fournisseurs\", ajoutez ceux qui vous livrent.",
+          "s3": "Dans \"Fiches techniques\", dites ce que contient chaque plat. Le stock baisse alors à chaque vente.",
+          "s4": "Faites un inventaire physique de temps en temps pour corriger les écarts."
+        }
+      },
+      "team": {
+        "title": "Ajouter votre équipe",
+        "page": "Utilisateurs",
+        "steps": {
+          "s1": "En bas du menu de gauche, touchez votre nom, puis \"Paramètres\".",
+          "s2": "Onglet \"Personnel\", puis \"Gérer l'équipe\".",
+          "s3": "Touchez \"Nouveau Membre\", entrez son e-mail et choisissez son rôle (serveur, caissier, cuisine...).",
+          "s4": "La personne reçoit une invitation par e-mail. Le menu \"...\" d'un membre permet d'ajuster ce qu'il peut faire."
+        }
+      },
+      "reports": {
+        "title": "Voir vos ventes",
+        "page": "Rapports",
+        "steps": {
+          "s1": "Ouvrez \"Rapports\" dans le menu de gauche.",
+          "s2": "Choisissez la période en haut de l'écran : aujourd'hui, la semaine, le mois.",
+          "s3": "Vous voyez le chiffre d'affaires, le nombre de commandes et les plats qui marchent le mieux.",
+          "s4": "Besoin de le partager ? Boutons \"CSV\" ou \"PDF\" en haut de la page."
+        }
+      },
+      "subscription": {
+        "title": "Gérer votre abonnement",
+        "page": "Abonnement",
+        "steps": {
+          "s1": "En bas du menu de gauche, touchez votre nom, puis \"Abonnement\".",
+          "s2": "Vous voyez votre formule, et la date de fin d'essai ou du prochain paiement.",
+          "s3": "Pour changer de formule, choisissez-la. Mensuel ou annuel : l'annuel coûte 15 % de moins.",
+          "s4": "En cours de mois, vous ne payez que la différence pour les jours restants."
+        }
+      }
+    },
+    "faq": {
+      "f1": {
+        "q": "Comment changer le prix d'un plat ?",
+        "a": "Ouvrez \"Plats\", touchez le plat, changez le prix et enregistrez. Le menu de vos clients est à jour tout de suite."
+      },
+      "f2": {
+        "q": "J'ai plusieurs établissements. Comment passer de l'un à l'autre ?",
+        "a": "Touchez le nom de votre établissement en haut du menu de gauche, puis choisissez l'autre. Chacun garde sa carte, ses tables et ses ventes."
+      },
+      "f3": {
+        "q": "Que se passe-t-il si internet coupe ?",
+        "a": "La caisse continue de fonctionner. Les encaissements sont gardés sur l'appareil et partent dès que la connexion revient."
+      },
+      "f4": {
+        "q": "Mes clients doivent-ils installer une application ?",
+        "a": "Non. Ils scannent le QR code de la table avec l'appareil photo de leur téléphone et la carte s'ouvre."
+      },
+      "f5": {
+        "q": "Comment contacter le support ?",
+        "a": "Par WhatsApp ou par e-mail à support@attabl.com, avec les boutons en haut de cette page. On répond en général sous 24 heures, du lundi au vendredi."
+      }
+    }
   },
   "notifications": {
     "muteError": "Impossible de modifier ce rappel",
@@ -2985,7 +3121,6 @@
     "footerCooking": "Cuisson",
     "footerPacking": "Prêt",
     "footerDelayed": "Retard",
-    "footerPage": "Page",
     "orderedAt": "Commande {time}",
     "serviceDineIn": "Sur place",
     "statusQueue": "FILE",
@@ -3563,6 +3698,8 @@
     "title": "Plats & Articles",
     "newItem": "Nouveau plat",
     "allCategories": "Toutes les catégories",
+    "filterCategoryLabel": "Filtrer par catégorie",
+    "filterAvailabilityLabel": "Filtrer par disponibilité",
     "all": "Tous",
     "inStock": "En stock",
     "outOfStock": "Épuisé",
@@ -3834,6 +3971,7 @@
     "description": "Note",
     "descriptionPlaceholder": "Pourquoi c'est impayé",
     "attach": "Mettre sur l'ardoise",
+    "choose": "Choisir une ardoise",
     "attached": "Commande portée sur l'ardoise",
     "detach": "Retirer de l'ardoise",
     "onTab": "Sur l'ardoise",
@@ -4143,6 +4281,7 @@
     "staffReportPeriod7": "7 derniers jours",
     "staffReportPeriod30": "30 derniers jours",
     "staffReportPeriodMonth": "Mois en cours",
+    "staffReportPeriodLabel": "Période",
     "staffReportColAuthor": "Employé",
     "staffReportColOut": "Sorties",
     "staffReportColIn": "Entrées",
@@ -4305,6 +4444,11 @@
     "quantityLabel": "Quantité",
     "downloadReceipt": "Télécharger le reçu",
     "receiptDownloaded": "Reçu téléchargé",
+    "receiptTitle": "Reçu",
+    "receiptOrder": "Commande",
+    "receiptPhone": "Tél.",
+    "receiptAdjustments": "Taxes et remises",
+    "receiptThanks": "Merci de votre visite !",
     "receiptError": "Impossible de générer le reçu",
     "trackLive": "Suivre en temps réel",
     "reorderShort": "Recommander",
@@ -4927,6 +5071,8 @@
     "placeQR": "Placez le QR code dans le cadre",
     "cameraUnavailable": "Caméra non disponible",
     "cameraHint": "Vérifiez les permissions dans les réglages",
+    "cameraDeniedTitle": "Accès à la caméra refusé",
+    "cameraDeniedHint": "Autorisez la caméra pour ce site dans les réglages de votre navigateur. Sur iPhone : Réglages > Safari (ou Chrome) > Caméra. Ouvert depuis WhatsApp ? Ouvrez le lien dans votre navigateur. Puis touchez Réessayer.",
     "tableMatched": "Table {table}",
     "tableDetected": "Table détectée",
     "confirmTableCta": "Confirmer la table",

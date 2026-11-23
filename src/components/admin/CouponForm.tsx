@@ -135,12 +135,12 @@ export default function CouponForm({
 
         {/* Discount Type */}
         <div className="space-y-2">
-          <Label>{t('discountType')}</Label>
+          <Label htmlFor="coupon-discount-type">{t('discountType')}</Label>
           <Select
             value={discountType}
             onValueChange={(value: 'percentage' | 'fixed') => setDiscountType(value)}
           >
-            <SelectTrigger>
+            <SelectTrigger id="coupon-discount-type">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

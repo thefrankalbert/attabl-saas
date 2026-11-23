@@ -75,10 +75,12 @@ export function PaymentMethodPicker({
         // Choix actif aux couleurs des pastilles de l'admin (ReportsSummaryHeader,
         // StockHistoryFilters): `bg-accent` y est presque noir et le texte par
         // defaut le rendait illisible (constate au navigateur le 2026-11-14).
+        // whitespace-normal: dans le panneau de la fiche commande (224 px),
+        // "Carte (terminal)" sortait du bouton; il passe sur deux lignes.
         <ToggleGroupItem
           key={id}
           value={id}
-          className="min-h-[44px] flex-1 text-sm font-bold data-[state=on]:border-app-text data-[state=on]:bg-app-text data-[state=on]:text-app-bg"
+          className="h-auto min-h-[44px] min-w-0 flex-1 whitespace-normal py-1.5 text-center text-sm leading-tight font-bold data-[state=on]:border-app-text data-[state=on]:bg-app-text data-[state=on]:text-app-bg"
         >
           {label(id)}
         </ToggleGroupItem>

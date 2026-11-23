@@ -118,11 +118,14 @@ export default function InventoryFormModal({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+            <Label
+              htmlFor="ingredient-form-unit"
+              className="text-xs font-medium text-app-text-secondary mb-1 block"
+            >
               {tc('unit')}
             </Label>
             <Select value={formUnit} onValueChange={(val) => setFormUnit(val as IngredientUnit)}>
-              <SelectTrigger className="w-full h-10">
+              <SelectTrigger id="ingredient-form-unit" className="w-full h-10">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

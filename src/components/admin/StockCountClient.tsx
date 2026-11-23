@@ -172,7 +172,7 @@ export default function StockCountClient({ tenantId }: StockCountClientProps) {
       )}
 
       <Dialog open={isNewCountOpen} onOpenChange={setIsNewCountOpen}>
-        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t('newCount')}</DialogTitle>
           </DialogHeader>

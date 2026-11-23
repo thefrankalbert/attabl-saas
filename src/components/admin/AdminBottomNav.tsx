@@ -40,7 +40,11 @@ export function AdminBottomNav({ basePath, role, establishmentType }: AdminBotto
     // "Tableau de bord" does not fit a 72px tab: it showed "Tableau de b...".
     navDashboard: t('navDashboardShort'),
   };
-  const resolveLabel = (key: string) => segmentLabelOverrides[key] ?? t(key);
+  // Onglet de 75 px: "Cuisine (KDS)" / "Caisse (POS)" finissaient en ellipsis
+  // (mesure CI, polices Linux). Sur la barre du bas on garde le mot seul; le
+  // libelle complet reste dans le menu lateral et le titre de la page.
+  const resolveLabel = (key: string) =>
+    (segmentLabelOverrides[key] ?? t(key)).replace(/\s*\([^)]*\)$/, '');
 
   // Get the 5 bottom nav item IDs for this role
   const itemIds = BOTTOM_NAV_ITEMS[role] ?? BOTTOM_NAV_ITEMS.admin;
@@ -105,7 +109,9 @@ export function AdminBottomNav({ basePath, role, establishmentType }: AdminBotto
               />
               <span
                 className={cn(
-                  'text-[11px] sm:text-xs leading-tight truncate max-w-[72px] sm:max-w-none',
+                  // Deux lignes centrees plutot qu'une coupe en ellipsis: le libelle reste
+                  // entier meme si une traduction ou une police est plus large.
+                  'text-[11px] sm:text-xs leading-tight line-clamp-2 whitespace-normal break-words text-center max-w-[72px] sm:max-w-none',
                   isActive ? 'font-semibold' : 'font-medium',
                 )}
               >

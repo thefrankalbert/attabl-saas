@@ -49,7 +49,9 @@ export function OrderActionsPanel({
     !isComp && canPay && order.status !== 'cancelled' && paymentStatus === 'pending';
 
   return (
-    <div className="lg:w-56 shrink-0 space-y-3">
+    // lg: la colonne d'actions defile seule; sans cela le bas du panneau
+    // (selecteur Especes / Carte, saisie du paiement) etait coupe a 1024 px.
+    <div className="lg:w-56 shrink-0 space-y-3 lg:min-h-0 lg:overflow-y-auto">
       {/* Status Actions */}
       {(showStatusButtons || showCheckout) && (
         <div className="rounded-xl border border-app-border p-3 space-y-2">
@@ -120,7 +122,9 @@ export function OrderActionsPanel({
             )}
           </div>
 
-          {showStatusButtons && canPay && order.status !== 'ready' && (
+          {/* Pour tout le personnel (avant cette PR, un second encadre l'affichait
+              aussi a qui ne peut pas encaisser): rien ne se perd. */}
+          {showStatusButtons && order.status !== 'ready' && (
             <p className="text-[10px] text-status-warning flex items-start gap-1">
               <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
               {t('warningReadyBeforeCheckout')}

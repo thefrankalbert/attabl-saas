@@ -61,14 +61,17 @@ export default function InventoryLossModal({
 
           <div className="space-y-4">
             <div>
-              <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+              <Label
+                htmlFor="loss-reason"
+                className="text-xs font-medium text-app-text-secondary mb-1 block"
+              >
                 {t('lossReason')}
               </Label>
               <Select
                 value={lossReason}
                 onValueChange={(val) => setLossReason(val as LossReasonCode)}
               >
-                <SelectTrigger className="w-full h-10">
+                <SelectTrigger id="loss-reason" className="w-full h-10">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

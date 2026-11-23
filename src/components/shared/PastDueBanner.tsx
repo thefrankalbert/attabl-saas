@@ -47,7 +47,7 @@ export function PastDueBanner({ showManageCard = true }: { showManageCard?: bool
           variant="default"
           onClick={handleManageCard}
           disabled={loading}
-          className="shrink-0 bg-status-warning text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:opacity-90 disabled:opacity-50 h-auto"
+          className="shrink-0 bg-status-warning-solid text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:opacity-90 disabled:opacity-50 h-auto"
         >
           {loading ? 'Chargement...' : 'Mettre à jour'}
         </Button>

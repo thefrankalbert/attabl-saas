@@ -2,6 +2,7 @@
 
 import { usePathname, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { Fragment } from 'react';
 import { useTranslations } from 'next-intl';
 import { Home } from 'lucide-react';
 import {
@@ -93,23 +94,26 @@ export function AdminBreadcrumbs() {
 
   return (
     <Breadcrumb className="min-w-0 overflow-hidden">
-      <BreadcrumbList className="flex-nowrap overflow-hidden">
+      {/* Gris du theme admin (clair et sombre): text-neutral-500 du composant
+          restait a 4.2:1 sur le fond sombre. */}
+      <BreadcrumbList className="flex-nowrap overflow-hidden text-[var(--muted-foreground)]">
         <BreadcrumbItem>
-          <BreadcrumbLink asChild>
-            <Link href={basePath}>
-              <Home className="h-4 w-4" />
+          <BreadcrumbLink asChild className="hover:text-[var(--foreground)]">
+            <Link href={basePath} aria-label={t('navDashboard')}>
+              <Home className="h-4 w-4" aria-hidden />
             </Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
+        {/* Fragment, pas <span>: un <ol> ne doit contenir que des <li> (axe: list). */}
         {crumbs.map((crumb) => (
-          <span key={crumb.href} className="contents">
+          <Fragment key={crumb.href}>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbLink asChild>
+              <BreadcrumbLink asChild className="hover:text-[var(--foreground)]">
                 <Link href={crumb.href}>{crumb.label}</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
-          </span>
+          </Fragment>
         ))}
       </BreadcrumbList>
     </Breadcrumb>

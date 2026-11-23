@@ -14,7 +14,7 @@ A donner tel quel a Claude Code. Le harnais "journee complete" est a ~80%: seed,
 - Creer `tests/journeys/08-bola.spec.ts` a partir de `security/generated-tests/security-bola.spec.ts`.
 - Seeder DEUX tenants via `seedTenantWithMenu()` (tenant A et tenant B) + un staff par tenant.
 - Creer une commande dans le tenant B (POS ou QR). Recuperer son id.
-- Avec la session d'un membre du tenant A, tenter sur l'id de B: `GET/PATCH/DELETE` des routes commandes, `pay-wave`/`pay-orange-money` retires donc ignorer, `invitations/[id]`, `assignments/[id]`.
+- Avec la session d'un membre du tenant A, tenter sur l'id de B: `GET/PATCH/DELETE` des routes commandes, `pay-wave`/`pay-orange-money` retires donc ignorer, `invitations/[id]` (`assignments/[id]` a ete supprimee le 2026-11-20, sans appelant).
 - Assertion: chaque tentative cross-tenant renvoie 401/403/404 OU ne renvoie aucune donnee de B. Jamais la donnee de B.
 - Retirer le `test.skip` BOLA de `07-edge-cases-security.spec.ts` (ou le faire pointer vers `08`).
 - Acceptance: `08-bola.spec.ts` passe; aucune fuite cross-tenant.

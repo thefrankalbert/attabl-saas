@@ -1,5 +1,4 @@
 import * as Sentry from '@sentry/nextjs';
-import { createHash } from 'crypto';
 
 function getSentryTraceId(): string | undefined {
   try {
@@ -27,10 +26,6 @@ function resolveCorrelationId(context?: LogContext): string | undefined {
  *   import { logger } from '@/lib/logger';
  *   logger.error('Payment failed', error, { orderId: '123' });
  */
-
-export function hashEmail(email: string): string {
-  return createHash('sha256').update(email.toLowerCase().trim()).digest('hex').slice(0, 12);
-}
 
 const isDev = process.env.NODE_ENV === 'development';
 

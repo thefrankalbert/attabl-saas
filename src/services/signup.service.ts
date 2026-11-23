@@ -80,7 +80,11 @@ export function createSignupService(supabase: SupabaseClient) {
       if (isTenantNameConflictError(error)) {
         throw new ServiceError('RESTAURANT_NAME_TAKEN', 'CONFLICT', error);
       }
-      throw new ServiceError(`Erreur provisionnement: ${error.message}`, 'INTERNAL', error);
+      // Le message Postgres brut (noms de contraintes, de colonnes) ne part pas
+      // au navigateur. Il est journalise ICI: les routes d'inscription renvoient
+      // la ServiceError sans la tracer, la cause serait sinon perdue.
+      logger.error('provision_signup_tenant a echoue', error, { userId: input.userId });
+      throw new ServiceError('Erreur lors de la creation de votre restaurant', 'INTERNAL', error);
     }
 
     const row = data as ProvisionSignupRpcResult | null;

@@ -76,7 +76,7 @@ export default async function PlatformConsolePage() {
       appVersion={APP_VERSION}
       reminderStats={reminderStats}
       heartbeats={heartbeats}
-      supportPhone={supportContact.display}
+      supportPhone={supportContact?.display ?? ''}
     />
   );
 }

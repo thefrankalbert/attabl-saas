@@ -88,7 +88,7 @@ export function PlatformSettingsPanel({ heartbeats, supportPhone }: PlatformSett
               inputMode="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="+226 55 21 22 93"
+              placeholder="+226 70 00 00 00"
             />
           </div>
           <Button onClick={save} disabled={isPending || phone.trim() === supportPhone}>

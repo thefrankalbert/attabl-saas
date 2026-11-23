@@ -1,12 +1,8 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import { DEFAULT_SUPPORT_CONTACT } from '@/lib/support-contact';
 import { AnimatedWords } from './AnimatedWords';
 import { CtaTrail } from './CtaTrail';
-
-// ponytail: numero par defaut du projet, page statique. Le lire dans
-// platform_settings si le numero change souvent depuis la console.
-const WHATSAPP_LINK = `https://wa.me/${DEFAULT_SUPPORT_CONTACT.digits}`;
+import { WHATSAPP_LINK } from './whatsapp';
 
 export async function FinalCta() {
   const t = await getTranslations('marketing.home.finalCta');

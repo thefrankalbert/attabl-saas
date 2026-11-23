@@ -326,14 +326,13 @@ export async function proxy(request: NextRequest) {
 
     // Block users whose email is not yet confirmed (prevents password-reset bypass).
     // Skip for OAuth users (Google/Azure) - their email is verified by the provider.
-    // Allow /reset-password and /auth/* paths so the reset flow itself still works.
+    // /reset-password et /auth/* ne sont pas des chemins proteges: ils
+    // n'atteignent jamais ce bloc, le flux de reinitialisation reste libre.
     if (
       user &&
       !devBypass &&
       !user.email_confirmed_at &&
       user.app_metadata?.provider === 'email' &&
-      !pathname.startsWith('/reset-password') &&
-      !pathname.startsWith('/auth/') &&
       !pathname.startsWith('/onboarding')
     ) {
       const mainDomain = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
@@ -555,7 +554,12 @@ function extractSubdomain(hostname: string): string | null {
   }
 
   // Si radisson.attabl.com (3 parties) → "radisson"
-  if (parts.length >= 3) {
+  // Seulement sous le domaine ATTABL. Un domaine personnalise a trois parties
+  // (menu.monresto.com) n'a PAS de sous-domaine ATTABL: rendre "menu" ici
+  // sautait la recherche par domaine personnalise et servait le restaurant de
+  // slug "menu" s'il existait. `null` laisse la branche domaine personnalise
+  // resoudre l'hote entier.
+  if (parts.length >= 3 && hostWithoutPort.endsWith('.attabl.com')) {
     return parts[0];
   }
 

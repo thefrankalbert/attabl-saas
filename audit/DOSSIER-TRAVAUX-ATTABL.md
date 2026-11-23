@@ -1400,7 +1400,7 @@ Ce que le script fait deja et qu'il ne faut pas refaire a la main : `supabase in
 | **L2. Stripe mode test**    | **6** (01.3-5, 06.1-4)                              | `sk_test_`, les 9 prix a creer, `whsec` partage | **M**  |
 | L3. Rate limit reel         | 1 (07.2, de degrade a strict)                       | Instance Upstash dediee test                    | M      |
 
-**Priorite absolue : `08-bola.spec.ts`.** Ce sont les 5 seuls tests du depot qui exercent l'isolation cross-tenant, sur 4 routes sans equivalent unitaire (`/api/orders/:id/claim`, `/api/invitations/:id`, `/api/invitations/:id/resend`, `/api/assignments/:id`). Le seed monte deux tenants complets. `loginPersonaForSlug(OWNER, SLUG_B)` force le `Referer` sur le slug de B pendant que la session est celle de A, ce qui rend le test non trivial. Un des tests asserte l'invariance du `token` et de `expires_at` d'une invitation, pas juste le statut : c'est exactement le vecteur de prise de controle de compte.
+**Priorite absolue : `08-bola.spec.ts`.** Ce sont les 5 seuls tests du depot qui exercent l'isolation cross-tenant, sur 3 routes sans equivalent unitaire (`/api/orders/:id/claim`, `/api/invitations/:id`, `/api/invitations/:id/resend` ; `/api/assignments/:id` a ete supprimee le 2026-11-20, sans appelant). Le seed monte deux tenants complets. `loginPersonaForSlug(OWNER, SLUG_B)` force le `Referer` sur le slug de B pendant que la session est celle de A, ce qui rend le test non trivial. Un des tests asserte l'invariance du `token` et de `expires_at` d'une invitation, pas juste le statut : c'est exactement le vecteur de prise de controle de compte.
 
 **Puis** : `04-service-and-ordering` test #3 (fraude prix) et #4 (POS especes), impact financier immediat.
 

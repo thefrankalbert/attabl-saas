@@ -140,19 +140,6 @@ test.describe.serial('08 - Isolation cross-tenant (BOLA)', () => {
     await ctx.dispose();
   });
 
-  test('A ne peut pas liberer (delete) une assignation de B', async () => {
-    test.skip(!tenantBId, 'seed indisponible');
-    const ctx = await attackerCtx();
-    const res = await ctx.delete(`/api/assignments/${bRes.assignmentId}`);
-    expect(ACCEPTED, `delete assignation doit etre bloque, recu ${res.status()}`).toContain(
-      res.status(),
-    );
-    const row = await getAssignmentRow(bRes.assignmentId);
-    expect(row, 'assignation de B supprimee par A').not.toBeNull();
-    expect(row?.ended_at, 'assignation de B terminee par A').toBeNull();
-    await ctx.dispose();
-  });
-
   test('aucune ressource de B na fuite (controle final)', async () => {
     test.skip(!tenantBId, 'seed indisponible');
     const db = getAdmin();

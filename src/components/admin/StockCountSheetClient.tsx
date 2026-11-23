@@ -323,7 +323,7 @@ export default function StockCountSheetClient({ tenantId, countId }: StockCountS
 
       {/* Commit confirmation dialog */}
       <Dialog open={showCommitDialog} onOpenChange={setShowCommitDialog}>
-        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t('commitConfirmTitle')}</DialogTitle>
             <DialogDescription>

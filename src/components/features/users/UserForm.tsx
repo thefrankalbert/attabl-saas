@@ -76,9 +76,9 @@ export default function UserForm({
         </div>
 
         <div className="space-y-2">
-          <Label>{t('roleAndPermissions')}</Label>
+          <Label htmlFor="invite-role">{t('roleAndPermissions')}</Label>
           <Select value={inviteRole} onValueChange={(v: string) => setInviteRole(v)}>
-            <SelectTrigger>
+            <SelectTrigger id="invite-role">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
