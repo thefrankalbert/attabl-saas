@@ -2986,7 +2986,12 @@ export type Database = {
         }[];
       };
       get_daily_revenue: {
-        Args: { p_end_date: string; p_start_date: string; p_tenant_id: string };
+        Args: {
+          p_end_date: string;
+          p_start_date: string;
+          p_tenant_id: string;
+          p_timezone?: string;
+        };
         Returns: {
           day: string;
           order_count: number;
