@@ -86,6 +86,20 @@ describe('useAdvancedReports - normalisation', () => {
         costComplete: false,
       },
     ]);
+    // Champ cost_complete absent: le cout est signale manquant, pas complet.
+    expect(
+      parseLosses([
+        {
+          ingredient_id: 'j',
+          ingredient_name: 'Riz cru',
+          unit: 'kg',
+          quantity: 1,
+          cost_value: 0,
+          movement_count: 1,
+          main_reason: 'expired',
+        },
+      ])[0].costComplete,
+    ).toBe(false);
     expect(
       parseComparison([
         {

@@ -106,7 +106,8 @@ export function parseLosses(data: unknown): LossRow[] {
     costValue: num(r.cost_value),
     movements: num(r.movement_count),
     mainReason: r.main_reason ? String(r.main_reason) : null,
-    costComplete: r.cost_complete !== false,
+    // Champ absent = cout inconnu: affiche comme manquant, jamais comme complet.
+    costComplete: r.cost_complete === true,
   }));
 }
 

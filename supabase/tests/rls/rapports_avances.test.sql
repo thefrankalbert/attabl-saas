@@ -1,7 +1,9 @@
 -- Rapports avances (migration 20261123130000, lot 4 PR B).
 --
 -- Donnees: un restaurant Business. Deux commandes reglees le mercredi
--- 2026-11-18 a 11 h 30 UTC (12 h 30 a Douala):
+-- 2026-01-14 a 11 h 30 UTC (12 h 30 a Douala). Date fixe LOIN de maintenant:
+-- la comparaison (relative a now()) ne doit jamais voir ces commandes, quel que
+-- soit le jour ou le test tourne.
 --   C1: 2 Poulet (5 000) = 10 000, paye 10 000 en especes puis 2 000 rembourses;
 --   C2: 1 Poulet + 3 Jus (1 000) = 8 000, paye en Orange Money.
 -- Fiche du Poulet: 0,5 kg de poulet a 2 500 + 0,05 L d'huile a 1 200 = 1 310.
@@ -10,8 +12,11 @@
 --   une seule commande, comptee a 14 h; l'argent compte a chaque heure.
 -- C5: 1 Brochette (4 000) + 1 Riz (1 000), remise de 1 000 (20 %): la remise
 --   est repartie au prorata, Brochette = 4 000 - 800 = 3 200.
--- P1: commande payee 777 (pourboire 77) au debut de la semaine precedente
---   (Douala): la periode precedente de la comparaison n'est pas vide.
+-- P1: commande payee 777 (pourboire 77) au MILIEU de la periode precedente de
+--   la comparaison (debut de la semaine precedente + la moitie du temps ecoule
+--   depuis lundi, Douala): toujours dedans, quel que soit le moment du test.
+-- C7 (2026-01-21): 3 plats a 1 000, remise de 1 000: la somme des parts de
+--   remise doit valoir exactement 1 000 (334 + 333 + 333).
 -- Pertes: 1,5 kg de poulet (perime) + 0,5 kg (casse), 1 kg de riz (sans cout),
 -- et un retrait manuel (pas une perte: temoin d'exclusion).
 --
@@ -22,7 +27,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(57);
+select plan(60);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -84,53 +89,62 @@ insert into public.recipes (tenant_id, menu_item_id, ingredient_id, quantity_nee
 insert into public.orders (id, tenant_id, order_number, subtotal, total, status, payment_status, paid_at, created_at)
 values
   ('f1700000-0000-4000-8000-000000000001', 'f1200000-0000-4000-8000-000000000001', 'AV-1', 10000, 10000,
-   'served', 'partial', '2026-11-18 11:30+00', '2026-11-18 11:00+00'),
+   'served', 'partial', '2026-01-14 11:30+00', '2026-01-14 11:00+00'),
   ('f1700000-0000-4000-8000-000000000002', 'f1200000-0000-4000-8000-000000000001', 'AV-2', 8000, 8000,
-   'served', 'paid', '2026-11-18 11:30+00', '2026-11-18 11:00+00'),
+   'served', 'paid', '2026-01-14 11:30+00', '2026-01-14 11:00+00'),
   -- C3: 1 Riz (fiche dont l'ingredient n'a pas de cout), sans ligne au
   -- registre: n'entre que dans les ventes par plat.
   ('f1700000-0000-4000-8000-000000000003', 'f1200000-0000-4000-8000-000000000001', 'AV-3', 2000, 2000,
-   'served', 'paid', '2026-11-18 11:30+00', '2026-11-18 11:00+00'),
+   'served', 'paid', '2026-01-14 11:30+00', '2026-01-14 11:00+00'),
   ('f1700000-0000-4000-8000-000000000004', 'f1200000-0000-4000-8000-000000000001', 'AV-4', 3000, 3000,
-   'served', 'paid', '2026-11-18 15:20+00', '2026-11-18 13:00+00');
+   'served', 'paid', '2026-01-14 15:20+00', '2026-01-14 13:00+00');
 insert into public.orders (id, tenant_id, order_number, subtotal, total, discount_amount, status, payment_status, paid_at, created_at)
 values ('f1700000-0000-4000-8000-000000000005', 'f1200000-0000-4000-8000-000000000001', 'AV-5', 5000, 4000, 1000,
-        'served', 'paid', '2026-11-18 11:30+00', '2026-11-18 11:00+00');
--- P1, au debut de la semaine precedente (Douala) + 1 seconde.
+        'served', 'paid', '2026-01-14 11:30+00', '2026-01-14 11:00+00');
+-- P1, au milieu de la periode precedente de la comparaison 'week' (Douala):
+-- debut de la semaine precedente + la moitie du temps ecoule depuis lundi.
 insert into public.orders (id, tenant_id, order_number, subtotal, total, tip_amount, status, payment_status, paid_at, created_at)
 select 'f1700000-0000-4000-8000-000000000006', 'f1200000-0000-4000-8000-000000000001', 'AV-6', 700, 700, 77,
        'served', 'paid', d, d
-  from (select (date_trunc('week', now() at time zone 'Africa/Douala') - interval '1 week' + interval '1 second')
-               at time zone 'Africa/Douala' as d) x;
+  from (select (lundi - interval '1 week' + (now() at time zone 'Africa/Douala' - lundi) / 2)
+               at time zone 'Africa/Douala' as d
+          from (select date_trunc('week', now() at time zone 'Africa/Douala') as lundi) w) x;
+-- C7: 3 plats a 1 000, remise de 1 000, le mercredi suivant (hors des autres periodes).
+insert into public.orders (id, tenant_id, order_number, subtotal, total, discount_amount, status, payment_status, paid_at, created_at)
+values ('f1700000-0000-4000-8000-000000000007', 'f1200000-0000-4000-8000-000000000001', 'AV-7', 3000, 2000, 1000,
+        'served', 'paid', '2026-01-21 11:30+00', '2026-01-21 11:00+00');
 insert into public.order_items (tenant_id, order_id, menu_item_id, item_name, price_at_order, quantity) values
   ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000001', 'f1500000-0000-4000-8000-000000000001', 'Poulet', 5000, 2),
   ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000002', 'f1500000-0000-4000-8000-000000000001', 'Poulet', 5000, 1),
   ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000002', 'f1500000-0000-4000-8000-000000000002', 'Jus', 1000, 3),
   ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000003', 'f1500000-0000-4000-8000-000000000003', 'Riz', 2000, 1),
   ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000005', 'f1500000-0000-4000-8000-000000000005', 'Brochette', 4000, 1),
-  ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000005', 'f1500000-0000-4000-8000-000000000003', 'Riz', 1000, 1);
+  ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000005', 'f1500000-0000-4000-8000-000000000003', 'Riz', 1000, 1),
+  ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000007', 'f1500000-0000-4000-8000-000000000001', 'Poulet', 1000, 1),
+  ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000007', 'f1500000-0000-4000-8000-000000000002', 'Jus', 1000, 1),
+  ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000007', 'f1500000-0000-4000-8000-000000000005', 'Brochette', 1000, 1);
 insert into public.payments (tenant_id, order_id, amount, method, status, created_at) values
-  ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000001', 10000, 'cash', 'completed', '2026-11-18 11:30+00'),
-  ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000001', 2000, 'cash', 'refunded', '2026-11-18 11:40+00'),
-  ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000002', 8000, 'orange_money', 'completed', '2026-11-18 11:30+00'),
-  ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000004', 1000, 'wave', 'completed', '2026-11-18 13:10+00'),
-  ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000004', 2000, 'wave', 'completed', '2026-11-18 15:20+00');
+  ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000001', 10000, 'cash', 'completed', '2026-01-14 11:30+00'),
+  ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000001', 2000, 'cash', 'refunded', '2026-01-14 11:40+00'),
+  ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000002', 8000, 'orange_money', 'completed', '2026-01-14 11:30+00'),
+  ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000004', 1000, 'wave', 'completed', '2026-01-14 13:10+00'),
+  ('f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000004', 2000, 'wave', 'completed', '2026-01-14 15:20+00');
 insert into public.payments (tenant_id, order_id, amount, method, status, created_at)
 select 'f1200000-0000-4000-8000-000000000001', 'f1700000-0000-4000-8000-000000000006', 777, 'cash', 'completed', paid_at
   from public.orders where id = 'f1700000-0000-4000-8000-000000000006';
 
 insert into public.stock_movements (tenant_id, ingredient_id, movement_type, quantity, reason_code, created_at) values
-  ('f1200000-0000-4000-8000-000000000001', 'f1600000-0000-4000-8000-000000000001', 'loss', -1.5, 'expired', '2026-11-18 09:00+00'),
-  ('f1200000-0000-4000-8000-000000000001', 'f1600000-0000-4000-8000-000000000001', 'loss', -0.5, 'breakage', '2026-11-18 09:30+00'),
-  ('f1200000-0000-4000-8000-000000000001', 'f1600000-0000-4000-8000-000000000003', 'loss', -1, 'expired', '2026-11-18 09:45+00'),
-  ('f1200000-0000-4000-8000-000000000001', 'f1600000-0000-4000-8000-000000000001', 'manual_remove', -4, null, '2026-11-18 10:00+00');
+  ('f1200000-0000-4000-8000-000000000001', 'f1600000-0000-4000-8000-000000000001', 'loss', -1.5, 'expired', '2026-01-14 09:00+00'),
+  ('f1200000-0000-4000-8000-000000000001', 'f1600000-0000-4000-8000-000000000001', 'loss', -0.5, 'breakage', '2026-01-14 09:30+00'),
+  ('f1200000-0000-4000-8000-000000000001', 'f1600000-0000-4000-8000-000000000003', 'loss', -1, 'expired', '2026-01-14 09:45+00'),
+  ('f1200000-0000-4000-8000-000000000001', 'f1600000-0000-4000-8000-000000000001', 'manual_remove', -4, null, '2026-01-14 10:00+00');
 
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"f1100000-0000-4000-8000-000000000001"}';
 
 -- 1. Marge par plat.
 create temp table m as select * from public.get_dish_margins('f1200000-0000-4000-8000-000000000001',
-  '2026-11-18 00:00+00', '2026-11-19 00:00+00');
+  '2026-01-14 00:00+00', '2026-01-15 00:00+00');
 select is((select quantity_sold from m where item_name = 'Poulet'), 3::bigint, 'marge: 3 poulets vendus');
 select is((select revenue from m where item_name = 'Poulet'), 15000::bigint, 'marge: ventes du poulet');
 select is((select unit_cost from m where item_name = 'Poulet'), 1310.000::numeric, 'marge: cout de fiche 0,5 x 2500 + 0,05 x 1200');
@@ -144,10 +158,16 @@ select is((select revenue from m where item_name = 'Brochette'), 3200::bigint,
   'remise de 20 % repartie au prorata: 4 000 - 800');
 select is((select revenue from m where item_name = 'Riz'), 2800::bigint,
   'Riz: 2 000 (C3) + 1 000 - 200 de remise (C5)');
+create temp table m7 as select * from public.get_dish_margins('f1200000-0000-4000-8000-000000000001',
+  '2026-01-21 00:00+00', '2026-01-22 00:00+00');
+select is((select sum(revenue)::bigint from m7), 2000::bigint,
+  'remise de 1 000 sur 3 plats egaux: ventes = 3 000 - 1 000 exactement');
+select is((select array_agg(revenue order by revenue) from m7), array[666, 667, 667]::bigint[],
+  'remise de 1 000 sur 3 plats egaux: 334 + 333 + 333, reste a une seule ligne');
 
 -- 2. Heures fortes, a l'heure de Douala (UTC+1).
 create temp table h as select * from public.get_sales_heatmap('f1200000-0000-4000-8000-000000000001',
-  '2026-11-18 00:00+00', '2026-11-19 00:00+00', 'Africa/Douala');
+  '2026-01-14 00:00+00', '2026-01-15 00:00+00', 'Africa/Douala');
 select is((select revenue from h where day_of_week = 3 and hour_of_day = 12), 16000::bigint,
   'heures fortes: mercredi 12 h a Douala, rembourse deduit');
 select is((select order_count from h where day_of_week = 3 and hour_of_day = 12), 2::bigint, 'heures fortes: deux commandes');
@@ -160,7 +180,7 @@ select is((select revenue from h where day_of_week = 3 and hour_of_day = 16), 20
   'l argent du second paiement compte a son heure');
 select is((select sum(order_count)::bigint from h),
   (select total_orders from public.get_order_summary('f1200000-0000-4000-8000-000000000001',
-     '2026-11-18 00:00+00', '2026-11-19 00:00+00')),
+     '2026-01-14 00:00+00', '2026-01-15 00:00+00')),
   'somme des cases = commandes du resume');
 select throws_ok(
   $$select * from public.get_sales_heatmap('f1200000-0000-4000-8000-000000000001', now() - interval '1 day', now(), 'Mars/Olympus')$$,
@@ -175,6 +195,8 @@ create temp table cs as
   select c.period, s.total_revenue, s.total_orders, s.total_tips
     from c cross join lateral public.get_order_summary('f1200000-0000-4000-8000-000000000001', c.start_at, c.end_at) s;
 select is((select count(*)::int from c), 2, 'comparaison: periode en cours et precedente');
+select ok((select start_at from c where period = 'previous') < (select start_at from c where period = 'current'),
+  'comparaison: la periode precedente commence avant');
 select ok((select end_at from c where period = 'previous') < (select start_at from c where period = 'current'),
   'comparaison: la periode precedente finit avant le debut de la periode en cours');
 select is((select revenue::numeric from c where period = 'current'), (select total_revenue from cs where period = 'current'),
@@ -195,18 +217,18 @@ select throws_ok(
 
 -- 4. Moyens de paiement.
 create temp table p as select * from public.get_payment_method_report('f1200000-0000-4000-8000-000000000001',
-  '2026-11-18 00:00+00', '2026-11-19 00:00+00');
+  '2026-01-14 00:00+00', '2026-01-15 00:00+00');
 select is((select net from p where method = 'cash'), 8000::bigint, 'especes: 10 000 encaisses moins 2 000 rembourses');
 select is((select refunded from p where method = 'cash'), 2000::bigint, 'especes: rembourse');
 select is((select collected from p where method = 'orange_money'), 8000::bigint, 'Orange Money: encaisse');
 select is((select sum(net)::numeric from p),
   (select total_revenue from public.get_order_summary('f1200000-0000-4000-8000-000000000001',
-     '2026-11-18 00:00+00', '2026-11-19 00:00+00')),
+     '2026-01-14 00:00+00', '2026-01-15 00:00+00')),
   'somme des moyens = chiffre du restaurant');
 
 -- 5. Pertes.
 create temp table l as select * from public.get_stock_losses_report('f1200000-0000-4000-8000-000000000001',
-  '2026-11-18 00:00+00', '2026-11-19 00:00+00');
+  '2026-01-14 00:00+00', '2026-01-15 00:00+00');
 select is((select quantity from l where ingredient_name = 'Poulet cru'), 2.000::numeric, 'pertes: 2 kg, retrait manuel exclu');
 select is((select cost_complete from l where ingredient_name = 'Poulet cru'), true, 'pertes: ingredient avec cout, valeur complete');
 select is((select cost_complete from l where ingredient_name = 'Riz cru'), false, 'pertes: ingredient sans cout, signale');

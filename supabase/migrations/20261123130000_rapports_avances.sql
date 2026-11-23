@@ -66,7 +66,9 @@ BEGIN
 
   RETURN QUERY
   WITH lignes AS (
-    SELECT oi.menu_item_id AS plat,
+    SELECT oi.id AS ligne,
+           oi.order_id AS cmd,
+           oi.menu_item_id AS plat,
            oi.item_name,
            oi.quantity,
            (oi.quantity * oi.price_at_order)::numeric AS brut,
@@ -80,15 +82,32 @@ BEGIN
        AND o.status != 'cancelled'
        AND o.payment_status IN ('paid', 'partial')
   ),
-  ventes AS (
-    SELECT l.plat,
-           MAX(l.item_name)::text AS nom,
-           SUM(l.quantity)::bigint AS qte,
-           -- Un seul arrondi, sur le total du plat.
-           ROUND(SUM(l.brut - CASE WHEN l.total_lignes > 0
-                                   THEN l.remise * l.brut / l.total_lignes ELSE 0 END))::bigint AS ca
+  -- Part de remise de chaque ligne, en unites mineures entieres: part
+  -- arrondie a l'inferieur, puis le reste de la commande va a sa ligne la plus
+  -- grosse. La somme des parts d'une commande egale EXACTEMENT sa remise
+  -- (1 000 sur 3 plats egaux: 334 + 333 + 333, jamais 999 ni 1 001).
+  base AS (
+    SELECT l.*,
+           CASE WHEN l.total_lignes > 0
+                THEN floor(l.remise * l.brut / l.total_lignes) ELSE 0 END AS part_base,
+           row_number() OVER (PARTITION BY l.cmd ORDER BY l.brut DESC, l.ligne) AS rang
       FROM lignes l
-     GROUP BY l.plat
+  ),
+  parts AS (
+    SELECT b.*,
+           b.part_base
+             + CASE WHEN b.rang = 1 AND b.total_lignes > 0
+                    THEN b.remise - SUM(b.part_base) OVER (PARTITION BY b.cmd)
+                    ELSE 0 END AS part
+      FROM base b
+  ),
+  ventes AS (
+    SELECT p.plat,
+           MAX(p.item_name)::text AS nom,
+           SUM(p.quantity)::bigint AS qte,
+           SUM(p.brut - p.part)::bigint AS ca
+      FROM parts p
+     GROUP BY p.plat
   ),
   fiches AS (
     SELECT r.menu_item_id AS plat,
