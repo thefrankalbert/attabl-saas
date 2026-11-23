@@ -2,8 +2,9 @@
 --
 -- Le defaut corrige: markPaid basculait la commande en payee, PUIS ecrivait la
 -- ligne du registre. Si le registre echouait, l'annulation ne pouvait pas
--- reussir pour un caissier. Les deux premieres assertions en donnent la
--- preuve (temoin de l'ancien chemin); les suivantes prouvent que la fonction
+-- reussir pour un caissier. Les deux premieres assertions montrent que cet
+-- ancien chemin (bascule sans ligne) est desormais refuse a la validation
+-- (20261124100000, constat B150); les suivantes prouvent que la fonction
 -- encaisser_commande ne laisse jamais une commande payee sans sa ligne.
 begin;
 create extension if not exists pgtap with schema extensions;
@@ -90,24 +91,33 @@ $$;
 create trigger test_panne_registre before insert on public.payments
   for each row execute function public.test_panne_registre();
 
+-- Ecriture puis validation simulee des controles reportes de 20261124100000.
+create function public.test_atomique_valider(p_sql text) returns void
+language plpgsql security invoker as $$
+begin
+  execute p_sql;
+  set constraints trg_paid_exige_registre_update immediate;
+  set constraints trg_paid_exige_registre_update deferred;
+end;
+$$;
+grant execute on function public.test_atomique_valider(text) to authenticated;
+
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"e1111111-1111-1111-1111-111111111111"}';
 
--- Temoin de l'ancien chemin (deux ecritures separees). La bascule passe, mais
--- la garde remplace paid_at: une annulation filtree sur la valeur envoyee par
--- l'application ne retrouve donc jamais la ligne...
-update public.orders
-   set payment_status = 'paid', payment_method = 'cash', paid_at = '2001-01-01T00:00:00Z'
- where id = 'ec000000-0000-4000-8000-000000000001';
-select is(
-  (select paid_at = '2001-01-01T00:00:00Z'::timestamptz from public.orders
-    where id = 'ec000000-0000-4000-8000-000000000001'),
-  false, 'ancien chemin: paid_at reecrit, l annulation par paid_at ne trouve rien');
--- ... et le retour a pending est refuse au caissier.
+-- Temoin de l'ancien chemin (deux ecritures separees: la bascule, puis la
+-- ligne au registre dans une autre requete). Depuis 20261124100000 (constat
+-- B150), la base refuse a la validation toute bascule a 'paid' que le registre
+-- ne couvre pas: la premiere ecriture de l'ancien chemin ne passerait plus.
+-- La validation est simulee par SET CONSTRAINTS ... IMMEDIATE (un test pgTAP
+-- ne valide jamais sa transaction).
 select throws_ok(
-  $$update public.orders set payment_status = 'pending', payment_method = null, paid_at = null
-    where id = 'ec000000-0000-4000-8000-000000000001'$$,
-  '42501', null, 'ancien chemin: le caissier ne peut pas annuler la bascule');
+  $$select public.test_atomique_valider($q$update public.orders
+      set payment_status = 'paid', payment_method = 'cash', paid_at = '2001-01-01T00:00:00Z'
+      where id = 'ec000000-0000-4000-8000-000000000001'$q$)$$,
+  '42501', null, 'ancien chemin: la bascule sans ligne au registre est refusee a la validation');
+select is((select payment_status from public.orders where id = 'ec000000-0000-4000-8000-000000000001'),
+  'pending', 'ancien chemin: la commande reste a encaisser');
 
 -- Registre en panne APRES la bascule: RIEN ne doit rester bascule.
 select throws_ok(

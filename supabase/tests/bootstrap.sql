@@ -37,6 +37,14 @@ begin
   end loop;
 end $$;
 
+-- En production (et sur toute stack Supabase), `service_role` porte BYPASSRLS:
+-- lu le 2026-11-23, `rolbypassrls = true`. Sans cet attribut ici, la base de
+-- test refuse au serveur ce que la production lui accorde. Depuis
+-- 20261124100200 `orders` n'a plus de politique INSERT: le serveur ne cree une
+-- commande que parce que la RLS ne s'applique pas a lui. Une base de test ou
+-- il la subirait echouerait sur un chemin qui fonctionne en production.
+alter role service_role bypassrls;
+
 -- ---------------------------------------------------------------- les schemas
 create schema if not exists auth;
 create schema if not exists extensions;

@@ -160,10 +160,15 @@ select is(
   'argent: un manager sans settings.edit ne change PAS la TVA du restaurant (B103)'
 );
 
-select lives_ok(
+-- Depuis 20261124100200 (constat B150), plus aucun employe, gerant compris,
+-- ne cree de commande par l'API directe: elles naissent au serveur
+-- applicatif (create_order_with_items en service_role).
+select throws_ok(
   $$insert into public.orders (tenant_id, order_number, subtotal, total)
     values ('c3333333-3333-3333-3333-333333333333', 'CMD-TEST-2', 5000, 5000)$$,
-  'argent non-regression: un manager cree une commande'
+  '42501',
+  null,
+  'argent: un manager ne cree plus de commande par l API directe'
 );
 
 -- ===========================================================================
@@ -185,13 +190,17 @@ select throws_ok(
   'isolation: un manager ne greffe PAS une ligne sur la commande d un autre restaurant'
 );
 
-select lives_ok(
+-- Et pas davantage sur SA commande (20261124100200): les articles naissent
+-- avec la commande, au serveur applicatif.
+select throws_ok(
   $$insert into public.order_items
       (tenant_id, order_id, menu_item_id, price_at_order, item_name)
     values ('c3333333-3333-3333-3333-333333333333',
             'c4444444-4444-4444-4444-444444444444',
             'c7777777-7777-7777-7777-777777777777', 29000, 'Plat')$$,
-  'isolation non-regression: un manager ajoute une ligne a SA commande'
+  '42501',
+  null,
+  'isolation: un manager n ajoute plus de ligne a SA commande par l API directe'
 );
 
 -- Parite avec l application: la permission RETIREE mord aussi en base.
