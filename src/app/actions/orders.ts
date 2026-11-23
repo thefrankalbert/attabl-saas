@@ -570,7 +570,8 @@ export async function actionSetCourseHeld(
 /**
  * Encaisse le solde d'une commande `partial` (A2), au registre. Plafonne par
  * recordTender: un rejeu trouve un solde nul et n'encaisse rien (il repond
- * alors `paid: false`, "deja reglee"). Le solde est lu cote serveur, jamais
+ * alors `paid: false`, "deja reglee", apres avoir refait le calcul du statut
+ * si la commande etait restee `partial`). Le solde est lu cote serveur, jamais
  * recu du client.
  */
 async function settlePartialBalance(
@@ -584,11 +585,22 @@ async function settlePartialBalance(
   const paymentService = createPaymentService(supabase);
   const summary = await paymentService.getSummary(orderId, tenantId);
   const balance = summary.due - summary.net;
-  if (balance <= 0) return { success: true, paid: false };
+  if (balance <= 0) {
+    // Registre solde mais commande restee `partial` (la mise a jour de statut
+    // avait echoue apres le dernier versement, constat L132): on refait le
+    // calcul du statut, sans nouvel encaissement, ce qui libere aussi la table.
+    // Reponse honnete: rien n'a ete encaisse maintenant, "deja reglee".
+    await paymentService.resyncStatus(orderId, tenantId);
+    return { success: true, paid: false };
+  }
+  // Aucun chemin n'ajoute un pourboire a une commande deja payee en partie: la
+  // fiche (OrderPaymentPanel) n'a pas de champ de pourboire, recordTender
+  // plafonne au du, et encaisser_commande (PR #446) ne l'ajoute qu'a une
+  // commande encore `pending`. Le message ne promet donc aucun autre chemin.
   if ((tipAmount ?? 0) > 0) {
     return {
       error:
-        'Cette commande a deja recu un acompte. Encaissez le solde depuis sa fiche pour ajouter un pourboire.',
+        'Un pourboire ne peut pas etre ajoute a une commande deja payee en partie. Encaissez le solde sans pourboire.',
     };
   }
   const parsedMethod = paymentMethodSchema.safeParse(method);
@@ -599,7 +611,9 @@ async function settlePartialBalance(
       method: parsedMethod.data,
       createdBy: adminUserId,
     });
-    return { success: true, paid: after.paymentStatus === 'paid' };
+    // `paid` seulement si CET appel a fait entrer de l'argent: recordTender peut
+    // aussi avoir seulement repare le statut d'une commande deja soldee.
+    return { success: true, paid: after.paymentStatus === 'paid' && after.net > summary.net };
   } catch (err) {
     // Course entre deux caisses: l'autre a encaisse le solde entre notre
     // lecture et notre ecriture, et la garde du registre refuse "Montant
@@ -608,7 +622,12 @@ async function settlePartialBalance(
     // contre-audit du lot A). Sinon l'erreur reste vraie.
     if (err instanceof ServiceError && err.code === 'VALIDATION') {
       const reread = await paymentService.getSummary(orderId, tenantId);
-      if (reread.due - reread.net <= 0) return { success: true, paid: false };
+      if (reread.due - reread.net <= 0) {
+        // L'autre caisse a solde; si sa mise a jour de statut a echoue, on la
+        // refait ici (sans encaisser).
+        await paymentService.resyncStatus(orderId, tenantId);
+        return { success: true, paid: false };
+      }
     }
     throw err;
   }

@@ -991,4 +991,72 @@ describe('recordTender - refus de la garde du registre (course entre deux appare
       service.recordTender(ORDER_ID, TENANT, { amount: 10000, method: 'cash', createdBy: 'a' }),
     ).rejects.toMatchObject({ code: 'INTERNAL' });
   });
+
+  // Constat L132 (cinquieme contre-audit du lot A).
+  describe('commande coincee et mise a jour de statut en echec', () => {
+    const ledgerRow = (id: string, amount: number): LedgerRow => ({
+      id,
+      amount,
+      method: 'cash',
+      status: 'completed',
+      created_by: null,
+      created_at: '2026-06-30T12:00:00.000Z',
+    });
+
+    it('registre solde mais statut partial: refait le statut, sans nouvel encaissement', async () => {
+      const mock = createMockSupabase(baseOrder({ payment_status: 'partial' }), [
+        ledgerRow('p1', 4000),
+        ledgerRow('p2', 6000),
+      ]);
+      const service = createPaymentService(asSupabase(mock));
+
+      const summary = await service.recordTender(ORDER_ID, TENANT, {
+        amount: 1000,
+        method: 'cash',
+      });
+
+      expect(summary.paymentStatus).toBe('paid');
+      expect(mock._order.payment_status).toBe('paid');
+      expect((mock._order as OrderRow & { payment_method?: string }).payment_method).toBe('cash');
+      expect(mock._ledger).toHaveLength(2);
+    });
+
+    it('temoin: une commande payee ne passe pas par la reparation (refus du depassement)', async () => {
+      const mock = createMockSupabase(baseOrder({ payment_status: 'paid' }), [
+        ledgerRow('p1', 10000),
+      ]);
+      const service = createPaymentService(asSupabase(mock));
+      await expect(
+        service.recordTender(ORDER_ID, TENANT, { amount: 1000, method: 'cash' }),
+      ).rejects.toMatchObject({ code: 'VALIDATION' });
+    });
+
+    it('statut non mis a jour apres le versement: message vrai, versement au registre', async () => {
+      const mock = createMockSupabase(baseOrder({ payment_status: 'partial' }), [
+        ledgerRow('p1', 4000),
+      ]);
+      const realFrom = mock.from;
+      // La base refuse la mise a jour de statut (declencheur, 42501).
+      const refused = { error: { code: '42501', message: 'refus' } };
+      const failingUpdate = () => {
+        const tail = {
+          neq: async () => refused,
+          then: (ok: (v: typeof refused) => unknown) => Promise.resolve(refused).then(ok),
+        };
+        return { eq: () => ({ eq: () => tail }) };
+      };
+      (mock as { from: unknown }).from = vi.fn((table: string) =>
+        table === 'orders' ? { ...realFrom('orders'), update: failingUpdate } : realFrom(table),
+      );
+      const service = createPaymentService(asSupabase(mock));
+
+      await expect(
+        service.recordTender(ORDER_ID, TENANT, { amount: 6000, method: 'cash' }),
+      ).rejects.toThrow(
+        "Le versement est enregistre, mais le statut de la commande n'a pas pu etre mis a jour. Rafraichissez la commande.",
+      );
+      // Le versement est bien au registre: un nouvel essai lira un solde nul.
+      expect(mock._ledger).toHaveLength(2);
+    });
+  });
 });

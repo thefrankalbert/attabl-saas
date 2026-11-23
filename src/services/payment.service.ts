@@ -83,6 +83,13 @@ export function createPaymentService(supabase: SupabaseClient) {
       const remaining =
         dueFor(order) - summarize(order, await fetchTenders(supabase, orderId, tenantId)).net;
       if (amount > remaining) {
+        // Commande COINCEE: le registre est solde mais le statut est reste
+        // 'partial' (la mise a jour de statut avait echoue apres le dernier
+        // versement, constat L132). Rien a encaisser: on refait seulement le
+        // calcul du statut, qui libere aussi la table.
+        if (remaining <= 0 && order.payment_status === 'partial') {
+          return this.resyncStatus(orderId, tenantId);
+        }
         // Le REJEU d'un encaissement deja enregistre depasse forcement le solde
         // (le premier envoi l'a solde): ce n'est pas un depassement, c'est le
         // meme paiement. Sans ce test, le rejeu d'un encaissement du total
@@ -126,6 +133,35 @@ export function createPaymentService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur lors de l enregistrement du paiement', 'INTERNAL', error);
       }
 
+      try {
+        await recompute(supabase, order, tenantId);
+      } catch (err) {
+        // Le versement EST au registre: le dire, au lieu d'une erreur qui fait
+        // croire au caissier que rien n'est passe. Un nouvel essai ne peut pas
+        // encaisser deux fois (solde relu nul) et refait le calcul du statut
+        // (resyncStatus). Second contre-audit L132, point 4.
+        logger.error('Tender recorded but order status update failed', {
+          orderId,
+          tenantId,
+          err,
+        });
+        throw new ServiceError(
+          "Le versement est enregistre, mais le statut de la commande n'a pas pu etre mis a jour. Rafraichissez la commande.",
+          'INTERNAL',
+          err,
+        );
+      }
+      return this.getSummary(orderId, tenantId);
+    },
+
+    /**
+     * Refait le calcul du statut de paiement depuis le registre, SANS nouvel
+     * encaissement (commande au registre solde mais restee 'partial'). Meme
+     * ecriture qu'apres un encaissement (`recompute`): statut, moyen dominant,
+     * horodatage et liberation de la table. Tenant-scoped.
+     */
+    async resyncStatus(orderId: string, tenantId: string): Promise<PaymentSummary> {
+      const order = await fetchOrder(supabase, orderId, tenantId);
       await recompute(supabase, order, tenantId);
       return this.getSummary(orderId, tenantId);
     },

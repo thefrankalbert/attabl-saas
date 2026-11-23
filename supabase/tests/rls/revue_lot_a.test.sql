@@ -20,15 +20,23 @@
 --       soldes affiches comme dans la garde. A1 : la politique DELETE de
 --       `orders` est la seule, et c'est celle de 20261121200000.
 --
--- Temoin negatif: sans ces migrations, les assertions 1, 3, 5, 7, 9, 13, 14,
--- 16, 17, 19, 20 et 22 echouent (suppression acceptee, attache acceptee, solde accepte,
--- table liberee, deplacement accepte sans le droit, table occupee supprimee).
+-- L132 (20261121200400) : un caissier solde une commande 'partial' au moyen
+--       NULL quand le registre couvre le du (et repare une commande coincee);
+--       refus maintenus: registre incomplet, statut autre que 'partial',
+--       reetiquetage, moyen pose sans solder, autres gardes du declencheur.
+--
+-- Temoin negatif: sans les cinq migrations du lot (20261121200000 a 200400),
+-- les assertions 1, 3, 5, 7, 9, 13, 14, 16, 17, 19, 20, 21, 30, 31 et 33
+-- echouent (suppression acceptee, attache acceptee, solde accepte, table
+-- liberee, deplacement accepte sans le droit, caissier bloque au solde, table
+-- occupee supprimee). Les assertions 22 et 23 ne tombent que sur une clause
+-- 200400 trop large (registre ignore, condition 'partial' retiree).
 -- Execution: scripts/run-pgtap.sh --local
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(26);
+select plan(37);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at, email_confirmed_at)
 values
@@ -198,6 +206,75 @@ select ok(
     where schemaname = 'public' and tablename = 'orders'
       and policyname = 'Money managers can delete own tenant orders') like '%payments%',
   'A1: la politique DELETE exige qu aucun paiement ne soit rattache');
+
+-- --------------------------- L132: un caissier solde une commande 'partial'
+-- (migration 20261121200400). La seule exception de la garde du moyen de
+-- paiement: moyen NULL, la commande passe de 'partial' a 'paid', et le
+-- registre couvre le du (meme regle que recompute).
+insert into public.orders (id, tenant_id, service_type, order_number, subtotal, total, status, payment_status, payment_method, created_at)
+values
+  ('0a000000-0000-4000-8000-000000000020', 'aa000000-0000-4000-8000-000000000001', 'takeaway', 'A-20', 1000, 1000, 'delivered', 'partial', null, now()),
+  ('0a000000-0000-4000-8000-000000000021', 'aa000000-0000-4000-8000-000000000001', 'takeaway', 'A-21', 1000, 1000, 'delivered', 'paid', 'cash', now()),
+  ('0a000000-0000-4000-8000-000000000022', 'aa000000-0000-4000-8000-000000000001', 'takeaway', 'A-22', 1000, 1000, 'delivered', 'partial', null, now()),
+  ('0a000000-0000-4000-8000-000000000023', 'aa000000-0000-4000-8000-000000000001', 'takeaway', 'A-23', 1000, 1000, 'delivered', 'partial', 'cash', now()),
+  -- registre a 400 sur 1000: ne peut pas etre declaree payee
+  ('0a000000-0000-4000-8000-000000000024', 'aa000000-0000-4000-8000-000000000001', 'takeaway', 'A-24', 1000, 1000, 'delivered', 'partial', null, now()),
+  -- statut de paiement NULL, registre complet: hors de l'exception ('partial' exige)
+  ('0a000000-0000-4000-8000-000000000025', 'aa000000-0000-4000-8000-000000000001', 'takeaway', 'A-25', 1000, 1000, 'delivered', null, null, now()),
+  -- commande coincee: registre complet, statut reste 'partial'
+  ('0a000000-0000-4000-8000-000000000026', 'aa000000-0000-4000-8000-000000000001', 'takeaway', 'A-26', 1000, 1000, 'delivered', 'partial', null, now());
+insert into public.payments (tenant_id, order_id, amount, method, status)
+values
+  ('aa000000-0000-4000-8000-000000000001', '0a000000-0000-4000-8000-000000000020', 400, 'cash', 'completed'),
+  ('aa000000-0000-4000-8000-000000000001', '0a000000-0000-4000-8000-000000000024', 400, 'cash', 'completed'),
+  ('aa000000-0000-4000-8000-000000000001', '0a000000-0000-4000-8000-000000000025', 1000, 'cash', 'completed'),
+  ('aa000000-0000-4000-8000-000000000001', '0a000000-0000-4000-8000-000000000026', 1000, 'cash', 'completed');
+
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"a2222222-2222-4222-8222-222222222222","role":"authenticated"}', true);
+-- Le caissier encaisse le solde (600), puis l'ecriture de recompute.
+insert into public.payments (tenant_id, order_id, amount, method, status)
+values ('aa000000-0000-4000-8000-000000000001', '0a000000-0000-4000-8000-000000000020', 600, 'cash', 'completed');
+select lives_ok(
+  $$ update public.orders set payment_status = 'paid', paid_at = now(), payment_method = 'cash'
+       where id = '0a000000-0000-4000-8000-000000000020' $$,
+  'L132: un caissier solde une commande partial au moyen NULL (forme exacte de recompute)');
+select lives_ok(
+  $$ update public.orders set payment_status = 'paid', paid_at = now(), payment_method = 'cash'
+       where id = '0a000000-0000-4000-8000-000000000026' $$,
+  'L132: un caissier repare une commande coincee (registre complet, statut partial)');
+select throws_ok(
+  $$ update public.orders set payment_status = 'paid', paid_at = now(), payment_method = 'cash'
+       where id = '0a000000-0000-4000-8000-000000000024' $$,
+  '42501', null, 'L132 temoin: registre a 400 sur 1000, la commande ne passe pas paid avec un moyen');
+select throws_ok(
+  $$ update public.orders set payment_status = 'paid', paid_at = now(), payment_method = 'cash'
+       where id = '0a000000-0000-4000-8000-000000000025' $$,
+  '42501', null, 'L132 temoin: statut NULL (pas partial), meme registre complet: regle d avant');
+select throws_ok(
+  $$ update public.orders set payment_method = 'card' where id = '0a000000-0000-4000-8000-000000000021' $$,
+  '42501', null, 'L132 temoin: un caissier ne reetiquette pas en carte une commande payee en especes');
+select throws_ok(
+  $$ update public.orders set payment_method = 'cash' where id = '0a000000-0000-4000-8000-000000000022' $$,
+  '42501', null, 'L132 temoin: pas de moyen pose sur une commande encore partial sans la solder');
+select throws_ok(
+  $$ update public.orders set payment_status = 'paid', payment_method = 'card'
+       where id = '0a000000-0000-4000-8000-000000000023' $$,
+  '42501', null, 'L132 temoin: pas de changement du moyen d une partial qui en a deja un');
+-- Les autres gardes du declencheur ne sont pas affaiblies.
+select throws_ok(
+  $$ update public.orders set total = 1 where id = '0a000000-0000-4000-8000-000000000022' $$,
+  '42501', null, 'L132 temoin: les montants restent figes');
+select throws_ok(
+  $$ update public.orders set tip_amount = 500 where id = '0a000000-0000-4000-8000-000000000022' $$,
+  '42501', null, 'L132 temoin: pas de pourboire sur une commande deja partiellement reglee');
+select throws_ok(
+  $$ update public.orders set payment_status = 'pending' where id = '0a000000-0000-4000-8000-000000000021' $$,
+  '42501', null, 'L132 temoin: une commande payee ne revient pas a pending');
+reset role;
+select is(
+  (select payment_status || ':' || payment_method from public.orders where id = '0a000000-0000-4000-8000-000000000020'),
+  'paid:cash', 'L132: la commande soldee par le caissier est paid, avec son moyen');
 
 -- ------------------------------------------------ A17: suppression de tables
 insert into public.venues (id, tenant_id, slug, name)

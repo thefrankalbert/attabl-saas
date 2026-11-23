@@ -52,7 +52,8 @@ vi.mock('@/services/order-annotation.service', () => ({ createOrderAnnotationSer
 vi.mock('@/services/order-ready.service', () => ({ createOrderReadyService: vi.fn() }));
 vi.mock('@/services/audit.service', () => ({ createAuditService: () => ({ log: vi.fn() }) }));
 
-const { mockMarkPaid, mockGetSummary, mockRecordTender } = vi.hoisted(() => ({
+const { mockMarkPaid, mockGetSummary, mockRecordTender, mockResync } = vi.hoisted(() => ({
+  mockResync: vi.fn(),
   mockMarkPaid: vi.fn(),
   mockGetSummary: vi.fn(),
   mockRecordTender: vi.fn(),
@@ -61,7 +62,11 @@ vi.mock('@/services/order.service', () => ({
   createOrderService: () => ({ markPaid: mockMarkPaid }),
 }));
 vi.mock('@/services/payment.service', () => ({
-  createPaymentService: () => ({ getSummary: mockGetSummary, recordTender: mockRecordTender }),
+  createPaymentService: () => ({
+    getSummary: mockGetSummary,
+    recordTender: mockRecordTender,
+    resyncStatus: mockResync,
+  }),
 }));
 
 import { actionMarkOrderPaid } from '@/app/actions/orders';
@@ -85,7 +90,7 @@ describe('actionMarkOrderPaid: commande partiellement payee', () => {
   it('partial: encaisse le solde restant au registre, sans appeler markPaid', async () => {
     orderRow.value = { payment_status: 'partial' };
     mockGetSummary.mockResolvedValue({ due: 10000, net: 4000, paymentStatus: 'partial' });
-    mockRecordTender.mockResolvedValue({ paymentStatus: 'paid' });
+    mockRecordTender.mockResolvedValue({ paymentStatus: 'paid', net: 10000 });
     const res = await actionMarkOrderPaid(TENANT, ORDER, 'cash');
     expect(mockRecordTender).toHaveBeenCalledWith(ORDER, TENANT, {
       amount: 6000,
@@ -109,6 +114,8 @@ describe('actionMarkOrderPaid: commande partiellement payee', () => {
     );
     const res = await actionMarkOrderPaid(TENANT, ORDER, 'cash');
     expect(res).toEqual({ success: true, paid: false });
+    // Si la mise a jour de statut de l'autre caisse a echoue, elle est refaite.
+    expect(mockResync).toHaveBeenCalledWith(ORDER, TENANT);
   });
 
   it('temoin: refus sans course (solde toujours du apres relecture): l erreur reste', async () => {
@@ -125,18 +132,35 @@ describe('actionMarkOrderPaid: commande partiellement payee', () => {
     orderRow.value = { payment_status: 'partial' };
     mockGetSummary.mockResolvedValue({ due: 10000, net: 4000, paymentStatus: 'partial' });
     const res = await actionMarkOrderPaid(TENANT, ORDER, 'cash', 500);
-    expect(res.error).toMatch(/acompte/);
+    // Message vrai: aucun chemin "depuis sa fiche" pour un pourboire n'existe.
+    expect(res.error).toBe(
+      'Un pourboire ne peut pas etre ajoute a une commande deja payee en partie. Encaissez le solde sans pourboire.',
+    );
     expect(mockRecordTender).not.toHaveBeenCalled();
     expect(mockMarkPaid).not.toHaveBeenCalled();
   });
 
-  it('partial rejouee apres un solde deja encaisse: paid false, pas de second encaissement', async () => {
+  // Constat L132: registre solde mais commande restee `partial` (la mise a
+  // jour de statut avait echoue). Le nouvel essai refait le calcul du statut,
+  // sans rien encaisser, au lieu de repondre "deja reglee" sans rien reparer.
+  it('commande coincee (registre solde, statut partial): statut refait, pas de second encaissement', async () => {
     orderRow.value = { payment_status: 'partial' };
     mockGetSummary.mockResolvedValue({ due: 10000, net: 10000, paymentStatus: 'paid' });
     const res = await actionMarkOrderPaid(TENANT, ORDER, 'cash');
     expect(res).toEqual({ success: true, paid: false });
+    expect(mockResync).toHaveBeenCalledWith(ORDER, TENANT);
     expect(mockRecordTender).not.toHaveBeenCalled();
     expect(mockMarkPaid).not.toHaveBeenCalled();
+  });
+
+  it('recordTender a seulement repare le statut (aucun argent entre): paid false', async () => {
+    orderRow.value = { payment_status: 'partial' };
+    mockGetSummary.mockResolvedValue({ due: 10000, net: 4000, paymentStatus: 'partial' });
+    // recordTender renvoie 'paid' sans que le net ait bouge: CET appel n'a fait
+    // entrer aucun argent (il n'a fait que refaire le statut).
+    mockRecordTender.mockResolvedValue({ paymentStatus: 'paid', net: 4000 });
+    const res = await actionMarkOrderPaid(TENANT, ORDER, 'cash');
+    expect(res).toEqual({ success: true, paid: false });
   });
 
   it('temoin: deja payee, le chemin rapide repond paid false sans calcul de solde', async () => {

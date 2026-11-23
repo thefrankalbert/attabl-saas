@@ -21,7 +21,12 @@ import { CancelOrderButton } from '../order-details/CancelOrderButton';
 
 type Overrides = Partial<Pick<Order, 'status' | 'payment_status'>>;
 
-function renderButton(overrides: Overrides, canPay = true, onCancelled = vi.fn()) {
+function renderButton(
+  overrides: Overrides,
+  canPay = true,
+  onCancelled = vi.fn(),
+  canManageMoney = true,
+) {
   const order = {
     id: 'o1',
     tenant_id: 't1',
@@ -31,7 +36,12 @@ function renderButton(overrides: Overrides, canPay = true, onCancelled = vi.fn()
   } as unknown as Order;
   render(
     <NextIntlClientProvider locale="fr-FR" messages={messages}>
-      <CancelOrderButton order={order} canPay={canPay} onCancelled={onCancelled} />
+      <CancelOrderButton
+        order={order}
+        canPay={canPay}
+        canManageMoney={canManageMoney}
+        onCancelled={onCancelled}
+      />
     </NextIntlClientProvider>,
   );
   return onCancelled;
@@ -72,6 +82,29 @@ describe('CancelOrderButton', () => {
     expect(cancelButton()).toBeNull();
   });
 
+  // Quatrieme contre-audit: la base refuse au caissier (orders.pay sans
+  // autorite sur l'argent) l'annulation d'une commande remboursee ou offerte.
+  it.each(['refunded', 'comp'] as const)(
+    'caissier (sans autorite sur l argent) + %s: absent',
+    (payment_status) => {
+      renderButton({ payment_status }, true, vi.fn(), false);
+      expect(cancelButton()).toBeNull();
+    },
+  );
+
+  it('caissier + partial: present', () => {
+    renderButton({ payment_status: 'partial' }, true, vi.fn(), false);
+    expect(cancelButton()).toBeInTheDocument();
+  });
+
+  it.each(['refunded', 'comp'] as const)(
+    'gerant (autorite sur l argent) + %s: present',
+    (payment_status) => {
+      renderButton({ payment_status }, true, vi.fn(), true);
+      expect(cancelButton()).toBeInTheDocument();
+    },
+  );
+
   it('demande confirmation, puis appelle l action existante et rafraichit', async () => {
     mockUpdateStatus.mockResolvedValue({ success: true });
     const onCancelled = renderButton({});
@@ -86,7 +119,7 @@ describe('CancelOrderButton', () => {
     );
     await waitFor(() => expect(mockUpdateStatus).toHaveBeenCalledWith('t1', 'o1', 'cancelled'));
     await waitFor(() => expect(onCancelled).toHaveBeenCalled());
-    expect(mockToast).toHaveBeenCalledWith({ title: 'Commande annulee' });
+    expect(mockToast).toHaveBeenCalledWith({ title: 'Commande annulée' });
   });
 
   it('erreur du serveur: message affiche, pas de rafraichissement', async () => {
@@ -108,4 +141,25 @@ describe('CancelOrderButton', () => {
     );
     expect(onCancelled).not.toHaveBeenCalled();
   });
+
+  // Verification visuelle du lot A (D4): a la fermeture de la boite, le focus
+  // revient au bouton qui l'a ouverte, pas a BODY.
+  it.each(['Garder la commande', 'Echap'])(
+    'apres %s, le bouton reprend le focus',
+    async (geste) => {
+      renderButton({});
+      const button = cancelButton() as HTMLElement;
+      button.focus();
+      fireEvent.click(button);
+      const dialog = await screen.findByRole('alertdialog');
+      if (geste === 'Echap') {
+        fireEvent.keyDown(dialog, { key: 'Escape' });
+      } else {
+        fireEvent.click(screen.getByRole('button', { name: 'Garder la commande' }));
+      }
+      await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+      await waitFor(() => expect(document.activeElement).toBe(cancelButton()));
+      expect(mockUpdateStatus).not.toHaveBeenCalled();
+    },
+  );
 });

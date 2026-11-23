@@ -171,12 +171,18 @@ export function OrderActionsPanel({
         currency={currency}
         canComp={canComp}
         onUpdate={onUpdate}
+        orderCancelled={order.status === 'cancelled'}
       />
 
       {/* Annuler depuis la fiche: seul chemin pour une commande ancienne (une
           commande d'ardoise remboursee, par exemple). Masque si l'annulation
           n'est pas permise. */}
-      <CancelOrderButton order={order} canPay={canPay} onCancelled={onUpdate} />
+      <CancelOrderButton
+        order={order}
+        canPay={canPay}
+        canManageMoney={canComp}
+        onCancelled={onUpdate}
+      />
     </div>
   );
 }

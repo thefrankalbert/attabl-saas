@@ -7,8 +7,8 @@
 -- tous ses articles, et l'ecran afficherait "supprimee" (prouve par le second
 -- contre-audit du lot A). Le nouveau code refuse avant toute ecriture et ne
 -- supprime plus les articles a part.
--- Les trois autres migrations du lot (20261121200100, 200200, 200300) peuvent
--- passer avant le code.
+-- Les autres migrations du lot (20261121200100, 200200, 200300 et 200400)
+-- peuvent passer avant ou apres le code.
 -- ============================================================================
 -- Une commande qui porte de l'argent au registre ne se supprime pas (revue L011, A1).
 -- ============================================================================
