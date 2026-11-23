@@ -4001,7 +4001,8 @@
     "dashCardTitle": "QR codes",
     "dashCardDesc": "Create and assign a QR per table or zone",
     "dashCardDescCount": "{count} tables - create and assign their QR codes",
-    "dashCardCta": "Manage"
+    "dashCardCta": "Manage",
+    "qrColorsUnreadable": "Phones struggle to scan these colors. The QR code will print in black so it stays readable. Choose dark dots on a light background."
   },
   "service": {
     "readyAlertTable": "Order ready - Table {table}",

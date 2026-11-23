@@ -625,7 +625,7 @@ describe('design QR choisi pendant l onboarding', () => {
       't1',
       donnees({
         qrTemplate: 'carte',
-        qrStyle: 'dark',
+        qrStyle: 'classic',
         qrCta: 'Commandez ici',
         qrDescription: 'Wifi: attabl',
       }),
@@ -643,7 +643,7 @@ describe('design QR choisi pendant l onboarding', () => {
     expect(qr.is_default).toBe(true);
     expect(qr.config.templateId).toBe('carte');
     expect(qr.config.ctaText).toBe('Commandez ici');
-    expect(qr.config.qrBgColor).toBe('#1a1a1a');
+    expect(qr.config.qrBgColor).toBe('#FFFFFF');
     expect(qr.config.printLayout.message).toEqual({ enabled: true, text: 'Wifi: attabl' });
   });
 

@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import type QRCodeStyling from 'qr-code-styling';
 import type { Options } from 'qr-code-styling';
 import type { QRDotStyle, QRCornerStyle, QRErrorCorrectionLevel } from '@/types/qr-design.types';
+import { scannableQrColors } from '@/lib/qr/qr-contrast';
 
 interface StyledQRProps {
   value: string;
@@ -46,6 +47,8 @@ export function StyledQR({
 
   useEffect(() => {
     let cancelled = false;
+    // Never print a code phones cannot read (light dots, inverted colors).
+    const colors = scannableQrColors(fgColor, bgColor);
 
     const options: Options = {
       width: size,
@@ -56,10 +59,10 @@ export function StyledQR({
       qrOptions: { errorCorrectionLevel: errorCorrection },
       image: logoSrc || undefined,
       imageOptions: { crossOrigin: 'anonymous', margin: 4, imageSize: logoSize },
-      dotsOptions: { color: fgColor, type: dotStyle },
-      backgroundOptions: { color: bgColor },
-      cornersSquareOptions: { color: fgColor, type: cornerType(cornerStyle) },
-      cornersDotOptions: { color: fgColor, type: cornerStyle === 'square' ? 'square' : 'dot' },
+      dotsOptions: { color: colors.fg, type: dotStyle },
+      backgroundOptions: { color: colors.bg },
+      cornersSquareOptions: { color: colors.fg, type: cornerType(cornerStyle) },
+      cornersDotOptions: { color: colors.fg, type: cornerStyle === 'square' ? 'square' : 'dot' },
     };
 
     async function render() {

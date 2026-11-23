@@ -50,13 +50,12 @@ async function fetchImageAsDataUrl(url: string): Promise<string | null> {
   }
 }
 
-async function buildQrDataUrl(url: string, style: string): Promise<string> {
-  const dark = style === 'inverted' || style === 'dark' ? '#FFFFFF' : '#000000';
-  const light = style === 'inverted' ? '#000000' : '#FFFFFF';
+/** Always dark dots on white: the only colors every phone camera reads. */
+async function buildQrDataUrl(url: string): Promise<string> {
   return QRCode.toDataURL(url, {
     width: 600,
     margin: 1,
-    color: { dark, light },
+    color: { dark: '#000000', light: '#FFFFFF' },
   });
 }
 
@@ -132,7 +131,7 @@ export async function POST(request: Request) {
       (config.logo.visible || config.verso === 'logo') && logoUrl
         ? fetchImageAsDataUrl(logoUrl)
         : Promise.resolve(null),
-      buildQrDataUrl(config.qrCode.menuUrl, config.qrCode.style),
+      buildQrDataUrl(config.qrCode.menuUrl),
     ]);
 
     // 6. Build PDF page components

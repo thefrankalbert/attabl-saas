@@ -2,7 +2,7 @@ export type UnitSystem = 'cm' | 'mm' | 'px';
 
 export type VersoMode = 'none' | 'logo' | 'mirror';
 
-type QrStyle = 'classic' | 'branded' | 'inverted' | 'dark';
+type QrStyle = 'classic' | 'branded';
 
 interface LogoConfig {
   visible: boolean;
