@@ -29,6 +29,9 @@ const subscribeNever = () => () => {};
 
 /**
  * Photo side of the auth frame: full-screen photo from 1024px, banner below.
+ * From 1024px the sentence is centred in the right half (owner's choice on
+ * 2026-11-23; the mock-up had it at the bottom), with a soft shadow because it
+ * then sits on the subject of the photo, sometimes on a light area.
  * One photo is fixed; several make a slideshow (0.8s fade, one photo every 6s,
  * pause button). With reduced motion the first photo stays and there is no
  * button. The first photo is the only one preloaded: each following photo is
@@ -109,8 +112,8 @@ export function AuthPhotoPanel({ scene: sceneProp }: { scene: AuthScene }) {
         aria-hidden="true"
       />
 
-      <div className="absolute inset-x-0 bottom-0 px-5 pb-12 lg:inset-y-0 lg:left-1/2 lg:right-0 lg:flex lg:items-end lg:justify-center lg:px-16 lg:pb-[13dvh]">
-        <p className="auth-serif max-w-[16ch] text-[30px] leading-[1.05] tracking-[-0.01em] text-balance text-white sm:text-[38px] lg:max-w-[15ch] lg:text-center lg:text-[48px]">
+      <div className="absolute inset-x-0 bottom-0 px-5 pb-12 lg:inset-y-0 lg:left-1/2 lg:right-0 lg:flex lg:items-center lg:justify-center lg:px-16 lg:pb-0">
+        <p className="auth-serif max-w-[16ch] text-[30px] leading-[1.05] tracking-[-0.01em] text-balance text-white sm:text-[38px] lg:max-w-[15ch] lg:text-center lg:text-[48px] lg:[text-shadow:0_2px_28px_rgba(0,0,0,0.6),0_1px_3px_rgba(0,0,0,0.4)]">
           {t(`phrases.${scene}`)}
         </p>
       </div>
