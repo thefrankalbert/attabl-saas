@@ -16,12 +16,12 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { BlurFade } from '@/components/ui/blur-fade';
+import { WHATSAPP_LINK } from '@/components/marketing/home/whatsapp';
 
-const WHATSAPP = 'https://wa.me/22665565411';
 const CITY_KEYS = ['yaounde', 'ouaga', 'ndjamena'] as const;
 const CITY_TEL: Record<(typeof CITY_KEYS)[number], string> = {
   yaounde: '+237658651050',
-  ouaga: '+22665565411',
+  ouaga: '+22655212293',
   ndjamena: '+23564940372',
 };
 const FAQ_KEYS = ['q1', 'q2', 'q3'] as const;
@@ -107,7 +107,7 @@ export default function ContactPage() {
                   {formState.message}
                 </p>
                 <a
-                  href={WHATSAPP}
+                  href={WHATSAPP_LINK}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-5 inline-flex items-center gap-2 rounded-[10px] bg-green-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-green-700"
@@ -199,7 +199,7 @@ export default function ContactPage() {
           {/* Channels */}
           <div className="flex flex-col gap-3.5">
             <a
-              href={WHATSAPP}
+              href={WHATSAPP_LINK}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-start gap-3.5 rounded-[14px] border border-zinc-200 bg-white p-5 transition-colors hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"

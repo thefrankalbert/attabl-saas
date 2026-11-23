@@ -5,6 +5,7 @@ import ReportsClient from '@/components/admin/ReportsClient';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 import { FeatureUpgradeWall } from '@/components/admin/FeatureUpgradeWall';
 import { canAccessFeature } from '@/lib/plans/features';
+import { resolveTenantTimezone } from '@/lib/timezones';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 
 export const dynamic = 'force-dynamic';
@@ -49,7 +50,11 @@ export default async function ReportsPage({ params }: { params: Promise<{ site: 
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">
-      <ReportsClient tenantId={tenant.id} currency={tenant.currency || 'XAF'} />
+      <ReportsClient
+        tenantId={tenant.id}
+        currency={tenant.currency || 'XAF'}
+        timezone={resolveTenantTimezone(tenant)}
+      />
     </div>
   );
 }

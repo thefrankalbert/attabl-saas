@@ -1,19 +1,36 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useMemo } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import { TrendingUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
+import { CHART_PALETTE } from '@/lib/design-tokens';
+import { fromMinorUnits } from '@/lib/utils/money';
+import type { CurrencyCode } from '@/types/admin.types';
 import type { CurrencyFormatter, DailyStats } from './reports.types';
 
 interface RevenueChartCardProps {
   dailyStats: DailyStats[];
   periodDisplayLabel: string;
   fmt: CurrencyFormatter;
+  currency: CurrencyCode;
 }
 
-export function RevenueChartCard({ dailyStats, periodDisplayLabel, fmt }: RevenueChartCardProps) {
+export function RevenueChartCard({
+  dailyStats,
+  periodDisplayLabel,
+  fmt,
+  currency,
+}: RevenueChartCardProps) {
   const t = useTranslations('reports');
+  const locale = useLocale();
+  // Axe en notation compacte (1,2 Md, 350 M): un montant complet a 10 chiffres
+  // ne tient pas dans la largeur de l'axe. Le montant exact reste dans l'infobulle.
+  const compact = useMemo(
+    () => new Intl.NumberFormat(locale, { notation: 'compact', maximumFractionDigits: 1 }),
+    [locale],
+  );
 
   return (
     <div className="lg:col-span-2 bg-app-card border border-app-border/60 rounded-xl p-4">
@@ -35,7 +52,9 @@ export function RevenueChartCard({ dailyStats, periodDisplayLabel, fmt }: Revenu
           <BarChart
             data={dailyStats.map((d) => ({
               ...d,
-              label: format(new Date(d.date), 'dd/MM'),
+              // Jour du calendrier du restaurant (AAAA-MM-JJ), lu comme date locale:
+              // new Date() le lirait comme minuit UTC et decalerait la barre a l'ouest.
+              label: format(parseISO(d.date), 'dd/MM'),
             }))}
             margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
           >
@@ -49,7 +68,7 @@ export function RevenueChartCard({ dailyStats, periodDisplayLabel, fmt }: Revenu
               tick={{ fontSize: 10, fill: 'var(--app-text-muted)' }}
               axisLine={false}
               tickLine={false}
-              tickFormatter={(v: number) => fmt(v)}
+              tickFormatter={(v: number) => compact.format(fromMinorUnits(v, currency))}
               width={65}
             />
             <Tooltip
@@ -71,7 +90,7 @@ export function RevenueChartCard({ dailyStats, periodDisplayLabel, fmt }: Revenu
               }}
               cursor={{ fill: 'var(--app-accent-muted)' }}
             />
-            <Bar dataKey="revenue" fill="var(--accent)" radius={[4, 4, 0, 0]} maxBarSize={40} />
+            <Bar dataKey="revenue" fill={CHART_PALETTE[3]} radius={[4, 4, 0, 0]} maxBarSize={40} />
           </BarChart>
         </ResponsiveContainer>
       )}

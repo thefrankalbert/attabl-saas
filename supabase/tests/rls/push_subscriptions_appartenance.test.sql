@@ -58,10 +58,16 @@ select ok(
     where polrelid = 'public.push_subscriptions'::regclass) like '%get_my_tenant_ids%',
   'le with check exige l appartenance au restaurant, pas seulement l utilisateur');
 
+-- Depuis 20261124110500 (audit B139), le `using` ne juge plus que le compte:
+-- un membre desactive ailleurs doit pouvoir reprendre ou supprimer SA ligne
+-- (upsert de /api/push-subscriptions). On ne voit toujours que ses propres
+-- appareils; l'appartenance reste exigee par le `with check` ci-dessus.
 select ok(
   (select pg_get_expr(polqual, polrelid) from pg_policy
-    where polrelid = 'public.push_subscriptions'::regclass) like '%get_my_tenant_ids%',
-  'le using aussi: on ne lit pas les appareils d un autre restaurant');
+    where polrelid = 'public.push_subscriptions'::regclass) not like '%get_my_tenant_ids%'
+  and (select pg_get_expr(polqual, polrelid) from pg_policy
+    where polrelid = 'public.push_subscriptions'::regclass) like '%auth.uid()%',
+  'le using ne juge que le compte: on ne lit que ses propres appareils');
 
 -- ===========================================================================
 -- Les droits de table: la RLS ne protege pas TRUNCATE

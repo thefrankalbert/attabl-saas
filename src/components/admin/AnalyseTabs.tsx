@@ -3,11 +3,21 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { BarChart3, History, Receipt, ScrollText, TrendingDown } from 'lucide-react';
+import {
+  BarChart3,
+  ChartNoAxesCombined,
+  History,
+  MapPin,
+  Receipt,
+  ScrollText,
+  TrendingDown,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const ANALYSE_TABS = [
   { path: '/reports', labelKey: 'tabReports', icon: BarChart3 },
+  { path: '/reports/venues', labelKey: 'tabVenueReports', icon: MapPin },
+  { path: '/reports/advanced', labelKey: 'tabAdvancedReports', icon: ChartNoAxesCombined },
   { path: '/stock-history', labelKey: 'tabStockHistory', icon: History },
   { path: '/stock-losses', labelKey: 'tabStockLosses', icon: TrendingDown },
   { path: '/invoices', labelKey: 'tabInvoices', icon: Receipt },
@@ -26,7 +36,15 @@ export default function AnalyseTabs() {
     <div className="flex items-center gap-1 border-b border-app-border pb-2 mb-1 overflow-x-auto">
       {ANALYSE_TABS.map(({ path, labelKey, icon: Icon }) => {
         const href = `${basePath}${path}`;
-        const active = pathname.startsWith(href);
+        // L'onglet actif est celui dont le chemin est le plus long a correspondre:
+        // /reports/venues ne doit pas allumer aussi l'onglet /reports.
+        const matches = (p: string) => {
+          const h = `${basePath}${p}`;
+          return pathname === h || pathname.startsWith(`${h}/`);
+        };
+        const active =
+          matches(path) &&
+          !ANALYSE_TABS.some((o) => o.path.length > path.length && matches(o.path));
         return (
           <Link
             key={path}

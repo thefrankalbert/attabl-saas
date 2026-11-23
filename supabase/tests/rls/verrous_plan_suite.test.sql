@@ -180,7 +180,7 @@ select throws_like($$
   select * from get_daily_revenue('c3000000-0000-4000-8000-000000000001', now() - interval '30 days', now())
 $$, 'access denied: caller is not a member%', 'non-membre: refus d appartenance avant tout controle de plan');
 select ok(not has_function_privilege('authenticated',
-  'public.get_daily_revenue_brut(uuid, timestamp with time zone, timestamp with time zone)', 'EXECUTE'),
+  'public.get_daily_revenue_brut(uuid, timestamp with time zone, timestamp with time zone, text)', 'EXECUTE'),
   'le corps brut des rapports n est pas appelable par un client');
 
 -- 26-27. Contre-audit C: un super administrateur passe l'appartenance; le plan juge.
