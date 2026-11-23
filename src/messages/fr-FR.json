@@ -439,6 +439,7 @@
               "dashboard": "Dashboard (CA, commandes)",
               "salesReports": "Rapports de vente",
               "bestSellers": "Best-sellers",
+              "venueReports": "Rapports par espace (terrasse, bar, bord de piscine...)",
               "aiSuggestions": "Suggestions automatiques (IA)"
             }
           },
@@ -2300,6 +2301,8 @@
     "upgradeWall": {
       "planRequired": "Fonctionnalité Pro",
       "upgradeCta": "Passer au Pro",
+      "planRequiredBusiness": "Fonctionnalité Business",
+      "upgradeCtaBusiness": "Passer au Business",
       "askOwner": "Le propriétaire du restaurant peut activer cette fonction.",
       "back": "Retour au tableau de bord",
       "kds": {
@@ -2325,6 +2328,10 @@
       "tables": {
         "title": "Gestion des tables",
         "desc": "Créez vos zones, numérotez vos tables, un QR par table. Chaque commande arrive avec le bon numéro."
+      },
+      "venueReports": {
+        "title": "Rapports par espace",
+        "desc": "Terrasse, bar, piscine: voyez ce que chaque espace rapporte. Chiffre d'affaires, commandes, ticket moyen et meilleures ventes, côte à côte."
       }
     }
   },
@@ -2972,6 +2979,7 @@
     "navSuppliers": "Fournisseurs",
     "navStockHistory": "Historique stock",
     "navStockLosses": "Pertes",
+    "navVenueReports": "Par espace",
     "navStockCounts": "Inventaires physiques",
     "navAnnouncements": "Annonces",
     "navCoupons": "Coupons",
@@ -3289,6 +3297,26 @@
     "limitBannerCta": "Voir les plans"
   },
   "reports": {
+    "venueReport": {
+      "title": "Rapports par espace",
+      "venueFilter": "Espace",
+      "allVenues": "Tous les espaces",
+      "unassigned": "Sans espace",
+      "unassignedHint": "Commandes sans table : à emporter, caisse sans table, chambre.",
+      "comparisonTitle": "Comparaison des espaces",
+      "colVenue": "Espace",
+      "colRevenue": "Chiffre d'affaires",
+      "colShare": "Part du CA",
+      "colOrders": "Commandes",
+      "colAvgTicket": "Ticket moyen",
+      "colBestSeller": "Meilleure vente",
+      "topTitle": "Meilleures ventes : {venue}",
+      "noSales": "Aucune vente sur la période.",
+      "singleVenue": "Vous n'avez qu'un espace pour l'instant. Ajoutez un deuxième espace (terrasse, bar, bord de piscine...) pour comparer ce que chacun rapporte.",
+      "manageVenues": "Gérer mes espaces",
+      "noVenues": "Aucun espace. Créez vos espaces dans Paramètres > Espaces.",
+      "salesCount": "{count, plural, one {# vendu} other {# vendus}}"
+    },
     "title": "Rapports",
     "reportModel": "Modèle de fiche",
     "model_simple": "État des stocks - simple",
@@ -3331,6 +3359,7 @@
     "tabReports": "Rapports",
     "tabStockHistory": "Historique stock",
     "tabStockLosses": "Pertes",
+    "tabVenueReports": "Par espace",
     "tabInvoices": "Factures",
     "tabAuditLogs": "Journal d'audit",
     "subtitleClient": "Analysez la performance de votre restaurant.",

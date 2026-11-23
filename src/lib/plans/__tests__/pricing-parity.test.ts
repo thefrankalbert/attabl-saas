@@ -35,6 +35,7 @@ const BOOLEAN_FEATURE_MAP: Record<string, FeatureKey> = {
   salesReports: 'canAccessReports',
   bestSellers: 'canAccessReports',
   aiSuggestions: 'canAccessAIAnalytics',
+  venueReports: 'canAccessVenueReports',
 };
 
 // Advertised quantitative line -> numeric limit field.

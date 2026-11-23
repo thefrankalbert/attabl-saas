@@ -70,3 +70,26 @@ describe('FeatureUpgradeWall - lien de retour', () => {
     expect(screen.queryByText('back')).toBeNull();
   });
 });
+
+// Fonction Business (rapports par espace): le mur dit "Business", pas "Pro".
+describe('FeatureUpgradeWall - fonction Business', () => {
+  it('libelle et bouton Business pour les rapports par espace', async () => {
+    mockGetPermission.mockResolvedValue(true);
+    render(
+      await FeatureUpgradeWall({
+        feature: 'venueReports',
+        checkoutUrl: '/sites/resto/admin/subscription',
+      }),
+    );
+    expect(screen.getByText('planRequiredBusiness')).toBeInTheDocument();
+    expect(screen.getByText('upgradeCtaBusiness')).toBeInTheDocument();
+    expect(screen.queryByText('upgradeCta')).toBeNull();
+  });
+
+  it('temoin: une fonction Pro garde le libelle Pro', async () => {
+    mockGetPermission.mockResolvedValue(true);
+    await renderWall();
+    expect(screen.getByText('planRequired')).toBeInTheDocument();
+    expect(screen.queryByText('planRequiredBusiness')).toBeNull();
+  });
+});

@@ -15,6 +15,7 @@ import {
   ChefHat,
   UserCheck,
   BarChart3,
+  MapPin,
   History,
   TrendingDown,
   Receipt,
@@ -176,6 +177,11 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         path: '/reports',
         icon: BarChart3,
         labelKey: 'navReports',
+      },
+      {
+        path: '/reports/venues',
+        icon: MapPin,
+        labelKey: 'navVenueReports',
       },
       {
         path: '/stock-history',

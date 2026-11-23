@@ -57,6 +57,13 @@ export const featureCategories: { key: CategoryKey; features: FeatureRow[] }[] =
       { labelKey: 'salesReports', starter: false, pro: true, business: true, enterprise: true },
       { labelKey: 'bestSellers', starter: false, pro: true, business: true, enterprise: true },
       {
+        labelKey: 'venueReports',
+        starter: false,
+        pro: false,
+        business: true,
+        enterprise: true,
+      },
+      {
         labelKey: 'aiSuggestions',
         starter: false,
         pro: false,
