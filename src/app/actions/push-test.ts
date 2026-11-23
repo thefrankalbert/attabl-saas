@@ -46,9 +46,17 @@ export async function actionSendTestAlert(): Promise<Result> {
       },
       { membres: [adminUserId] },
     );
-    // Aucun envoi: aucun appareil abonne pour CE restaurant (ou un super
-    // administrateur qui n'en est pas membre).
-    if (result.envoyees === 0) return { success: false, error: 'noDevice' };
+    if (result.envoyees === 0) {
+      // Une panne (cles absentes, base illisible), des envois en echec ou des
+      // adresses refusees ne sont pas "aucun appareil": le dire evite de faire
+      // chercher une fausse cause au restaurateur (revue L012, A7).
+      if (result.indisponible || result.echecs > 0 || result.refuses > 0) {
+        return { success: false, error: 'failed' };
+      }
+      // Aucun appareil abonne pour CE restaurant (ou un super administrateur
+      // qui n'en est pas membre).
+      return { success: false, error: 'noDevice' };
+    }
     return { success: true, sent: result.envoyees };
   } catch (err) {
     logger.error('actionSendTestAlert: unexpected error', err);

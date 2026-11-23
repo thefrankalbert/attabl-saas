@@ -395,14 +395,23 @@ export function createInvitationService(supabase: SupabaseClient): InvitationSer
     },
 
     async cancelInvitation(invitationId: string): Promise<void> {
-      const { error } = await supabase
+      const { error, count } = await supabase
         .from('invitations')
-        .update({ status: 'cancelled' })
+        .update({ status: 'cancelled' }, { count: 'exact' })
         .eq('id', invitationId)
         .eq('status', 'pending');
 
       if (error) {
-        throw new ServiceError(`Erreur annulation: ${error.message}`, 'INTERNAL', error);
+        throw new ServiceError("Erreur lors de l'annulation", 'INTERNAL', error);
+      }
+      // Zero ligne = l'invitation n'est plus en attente (acceptee entre-temps,
+      // deja annulee). Repondre un succes faisait croire a l'admin qu'il avait
+      // coupe un acces qui existe (revue L022, A23).
+      if (count === 0) {
+        throw new ServiceError(
+          "Cette invitation n'est plus en attente (deja acceptee ou annulee).",
+          'CONFLICT',
+        );
       }
     },
 
@@ -418,13 +427,17 @@ export function createInvitationService(supabase: SupabaseClient): InvitationSer
         .select(
           'id, tenant_id, email, role, custom_permissions, invited_by, token, expires_at, status, created_at, accepted_at',
         )
-        .single();
+        .maybeSingle();
 
-      if (error || !invitation) {
+      // Le texte brut de PostgREST reste dans `details`, jamais dans le message
+      // renvoye au client (revue L021, A22).
+      if (error) {
+        throw new ServiceError("Erreur lors du renvoi de l'invitation", 'INTERNAL', error);
+      }
+      if (!invitation) {
         throw new ServiceError(
-          `Erreur renvoi: ${error?.message || 'Invitation introuvable'}`,
-          'INTERNAL',
-          error,
+          "Cette invitation n'est plus en attente (deja acceptee ou annulee).",
+          'CONFLICT',
         );
       }
 

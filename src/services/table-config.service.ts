@@ -23,6 +23,78 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
   const { assertVenueOwnedByTenant, assertZoneOwnedByTenant, assertTableOwnedByTenant } =
     createTableConfigGuards(supabase);
 
+  /**
+   * Refuse de supprimer une table qui a une session ouverte (revue L015, A17).
+   * `orders.table_id` est ON DELETE SET NULL et `table_sessions` est rattachee
+   * par numero de table: supprimer la table detachait ses commandes sans fermer
+   * la session, la note restait ouverte sans table en salle.
+   * La course (une commande arrivee entre cette verification et la
+   * suppression) est fermee en base: le declencheur de 20261121200300 prend le
+   * verrou de la table et refuse lui aussi. Ici: un message clair, sans ecrire.
+   */
+  async function assertNoOpenSession(tenantId: string, tableNumbers: string[]): Promise<void> {
+    if (tableNumbers.length === 0) return;
+    const { data, error } = await supabase
+      .from('table_sessions')
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .eq('status', 'open')
+      .in('table_number', tableNumbers)
+      .limit(1);
+    if (error) {
+      throw new ServiceError('Erreur lors de la verification des tables', 'INTERNAL', error);
+    }
+    if ((data ?? []).length > 0) {
+      throw new ServiceError(
+        'Une table est occupee. Encaissez et liberez-la avant de la supprimer.',
+        'CONFLICT',
+      );
+    }
+  }
+
+  /**
+   * Erreur d'une suppression de table ou de zone. Les deux refus du declencheur
+   * de 20261121200300 sont des conflits attendus, pas des pannes: ils gardent un
+   * message francais clair, sans prefixe technique (troisieme contre-audit).
+   * Toute autre erreur reste interne.
+   */
+  function deleteError(error: { code?: string; message: string }, label: string): ServiceError {
+    if (error.code === '55P03') {
+      return new ServiceError(
+        "Cette table est en cours d'utilisation. Reessayez dans un instant.",
+        'CONFLICT',
+        error,
+      );
+    }
+    if (error.code === '23514') {
+      return new ServiceError(
+        'Une table est occupee. Encaissez et liberez-la avant de la supprimer.',
+        'CONFLICT',
+        error,
+      );
+    }
+    return new ServiceError(`Erreur suppression ${label}: ${error.message}`, 'INTERNAL', error);
+  }
+
+  /** Numeros des tables visees, lus cote serveur et bornes au restaurant. */
+  async function tableNumbersWhere(
+    tenantId: string,
+    column: 'id' | 'zone_id',
+    value: string,
+  ): Promise<string[]> {
+    const { data, error } = await supabase
+      .from('tables')
+      .select('table_number')
+      .eq(column, value)
+      .eq('tenant_id', tenantId);
+    if (error) {
+      throw new ServiceError('Erreur lors de la verification des tables', 'INTERNAL', error);
+    }
+    return ((data ?? []) as Array<{ table_number: string | null }>)
+      .map((t) => t.table_number)
+      .filter((n): n is string => !!n);
+  }
+
   return {
     /**
      * Generate a table number from a prefix and index.
@@ -266,11 +338,12 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
      */
     async deleteZone(tenantId: string, zoneId: string): Promise<void> {
       await assertZoneOwnedByTenant(tenantId, zoneId);
+      await assertNoOpenSession(tenantId, await tableNumbersWhere(tenantId, 'zone_id', zoneId));
 
       const { error } = await supabase.from('zones').delete().eq('id', zoneId);
 
       if (error) {
-        throw new ServiceError(`Erreur suppression zone: ${error.message}`, 'INTERNAL', error);
+        throw deleteError(error, 'zone');
       }
     },
 
@@ -385,11 +458,12 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
      */
     async deleteTable(tenantId: string, tableId: string): Promise<void> {
       await assertTableOwnedByTenant(tenantId, tableId);
+      await assertNoOpenSession(tenantId, await tableNumbersWhere(tenantId, 'id', tableId));
 
       const { error } = await supabase.from('tables').delete().eq('id', tableId);
 
       if (error) {
-        throw new ServiceError(`Erreur suppression table: ${error.message}`, 'INTERNAL', error);
+        throw deleteError(error, 'table');
       }
     },
 

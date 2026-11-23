@@ -7,7 +7,12 @@ import { isFeatureEntitled } from '@/lib/plans/assert-feature';
 import { createTableConfigService } from '@/services/table-config.service';
 import { ServiceError } from '@/services/errors';
 import { createClient } from '@/lib/supabase/server';
-import { zoneSchema } from '@/lib/validations/table-config.schema';
+import {
+  zoneSchema,
+  tableNumberSchema,
+  tableCapacitySchema,
+  MAX_TABLES_PER_BATCH,
+} from '@/lib/validations/table-config.schema';
 
 type ActionResponse<T = undefined> = {
   success?: boolean;
@@ -166,9 +171,9 @@ export async function actionDeleteZone(tenantId: string, zoneId: string): Promis
 
 const insertTableRowSchema = z.object({
   zone_id: z.string().uuid(),
-  table_number: z.string().min(1).max(20),
+  table_number: tableNumberSchema,
   display_name: z.string().min(1).max(100),
-  capacity: z.number().int().min(1),
+  capacity: tableCapacitySchema,
   is_active: z.boolean(),
 });
 
@@ -184,7 +189,11 @@ export async function actionInsertTables(
   const parsedTenant = tenantIdSchema.safeParse(tenantId);
   if (!parsedTenant.success) return { error: 'Invalid tenant ID' };
 
-  const parsedTables = z.array(insertTableRowSchema).min(1).safeParse(tables);
+  const parsedTables = z
+    .array(insertTableRowSchema)
+    .min(1)
+    .max(MAX_TABLES_PER_BATCH)
+    .safeParse(tables);
   if (!parsedTables.success) return { error: 'Invalid input' };
 
   const { error: permError } = await checkPermissions(tenantId);
@@ -241,7 +250,7 @@ export async function actionUpdateTableCapacity(
 ): Promise<ActionResponse> {
   const parsedTenant = tenantIdSchema.safeParse(tenantId);
   const parsedTableId = tableIdSchema.safeParse(tableId);
-  const parsedCapacity = z.number().int().min(1).safeParse(capacity);
+  const parsedCapacity = tableCapacitySchema.safeParse(capacity);
   if (!parsedTenant.success || !parsedTableId.success || !parsedCapacity.success) {
     return { error: 'Invalid input' };
   }

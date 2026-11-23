@@ -23,6 +23,8 @@ vi.mock('@/hooks/useSegmentTerms', () => ({
 }));
 vi.mock('@/components/ui/use-toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
 vi.mock('../OrderPaymentPanel', () => ({ default: () => null }));
+// Le bouton d'annulation de la fiche appelle une action serveur: simulee ici.
+vi.mock('@/app/actions/orders', () => ({ actionUpdateOrderStatus: vi.fn() }));
 
 function withRole(role: AdminRole, ui: React.ReactElement) {
   const permissions = DEFAULT_PERMISSIONS[role] as Record<PermissionCode, boolean>;
@@ -116,6 +118,15 @@ describe('Detail de commande: encaisser ou marquer servie', () => {
     withRole('cashier', panel(true));
     expect(screen.getByText('statusButtonCheckout')).toBeInTheDocument();
     expect(screen.queryByText('statusButtonServed')).toBeNull();
+  });
+  // Annuler depuis la fiche exige le meme droit que l'action (orders.pay).
+  it('sans orders.pay: pas de bouton "annuler la commande"', () => {
+    withRole('waiter', panel(false));
+    expect(screen.queryByText('cancelOrderButton')).toBeNull();
+  });
+  it('avec orders.pay: bouton "annuler la commande" sur la fiche', () => {
+    withRole('cashier', panel(true));
+    expect(screen.getByText('cancelOrderButton')).toBeInTheDocument();
   });
 });
 

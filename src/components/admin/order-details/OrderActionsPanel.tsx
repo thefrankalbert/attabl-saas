@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import type { Order, OrderStatus, CurrencyCode } from '@/types/admin.types';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import OrderPaymentPanel from '../OrderPaymentPanel';
+import { CancelOrderButton } from './CancelOrderButton';
 
 interface OrderActionsPanelProps {
   order: Order;
@@ -170,6 +171,17 @@ export function OrderActionsPanel({
         currency={currency}
         canComp={canComp}
         onUpdate={onUpdate}
+        orderCancelled={order.status === 'cancelled'}
+      />
+
+      {/* Annuler depuis la fiche: seul chemin pour une commande ancienne (une
+          commande d'ardoise remboursee, par exemple). Masque si l'annulation
+          n'est pas permise. */}
+      <CancelOrderButton
+        order={order}
+        canPay={canPay}
+        canManageMoney={canComp}
+        onCancelled={onUpdate}
       />
     </div>
   );
