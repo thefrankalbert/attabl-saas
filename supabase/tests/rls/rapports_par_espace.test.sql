@@ -1,4 +1,4 @@
--- Rapports par espace (migration 20261123100000, lot 4 PR A).
+-- Rapports par espace (migration 20261123120000, lot 4 PR A).
 --
 -- Chiffres: un restaurant Business a trois espaces actifs (Terrasse, Bar,
 -- Lobby sans vente), un espace inactif qui a vendu (Ancien) et un espace
@@ -11,7 +11,8 @@
 -- - A1 dans l'espace inactif Ancien: 1 000;
 -- - E1 a emporter (sans table ni espace): 3 000 -> ligne sans espace;
 -- - X1 avec un espace d'un AUTRE restaurant: 500 -> ligne sans espace.
--- Total du registre: 8 000 + 10 000 + 1 000 + 3 500 = 22 500, 6 commandes.
+-- - L1, ancienne commande (espace vide) sur une autre table de la Terrasse: 700.
+-- Total du registre: 8 700 + 10 000 + 1 000 + 3 500 = 23 200, 7 commandes.
 --
 -- Verrous: Starter et Pro refuses (42501) sur les deux fonctions, alors que le
 -- meme membre Pro lit get_order_summary (temoin: le refus vient du plan, pas
@@ -74,7 +75,9 @@ values
    'e2000000-0000-4000-8000-000000000001', 'Bar', 'B');
 insert into public.tables (id, zone_id, tenant_id, table_number, display_name)
 values ('e6000000-0000-4000-8000-000000000001', 'e5000000-0000-4000-8000-000000000001',
-        'e2000000-0000-4000-8000-000000000001', 'T1', 'Table T1');
+        'e2000000-0000-4000-8000-000000000001', 'T1', 'Table T1'),
+       ('e6000000-0000-4000-8000-000000000002', 'e5000000-0000-4000-8000-000000000001',
+        'e2000000-0000-4000-8000-000000000001', 'T2', 'Table T2');
 
 insert into public.categories (id, tenant_id, name)
 values ('e7000000-0000-4000-8000-000000000001', 'e2000000-0000-4000-8000-000000000001', 'Plats');
@@ -100,7 +103,12 @@ values
   ('e9000000-0000-4000-8000-000000000005', 'e2000000-0000-4000-8000-000000000001',
    'e4000000-0000-4000-8000-000000000004', null, 'ESP-A1', 1000, 1000, 'served', 'paid', now()),
   ('e9000000-0000-4000-8000-000000000006', 'e2000000-0000-4000-8000-000000000001',
-   'e4000000-0000-4000-8000-000000000009', null, 'ESP-X1', 500, 500, 'served', 'paid', now());
+   'e4000000-0000-4000-8000-000000000009', null, 'ESP-X1', 500, 500, 'served', 'paid', now()),
+  ('e9000000-0000-4000-8000-000000000007', 'e2000000-0000-4000-8000-000000000001', null,
+   'e6000000-0000-4000-8000-000000000002', 'ESP-L1', 700, 700, 'served', 'paid', now());
+-- L1 simule une commande ANTERIEURE a la migration (espace vide): les rapports
+-- la rangent par la zone de sa table (Terrasse).
+update public.orders set venue_id = null where id = 'e9000000-0000-4000-8000-000000000007';
 
 insert into public.order_items (tenant_id, order_id, menu_item_id, item_name, price_at_order, quantity)
 values
@@ -129,7 +137,8 @@ values
   ('e2000000-0000-4000-8000-000000000001', 'e9000000-0000-4000-8000-000000000003', 4000, 'cash', 'completed'),
   ('e2000000-0000-4000-8000-000000000001', 'e9000000-0000-4000-8000-000000000004', 3000, 'cash', 'completed'),
   ('e2000000-0000-4000-8000-000000000001', 'e9000000-0000-4000-8000-000000000005', 1000, 'cash', 'completed'),
-  ('e2000000-0000-4000-8000-000000000001', 'e9000000-0000-4000-8000-000000000006', 500, 'cash', 'completed');
+  ('e2000000-0000-4000-8000-000000000001', 'e9000000-0000-4000-8000-000000000006', 500, 'cash', 'completed'),
+  ('e2000000-0000-4000-8000-000000000001', 'e9000000-0000-4000-8000-000000000007', 700, 'cash', 'completed');
 
 -- Declencheur: l'espace de la table est inscrit sur la commande.
 select is((select venue_id from public.orders where id = 'e9000000-0000-4000-8000-000000000001'),
@@ -151,9 +160,10 @@ create temp table s as
   select * from public.get_order_summary('e2000000-0000-4000-8000-000000000001',
     now() - interval '1 day', now() + interval '1 minute');
 
-select is((select revenue from r where venue_name = 'Terrasse'), 8000::bigint,
-  'Terrasse: encaisse moins rembourse, malgre le deplacement de la table');
-select is((select order_count from r where venue_name = 'Terrasse'), 1::bigint, 'Terrasse: une commande');
+select is((select revenue from r where venue_name = 'Terrasse'), 8700::bigint,
+  'Terrasse: T1 encaisse moins rembourse malgre le deplacement de sa table, plus L1 ancienne commande');
+select is((select order_count from r where venue_name = 'Terrasse'), 2::bigint,
+  'Terrasse: deux commandes (dont l ancienne, rangee par sa table)');
 select is((select revenue from r where venue_name = 'Bar'), 10000::bigint, 'Bar: espace fourni garde');
 select is((select order_count from r where venue_name = 'Bar'), 2::bigint, 'Bar: deux commandes');
 select is((select avg_basket from r where venue_name = 'Bar'), 5000::bigint, 'Bar: ticket moyen');
@@ -195,21 +205,21 @@ set local request.jwt.claims = '{"sub":"e1000000-0000-4000-8000-000000000002"}';
 select lives_ok(
   $$select * from public.get_order_summary('e2000000-0000-4000-8000-000000000002', now() - interval '1 day', now())$$,
   'temoin: le proprietaire Pro lit les rapports Pro');
-select throws_ok(
+select throws_like(
   $$select * from public.get_venue_report('e2000000-0000-4000-8000-000000000002', now() - interval '1 day', now())$$,
-  '42501', null, 'Pro: rapport par espace refuse');
-select throws_ok(
+  '%Business plan%', 'Pro: rapport par espace refuse (par le plan)');
+select throws_like(
   $$select * from public.get_venue_top_items('e2000000-0000-4000-8000-000000000002', now() - interval '1 day', now(), 5)$$,
-  '42501', null, 'Pro: meilleures ventes par espace refusees');
+  '%Business plan%', 'Pro: meilleures ventes par espace refusees (par le plan)');
 
 -- Starter: refuse.
 set local request.jwt.claims = '{"sub":"e1000000-0000-4000-8000-000000000003"}';
-select throws_ok(
+select throws_like(
   $$select * from public.get_venue_report('e2000000-0000-4000-8000-000000000003', now() - interval '1 day', now())$$,
-  '42501', null, 'Starter: rapport par espace refuse');
-select throws_ok(
+  '%Business plan%', 'Starter: rapport par espace refuse (par le plan)');
+select throws_like(
   $$select * from public.get_venue_top_items('e2000000-0000-4000-8000-000000000003', now() - interval '1 day', now(), 5)$$,
-  '42501', null, 'Starter: meilleures ventes par espace refusees');
+  '%Business plan%', 'Starter: meilleures ventes par espace refusees (par le plan)');
 
 -- Non-membre (proprietaire Starter) sur un restaurant Pro: refuse sur
 -- l'appartenance, le message ne dit rien du plan.
@@ -219,13 +229,13 @@ select throws_like(
 
 -- Abonnement Business inutilisable: refuse.
 set local request.jwt.claims = '{"sub":"e1000000-0000-4000-8000-000000000006"}';
-select throws_ok(
+select throws_like(
   $$select * from public.get_venue_report('e2000000-0000-4000-8000-000000000006', now() - interval '1 day', now())$$,
-  '42501', null, 'Business gele: refuse');
+  '%Business plan%', 'Business gele: refuse (par le plan)');
 set local request.jwt.claims = '{"sub":"e1000000-0000-4000-8000-000000000007"}';
-select throws_ok(
+select throws_like(
   $$select * from public.get_venue_report('e2000000-0000-4000-8000-000000000007', now() - interval '1 day', now())$$,
-  '42501', null, 'essai expire (plan choisi Business): refuse');
+  '%Business plan%', 'essai expire (plan choisi Business): refuse (par le plan)');
 
 -- Droit reports.view en base.
 set local request.jwt.claims = '{"sub":"e1000000-0000-4000-8000-000000000008"}';

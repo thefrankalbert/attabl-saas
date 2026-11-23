@@ -44,9 +44,9 @@ interface SignupResult {
 /**
  * Signup service - handles tenant creation for both email and OAuth flows.
  *
- * Eliminates code duplication between /api/signup and /api/signup-oauth.
- * Both routes shared identical logic for: slug generation, tenant creation,
- * admin user creation, and default venue creation (~60 duplicated lines).
+ * Shared by /api/signup (email) and /auth/callback (OAuth), which need the
+ * same logic for: slug generation, tenant creation, admin user creation, and
+ * default venue creation.
  */
 interface ProvisionSignupRpcResult {
   tenantId: string;

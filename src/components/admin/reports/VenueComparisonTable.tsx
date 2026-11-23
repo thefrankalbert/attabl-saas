@@ -6,6 +6,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { ResponsiveDataTable } from '@/components/admin/ResponsiveDataTable';
 import { CHART_NEUTRAL, CHART_PALETTE } from '@/lib/design-tokens';
 import { cn } from '@/lib/utils';
+import { revenueShares } from '@/lib/reports/revenue-shares';
 import { venueKey, type VenueRow, type VenueTopItem } from '@/hooks/queries/useVenueReport';
 import type { CurrencyFormatter } from './reports.types';
 
@@ -52,7 +53,7 @@ export function VenueComparisonTable({
   const tv = useTranslations('reports.venueReport');
 
   const lines = useMemo<Line[]>(() => {
-    const total = rows.reduce((s, r) => s + r.revenue, 0);
+    const shares = revenueShares(rows.map((r) => r.revenue));
     // Couleur fixe par espace, d'apres l'ordre alphabetique (puis l'id) et non
     // le classement: un espace garde sa couleur d'une periode a l'autre.
     const colorOrder = rows
@@ -60,7 +61,7 @@ export function VenueComparisonTable({
       .map((r) => ({ id: r.venueId as string, name: r.venueName ?? '' }))
       .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id))
       .map((v) => v.id);
-    return rows.map((r) => {
+    return rows.map((r, index) => {
       const key = venueKey(r);
       // Ligne "sans espace": gris neutre, ce n'est pas un vrai espace.
       const color = r.venueId
@@ -71,7 +72,7 @@ export function VenueComparisonTable({
         ...r,
         key,
         label: labelOf(r),
-        share: total > 0 ? Math.round((r.revenue / total) * 100) : 0,
+        share: shares[index],
         color,
         bestSeller: best?.name ?? null,
       };

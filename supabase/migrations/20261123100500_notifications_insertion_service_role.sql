@@ -1,0 +1,27 @@
+-- ============================================================================
+-- Audit B118 (Basse): plus aucune session utilisateur n'insere de notification.
+--
+-- CE QUI NE TENAIT PAS. `20260403000000_fix_remaining_linter_warnings.sql`
+-- avait rouvert ce que `20260309000001` fermait ("Only service role can insert
+-- notifications") avec la politique "Admins can insert notifications"
+-- (`tenant_id = ANY(get_my_tenant_ids_array())`). Tout membre actif, meme un
+-- serveur sans droit de gestion, pouvait donc fabriquer par PostgREST une
+-- fausse alerte ("Paiement refuse, appelez le +226...") diffusee a toute
+-- l'equipe ou ciblee sur le proprietaire, affichee comme venant du systeme.
+--
+-- LA CORRECTION. La politique est supprimee. Sans politique d'insertion, RLS
+-- refuse toute insertion a `authenticated`; `service_role` n'est pas soumis a
+-- RLS. Toutes les insertions de l'application passent deja par le client
+-- service_role (notification.service.ts, invitation.service.ts appele avec le
+-- client admin, routes de commande avec `adminSupabase`, cron des rappels):
+-- verifie dans le code.
+--
+-- ORDRE DE DEPLOIEMENT: peut passer AVANT le code en ligne. Elle ne retire
+-- rien qu'un parcours de l'application utilise.
+--
+-- ROLLBACK:
+--   CREATE POLICY "Admins can insert notifications" ON public.notifications
+--     FOR INSERT WITH CHECK (tenant_id = ANY (public.get_my_tenant_ids_array()));
+-- ============================================================================
+
+DROP POLICY IF EXISTS "Admins can insert notifications" ON public.notifications;

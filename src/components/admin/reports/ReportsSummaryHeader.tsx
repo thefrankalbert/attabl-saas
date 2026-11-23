@@ -137,8 +137,8 @@ export function ReportsSummaryHeader({
               <p className="text-xs font-medium text-app-text-muted uppercase tracking-wide">
                 {label}
               </p>
-              <div className="flex items-end gap-2 mt-0.5">
-                <p className="text-xl font-bold text-app-text tabular-nums leading-tight truncate">
+              <div className="flex flex-wrap items-end gap-x-2 mt-0.5">
+                <p className="text-xl font-bold text-app-text tabular-nums leading-tight whitespace-nowrap">
                   {value}
                 </p>
                 <TrendBadge value={trend} />

@@ -231,7 +231,14 @@ export async function bulkImportMenuRows(
     const { error } = await supabase.from('menu_items').insert(batch.map((b) => b.row));
     if (error) {
       logger.error('Bulk import: menu_items batch failed', error, { tenantId });
-      for (const b of batch) skip(b.key, 'Enregistrement du plat impossible');
+      // Audit B46: une seule ligne fautive faisait echouer tout le lot, et les
+      // plats valides etaient rejetes avec elle. On reprend le lot ligne par
+      // ligne pour n'ecarter que la ligne refusee par la base.
+      for (const b of batch) {
+        const { error: rowError } = await supabase.from('menu_items').insert([b.row]);
+        if (rowError) skip(b.key, 'Enregistrement du plat impossible');
+        else result.itemsCreated += 1;
+      }
     } else {
       result.itemsCreated += batch.length;
     }

@@ -268,3 +268,41 @@ describe('parseExcelBuffer - colonnes en desordre', () => {
     expect(rows[0]).toMatchObject({ category: 'Mains', name: 'Chicken', price: 1200 });
   });
 });
+
+describe('parseExcelBuffer - prix de vente et cout (audit B45, B46)', () => {
+  it('B45: une colonne Cout a cote du Prix ne remplace jamais le prix de vente', async () => {
+    // Avant: la copie locale de mapHeaders gardait la DERNIERE colonne
+    // reconnue, et "Cout" etait un alias du prix. Le plat a 6500 FCFA etait
+    // importe a 2100 (son cout), sans erreur, plats existants compris.
+    feuille([['Plats', 'Poulet DG', 6500, 2100]], ['Catégorie', 'Nom du plat', 'Prix', 'Cout']);
+
+    const { rows } = await parseExcelBuffer(tampon);
+
+    expect(rows[0]).toMatchObject({ name: 'Poulet DG', price: 6500 });
+  });
+
+  it('B45: deux colonnes reconnues pour le meme champ, la PREMIERE gagne', async () => {
+    feuille([['Plats', 'Poulet DG', 'Chicken', 6500]], ['Catégorie', 'Nom', 'Item', 'Prix']);
+
+    const { rows } = await parseExcelBuffer(tampon);
+
+    expect(rows[0]).toMatchObject({ name: 'Poulet DG' });
+  });
+
+  it('B46: un prix au-dela de la colonne numeric(10,2) est refuse sur SA ligne', async () => {
+    // Avant: aucun maximum. La ligne passait, et Postgres refusait tout le lot
+    // de 50 plats a l'insertion.
+    feuille(
+      [
+        ['Plats', 'Faute de frappe', '', 150000000, '', ''],
+        ['Plats', 'Riz', '', 1500, '', ''],
+      ],
+      ENTETES,
+    );
+
+    const { rows, errors } = await parseExcelBuffer(tampon);
+
+    expect(rows.map((r) => r.name)).toEqual(['Riz']);
+    expect(errors).toHaveLength(1);
+  });
+});

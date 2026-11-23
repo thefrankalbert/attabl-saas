@@ -283,7 +283,10 @@ async function getOrCreateVenue(
 
   const { data: newVenue, error: venueInsertError } = await supabase
     .from('venues')
-    .insert({ tenant_id: tenantId, name: tenantSlug || 'Principal' })
+    // Audit B60: `venues.slug` est NOT NULL sans valeur par defaut; sans lui
+    // l'insertion echouait a chaque lancement. Meme slug que la salle par
+    // defaut de l'inscription (signup.service.ts).
+    .insert({ tenant_id: tenantId, slug: 'main', name: tenantSlug || 'Principal' })
     .select('id')
     .single();
   if (venueInsertError || !newVenue) {

@@ -74,8 +74,10 @@ export default async function TablesPage({ params }: { params: Promise<{ site: s
       .insert([
         {
           tenant_id: tenantId,
+          // Audit B60: `slug` est obligatoire et `is_default` n'existe pas en
+          // base; l'insertion echouait a chaque affichage de la page.
+          slug: 'main',
           name: 'Principal',
-          is_default: true,
         },
       ])
       .select()

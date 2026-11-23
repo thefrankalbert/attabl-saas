@@ -158,8 +158,9 @@ export async function GET(request: Request) {
 
       // User has no tenant - create one directly in-process.
       // The session was just established via exchangeCodeForSession, so we trust
-      // session.user here. A loopback fetch to /api/signup-oauth cannot work: it
-      // forwards no Origin/Referer (CSRF 403) and no auth cookies (getUser 401).
+      // session.user here. A loopback fetch to an API route (the former
+      // /api/signup-oauth, now removed) cannot work: it forwards no
+      // Origin/Referer (CSRF 403) and no auth cookies (getUser 401).
       // Restrict plan to known values; query params are attacker-controllable.
       const signupPlan = plan === 'pro' || plan === 'business' ? plan : 'starter';
       const signupName = (restaurantName || 'Mon Établissement').slice(0, 100);

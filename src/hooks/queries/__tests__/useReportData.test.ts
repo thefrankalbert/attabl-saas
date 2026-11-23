@@ -2,20 +2,19 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { getDateRange, parseOrderSummary, parseServerPerformance } from '../useReportData';
 
 /**
- * Characterization + regression tests for getDateRange, the report period math.
- * It had already shipped an off-by-a-day bug (same-day orders dropped, PR #247)
- * and a timezone bug (offset-less strings read as UTC, shifting every window by
- * the local offset). These lock the corrected contract:
- *  - boundaries are absolute UTC instants (ISO with Z),
- *  - anchored to the browser's LOCAL calendar day,
- *  - the previous window is contiguous with the current one (prevEnd = start-1ms).
- *
- * Assertions are timezone-independent (they check local-midnight/instant math),
- * so they pass under any CI timezone.
+ * Bornes des periodes de rapport, au calendrier du RESTAURANT (fuseau passe en
+ * parametre), jamais a celui de l'appareil ni du serveur de test:
+ *  - instants absolus (ISO avec Z);
+ *  - minuit = minuit du restaurant;
+ *  - periode precedente contigue (prevEnd = start - 1 ms).
+ * Douala est en UTC+1 sans heure d'ete: minuit local = 23 h UTC la veille.
+ * Les assertions ne dependent pas du fuseau de la machine qui lance les tests.
  */
+const TZ = 'Africa/Douala';
+
 describe('getDateRange', () => {
-  // A fixed mid-afternoon instant so "now" is unambiguously inside the day.
-  const FIXED_NOW = new Date('2026-03-15T13:45:30.000Z');
+  // 11 h a Douala le 15 mars 2026.
+  const FIXED_NOW = new Date('2026-03-15T10:00:00.000Z');
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -26,59 +25,69 @@ describe('getDateRange', () => {
     vi.useRealTimers();
   });
 
-  const ISO_WITH_Z = /Z$/;
+  const inRange = (r: { startDate: string; endDate: string }, iso: string) =>
+    new Date(iso) >= new Date(r.startDate) && new Date(iso) <= new Date(r.endDate);
 
   it('emits absolute UTC instants (ISO with Z), never offset-less strings', () => {
     for (const p of ['today', '7d', '30d', '90d', 'thisMonth', 'lastMonth', 'thisYear'] as const) {
-      const r = getDateRange(p);
-      expect(r.startDate).toMatch(ISO_WITH_Z);
-      expect(r.endDate).toMatch(ISO_WITH_Z);
-      expect(r.prevStartDate).toMatch(ISO_WITH_Z);
-      expect(r.prevEndDate).toMatch(ISO_WITH_Z);
-      // Regression guard: the old bug emitted 'yyyy-MM-ddT00:00:00' with no zone.
-      expect(r.startDate).not.toMatch(/T00:00:00$/);
+      const r = getDateRange(p, TZ);
+      for (const v of [r.startDate, r.endDate, r.prevStartDate, r.prevEndDate]) {
+        expect(v).toMatch(/Z$/);
+      }
     }
   });
 
-  it("today: start is local midnight, end is 'now'", () => {
-    const r = getDateRange('today');
-    const start = new Date(r.startDate);
-    expect(start.getHours()).toBe(0);
-    expect(start.getMinutes()).toBe(0);
-    expect(start.getSeconds()).toBe(0);
-    // End is the current instant (up to now), so same-day orders are included.
+  it("aujourd'hui commence a minuit HEURE DU RESTAURANT et finit maintenant", () => {
+    const r = getDateRange('today', TZ);
+    expect(r.startDate).toBe('2026-03-14T23:00:00.000Z');
     expect(r.endDate).toBe(FIXED_NOW.toISOString());
-    expect(new Date(r.endDate).getTime()).toBeGreaterThan(start.getTime());
   });
 
-  it('the previous window is contiguous: prevEnd is exactly 1ms before start', () => {
+  it('une commande a 00 h 30 heure du restaurant compte aujourd hui, une a 23 h 30 la veille non', () => {
+    const r = getDateRange('today', TZ);
+    // 00 h 30 a Douala le 15 = 23 h 30 UTC le 14: un calcul a l'heure UTC l'oubliait.
+    expect(inRange(r, '2026-03-14T23:30:00.000Z')).toBe(true);
+    // 23 h 30 a Douala le 14 = 22 h 30 UTC le 14: c'est la journee d'hier.
+    expect(inRange(r, '2026-03-14T22:30:00.000Z')).toBe(false);
+  });
+
+  it('meme resultat quel que soit le fuseau de l appareil (temoin: un autre fuseau donne d autres bornes)', () => {
+    const douala = getDateRange('today', TZ);
+    const ouaga = getDateRange('today', 'Africa/Ouagadougou');
+    expect(ouaga.startDate).toBe('2026-03-15T00:00:00.000Z');
+    expect(douala.startDate).not.toBe(ouaga.startDate);
+  });
+
+  it('7 jours: depuis minuit du restaurant il y a 6 jours', () => {
+    expect(getDateRange('7d', TZ).startDate).toBe('2026-03-08T23:00:00.000Z');
+  });
+
+  it('ce mois: depuis le 1er a minuit du restaurant', () => {
+    expect(getDateRange('thisMonth', TZ).startDate).toBe('2026-02-28T23:00:00.000Z');
+  });
+
+  it('mois dernier: tout fevrier, jusqu a la derniere milliseconde avant le 1er mars local', () => {
+    const r = getDateRange('lastMonth', TZ);
+    expect(r.startDate).toBe('2026-01-31T23:00:00.000Z');
+    expect(r.endDate).toBe('2026-02-28T22:59:59.999Z');
+  });
+
+  it('cette annee: depuis le 1er janvier a minuit du restaurant', () => {
+    expect(getDateRange('thisYear', TZ).startDate).toBe('2025-12-31T23:00:00.000Z');
+  });
+
+  it('la periode precedente est contigue: prevEnd = start - 1 ms', () => {
     for (const p of ['today', '7d', '30d', 'thisMonth', 'lastMonth', 'thisYear'] as const) {
-      const r = getDateRange(p);
+      const r = getDateRange(p, TZ);
       expect(new Date(r.prevEndDate).getTime()).toBe(new Date(r.startDate).getTime() - 1);
-      expect(new Date(r.startDate).getTime()).toBeLessThanOrEqual(new Date(r.endDate).getTime());
       expect(new Date(r.prevStartDate).getTime()).toBeLessThanOrEqual(
         new Date(r.prevEndDate).getTime(),
       );
     }
   });
 
-  it('7d spans 7 local days: start is local midnight 6 days before today', () => {
-    const r = getDateRange('7d');
-    const start = new Date(r.startDate);
-    expect(start.getHours()).toBe(0);
-    const todayMidnight = new Date(FIXED_NOW);
-    todayMidnight.setHours(0, 0, 0, 0);
-    const days = Math.round((todayMidnight.getTime() - start.getTime()) / 86_400_000);
-    expect(days).toBe(6);
-  });
-
-  it('lastMonth end covers the whole last day (end-of-day, not midnight)', () => {
-    const r = getDateRange('lastMonth');
-    const end = new Date(r.endDate);
-    // endOfDay -> 23:59:59.999 local
-    expect(end.getHours()).toBe(23);
-    expect(end.getMinutes()).toBe(59);
-    expect(end.getSeconds()).toBe(59);
+  it('7 jours: la periode precedente couvre les 7 jours d avant, a minuit local', () => {
+    expect(getDateRange('7d', TZ).prevStartDate).toBe('2026-03-01T23:00:00.000Z');
   });
 });
 
