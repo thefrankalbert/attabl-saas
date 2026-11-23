@@ -115,10 +115,22 @@ export function createTenantService(supabase: SupabaseClient): TenantService {
         ...(settings.openingHours !== undefined && { opening_hours: settings.openingHours }),
       };
 
-      const { error } = await supabase.from('tenants').update(update).eq('id', tenantId);
+      const { error, count } = await supabase
+        .from('tenants')
+        .update(update, { count: 'exact' })
+        .eq('id', tenantId);
 
       if (error) {
         throw new ServiceError('Erreur lors de la mise à jour des paramètres', 'INTERNAL', error);
+      }
+      // Un UPDATE refuse par la RLS ne leve aucune erreur: il ne touche aucune
+      // ligne. Sans ce controle, l'ecran affichait "enregistre" alors que rien
+      // n'avait change (revue L100, B103).
+      if (count === 0) {
+        throw new ServiceError(
+          'Votre role ne permet pas de modifier les parametres du restaurant',
+          'UNAUTHORIZED',
+        );
       }
     },
   };

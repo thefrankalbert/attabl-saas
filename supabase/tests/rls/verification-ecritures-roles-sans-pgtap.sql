@@ -124,9 +124,11 @@ insert into resultat select 'gerant encaisse TOUJOURS (commande payee)',
   case when (select payment_status from public.orders where id='d4444444-4444-4444-4444-444444444444') = 'paid'
        then 'OK' else 'ECHEC' end;
 
+-- Depuis 20261124110000 (audit B103): la TVA releve de `settings.edit`, que le
+-- gerant n'a pas par defaut. Comme dans l'application, il ne la change PAS.
 update public.tenants set tax_rate = 20 where id = 'd3333333-3333-3333-3333-333333333333';
-insert into resultat select 'gerant change TOUJOURS la TVA',
-  case when (select tax_rate::int from public.tenants where id='d3333333-3333-3333-3333-333333333333') = 20
+insert into resultat select 'gerant sans settings.edit ne change PAS la TVA',
+  case when (select tax_rate::int from public.tenants where id='d3333333-3333-3333-3333-333333333333') = 18
        then 'OK' else 'ECHEC' end;
 
 do $$ begin
