@@ -38,6 +38,7 @@ vi.mock('@/services/restaurant-group.service', () => ({
   }),
 }));
 
+import { ServiceError } from '@/services/errors';
 import {
   actionCreateVenue,
   actionRenameVenue,
@@ -116,5 +117,32 @@ describe('venues server actions', () => {
     const res = await actionReactivateVenue({ id: 'x' });
     expect(res.success).toBe(false);
     expect(mockReactivateVenue).not.toHaveBeenCalled();
+  });
+
+  // Revue L016 (A21): le texte brut de Postgres d'une erreur INTERNAL ne doit
+  // jamais atteindre le navigateur.
+  it.each([
+    ['rename', () => actionRenameVenue({ id: UUID, name: 'Pool' }), mockRenameVenue],
+    ['deactivate', () => actionDeactivateVenue({ id: UUID }), mockDeactivateVenue],
+    ['reactivate', () => actionReactivateVenue({ id: UUID }), mockReactivateVenue],
+    ['create', () => actionCreateVenue({ name: 'Pool' }), mockCreateVenue],
+  ])('%s: erreur INTERNAL -> message generique, sans texte de la base', async (_n, run, mock) => {
+    authOk();
+    mock.mockRejectedValue(
+      new ServiceError(
+        'Erreur verification venue: canceling statement due to statement timeout',
+        'INTERNAL',
+      ),
+    );
+    const res = await run();
+    expect(res.success).toBe(false);
+    expect((res as { error: string }).error).not.toMatch(/statement|venue:/);
+  });
+
+  it('temoin: une erreur metier (NOT_FOUND) garde son message', async () => {
+    authOk();
+    mockRenameVenue.mockRejectedValue(new ServiceError('Espace introuvable', 'NOT_FOUND'));
+    const res = await actionRenameVenue({ id: UUID, name: 'Pool' });
+    expect(res).toEqual({ success: false, error: 'Espace introuvable' });
   });
 });

@@ -106,7 +106,7 @@ export function createHouseAccountSettlementService(supabase: SupabaseClient) {
         // laisse la decision a un humain, sur la fiche de la commande.
         if (summary.refunded > 0) {
           throw new ServiceError(
-            'Une commande de cette ardoise a ete remboursee en partie. Reglez-la ou retirez-la de l ardoise depuis sa fiche, puis soldez.',
+            'Une commande de cette ardoise a ete remboursee en partie. Encaissez son solde depuis sa fiche, puis soldez.',
             'CONFLICT',
           );
         }

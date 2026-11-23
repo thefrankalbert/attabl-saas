@@ -7,10 +7,20 @@ import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-sessio
 import { assertTenantServing } from '@/lib/billing/assert-tenant-serving';
 import { createQrDesignService } from '@/services/qr-design.service';
 import { createAuditService } from '@/services/audit.service';
-import { saveQrDesignSchema, assignQrDesignSchema } from '@/lib/validations/qr-design.schema';
+import {
+  saveQrDesignSchema,
+  assignQrDesignSchema,
+  resolveDesignsForTablesSchema,
+} from '@/lib/validations/qr-design.schema';
 import { getTranslations } from 'next-intl/server';
 import { isFeatureEntitled } from '@/lib/plans/assert-feature';
-import { uploadLimiter, assignmentLimiter, getClientIpFromHeaders } from '@/lib/rate-limit';
+import {
+  uploadLimiter,
+  assignmentLimiter,
+  qrDesignResolveLimiter,
+  getClientIpFromHeaders,
+} from '@/lib/rate-limit';
+import { ServiceError } from '@/services/errors';
 
 /** Shared plan-entitlement check for QR customization (mirrors the trigger). */
 async function assertQrCustomizationEntitled(
@@ -85,42 +95,6 @@ export async function actionSaveQrDesign(input: unknown) {
   }
 }
 
-export async function actionDeleteQrDesign(id: unknown) {
-  const t = await getTranslations('errors');
-  try {
-    const { success: allowed } = await uploadLimiter.check(getClientIpFromHeaders(await headers()));
-    if (!allowed) return { success: false as const, error: t('rateLimited') };
-
-    const { tenantId, supabase, user, role } =
-      await getAuthenticatedUserWithTenant('settings.edit');
-    // Coupure du restaurant: enregistrer, supprimer ou assigner un design est une ecriture.
-    await assertTenantServing(tenantId);
-
-    if (typeof id !== 'string' || id.length === 0) {
-      return { success: false as const, error: 'Invalid input' };
-    }
-
-    const service = createQrDesignService(supabase);
-    await service.deleteDesign(tenantId, id);
-
-    createAuditService(supabase, {
-      tenantId,
-      userId: user.id,
-      userEmail: user.email,
-      userRole: role,
-    }).log({ action: 'delete', entityType: 'setting', entityId: id });
-
-    const slug = await tenantSlug(supabase, tenantId);
-    if (slug) revalidatePath(`/sites/${slug}/admin/qr-codes`);
-
-    return { success: true as const };
-  } catch (error) {
-    if (error instanceof AuthError) return { success: false as const, error: error.message };
-    logger.error('Error deleting QR design', error);
-    return { success: false as const, error: t('settingsUpdateError') };
-  }
-}
-
 export async function actionAssignQrDesign(input: unknown) {
   const t = await getTranslations('errors');
   try {
@@ -157,6 +131,10 @@ export async function actionAssignQrDesign(input: unknown) {
     return { success: true as const };
   } catch (error) {
     if (error instanceof AuthError) return { success: false as const, error: error.message };
+    // Table ou zone introuvable: le dire, au lieu d'un succes ou d'un message generique.
+    if (error instanceof ServiceError && error.code === 'NOT_FOUND') {
+      return { success: false as const, error: error.message };
+    }
     logger.error('Error assigning QR design', error);
     return { success: false as const, error: t('settingsUpdateError') };
   }
@@ -174,20 +152,23 @@ export async function actionResolveDesignsForTables(tableIds: unknown) {
     // tout membre, donc l'appartenance suffit. `settings.edit` ici empechait
     // un gerant ou la salle d'imprimer les cartes de table. Creer, modifier et
     // assigner un design restent sous `settings.edit` (actions ci-dessus).
+    const { success: allowed } = await qrDesignResolveLimiter.check(
+      getClientIpFromHeaders(await headers()),
+    );
+    if (!allowed) return { success: false as const, error: t('rateLimited') };
+
     const { tenantId, supabase } = await getAuthenticatedUserWithTenant();
 
-    if (!Array.isArray(tableIds) || tableIds.some((id) => typeof id !== 'string')) {
+    const parsed = resolveDesignsForTablesSchema.safeParse(tableIds);
+    if (!parsed.success) {
       return { success: false as const, error: 'Invalid input' };
     }
 
-    const service = createQrDesignService(supabase);
-    const entries = await Promise.all(
-      (tableIds as string[]).map(
-        async (id) => [id, await service.resolveDesignForTable(tenantId, id)] as const,
-      ),
+    const data = await createQrDesignService(supabase).resolveDesignsForTables(
+      tenantId,
+      parsed.data,
     );
-
-    return { success: true as const, data: Object.fromEntries(entries) };
+    return { success: true as const, data };
   } catch (error) {
     if (error instanceof AuthError) return { success: false as const, error: error.message };
     logger.error('Error resolving QR designs', error);

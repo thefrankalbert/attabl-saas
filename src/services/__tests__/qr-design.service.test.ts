@@ -33,6 +33,7 @@ function makeSupabase(queue: Result[]) {
     return builder;
   });
   builder.neq = vi.fn(passthrough);
+  builder.in = vi.fn(passthrough);
   builder.order = vi.fn(() => Promise.resolve(next()));
   builder.single = vi.fn(() => Promise.resolve(next()));
   builder.maybeSingle = vi.fn(() => Promise.resolve(next()));
@@ -151,7 +152,7 @@ describe('createQrDesignService.assignDesignToTable', () => {
 
   it('allows unassign (null design) without ownership check', async () => {
     // no ownership lookup; only the update await consumes one result
-    const { supabase, eqCalls } = makeSupabase([{ data: null, error: null }]);
+    const { supabase, eqCalls } = makeSupabase([{ data: [{ id: 'table-1' }], error: null }]);
     const service = createQrDesignService(supabase);
     await service.assignDesignToTable('tenant-A', 'table-1', null);
     expect(eqCalls).toContainEqual(['tenant_id', 'tenant-A']);
@@ -159,43 +160,105 @@ describe('createQrDesignService.assignDesignToTable', () => {
   });
 });
 
-describe('createQrDesignService.resolveDesignForTable', () => {
+describe('createQrDesignService: assignation sans ligne touchee (revue L013, A11)', () => {
+  it('table absente ou d un autre restaurant: NOT_FOUND, pas de faux succes', async () => {
+    const { supabase } = makeSupabase([{ data: [], error: null }]);
+    const service = createQrDesignService(supabase);
+    await expect(service.assignDesignToTable('tenant-A', 'table-x', null)).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
+  });
+
+  it('zone absente: NOT_FOUND', async () => {
+    const { supabase } = makeSupabase([{ data: [], error: null }]);
+    const service = createQrDesignService(supabase);
+    await expect(service.assignDesignToZone('tenant-A', 'zone-x', null)).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
+  });
+});
+
+describe('createQrDesignService.saveDesign: le defaut n est pas efface sur un refus (A10)', () => {
+  it('plafond atteint avec isDefault: refus, AUCUNE ecriture', async () => {
+    const { supabase } = makeSupabase([
+      { data: null, error: null, count: 50 } as unknown as Result,
+    ]);
+    const service = createQrDesignService(supabase);
+    await expect(
+      service.saveDesign('tenant-A', { name: 'Nouveau', config, isDefault: true }),
+    ).rejects.toMatchObject({ code: 'VALIDATION' });
+    expect(supabase.from('qr_designs').update).not.toHaveBeenCalled();
+  });
+
+  it('design disparu avec isDefault: NOT_FOUND, AUCUNE ecriture', async () => {
+    const { supabase } = makeSupabase([{ data: null, error: null }]);
+    const service = createQrDesignService(supabase);
+    await expect(
+      service.saveDesign('tenant-A', {
+        id: '550e8400-e29b-41d4-a716-446655440009',
+        name: 'Ancien',
+        config,
+        isDefault: true,
+      }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    expect(supabase.from('qr_designs').update).not.toHaveBeenCalled();
+  });
+});
+
+describe('createQrDesignService.resolveDesignsForTables', () => {
   it('uses the table-level design when set', async () => {
     const tableConfig = { ...config, qrFgColor: '#111111' };
     const { supabase } = makeSupabase([
-      { data: { qr_design_id: 'd-table', zone_id: 'z1' }, error: null }, // table
       { data: { primary_color: '#CCFF00', secondary_color: '#1A1A1A' }, error: null }, // tenant colors
       { data: null, error: null }, // no tenant default
-      { data: { config: tableConfig }, error: null }, // design d-table
+      { data: [{ id: 'table-1', qr_design_id: 'd-table', zone_id: 'z1' }], error: null }, // tables
+      { data: [{ id: 'd-table', config: tableConfig }], error: null }, // designs
     ]);
     const service = createQrDesignService(supabase);
-    const resolved = await service.resolveDesignForTable('tenant-A', 'table-1');
-    expect(resolved.qrFgColor).toBe('#111111');
+    const resolved = await service.resolveDesignsForTables('tenant-A', ['table-1']);
+    expect(resolved['table-1'].qrFgColor).toBe('#111111');
   });
 
   it('falls back to the zone design when the table has none', async () => {
     const zoneConfig = { ...config, qrFgColor: '#222222' };
     const { supabase } = makeSupabase([
-      { data: { qr_design_id: null, zone_id: 'z1' }, error: null }, // table
       { data: { primary_color: '#CCFF00', secondary_color: '#1A1A1A' }, error: null }, // tenant colors
       { data: null, error: null }, // no tenant default
-      { data: { qr_design_id: 'd-zone' }, error: null }, // zone
-      { data: { config: zoneConfig }, error: null }, // design d-zone
+      { data: [{ id: 'table-1', qr_design_id: null, zone_id: 'z1' }], error: null }, // tables
+      { data: [{ id: 'z1', qr_design_id: 'd-zone' }], error: null }, // zones
+      { data: [{ id: 'd-zone', config: zoneConfig }], error: null }, // designs
     ]);
     const service = createQrDesignService(supabase);
-    const resolved = await service.resolveDesignForTable('tenant-A', 'table-1');
-    expect(resolved.qrFgColor).toBe('#222222');
+    const resolved = await service.resolveDesignsForTables('tenant-A', ['table-1']);
+    expect(resolved['table-1'].qrFgColor).toBe('#222222');
   });
 
   it('falls back to the factory default when nothing is assigned', async () => {
     const { supabase } = makeSupabase([
-      { data: { qr_design_id: null, zone_id: null }, error: null }, // table
       { data: { primary_color: '#CCFF00', secondary_color: '#1A1A1A' }, error: null }, // tenant colors
       { data: null, error: null }, // no tenant default
+      { data: [{ id: 'table-1', qr_design_id: null, zone_id: null }], error: null }, // tables
     ]);
     const service = createQrDesignService(supabase);
-    const resolved = await service.resolveDesignForTable('tenant-A', 'table-1');
-    expect(resolved.templateId).toBe('minimal');
-    expect(resolved.templateAccentColor).toBe('#CCFF00');
+    const resolved = await service.resolveDesignsForTables('tenant-A', ['table-1']);
+    expect(resolved['table-1'].templateId).toBe('minimal');
+    expect(resolved['table-1'].templateAccentColor).toBe('#CCFF00');
+  });
+
+  it('nombre de requetes FIXE, quel que soit le nombre de tables (A9)', async () => {
+    const ids = Array.from({ length: 200 }, (_, i) => `table-${i}`);
+    const { supabase, fromCalls } = makeSupabase([
+      { data: { primary_color: '#CCFF00', secondary_color: '#1A1A1A' }, error: null },
+      { data: null, error: null },
+      {
+        data: ids.map((id) => ({ id, qr_design_id: null, zone_id: 'z1' })),
+        error: null,
+      },
+      { data: [{ id: 'z1', qr_design_id: null }], error: null },
+    ]);
+    const service = createQrDesignService(supabase);
+    const resolved = await service.resolveDesignsForTables('tenant-A', ids);
+    expect(Object.keys(resolved)).toHaveLength(200);
+    expect(fromCalls.length).toBeLessThanOrEqual(5);
   });
 });

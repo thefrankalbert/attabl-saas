@@ -419,6 +419,27 @@ export const pdfImportLimiter = createLimiter(
   true,
 );
 
+/**
+ * Resolution des designs QR pour l'impression des tables: 30 / minute par IP.
+ * Lecture ouverte a tout membre (revue L013, A9). Fail-open assume: c'est une
+ * lecture bornee (500 tables, requetes groupees), le plafond limite l'abus.
+ */
+export const qrDesignResolveLimiter = createLimiter(
+  'qr-design-resolve',
+  Ratelimit.slidingWindow(30, '1 m'),
+);
+
+/**
+ * Console plateforme (Command Center du super administrateur): 60 / minute par
+ * IP. La page rafraichit chaque minute et a chaque changement de periode.
+ * Fail-closed: la route lit tous les restaurants avec le client service_role.
+ */
+export const commandCenterLimiter = createLimiter(
+  'command-center',
+  Ratelimit.slidingWindow(60, '1 m'),
+  true,
+);
+
 /** Assignments: 30 requests / minute per IP */
 export const assignmentLimiter = createLimiter('assignment', Ratelimit.slidingWindow(30, '1 m'));
 

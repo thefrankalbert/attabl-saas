@@ -79,6 +79,27 @@ describe('actionReassignOrderTable', () => {
     const { actionReassignOrderTable } = await import('@/app/actions/table-reassign');
     const result = await actionReassignOrderTable(ORDER_ID, 'T12');
 
-    expect(result).toEqual({ success: false, error: 'Order not found' });
+    expect(result).toEqual({ success: false, error: 'Commande introuvable.' });
   });
+
+  it.each([
+    ['Destination table is now occupied', undefined, "Cette table vient d'etre occupee"],
+    ['permission denied', '42501', 'Votre role ne permet pas'],
+    [
+      'duplicate key value violates unique constraint "x_pkey"',
+      '23505',
+      'Le changement de table a echoue',
+    ],
+  ])(
+    'message brut "%s" traduit en francais, sans detail interne',
+    async (message, code, attendu) => {
+      mockRpc.mockResolvedValue({ error: { message, code } });
+      const { actionReassignOrderTable } = await import('@/app/actions/table-reassign');
+      const result = await actionReassignOrderTable(ORDER_ID, 'T12');
+      expect(result.success).toBe(false);
+      const err = (result as { error: string }).error;
+      expect(err).toContain(attendu);
+      expect(err).not.toContain(message);
+    },
+  );
 });

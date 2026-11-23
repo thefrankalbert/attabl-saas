@@ -131,6 +131,11 @@ describe('house-account-settlement.service', () => {
     await expect(
       createHouseAccountSettlementService(supabase).settle(ACCOUNT, TENANT, {}),
     ).rejects.toThrow(/remboursee en partie/);
+    // Le message ne renvoie plus vers "retirer de l ardoise": aucun ecran ne le
+    // permet (actionDetachOrder etait sans appelant, revue L007 A5).
+    await expect(
+      createHouseAccountSettlementService(supabase).settle(ACCOUNT, TENANT, {}),
+    ).rejects.toThrow(/^(?!.*retirez).*Encaissez son solde depuis sa fiche/);
     expect(recordTender).not.toHaveBeenCalled();
     // L'ardoise ne se ferme jamais sur un solde non regle.
     expect(markSettled).not.toHaveBeenCalled();

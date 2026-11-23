@@ -13,7 +13,7 @@ const ACCOUNT = 'account-1';
  */
 function createMock(
   opts: {
-    accountRow?: { id: string } | null;
+    accountRow?: { id: string; status?: string } | null;
     insertReturn?: Record<string, unknown>;
     listRows?: Array<Record<string, unknown>>;
   } = {},
@@ -72,7 +72,7 @@ function createMock(
             return b;
           });
           b.maybeSingle = vi.fn(async () => ({
-            data: opts.accountRow === undefined ? { id: ACCOUNT } : opts.accountRow,
+            data: opts.accountRow === undefined ? { id: ACCOUNT, status: 'open' } : opts.accountRow,
             error: null,
           }));
           return b;
@@ -142,7 +142,7 @@ describe('createOrderAnnotationService', () => {
   });
 
   it('attachOrderToHouseAccount verifies the account tenant before updating', async () => {
-    const mock = createMock({ accountRow: { id: ACCOUNT } });
+    const mock = createMock({ accountRow: { id: ACCOUNT, status: 'open' } });
     const svc = createOrderAnnotationService(asSupabase(mock));
 
     await svc.attachOrderToHouseAccount(ORDER, TENANT, ACCOUNT);
@@ -162,6 +162,16 @@ describe('createOrderAnnotationService', () => {
       code: 'NOT_FOUND',
     });
     // No order update happened.
+    expect(mock._calls.orderUpdate).toBeNull();
+  });
+
+  it('attachOrderToHouseAccount refuse une ardoise deja soldee (CONFLICT, aucune ecriture)', async () => {
+    const mock = createMock({ accountRow: { id: ACCOUNT, status: 'settled' } });
+    const svc = createOrderAnnotationService(asSupabase(mock));
+
+    await expect(svc.attachOrderToHouseAccount(ORDER, TENANT, ACCOUNT)).rejects.toMatchObject({
+      code: 'CONFLICT',
+    });
     expect(mock._calls.orderUpdate).toBeNull();
   });
 

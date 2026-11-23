@@ -34,9 +34,10 @@ vi.mock('@/services/payment.service', () => ({ createPaymentService: vi.fn() }))
 vi.mock('@/services/order-annotation.service', () => ({ createOrderAnnotationService: vi.fn() }));
 vi.mock('@/services/audit.service', () => ({ createAuditService: () => ({ log: vi.fn() }) }));
 
-const { mockResolve, mockDelete } = vi.hoisted(() => ({
+const { mockResolve, mockDelete, ledger } = vi.hoisted(() => ({
   mockResolve: vi.fn(),
   mockDelete: vi.fn(),
+  ledger: { rows: [] as Array<{ order_id: string }>, status: 'pending' },
 }));
 vi.mock('@/lib/auth/resolve-admin-permission', () => ({ resolveAdminPermission: mockResolve }));
 
@@ -48,11 +49,13 @@ vi.mock('@/lib/supabase/server', () => ({
     auth: { getUser: async () => ({ data: { user: { id: 'u-1' } }, error: null }) },
     from: (table: string) => {
       const c: Record<string, unknown> = {};
-      for (const m of ['select', 'eq', 'is', 'in']) c[m] = vi.fn(() => c);
+      for (const m of ['select', 'eq', 'is', 'in', 'limit']) c[m] = vi.fn(() => c);
       const rows =
         table === 'orders'
-          ? [{ id: ORDER_ID, tenant_id: TENANT_ID, payment_status: 'pending' }]
-          : [{ tenant_id: TENANT_ID, role: 'admin' }];
+          ? [{ id: ORDER_ID, tenant_id: TENANT_ID, payment_status: ledger.status }]
+          : table === 'payments'
+            ? ledger.rows
+            : [{ tenant_id: TENANT_ID, role: 'admin' }];
       c.then = (ok: (v: { data: unknown; error: null }) => unknown) =>
         ok({ data: rows, error: null });
       c.delete = vi.fn(() => {
@@ -68,7 +71,11 @@ import { actionDeleteOrders } from '@/app/actions/orders';
 import { TenantLockedError } from '@/lib/billing/assert-tenant-serving';
 
 describe('actionDeleteOrders: supprimer exige orders.pay', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    ledger.rows = [];
+    ledger.status = 'pending';
+  });
 
   it('admin sans orders.pay: refuse, rien n est supprime', async () => {
     mockResolve.mockResolvedValue({ allowed: false, role: 'admin' });
@@ -93,6 +100,16 @@ describe('actionDeleteOrders: supprimer exige orders.pay', () => {
     expect(res.error).toBe('Ce restaurant est temporairement indisponible');
     expect(res.success).toBeUndefined();
     expect(mockAssertServing).toHaveBeenCalledWith(TENANT_ID);
+    expect(mockDelete).not.toHaveBeenCalled();
+  });
+
+  it('commande partial avec un acompte au registre: refusee, rien n est supprime', async () => {
+    mockResolve.mockResolvedValue({ allowed: true, role: 'owner' });
+    ledger.status = 'partial';
+    ledger.rows = [{ order_id: ORDER_ID }];
+    const res = await actionDeleteOrders([ORDER_ID]);
+    expect(res.success).toBeUndefined();
+    expect(res.error).toMatch(/paiement/);
     expect(mockDelete).not.toHaveBeenCalled();
   });
 });

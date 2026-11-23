@@ -10,6 +10,7 @@ import {
   sliceSparkline,
   sumLocations,
   type DerivableOrder,
+  type DerivablePayment,
 } from '../command-center.derive';
 import type { Tenant } from '@/types/command-center.types';
 
@@ -40,6 +41,22 @@ function order(overrides: Partial<DerivableOrder> = {}): DerivableOrder {
   };
 }
 
+/** Encaissement au registre pour une commande (montant = total, en mineures). */
+function paid(o: DerivableOrder): DerivablePayment {
+  return {
+    tenant_id: o.tenant_id,
+    amount: o.total,
+    status: 'completed',
+    created_at: o.created_at,
+    display_currency: o.display_currency,
+  };
+}
+
+/** Commandes encaissees en entier: une ligne de registre par commande non annulee. */
+function ledgerOf(orders: DerivableOrder[]): DerivablePayment[] {
+  return orders.filter((o) => o.status !== 'cancelled').map(paid);
+}
+
 const translators = {
   orderCancelled: (n: string) => `cancelled-${n}`,
   siteOffline: () => 'offline',
@@ -52,7 +69,7 @@ describe('bucketToday', () => {
       order({ tenant_id: 'a', total: 5, created_at: new Date(2026, 5, 15, 9, 50).toISOString() }),
       order({ tenant_id: 'a', total: 20, created_at: new Date(2026, 5, 15, 13, 0).toISOString() }),
     ];
-    const result = bucketToday(orders, ['a']);
+    const result = bucketToday(orders, ledgerOf(orders), ['a']);
     const a = result.get('a')!;
     expect(a.revenue).toBe(35);
     expect(a.orders).toBe(3);
@@ -66,21 +83,40 @@ describe('bucketToday', () => {
       order({ tenant_id: 'a', total: 10 }),
       order({ tenant_id: 'a', total: 99, status: 'cancelled' }),
     ];
-    const a = bucketToday(orders, ['a']).get('a')!;
+    const a = bucketToday(orders, ledgerOf(orders), ['a']).get('a')!;
     expect(a.revenue).toBe(10);
     expect(a.orders).toBe(1);
   });
 
   it('ignores orders for unknown tenants', () => {
     const orders: DerivableOrder[] = [order({ tenant_id: 'ghost', total: 50 })];
-    const result = bucketToday(orders, ['a']);
+    const result = bucketToday(orders, ledgerOf(orders), ['a']);
     expect(result.get('a')!.revenue).toBe(0);
     expect(result.has('ghost')).toBe(false);
   });
 
   it('coerces string totals to numbers', () => {
     const orders: DerivableOrder[] = [order({ tenant_id: 'a', total: '12.5' })];
-    expect(bucketToday(orders, ['a']).get('a')!.revenue).toBe(12.5);
+    expect(bucketToday(orders, ledgerOf(orders), ['a']).get('a')!.revenue).toBe(12.5);
+  });
+
+  // Revue L016 (A18): le chiffre d'affaires est l'argent ENCAISSE (registre),
+  // pas la somme des commandes non annulees.
+  it('une commande offerte ou impayee (sans ligne au registre) ne compte pas au chiffre', () => {
+    const offerte = order({ tenant_id: 'a', total: 7000 });
+    const impayee = order({ tenant_id: 'a', total: 3000 });
+    const a = bucketToday([offerte, impayee], [], ['a']).get('a')!;
+    expect(a.revenue).toBe(0);
+    expect(a.orders).toBe(2);
+  });
+
+  it('un remboursement se soustrait, un acompte compte pour son montant', () => {
+    const o = order({ tenant_id: 'a', total: 10000 });
+    const payments: DerivablePayment[] = [
+      { ...paid(o), amount: 4000 },
+      { ...paid(o), amount: 1000, status: 'refunded' },
+    ];
+    expect(bucketToday([o], payments, ['a']).get('a')!.revenue).toBe(3000);
   });
 });
 
@@ -91,7 +127,7 @@ describe('bucketYesterday', () => {
       order({ tenant_id: 'b', total: 7 }),
       order({ tenant_id: 'b', total: 100, status: 'cancelled' }),
     ];
-    const result = bucketYesterday(orders, ['a', 'b']);
+    const result = bucketYesterday(orders, ledgerOf(orders), ['a', 'b']);
     expect(result.get('a')).toEqual({ revenue: 30, orders: 1 });
     expect(result.get('b')).toEqual({ revenue: 7, orders: 1 });
   });
@@ -100,8 +136,10 @@ describe('bucketYesterday', () => {
 describe('today vs yesterday split (via buildLocations)', () => {
   it('keeps today and yesterday revenue separate', () => {
     const tenants = [tenant('a')];
-    const today = bucketToday([order({ tenant_id: 'a', total: 40 })], ['a']);
-    const yesterday = bucketYesterday([order({ tenant_id: 'a', total: 25 })], ['a']);
+    const t = [order({ tenant_id: 'a', total: 40 })];
+    const y = [order({ tenant_id: 'a', total: 25 })];
+    const today = bucketToday(t, ledgerOf(t), ['a']);
+    const yesterday = bucketYesterday(y, ledgerOf(y), ['a']);
     const locations = buildLocations(tenants, today, yesterday, new Map(), NOW.getHours());
     expect(locations[0].revenue_today).toBe(40);
     expect(locations[0].revenue_yesterday).toBe(25);
@@ -113,11 +151,9 @@ describe('today vs yesterday split (via buildLocations)', () => {
       tenant('b', { is_active: true }),
       tenant('c', { is_active: true }),
     ];
-    const today = bucketToday(
-      [order({ tenant_id: 'b', total: 5 }), order({ tenant_id: 'c', total: 50 })],
-      ['a', 'b', 'c'],
-    );
-    const yesterday = bucketYesterday([], ['a', 'b', 'c']);
+    const t = [order({ tenant_id: 'b', total: 5 }), order({ tenant_id: 'c', total: 50 })];
+    const today = bucketToday(t, ledgerOf(t), ['a', 'b', 'c']);
+    const yesterday = bucketYesterday([], [], ['a', 'b', 'c']);
     const locations = buildLocations(tenants, today, yesterday, new Map(), NOW.getHours());
     expect(locations.map((l) => l.tenant_id)).toEqual(['c', 'b', 'a']);
   });
@@ -210,45 +246,42 @@ describe('chartWindow', () => {
 describe('bucketChart', () => {
   it('fills hourly buckets up to the current hour', () => {
     const { startDate } = chartWindow('day', NOW);
-    const data = bucketChart(
-      [
-        { total: 10, created_at: new Date(2026, 5, 15, 9, 0).toISOString() },
-        { total: 5, created_at: new Date(2026, 5, 15, 9, 30).toISOString() },
-      ],
-      startDate,
-      NOW,
-      'hour',
-    );
+    const rows = [
+      order({ total: 10, created_at: new Date(2026, 5, 15, 9, 0).toISOString() }),
+      order({ total: 5, created_at: new Date(2026, 5, 15, 9, 30).toISOString() }),
+    ];
+    const data = bucketChart(ledgerOf(rows), rows, startDate, NOW, 'hour');
     expect(data).toHaveLength(15); // 00h..14h inclusive
     expect(data.find((d) => d.label === '09h')).toEqual({ label: '09h', revenue: 15, orders: 2 });
   });
 
   it('fills daily buckets from startDate to now inclusive', () => {
     const { startDate } = chartWindow('week', NOW);
-    const data = bucketChart(
-      [
-        { total: 20, created_at: new Date(2026, 5, 12, 10, 0).toISOString() },
-        { total: 5, created_at: new Date(2026, 5, 12, 18, 0).toISOString() },
-        { total: 8, created_at: new Date(2026, 5, 15, 9, 0).toISOString() },
-      ],
-      startDate,
-      NOW,
-      'day',
-    );
+    const rows = [
+      order({ total: 20, created_at: new Date(2026, 5, 12, 10, 0).toISOString() }),
+      order({ total: 5, created_at: new Date(2026, 5, 12, 18, 0).toISOString() }),
+      order({ total: 8, created_at: new Date(2026, 5, 15, 9, 0).toISOString() }),
+    ];
+    const data = bucketChart(ledgerOf(rows), rows, startDate, NOW, 'day');
     expect(data).toHaveLength(7); // 9/6..15/6 inclusive
     expect(data.find((d) => d.label === '12/6')).toEqual({ label: '12/6', revenue: 25, orders: 2 });
     expect(data.find((d) => d.label === '15/6')).toEqual({ label: '15/6', revenue: 8, orders: 1 });
+  });
+
+  it('A18: une commande offerte compte dans les commandes, pas dans le chiffre', () => {
+    const { startDate } = chartWindow('day', NOW);
+    const offerte = order({ total: 7000, created_at: new Date(2026, 5, 15, 9, 0).toISOString() });
+    const data = bucketChart([], [offerte], startDate, NOW, 'hour');
+    expect(data.find((d) => d.label === '09h')).toEqual({ label: '09h', revenue: 0, orders: 1 });
   });
 });
 
 describe('sumLocations', () => {
   it('sums a numeric field across locations', () => {
     const tenants = [tenant('a'), tenant('b')];
-    const today = bucketToday(
-      [order({ tenant_id: 'a', total: 10 }), order({ tenant_id: 'b', total: 30 })],
-      ['a', 'b'],
-    );
-    const yesterday = bucketYesterday([], ['a', 'b']);
+    const t = [order({ tenant_id: 'a', total: 10 }), order({ tenant_id: 'b', total: 30 })];
+    const today = bucketToday(t, ledgerOf(t), ['a', 'b']);
+    const yesterday = bucketYesterday([], [], ['a', 'b']);
     const locations = buildLocations(tenants, today, yesterday, new Map(), NOW.getHours());
     expect(sumLocations(locations, 'revenue_today')).toBe(40);
     expect(sumLocations(locations, 'orders_today')).toBe(2);

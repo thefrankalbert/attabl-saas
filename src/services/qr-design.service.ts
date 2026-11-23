@@ -20,10 +20,12 @@ export interface QrDesignService {
   listDesigns(tenantId: string): Promise<QrDesignRow[]>;
   getDefaultDesign(tenantId: string): Promise<QrDesignRow | null>;
   saveDesign(tenantId: string, input: SaveQrDesignInput): Promise<QrDesignRow>;
-  deleteDesign(tenantId: string, id: string): Promise<void>;
   assignDesignToZone(tenantId: string, zoneId: string, designId: string | null): Promise<void>;
   assignDesignToTable(tenantId: string, tableId: string, designId: string | null): Promise<void>;
-  resolveDesignForTable(tenantId: string, tableId: string): Promise<QRDesignConfig>;
+  resolveDesignsForTables(
+    tenantId: string,
+    tableIds: string[],
+  ): Promise<Record<string, QRDesignConfig>>;
 }
 
 /**
@@ -115,6 +117,37 @@ export function createQrDesignService(supabase: SupabaseClient): QrDesignService
         throw new ServiceError('Configuration QR invalide', 'VALIDATION');
       }
 
+      // Plafond et existence AVANT d'effacer le defaut: sinon un refus (plafond
+      // atteint, design disparu) laissait le restaurant sans design par defaut,
+      // en silence (revue L013, A10).
+      if (input.id) {
+        const { data: existing, error: existErr } = await supabase
+          .from('qr_designs')
+          .select('id')
+          .eq('id', input.id)
+          .eq('tenant_id', tenantId)
+          .maybeSingle();
+        if (existErr) throw new ServiceError("Erreur lors de l'enregistrement", 'INTERNAL');
+        if (!existing) throw new ServiceError('Design QR introuvable', 'NOT_FOUND');
+      } else {
+        // Per-tenant cap: bound unbounded design creation (SEC-02).
+        // ponytail: check-then-insert has a TOCTOU race - two concurrent saves at
+        // count=49 can both insert (51). Acceptable: this is an anti-abuse ceiling
+        // (not a security boundary), bounded by uploadLimiter (20/min). If it must
+        // be hard, add a partial unique index / row_number trigger on tenant_id.
+        const { count, error: countError } = await supabase
+          .from('qr_designs')
+          .select('id', { count: 'exact', head: true })
+          .eq('tenant_id', tenantId);
+        if (countError) throw new ServiceError("Erreur lors de l'enregistrement", 'INTERNAL');
+        if ((count ?? 0) >= MAX_DESIGNS_PER_TENANT) {
+          throw new ServiceError(
+            `Limite de ${MAX_DESIGNS_PER_TENANT} designs QR atteinte`,
+            'VALIDATION',
+          );
+        }
+      }
+
       // A tenant keeps at most one default design (partial unique index enforces
       // it too). Clear the others first so the write never violates the index.
       if (input.isDefault) {
@@ -139,23 +172,6 @@ export function createQrDesignService(supabase: SupabaseClient): QrDesignService
         return toRow(data);
       }
 
-      // Per-tenant cap: bound unbounded design creation (SEC-02).
-      // ponytail: check-then-insert has a TOCTOU race - two concurrent saves at
-      // count=49 can both insert (51). Acceptable: this is an anti-abuse ceiling
-      // (not a security boundary), bounded by uploadLimiter (20/min). If it must
-      // be hard, add a partial unique index / row_number trigger on tenant_id.
-      const { count, error: countError } = await supabase
-        .from('qr_designs')
-        .select('id', { count: 'exact', head: true })
-        .eq('tenant_id', tenantId);
-      if (countError) throw new ServiceError("Erreur lors de l'enregistrement", 'INTERNAL');
-      if ((count ?? 0) >= MAX_DESIGNS_PER_TENANT) {
-        throw new ServiceError(
-          `Limite de ${MAX_DESIGNS_PER_TENANT} designs QR atteinte`,
-          'VALIDATION',
-        );
-      }
-
       const { data, error } = await supabase
         .from('qr_designs')
         .insert({
@@ -170,68 +186,93 @@ export function createQrDesignService(supabase: SupabaseClient): QrDesignService
       return toRow(data);
     },
 
-    async deleteDesign(tenantId, id) {
-      const { error } = await supabase
-        .from('qr_designs')
-        .delete()
-        .eq('id', id)
-        .eq('tenant_id', tenantId);
-      if (error) throw new ServiceError('Erreur lors de la suppression', 'INTERNAL');
-    },
-
     async assignDesignToZone(tenantId, zoneId, designId) {
       if (designId) await assertDesignOwned(tenantId, designId);
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('zones')
         .update({ qr_design_id: designId })
         .eq('id', zoneId)
-        .eq('tenant_id', tenantId);
+        .eq('tenant_id', tenantId)
+        .select('id');
       if (error) throw new ServiceError("Erreur lors de l'assignation", 'INTERNAL');
+      // Zero ligne = zone supprimee ou d'un autre restaurant: ne pas annoncer
+      // une assignation qui n'a pas eu lieu (revue L013, A11).
+      if (!data || data.length === 0) throw new ServiceError('Zone introuvable', 'NOT_FOUND');
     },
 
     async assignDesignToTable(tenantId, tableId, designId) {
       if (designId) await assertDesignOwned(tenantId, designId);
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('tables')
         .update({ qr_design_id: designId })
         .eq('id', tableId)
-        .eq('tenant_id', tenantId);
+        .eq('tenant_id', tenantId)
+        .select('id');
       if (error) throw new ServiceError("Erreur lors de l'assignation", 'INTERNAL');
+      if (!data || data.length === 0) throw new ServiceError('Table introuvable', 'NOT_FOUND');
     },
 
-    async resolveDesignForTable(tenantId, tableId) {
-      const { data: table } = await supabase
-        .from('tables')
-        .select('qr_design_id, zone_id')
-        .eq('id', tableId)
-        .eq('tenant_id', tenantId)
-        .maybeSingle();
-
+    async resolveDesignsForTables(tenantId, tableIds) {
+      // Resolution groupee (revue L013, A9): un nombre FIXE de requetes quel que
+      // soit le nombre de tables, au lieu de 3 a 5 requetes par table.
+      // Ordre: table -> zone -> defaut du restaurant (deja dans `fallback`).
       const fallback = await tenantDefaultConfig(tenantId);
+      const result: Record<string, QRDesignConfig> = {};
+      for (const id of tableIds) result[id] = fallback;
+      if (tableIds.length === 0) return result;
 
-      // Resolution order: table -> zone -> tenant default (already in fallback).
-      let designId: string | null = table?.qr_design_id ?? null;
+      const { data: tables, error: tablesErr } = await supabase
+        .from('tables')
+        .select('id, qr_design_id, zone_id')
+        .eq('tenant_id', tenantId)
+        .in('id', tableIds);
+      if (tablesErr) throw new ServiceError('Erreur lors du chargement des tables', 'INTERNAL');
+      const tableRows = (tables ?? []) as Array<{
+        id: string;
+        qr_design_id: string | null;
+        zone_id: string | null;
+      }>;
 
-      if (!designId && table?.zone_id) {
-        const { data: zone } = await supabase
+      const zoneIds = [
+        ...new Set(
+          tableRows.filter((t) => !t.qr_design_id && t.zone_id).map((t) => t.zone_id as string),
+        ),
+      ];
+      const zoneDesign = new Map<string, string | null>();
+      if (zoneIds.length > 0) {
+        const { data: zones, error: zonesErr } = await supabase
           .from('zones')
-          .select('qr_design_id')
-          .eq('id', table.zone_id)
+          .select('id, qr_design_id')
           .eq('tenant_id', tenantId)
-          .maybeSingle();
-        designId = zone?.qr_design_id ?? null;
+          .in('id', zoneIds);
+        if (zonesErr) throw new ServiceError('Erreur lors du chargement des zones', 'INTERNAL');
+        for (const z of (zones ?? []) as Array<{ id: string; qr_design_id: string | null }>) {
+          zoneDesign.set(z.id, z.qr_design_id);
+        }
       }
 
-      if (!designId) return fallback;
+      const designOf = new Map<string, string>();
+      for (const t of tableRows) {
+        const designId = t.qr_design_id ?? (t.zone_id ? zoneDesign.get(t.zone_id) : null) ?? null;
+        if (designId) designOf.set(t.id, designId);
+      }
 
-      const { data: design } = await supabase
+      const designIds = [...new Set(designOf.values())];
+      if (designIds.length === 0) return result;
+      const { data: designs, error: designsErr } = await supabase
         .from('qr_designs')
-        .select('config')
-        .eq('id', designId)
+        .select('id, config')
         .eq('tenant_id', tenantId)
-        .maybeSingle();
-
-      return design ? parseConfig(design.config, fallback) : fallback;
+        .in('id', designIds);
+      if (designsErr) throw new ServiceError('Erreur lors du chargement des designs', 'INTERNAL');
+      const configOf = new Map<string, QRDesignConfig>();
+      for (const d of (designs ?? []) as Array<{ id: string; config: unknown }>) {
+        configOf.set(d.id, parseConfig(d.config, fallback));
+      }
+      for (const [tableId, designId] of designOf) {
+        result[tableId] = configOf.get(designId) ?? fallback;
+      }
+      return result;
     },
   };
 }

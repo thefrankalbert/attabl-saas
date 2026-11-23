@@ -184,6 +184,30 @@ export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResp
 
   const foundIds = orders.map((o) => o.id);
 
+  // Une commande qui porte de l'argent au registre (acompte `partial`,
+  // remboursement `refunded`, ou toute ligne `payments`) ne se supprime pas:
+  // `payments.order_id` partait en cascade et l'encaissement disparaissait du
+  // chiffre (revue L011). Le registre fait foi, pas seulement le statut. Lecture
+  // en echec ferme: sans preuve qu'aucun argent n'est attache, on ne supprime rien.
+  const { data: ledgerRows, error: ledgerError } = await supabase
+    .from('payments')
+    .select('order_id')
+    .in('tenant_id', tenantIds)
+    .in('order_id', foundIds)
+    .limit(1);
+  if (ledgerError) {
+    logger.error('Failed to check payments before order deletion', ledgerError, {
+      orderIds: foundIds,
+    });
+    return { error: 'La suppression a echoue. Reessayez.' };
+  }
+  if ((ledgerRows ?? []).length > 0) {
+    return {
+      error:
+        'Impossible de supprimer une commande qui a deja recu un paiement. Remboursez-la ou annulez-la depuis sa fiche.',
+    };
+  }
+
   // Step 1: Delete order_items for these orders
   const { error: itemsError } = await supabase
     .from('order_items')
@@ -503,6 +527,39 @@ export async function actionSetCourseHeld(
 }
 
 /**
+ * Encaisse le solde d'une commande `partial` (A2). Renvoie `null` quand la
+ * commande n'a pas de solde a encaisser (vraiment deja reglee, annulee, offerte):
+ * l'appelant garde alors sa reponse "deja reglee".
+ */
+async function settlePartialBalance(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  orderId: string,
+  tenantId: string,
+  method: string,
+  tipAmount: number | undefined,
+  adminUserId: string,
+): Promise<{ success?: boolean; paid?: boolean; error?: string } | null> {
+  const paymentService = createPaymentService(supabase);
+  const summary = await paymentService.getSummary(orderId, tenantId);
+  const balance = summary.due - summary.net;
+  if (summary.paymentStatus !== 'partial' || balance <= 0) return null;
+  if ((tipAmount ?? 0) > 0) {
+    return {
+      error:
+        'Cette commande a deja recu un acompte. Encaissez le solde depuis sa fiche pour ajouter un pourboire.',
+    };
+  }
+  const parsedMethod = paymentMethodSchema.safeParse(method);
+  if (!parsedMethod.success) return { error: 'Moyen de paiement invalide' };
+  const after = await paymentService.recordTender(orderId, tenantId, {
+    amount: balance,
+    method: parsedMethod.data,
+    createdBy: adminUserId,
+  });
+  return { success: true, paid: after.paymentStatus === 'paid' };
+}
+
+/**
  * Marks an order as paid. Money: needs ORDER_PAY_PERMISSIONS (`orders.pay`,
  * which the waiter and the chef do not hold by default).
  */
@@ -518,7 +575,7 @@ export async function actionMarkOrderPaid(
   }
 
   try {
-    const { supabase } = await getAuthenticatedUserForTenant(
+    const { supabase, adminUserId } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
       ALL_ADMIN_ROLES,
       ORDER_PAY_PERMISSIONS,
@@ -546,6 +603,22 @@ export async function actionMarkOrderPaid(
         tipAmount: parsed.data.tipAmount,
       },
     );
+    if (!paid) {
+      // markPaid ne bascule qu'une commande `pending`. Une commande `partial`
+      // (acompte deja pris) repondait `paid: false`, que la caisse lit "deja
+      // reglee": le solde n'etait jamais encaisse alors que le caissier tenait
+      // l'argent (revue L011, A2). On encaisse donc le solde restant au registre,
+      // plafonne par recordTender: un rejeu trouve un solde nul et n'encaisse rien.
+      const settled = await settlePartialBalance(
+        supabase,
+        parsed.data.orderId,
+        parsed.data.tenantId,
+        parsed.data.method,
+        parsed.data.tipAmount,
+        adminUserId,
+      );
+      if (settled) return settled;
+    }
     return { success: true, paid };
   } catch (err) {
     if (err instanceof AuthError) {

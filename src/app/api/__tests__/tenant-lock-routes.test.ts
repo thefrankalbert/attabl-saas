@@ -245,6 +245,8 @@ describe('classement de toutes les routes API', () => {
     'invitations/[id]',
     // Lecture DNS seule, ecrit rien (le domaine est enregistre par un reglage garde).
     'domain-verify',
+    // Console plateforme du super administrateur: lecture seule, multi-restaurants.
+    'admin/command-center',
     // PDF genere a la volee, ecrit rien.
     'supports/export',
     // Integration d'un NOUVEL etablissement (essai en cours, jamais coupe).
