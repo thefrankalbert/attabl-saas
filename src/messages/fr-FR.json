@@ -3236,7 +3236,7 @@
       "methodRefunded": "{amount} remboursés",
       "marginsTitle": "Marge par plat",
       "marginsTotal": "Marge : {margin} sur {coverage} % des ventes",
-      "marginsHint": "Coût matière = quantités de la fiche technique x coût actuel des ingrédients. Un plat sans fiche, ou dont un ingrédient n'a pas de coût, n'a pas de marge calculée : complétez ses fiches dans Fiches techniques et Inventaire.",
+      "marginsHint": "Ventes = prix x quantité, remise de la commande déduite au prorata des plats. Un remboursement partiel n'est pas réparti sur les plats (on ne sait pas lesquels il concerne) : il reste visible dans le chiffre d'affaires. Coût matière = quantités de la fiche technique x coût actuel des ingrédients. Un plat sans fiche, ou dont un ingrédient n'a pas de coût, n'a pas de marge calculée : complétez ses fiches dans Fiches techniques et Inventaire.",
       "noRecipe": "Pas de fiche technique",
       "costIncomplete": "Coût incomplet",
       "colDish": "Plat",
@@ -3245,6 +3245,7 @@
       "colCost": "Coût matière",
       "colMargin": "Marge",
       "colMarginPct": "Marge en %",
+      "costMissing": "Coût manquant",
       "lossCount": "{count, plural, one {# perte} other {# pertes}}",
       "lossesTitle": "Pertes et gaspillage",
       "colIngredient": "Ingrédient",
@@ -3253,7 +3254,7 @@
       "colMovements": "Pertes",
       "colReason": "Motif principal",
       "lossesTotal": "Total perdu : {amount}",
-      "lossesHint": "Pertes déclarées dans l'inventaire (péremption, casse, vol...), valorisées au coût actuel des ingrédients.",
+      "lossesHint": "Pertes déclarées dans l'inventaire (péremption, casse, vol...), valorisées au coût actuel des ingrédients. Un ingrédient sans coût porte le badge Coût manquant : sa valeur n'est pas comptée.",
       "noLosses": "Aucune perte déclarée sur la période."
     },
     "venueReport": {

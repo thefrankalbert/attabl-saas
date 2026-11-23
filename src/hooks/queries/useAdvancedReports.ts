@@ -46,6 +46,8 @@ export interface LossRow {
   costValue: number;
   movements: number;
   mainReason: string | null;
+  /** Faux si l'ingredient n'a pas de cout: la valeur (0) est alors manquante. */
+  costComplete: boolean;
 }
 
 export interface ComparisonRow {
@@ -104,6 +106,7 @@ export function parseLosses(data: unknown): LossRow[] {
     costValue: num(r.cost_value),
     movements: num(r.movement_count),
     mainReason: r.main_reason ? String(r.main_reason) : null,
+    costComplete: r.cost_complete !== false,
   }));
 }
 

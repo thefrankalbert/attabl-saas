@@ -71,6 +71,7 @@ describe('useAdvancedReports - normalisation', () => {
           cost_value: '5000.000',
           movement_count: 2,
           main_reason: null,
+          cost_complete: false,
         },
       ]),
     ).toEqual([
@@ -82,6 +83,7 @@ describe('useAdvancedReports - normalisation', () => {
         costValue: 5000,
         movements: 2,
         mainReason: null,
+        costComplete: false,
       },
     ]);
     expect(

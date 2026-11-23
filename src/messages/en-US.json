@@ -3236,7 +3236,7 @@
       "methodRefunded": "{amount} refunded",
       "marginsTitle": "Margin per dish",
       "marginsTotal": "Margin: {margin} on {coverage}% of sales",
-      "marginsHint": "Food cost = quantities in the recipe card x current ingredient cost. A dish without a recipe card, or with an ingredient that has no cost, gets no margin: complete it in Recipes and Inventory.",
+      "marginsHint": "Sales = price x quantity, minus the order discount shared out across its dishes. A partial refund is not shared out across dishes (it does not say which ones): it stays visible in revenue. Food cost = quantities in the recipe card x current ingredient cost. A dish without a recipe card, or with an ingredient that has no cost, gets no margin: complete it in Recipes and Inventory.",
       "noRecipe": "No recipe card",
       "costIncomplete": "Incomplete cost",
       "colDish": "Dish",
@@ -3245,6 +3245,7 @@
       "colCost": "Food cost",
       "colMargin": "Margin",
       "colMarginPct": "Margin %",
+      "costMissing": "Missing cost",
       "lossCount": "{count, plural, one {# loss} other {# losses}}",
       "lossesTitle": "Losses and waste",
       "colIngredient": "Ingredient",
@@ -3253,7 +3254,7 @@
       "colMovements": "Losses",
       "colReason": "Main reason",
       "lossesTotal": "Total lost: {amount}",
-      "lossesHint": "Losses recorded in the inventory (expired, broken, stolen...), valued at current ingredient cost.",
+      "lossesHint": "Losses recorded in the inventory (expired, broken, stolen...), valued at current ingredient cost. An ingredient without a cost carries the Missing cost badge: its value is not counted.",
       "noLosses": "No losses recorded in this period."
     },
     "venueReport": {

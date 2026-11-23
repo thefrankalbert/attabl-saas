@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ResponsiveDataTable } from '@/components/admin/ResponsiveDataTable';
+import { Badge } from '@/components/ui/badge';
 import { sumMinor, toMinorUnits } from '@/lib/utils/money';
 import { INGREDIENT_UNITS } from '@/types/inventory.types';
 import type { LossRow } from '@/hooks/queries/useAdvancedReports';
@@ -32,6 +33,16 @@ function reasonLabel(
   if (!code) return '-';
   const key = `reason_${code}`;
   return tl.has(key) ? tl(key) : code;
+}
+
+/** Ingredient sans cout: sa valeur affichee (0) n'est pas une perte nulle. */
+function CostMissingBadge() {
+  const t = useTranslations('reports.advanced');
+  return (
+    <Badge variant="outline" className="whitespace-nowrap text-xs">
+      {t('costMissing')}
+    </Badge>
+  );
 }
 
 /** Pertes et gaspillage par ingredient, en quantite et en valeur. */
@@ -69,8 +80,9 @@ export function StockLossesCard({ rows, currency, fmt }: StockLossesCardProps) {
         id: 'value',
         header: () => <div className="text-right">{t('colValue')}</div>,
         cell: ({ row }) => (
-          <div className="text-right font-semibold tabular-nums whitespace-nowrap">
-            {fmt(row.original.valueMinor)}
+          <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+            {!row.original.costComplete && <CostMissingBadge />}
+            <span className="font-semibold tabular-nums">{fmt(row.original.valueMinor)}</span>
           </div>
         ),
       },
@@ -107,7 +119,10 @@ export function StockLossesCard({ rows, currency, fmt }: StockLossesCardProps) {
             <div className="rounded-xl border border-app-border/60 p-3 space-y-1">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-semibold text-app-text">{l.name}</span>
-                <span className="font-bold tabular-nums text-app-text">{fmt(l.valueMinor)}</span>
+                <span className="flex items-center gap-2">
+                  {!l.costComplete && <CostMissingBadge />}
+                  <span className="font-bold tabular-nums text-app-text">{fmt(l.valueMinor)}</span>
+                </span>
               </div>
               <p className="text-xs tabular-nums text-app-text-secondary">
                 {qty(l.quantity)} {unitLabel(l.unit)} - {reasonLabel(tl, l.mainReason)} -{' '}

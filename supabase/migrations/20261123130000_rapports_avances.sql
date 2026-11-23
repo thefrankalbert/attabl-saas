@@ -54,7 +54,10 @@ REVOKE EXECUTE ON FUNCTION public.assert_valid_timezone(text) FROM PUBLIC, anon,
 -- 1. Marge par plat.
 -- Une ligne par plat vendu sur la periode. unit_cost = somme(quantite de la
 -- fiche x cout unitaire de l'ingredient), en unites majeures, au cout ACTUEL
--- des ingredients. has_recipe = faux si le plat n'a aucune ligne de fiche:
+-- des ingredients. Ventes d'un plat = prix x quantite, MOINS sa part de la
+-- remise de la commande (orders.discount_amount repartie au prorata des lignes).
+-- Un remboursement partiel n'est pas reparti sur les plats (il ne dit pas
+-- lesquels): l'aide de l'ecran le dit. has_recipe = faux si le plat n'a aucune ligne de fiche:
 -- l'ecran l'affiche comme tel au lieu d'inventer une marge. cost_complete =
 -- faux si un ingredient de la fiche n'a pas de cout (cost_per_unit = 0).
 -- ----------------------------------------------------------------------------
@@ -81,11 +84,13 @@ BEGIN
   PERFORM public.assert_tenant_business_reports(p_tenant_id);
 
   RETURN QUERY
-  WITH ventes AS (
+  WITH lignes AS (
     SELECT oi.menu_item_id AS plat,
-           MAX(oi.item_name)::text AS nom,
-           SUM(oi.quantity)::bigint AS qte,
-           SUM(oi.quantity * oi.price_at_order)::bigint AS ca
+           oi.item_name,
+           oi.quantity,
+           (oi.quantity * oi.price_at_order)::numeric AS brut,
+           COALESCE(o.discount_amount, 0)::numeric AS remise,
+           SUM(oi.quantity * oi.price_at_order) OVER (PARTITION BY oi.order_id)::numeric AS total_lignes
       FROM order_items oi
       JOIN orders o ON o.id = oi.order_id
      WHERE o.tenant_id = p_tenant_id
@@ -93,7 +98,16 @@ BEGIN
        AND o.created_at <= p_end_date
        AND o.status != 'cancelled'
        AND o.payment_status IN ('paid', 'partial')
-     GROUP BY oi.menu_item_id
+  ),
+  ventes AS (
+    SELECT l.plat,
+           MAX(l.item_name)::text AS nom,
+           SUM(l.quantity)::bigint AS qte,
+           -- Un seul arrondi, sur le total du plat.
+           ROUND(SUM(l.brut - CASE WHEN l.total_lignes > 0
+                                   THEN l.remise * l.brut / l.total_lignes ELSE 0 END))::bigint AS ca
+      FROM lignes l
+     GROUP BY l.plat
   ),
   fiches AS (
     SELECT r.menu_item_id AS plat,
@@ -118,6 +132,10 @@ $$;
 -- 2. Heures fortes: chiffre d'affaires et commandes par jour de la semaine
 -- (1 = lundi ... 7 = dimanche, ISO) et par heure (0..23), a l'heure du
 -- restaurant. Seules les cases qui ont des ventes sont renvoyees.
+-- L'argent compte a l'heure de chaque ligne du registre. Une commande payee en
+-- plusieurs fois compte UNE seule fois, a l'heure de son premier paiement
+-- complete sur la periode: la somme des cases egale le nombre de commandes du
+-- resume (get_order_summary).
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.get_sales_heatmap(
   p_tenant_id uuid,
@@ -136,15 +154,39 @@ BEGIN
   PERFORM public.assert_valid_timezone(p_timezone);
 
   RETURN QUERY
-  SELECT EXTRACT(isodow FROM (p.created_at AT TIME ZONE p_timezone))::integer,
-         EXTRACT(hour FROM (p.created_at AT TIME ZONE p_timezone))::integer,
-         SUM(CASE WHEN p.status = 'refunded' THEN -p.amount ELSE p.amount END)::bigint,
-         (COUNT(DISTINCT p.order_id) FILTER (WHERE p.status = 'completed'))::bigint
-    FROM payments p
-   WHERE p.tenant_id = p_tenant_id
-     AND p.created_at >= p_start_date
-     AND p.created_at <= p_end_date
-   GROUP BY 1, 2
+  WITH registre AS (
+    SELECT EXTRACT(isodow FROM (p.created_at AT TIME ZONE p_timezone))::integer AS jour,
+           EXTRACT(hour FROM (p.created_at AT TIME ZONE p_timezone))::integer AS heure,
+           p.order_id,
+           p.status,
+           p.amount,
+           p.created_at,
+           p.id
+      FROM payments p
+     WHERE p.tenant_id = p_tenant_id
+       AND p.created_at >= p_start_date
+       AND p.created_at <= p_end_date
+  ),
+  argent AS (
+    SELECT r.jour, r.heure,
+           SUM(CASE WHEN r.status = 'refunded' THEN -r.amount ELSE r.amount END)::bigint AS ca
+      FROM registre r
+     GROUP BY r.jour, r.heure
+  ),
+  premiers AS (
+    SELECT DISTINCT ON (r.order_id) r.jour, r.heure
+      FROM registre r
+     WHERE r.status = 'completed'
+     ORDER BY r.order_id, r.created_at, r.id
+  ),
+  commandes AS (
+    SELECT pr.jour, pr.heure, COUNT(*)::bigint AS nb
+      FROM premiers pr
+     GROUP BY pr.jour, pr.heure
+  )
+  SELECT a.jour, a.heure, a.ca, COALESCE(c.nb, 0)::bigint
+    FROM argent a
+    LEFT JOIN commandes c ON c.jour = a.jour AND c.heure = a.heure
    ORDER BY 1, 2;
 END;
 $$;
@@ -154,8 +196,11 @@ $$;
 -- p_mode 'week': semaine en cours (depuis lundi 0 h) contre la meme duree de
 -- la semaine precedente. 'month': mois en cours contre la meme duree du mois
 -- precedent (borne a la fin de ce mois). Deux lignes: 'current', 'previous'.
--- Les chiffres viennent de get_order_summary_brut: memes regles que le
--- resume des rapports.
+-- Les chiffres viennent de get_order_summary, la fonction PUBLIQUE du resume
+-- (pas de son corps _brut, qu'une future migration pourrait laisser perime):
+-- memes regles et memes chiffres que le resume des rapports, par construction.
+-- Ses propres verrous (droit reports.view, plan Pro) sont deja couverts par le
+-- verrou Business ci-dessus.
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.get_period_comparison(
   p_tenant_id uuid,
@@ -207,7 +252,7 @@ BEGIN
             ('current'::text, v_cur_start AT TIME ZONE p_timezone, now()),
             ('previous'::text, v_prev_start AT TIME ZONE p_timezone, v_prev_end AT TIME ZONE p_timezone)
          ) AS b(p, s, e)
-   CROSS JOIN LATERAL public.get_order_summary_brut(p_tenant_id, b.s, b.e) s;
+   CROSS JOIN LATERAL public.get_order_summary(p_tenant_id, b.s, b.e) s;
 END;
 $$;
 
@@ -249,7 +294,11 @@ $$;
 -- 5. Pertes et gaspillage: mouvements de stock de type 'loss', par
 -- ingredient. Quantite dans l'unite de base de l'ingredient; valeur au cout
 -- unitaire ACTUEL, en unites majeures (comme get_losses_by_reason).
+-- cost_complete = faux si l'ingredient n'a pas de cout: sa valeur affichee (0)
+-- est alors signalee comme manquante, pas presentee comme une perte nulle.
+-- Le type de retour a change pendant la revue: DROP avant CREATE (rejouable).
 -- ----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS public.get_stock_losses_report(uuid, timestamptz, timestamptz);
 CREATE OR REPLACE FUNCTION public.get_stock_losses_report(
   p_tenant_id uuid,
   p_start_date timestamptz,
@@ -262,7 +311,8 @@ RETURNS TABLE(
   quantity numeric,
   cost_value numeric,
   movement_count bigint,
-  main_reason text
+  main_reason text,
+  cost_complete boolean
 )
 LANGUAGE plpgsql
 STABLE
@@ -290,14 +340,19 @@ BEGIN
          SUM(pe.qte),
          SUM(pe.qte * i.cost_per_unit),
          COUNT(*)::bigint,
-         m.motif::text
+         m.motif::text,
+         (i.cost_per_unit > 0)
     FROM pertes pe
     JOIN ingredients i ON i.id = pe.ing AND i.tenant_id = p_tenant_id
     LEFT JOIN motifs m ON m.ing = pe.ing
-   GROUP BY i.id, i.name, i.unit, m.motif
+   GROUP BY i.id, i.name, i.unit, i.cost_per_unit, m.motif
    ORDER BY 5 DESC, 2 ASC;
 END;
 $$;
+
+-- Les rapports lisent le registre par restaurant et par date (heures fortes,
+-- moyens de paiement, comparaison): index dedie, additif.
+CREATE INDEX IF NOT EXISTS idx_payments_tenant_created ON public.payments (tenant_id, created_at);
 
 REVOKE ALL ON FUNCTION public.get_dish_margins(uuid, timestamptz, timestamptz) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.get_dish_margins(uuid, timestamptz, timestamptz) TO authenticated, service_role;
