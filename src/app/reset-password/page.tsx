@@ -25,7 +25,7 @@ import { logger } from '@/lib/logger';
 import { resetPasswordSchema, type ResetPasswordInput } from '@/lib/validations/auth.schema';
 
 const inputClass =
-  'h-10 rounded-lg border-[var(--border)] bg-[var(--card)] px-3 text-[16px] md:text-[14px] text-[var(--heading)] shadow-none placeholder:text-[var(--muted)] focus-visible:border-[var(--fg)] focus-visible:ring-[3px] focus-visible:ring-[var(--ring)] focus-visible:ring-offset-0';
+  'auth-input placeholder:text-[var(--muted)] focus-visible:border-[var(--fg)] focus-visible:ring-[3px] focus-visible:ring-[var(--ring)] focus-visible:ring-offset-0';
 const labelClass = 'text-[13.5px] font-medium text-[var(--fg)]';
 
 export default function ResetPasswordPage() {
@@ -153,14 +153,9 @@ function ResetPasswordContent() {
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--ok-bg)]">
                 <CheckCircle2 className="h-7 w-7 text-[var(--ok-fg)]" />
               </div>
-              <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-[var(--heading)]">
-                {t('successTitle')}
-              </h1>
+              <h1 className="auth-serif auth-title">{t('successTitle')}</h1>
               <p className="text-sm text-[var(--secondary)]">{t('successBody')}</p>
-              <Button
-                onClick={() => router.push('/login')}
-                className="mt-1 h-10 w-full rounded-lg bg-[var(--fg)] text-sm font-medium text-[var(--primary-fg)] transition-colors hover:bg-[var(--fg-hover)]"
-              >
+              <Button onClick={() => router.push('/login')} className="auth-btn-primary mt-1">
                 {t('backToLoginCta')}
               </Button>
             </div>
@@ -175,13 +170,11 @@ function ResetPasswordContent() {
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--err-bg)]">
                 <AlertTriangle className="h-7 w-7 text-[var(--err-fg)]" />
               </div>
-              <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-[var(--heading)]">
-                {t('expiredTitle')}
-              </h1>
+              <h1 className="auth-serif auth-title">{t('expiredTitle')}</h1>
               <p className="text-sm text-[var(--secondary)]">{t('expiredBody')}</p>
               <Button
                 onClick={() => router.push('/forgot-password')}
-                className="mt-1 h-10 w-full rounded-lg bg-[var(--fg)] text-sm font-medium text-[var(--primary-fg)] transition-colors hover:bg-[var(--fg-hover)]"
+                className="auth-btn-primary mt-1"
               >
                 {t('requestNewLink')}
               </Button>
@@ -189,11 +182,9 @@ function ResetPasswordContent() {
           </AuthCard>
         ) : (
           <>
-            <div className="mb-7 text-center">
-              <h1 className="mb-1.5 text-[22px] font-semibold tracking-[-0.02em] text-[var(--heading)]">
-                {t('title')}
-              </h1>
-              <p className="text-sm text-[var(--secondary)]">{t('subtitle')}</p>
+            <div className="mb-6">
+              <h1 className="auth-serif auth-title mb-2">{t('title')}</h1>
+              <p className="text-[15px] text-[var(--secondary)]">{t('subtitle')}</p>
             </div>
 
             <AuthCard>
@@ -316,7 +307,7 @@ function ResetPasswordContent() {
                   <Button
                     type="submit"
                     disabled={form.formState.isSubmitting}
-                    className="h-10 w-full rounded-lg bg-[var(--fg)] text-sm font-medium text-[var(--primary-fg)] transition-colors hover:bg-[var(--fg-hover)]"
+                    className="auth-btn-primary"
                   >
                     {form.formState.isSubmitting ? (
                       <Loader2 className="h-4 w-4 animate-spin" />

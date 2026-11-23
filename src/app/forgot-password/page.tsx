@@ -23,7 +23,7 @@ import { logger } from '@/lib/logger';
 import { forgotPasswordSchema, type ForgotPasswordInput } from '@/lib/validations/auth.schema';
 
 const inputClass =
-  'h-10 rounded-lg border-[var(--border)] bg-[var(--card)] px-3 text-[16px] md:text-[14px] text-[var(--heading)] shadow-none placeholder:text-[var(--muted)] focus-visible:border-[var(--fg)] focus-visible:ring-[3px] focus-visible:ring-[var(--ring)] focus-visible:ring-offset-0';
+  'auth-input placeholder:text-[var(--muted)] focus-visible:border-[var(--fg)] focus-visible:ring-[3px] focus-visible:ring-[var(--ring)] focus-visible:ring-offset-0';
 const labelClass = 'text-[13.5px] font-medium text-[var(--fg)]';
 
 export default function ForgotPasswordPage() {
@@ -61,11 +61,9 @@ export default function ForgotPasswordPage() {
   return (
     <AuthShell scene="forgot">
       <div className="w-full">
-        <div className="mb-7 text-center">
-          <h1 className="mb-1.5 text-[22px] font-semibold tracking-[-0.02em] text-[var(--heading)]">
-            {t('title')}
-          </h1>
-          <p className="text-sm leading-relaxed text-[var(--secondary)]">{t('subtitle')}</p>
+        <div className="mb-6">
+          <h1 className="auth-serif auth-title mb-2">{t('title')}</h1>
+          <p className="text-[15px] leading-relaxed text-[var(--secondary)]">{t('subtitle')}</p>
         </div>
 
         <AuthCard>
@@ -126,7 +124,7 @@ export default function ForgotPasswordPage() {
                   <Button
                     type="submit"
                     disabled={form.formState.isSubmitting}
-                    className="h-10 w-full rounded-lg bg-[var(--fg)] text-sm font-medium text-[var(--primary-fg)] transition-colors hover:bg-[var(--fg-hover)]"
+                    className="auth-btn-primary"
                   >
                     {form.formState.isSubmitting ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -140,10 +138,7 @@ export default function ForgotPasswordPage() {
         </AuthCard>
 
         <p className="mt-6 text-center text-sm text-[var(--secondary)]">
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-1.5 font-medium text-[var(--fg)] hover:underline"
-          >
+          <Link href="/login" className="auth-link inline-flex items-center gap-1.5">
             <ArrowLeft className="h-[13px] w-[13px]" />
             {t('backToLogin')}
           </Link>
