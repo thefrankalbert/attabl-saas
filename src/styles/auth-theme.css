@@ -35,6 +35,13 @@
   --ok-border: #bbf7d0;
   /* #16a34a donnait 3.1:1 sur --ok-bg: 4.8:1 (axe, WCAG AA). */
   --ok-fg: #15803d;
+  /* Le bloc "supprimer mon compte" de la page d'acces non autorise vient des
+     reglages et ecrit avec les couleurs de l'application, prevues pour son
+     fond: gris a 2.5:1 sur la carte claire, rouge a 2.8:1 sur la carte sombre.
+     Dans le cadre, ces deux couleurs deviennent celles de la carte.
+     Tailwind fige --color-* sur :root: c'est ce nom-la qu'il faut redeclarer. */
+  --color-app-text-muted: var(--muted);
+  --color-status-error: var(--err-fg);
   /* Fond du bouton secondaire (Google, renvoyer). */
   --second: #f1efec;
   /* Tailles des formulaires: resserrees plus bas sur les ecrans courts. */
@@ -139,7 +146,11 @@
   color: var(--fg);
 }
 
+/* 24 px de haut au moins: cible tactile (WCAG 2.5.8), y compris dans une phrase. */
 .auth-shell .auth-link {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
   font-weight: 500;
   color: var(--fg);
   text-decoration: underline;
