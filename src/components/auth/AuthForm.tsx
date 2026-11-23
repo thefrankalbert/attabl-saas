@@ -33,7 +33,7 @@ function getPasswordStrength(password: string): 0 | 1 | 2 | 3 {
 // Hauteurs et marges resserrees sur ecran court (tablette paysage): la regle 12
 // interdit le defilement de l'inscription de 660 a 810 px de haut.
 const inputClass =
-  'h-10 [@media(max-height:819px)]:h-9 rounded-lg border-[var(--border)] bg-[var(--card)] px-3 text-[16px] md:text-[14px] text-[var(--heading)] shadow-none placeholder:text-[var(--muted)] focus-visible:border-[var(--fg)] focus-visible:ring-[3px] focus-visible:ring-[var(--ring)] focus-visible:ring-offset-0';
+  'auth-input placeholder:text-[var(--muted)] focus-visible:border-[var(--fg)] focus-visible:ring-[3px] focus-visible:ring-[var(--ring)] focus-visible:ring-offset-0';
 const labelClass = 'text-[13.5px] font-medium text-[var(--fg)]';
 
 function AuthForm({ mode }: AuthFormProps) {
@@ -88,11 +88,11 @@ function AuthForm({ mode }: AuthFormProps) {
     <div className="w-full">
       {/* Header - marges resserrees sous 820 px de haut: l'inscription
           defilait de 26 px (1024x768) a 134 px (660 de haut), regle 12. */}
-      <div className="mb-7 text-center [@media(min-height:720px)_and_(max-height:819px)]:mb-5 [@media(min-height:680px)_and_(max-height:719px)]:mb-3 [@media(max-height:679px)]:mb-2">
-        <h1 className="mb-1.5 text-[22px] [@media(max-height:719px)]:text-[20px] [@media(max-height:719px)]:leading-tight font-semibold tracking-[-0.02em] text-[var(--heading)]">
+      <div className="mb-6 [@media(min-height:720px)_and_(max-height:819px)]:mb-5 [@media(min-height:680px)_and_(max-height:719px)]:mb-3 [@media(max-height:679px)]:mb-2">
+        <h1 className="auth-serif auth-title mb-2">
           {isLogin ? tForm('loginTitle') : tForm('signupTitle')}
         </h1>
-        <p className="text-sm text-[var(--secondary)]">
+        <p className="text-[15px] text-[var(--secondary)]">
           {isLogin ? tForm('loginSubtitle') : tForm('signupSubtitle')}
         </p>
       </div>
@@ -148,14 +148,14 @@ function AuthForm({ mode }: AuthFormProps) {
           variant="outline"
           onClick={() => handleOAuthLogin('google')}
           disabled={oauthLoading !== null}
-          className="h-10 [@media(max-height:819px)]:h-9 w-full rounded-lg border-[var(--border)] bg-[var(--card)] font-medium text-[var(--fg)] transition-colors hover:bg-[var(--surface-hover)]"
+          className="auth-btn-secondary"
         >
           {oauthLoading === 'google' ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <GoogleIcon />
           )}
-          <span className="text-sm">{tForm('google')}</span>
+          <span>{tForm('google')}</span>
         </Button>
 
         {/* Divider */}
@@ -163,8 +163,8 @@ function AuthForm({ mode }: AuthFormProps) {
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-[var(--border)]" />
           </div>
-          <div className="relative flex justify-center text-[10px] font-medium uppercase tracking-[0.2em]">
-            <span className="bg-[var(--bg)] px-3 text-[var(--muted)]">{tForm('divider')}</span>
+          <div className="relative flex justify-center text-[13px]">
+            <span className="bg-[var(--card)] px-3 text-[var(--muted)]">{tForm('divider')}</span>
           </div>
         </div>
 
@@ -326,7 +326,7 @@ function AuthForm({ mode }: AuthFormProps) {
 
           <Button
             type="submit"
-            className="h-10 [@media(max-height:819px)]:h-9 w-full rounded-lg bg-[var(--fg)] text-sm font-medium text-[var(--primary-fg)] transition-colors hover:bg-[var(--fg-hover)]"
+            className="auth-btn-primary"
             disabled={loading || (!!turnstileSiteKey && !cfToken)}
           >
             {loading ? (
@@ -366,10 +366,7 @@ function AuthForm({ mode }: AuthFormProps) {
       {/* Footer Link */}
       <p className="mt-6 text-center text-sm text-[var(--muted)] [@media(min-height:720px)_and_(max-height:819px)]:mt-4 [@media(min-height:680px)_and_(max-height:719px)]:mt-3 [@media(max-height:679px)]:mt-2">
         {isLogin ? tForm('noAccount') : tForm('hasAccount')}{' '}
-        <Link
-          href={isLogin ? '/signup' : '/login'}
-          className="font-medium text-[var(--fg)] hover:text-[var(--fg-hover)]"
-        >
+        <Link href={isLogin ? '/signup' : '/login'} className="auth-link">
           {isLogin ? tForm('submitSignup') : tForm('submitLogin')}
         </Link>
       </p>
