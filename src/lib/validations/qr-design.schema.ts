@@ -102,4 +102,11 @@ export const assignQrDesignSchema = z.object({
   designId: z.string().uuid().nullable(),
 });
 
+/**
+ * Tables dont on resout le design pour l'impression. Plafond: un restaurant
+ * imprime au plus quelques centaines de tables; sans borne, un tableau de 30 000
+ * chaines lancait des dizaines de milliers de requetes (revue L013, A9).
+ */
+export const resolveDesignsForTablesSchema = z.array(z.string().uuid()).max(500);
+
 export type SaveQrDesignInput = z.infer<typeof saveQrDesignSchema>;

@@ -19,7 +19,16 @@ vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn(async () => ({})) 
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: vi.fn(() => ({})) }));
 vi.mock('@/lib/auth/get-session', async (importActual) => ({
   ...(await importActual<typeof import('@/lib/auth/get-session')>()),
-  getAuthenticatedUserForTenant: vi.fn(async () => ({ supabase: {} })),
+  // L'action lit le statut de paiement avant d'encaisser:
+  // `.from('orders').select().eq().eq().maybeSingle()`. Commande en attente ici.
+  getAuthenticatedUserForTenant: vi.fn(async () => {
+    const chain = {
+      select: () => chain,
+      eq: () => chain,
+      maybeSingle: async () => ({ data: { payment_status: 'pending' }, error: null }),
+    };
+    return { supabase: { from: () => chain } };
+  }),
 }));
 vi.mock('@/lib/billing/assert-tenant-serving', async (importActual) => ({
   ...(await importActual<typeof import('@/lib/billing/assert-tenant-serving')>()),

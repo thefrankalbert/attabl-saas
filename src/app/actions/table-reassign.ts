@@ -20,6 +20,24 @@ const reassignSchema = z.object({
   newTableNumber: z.string().min(1).max(50),
 });
 
+/**
+ * Messages francais par cas connu de la fonction SQL (revue L014, A13). Le
+ * texte brut (anglais, ou message Postgres de contrainte) n'atteint plus
+ * l'employe: il reste dans le journal serveur.
+ */
+const RPC_MESSAGES: Record<string, string> = {
+  'Destination table is now occupied': "Cette table vient d'etre occupee. Choisissez-en une autre.",
+  'Order not found': 'Commande introuvable.',
+  'Only dine-in orders can be reassigned': 'Seule une commande sur place peut changer de table.',
+  'Cannot reassign a cancelled order': 'Une commande annulee ne change pas de table.',
+  'Destination table number is required': 'Choisissez la table de destination.',
+};
+
+function reassignErrorMessage(error: { code?: string; message?: string }): string {
+  if (error.code === '42501') return 'Votre role ne permet pas de deplacer une commande.';
+  return RPC_MESSAGES[error.message ?? ''] ?? 'Le changement de table a echoue. Reessayez.';
+}
+
 export async function actionReassignOrderTable(
   orderId: string,
   newTableNumber: string,
@@ -42,7 +60,7 @@ export async function actionReassignOrderTable(
 
     if (error) {
       logger.error('actionReassignOrderTable: rpc failed', { error, orderId, tenantId });
-      return { success: false, error: error.message };
+      return { success: false, error: reassignErrorMessage(error) };
     }
 
     return { success: true };

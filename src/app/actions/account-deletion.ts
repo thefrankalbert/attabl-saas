@@ -92,7 +92,7 @@ async function run(input: unknown, kind: 'owner' | 'staff'): Promise<AccountDele
 
   // Deconnexion de CET appareil. Un compte efface ne peut deja plus se
   // reconnecter; un proprietaire d'autres restaurants garde ses autres sessions.
-  const { error: signOutError } = await supabase.auth.signOut();
+  const { error: signOutError } = await supabase.auth.signOut({ scope: 'local' });
   if (signOutError) {
     logger.warn('Suppression de compte: deconnexion locale incomplete', {
       userId: user.id,

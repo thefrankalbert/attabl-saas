@@ -40,6 +40,12 @@ interface OrderPaymentPanelProps {
   canComp?: boolean;
   /** Called after a tender/refund/comp so the parent can refresh the order. */
   onUpdate: () => void;
+  /**
+   * Commande annulee: plus d'encaissement, d'offert ni d'ardoise (le serveur
+   * les refuse). Le remboursement reste possible. Sans cela, la fenetre de la
+   * page Commandes gardait le formulaire d'encaissement apres une annulation.
+   */
+  orderCancelled?: boolean;
 }
 
 /**
@@ -54,6 +60,7 @@ export default function OrderPaymentPanel({
   currency = 'XAF',
   canComp = false,
   onUpdate,
+  orderCancelled = false,
 }: OrderPaymentPanelProps) {
   const t = useTranslations('payment');
   // Libelles des moyens de paiement: meme source que les reglages du restaurant.
@@ -125,12 +132,13 @@ export default function OrderPaymentPanel({
   );
   const isComp = summary.paymentStatus === 'comp';
   // A comped order is closed for free: hide the settle/refund inputs.
-  const canSettle = canPay && remaining > 0 && summary.paymentStatus !== 'paid' && !isComp;
+  const canSettle =
+    canPay && remaining > 0 && summary.paymentStatus !== 'paid' && !isComp && !orderCancelled;
   const canRefund = canGiveMoneyBack && summary.net > 0;
   // Comp only applies to a fully-unsettled order (the server rejects partial).
-  const canOfferComp = canComp && summary.paymentStatus === 'pending';
+  const canOfferComp = canComp && summary.paymentStatus === 'pending' && !orderCancelled;
   // Put an unpaid order on a running tab (never once paid or comped).
-  const canAttach = canPay && summary.paymentStatus !== 'paid' && !isComp;
+  const canAttach = canPay && summary.paymentStatus !== 'paid' && !isComp && !orderCancelled;
 
   const handleRecord = async () => {
     // The cashier types a MAJOR-unit amount (e.g. 12.50); the ledger stores minor.
@@ -211,7 +219,8 @@ export default function OrderPaymentPanel({
             <span>{t('netPaid')}</span>
             <span className="tabular-nums font-mono text-app-text">{fmt(summary.net)}</span>
           </div>
-          {remaining > 0 && (
+          {/* Une commande annulee ne doit plus rien: pas de "Reste a payer". */}
+          {remaining > 0 && !orderCancelled && (
             <p className="font-semibold text-[var(--warning)] tabular-nums">
               {t('remaining', { amount: fmt(remaining) })}
             </p>

@@ -44,6 +44,16 @@ describe('actionSendTestAlert', () => {
     expect(res).toEqual({ success: false, error: 'noDevice' });
   });
 
+  it.each([
+    ['envois en echec', { envoyees: 0, expirees: 0, echecs: 2, refuses: 0 }],
+    ['adresse refusee', { envoyees: 0, expirees: 0, echecs: 0, refuses: 1 }],
+    ['push indisponible', { envoyees: 0, expirees: 0, echecs: 0, refuses: 0, indisponible: true }],
+  ])('%s: repond failed, pas noDevice', async (_cas, resultat) => {
+    envoyer.mockResolvedValue(resultat);
+    const res = await actionSendTestAlert();
+    expect(res).toEqual({ success: false, error: 'failed' });
+  });
+
   it('limite les essais repetes, sans rien envoyer', async () => {
     check.mockResolvedValueOnce({ success: false });
     const res = await actionSendTestAlert();
