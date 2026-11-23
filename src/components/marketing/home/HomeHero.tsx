@@ -3,13 +3,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { AnimatedWords } from './AnimatedWords';
-import { HeroVideo } from './HeroVideo';
 import { WHATSAPP_LINK } from './whatsapp';
 
-// Affiche du hero (et de la video quand elle existera).
+// Photo du hero.
 const HERO_POSTER = '/marketing/home/hero-service.webp';
 
-export async function HomeHero({ videoSrc }: { videoSrc?: string }) {
+export async function HomeHero() {
   const t = await getTranslations('marketing.home.hero');
   const titleLines = t('title').split('\n');
 
@@ -21,23 +20,19 @@ export async function HomeHero({ videoSrc }: { videoSrc?: string }) {
     >
       {/* Media, voile et grain se reduisent ensemble quand le hero devient une tuile */}
       <div data-media className="home-hero-media">
-        {videoSrc ? (
-          <HeroVideo src={videoSrc} poster={HERO_POSTER} />
-        ) : (
-          <Image
-            src={HERO_POSTER}
-            alt=""
-            fill
-            priority
-            fetchPriority="high"
-            // object-cover : en portrait, c'est la hauteur qui fixe la largeur utile.
-            // Pas d'unite svh ici : le prechargement la lisait autrement que
-            // l'image et telechargeait une deuxieme taille (117 Ko de trop).
-            sizes="(max-aspect-ratio: 1/1) 200vw, 100vw"
-            className="object-cover"
-            data-hero-image
-          />
-        )}
+        <Image
+          src={HERO_POSTER}
+          alt=""
+          fill
+          priority
+          fetchPriority="high"
+          // object-cover : en portrait, c'est la hauteur qui fixe la largeur utile.
+          // Pas d'unite svh ici : le prechargement la lisait autrement que
+          // l'image et telechargeait une deuxieme taille (117 Ko de trop).
+          sizes="(max-aspect-ratio: 1/1) 200vw, 100vw"
+          className="object-cover"
+          data-hero-image
+        />
         {/* Voile de lisibilite (fonctionnel, pas decoratif) */}
         <div data-hero-voile className="home-hero-voile" aria-hidden="true" />
         <div className="home-grain" aria-hidden="true" />
