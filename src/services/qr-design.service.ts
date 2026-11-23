@@ -217,9 +217,11 @@ export function createQrDesignService(supabase: SupabaseClient): QrDesignService
       // soit le nombre de tables, au lieu de 3 a 5 requetes par table.
       // Ordre: table -> zone -> defaut du restaurant (deja dans `fallback`).
       const fallback = await tenantDefaultConfig(tenantId);
-      const result: Record<string, QRDesignConfig> = {};
-      for (const id of tableIds) result[id] = fallback;
-      if (tableIds.length === 0) return result;
+      // Une Map, pas un objet indexe par une valeur fournie par l'appelant: un
+      // identifiant comme "__proto__" ne peut pas toucher le prototype.
+      const resolved = new Map<string, QRDesignConfig>();
+      for (const id of tableIds) resolved.set(id, fallback);
+      if (tableIds.length === 0) return Object.fromEntries(resolved);
 
       const { data: tables, error: tablesErr } = await supabase
         .from('tables')
@@ -258,7 +260,7 @@ export function createQrDesignService(supabase: SupabaseClient): QrDesignService
       }
 
       const designIds = [...new Set(designOf.values())];
-      if (designIds.length === 0) return result;
+      if (designIds.length === 0) return Object.fromEntries(resolved);
       const { data: designs, error: designsErr } = await supabase
         .from('qr_designs')
         .select('id, config')
@@ -270,9 +272,9 @@ export function createQrDesignService(supabase: SupabaseClient): QrDesignService
         configOf.set(d.id, parseConfig(d.config, fallback));
       }
       for (const [tableId, designId] of designOf) {
-        result[tableId] = configOf.get(designId) ?? fallback;
+        resolved.set(tableId, configOf.get(designId) ?? fallback);
       }
-      return result;
+      return Object.fromEntries(resolved);
     },
   };
 }

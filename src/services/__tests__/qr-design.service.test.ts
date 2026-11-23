@@ -206,6 +206,20 @@ describe('createQrDesignService.saveDesign: le defaut n est pas efface sur un re
 });
 
 describe('createQrDesignService.resolveDesignsForTables', () => {
+  it('un identifiant "__proto__" ne touche pas le prototype des objets', async () => {
+    const { supabase } = makeSupabase([
+      { data: { primary_color: '#CCFF00', secondary_color: '#1A1A1A' }, error: null }, // tenant colors
+      { data: null, error: null }, // no tenant default
+      { data: [], error: null }, // aucune table ne correspond
+    ]);
+    const service = createQrDesignService(supabase);
+    const resolved = await service.resolveDesignsForTables('tenant-A', ['__proto__']);
+    // La cle est une propriete PROPRE du resultat, pas une ecriture sur le prototype.
+    expect(Object.prototype.hasOwnProperty.call(resolved, '__proto__')).toBe(true);
+    expect(Object.getPrototypeOf(resolved)).toBe(Object.prototype);
+    expect(({} as Record<string, unknown>).qrFgColor).toBeUndefined();
+  });
+
   it('uses the table-level design when set', async () => {
     const tableConfig = { ...config, qrFgColor: '#111111' };
     const { supabase } = makeSupabase([
