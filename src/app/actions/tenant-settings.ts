@@ -10,6 +10,7 @@ import { detailsForType } from '@/lib/validations/establishment-details.schema';
 import { createTenantService } from '@/services/tenant.service';
 import { getStorageCleanup } from '@/services/storage-cleanup.service';
 import { createAuditService } from '@/services/audit.service';
+import { ServiceError } from '@/services/errors';
 import { getTranslations } from 'next-intl/server';
 
 /**
@@ -163,6 +164,12 @@ export async function actionUpdateTenantSettings(formData: FormData) {
   } catch (error) {
     if (error instanceof AuthError) {
       return { success: false, error: error.message };
+    }
+    // La base a refuse l'ecriture (aucune ligne touchee, tenant.service.ts):
+    // un refus de droit attendu, pas une panne. Message clair, journal en warn.
+    if (error instanceof ServiceError && error.code === 'UNAUTHORIZED') {
+      logger.warn('Tenant settings update refused by the database', { reason: error.message });
+      return { success: false, error: t('settingsForbidden') };
     }
 
     logger.error('Error updating tenant settings', error);

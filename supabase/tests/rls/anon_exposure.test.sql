@@ -102,25 +102,25 @@ select throws_ok(
 reset role;
 
 -- Assertions structurelles, hors role.
--- Une seule exception attendue: l INSERT newsletter (formulaire public du site
--- vitrine). Toute AUTRE ecriture accordee a anon doit faire echouer ce test.
+-- Plus AUCUNE exception depuis 20261124110800 (audit B108): l'action serveur
+-- d'inscription a la newsletter a ete supprimee (PR #385), et l'INSERT anonyme
+-- direct contournait la limite de debit. Toute ecriture accordee a anon doit
+-- faire echouer ce test.
 select is(
   (select count(*)::int
    from information_schema.role_table_grants
    where grantee = 'anon' and table_schema = 'public'
-     and privilege_type in ('INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER')
-     and not (table_name = 'newsletter_subscriber' and privilege_type = 'INSERT')),
+     and privilege_type in ('INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER')),
   0,
-  'DB-12: aucun privilege d ecriture pour anon, hors l INSERT newsletter'
+  'DB-12: aucun privilege d ecriture pour anon, newsletter comprise'
 );
 
 select ok(
-  exists (
-    select 1 from information_schema.role_table_grants
-    where grantee = 'anon' and table_schema = 'public'
-      and table_name = 'newsletter_subscriber' and privilege_type = 'INSERT'
+  not exists (
+    select 1 from pg_policy
+    where polrelid = 'public.newsletter_subscriber'::regclass and polcmd = 'a'
   ),
-  'DB-12 non-regression: le formulaire newsletter du site vitrine peut toujours inserer'
+  'B108: plus aucune politique d insertion sur newsletter_subscriber'
 );
 
 select is(

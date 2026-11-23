@@ -70,7 +70,9 @@ jobs:
           # Le cluster cree par le paquet peut etre sur un autre port si 5432
           # etait pris. On force 5433 pour ne dependre de rien.
           sudo pg_dropcluster --stop 17 main || true
-          sudo pg_createcluster 17 main -p 5433 -- --auth=trust --locale=C
+          # --encoding=UTF8: la production est en UTF8. Avec --locale=C seul, le
+          # cluster nait en SQL_ASCII et refuse tout echappement Unicode.
+          sudo pg_createcluster 17 main -p 5433 -- --auth=trust --locale=C --encoding=UTF8
           sudo pg_ctlcluster 17 main start
           sudo -u postgres /usr/lib/postgresql/17/bin/createdb -p 5433 attabl_pgtap
           sudo -u postgres /usr/lib/postgresql/17/bin/psql -p 5433 -c "alter user postgres password 'postgres'"

@@ -127,6 +127,9 @@ const SQL_REJECTIONS: Record<string, PaymentRejection> = {
   rejected_plan_change: 'PLAN_CHANGE_NOT_ALLOWED',
   rejected_expired: 'EXPIRED_UNDERPAID',
   rejected_blocked: 'TENANT_BLOCKED',
+  // Course de deux transactions sur la meme tentative: la ligne lue `pending`
+  // a ete reglee entre-temps par l'autre (revue L142, B148).
+  already_settled_by_other_transaction: 'ALREADY_SETTLED_BY_OTHER_TRANSACTION',
 };
 
 interface ApplyResult {

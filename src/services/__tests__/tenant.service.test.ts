@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createTenantService } from '../tenant.service';
 
-function mockSupabase() {
-  const eq = vi.fn().mockResolvedValue({ error: null });
+function mockSupabase(count: number | null = 1) {
+  const eq = vi.fn().mockResolvedValue({ error: null, count });
   const update = vi.fn().mockReturnValue({ eq });
   const from = vi.fn().mockReturnValue({ update });
   return { client: { from } as unknown as SupabaseClient, update, eq, from };
@@ -78,6 +78,22 @@ describe('tenant.service updateSettings (partial PATCH)', () => {
 
     const payload = update.mock.calls[0]![0] as Record<string, unknown>;
     expect(payload).not.toHaveProperty('idle_timeout_minutes');
+  });
+
+  it('asks for an exact row count on the update', async () => {
+    const { client, update } = mockSupabase();
+
+    await createTenantService(client).updateSettings('tenant-1', { ...base });
+
+    expect(update.mock.calls[0]![1]).toEqual({ count: 'exact' });
+  });
+
+  it('fails honestly when the update matched no row (refused by RLS, B103)', async () => {
+    const { client } = mockSupabase(0);
+
+    await expect(
+      createTenantService(client).updateSettings('tenant-1', { ...base, taxRate: 0 }),
+    ).rejects.toMatchObject({ name: 'ServiceError', code: 'UNAUTHORIZED' });
   });
 
   it('rejects an invalid hex color before any write', async () => {
