@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseVenueRows, parseVenueTopItems, venueKey } from '../useVenueReport';
+import { comparableRows, parseVenueRows, parseVenueTopItems, venueKey } from '../useVenueReport';
 
 describe('useVenueReport - normalisation', () => {
   it('convertit les BIGINT (chaines ou nombres) et garde la ligne sans espace', () => {
@@ -26,5 +26,22 @@ describe('useVenueReport - normalisation', () => {
         { venue_id: 'v1', item_id: 'i1', item_name: 'Jus', quantity_sold: '6', revenue: '6000' },
       ]),
     ).toEqual([{ venueId: 'v1', itemId: 'i1', name: 'Jus', quantity: 6, revenue: 6000 }]);
+  });
+});
+
+describe('comparableRows', () => {
+  const espace = { venueId: 'v1', venueName: 'Salle', revenue: 5000, orders: 2, avgBasket: 2500 };
+  const sansEspace = { venueId: null, venueName: null, revenue: 3000, orders: 1, avgBasket: 3000 };
+
+  it('un espace + des ventes a emporter: deux lignes a comparer', () => {
+    expect(comparableRows([espace, sansEspace])).toBe(2);
+  });
+
+  it('temoin: un espace seul ne se compare a rien', () => {
+    expect(comparableRows([espace])).toBe(1);
+  });
+
+  it('une ligne sans espace vide ne compte pas', () => {
+    expect(comparableRows([espace, { ...sansEspace, revenue: 0, orders: 0 }])).toBe(1);
   });
 });

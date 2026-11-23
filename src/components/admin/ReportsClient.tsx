@@ -166,6 +166,7 @@ export default function ReportsClient({
               dailyStats={dailyStats}
               periodDisplayLabel={periodDisplayLabel}
               fmt={fmt}
+              currency={currency}
             />
             <TopProductsCard topItems={topItems} fmt={fmt} />
           </div>

@@ -19,6 +19,15 @@ export interface VenueRow {
 /** Cle stable d'une ligne (la ligne "sans espace" a venueId null). */
 export const venueKey = (row: { venueId: string | null }): string => row.venueId ?? '__none__';
 
+/**
+ * Lignes qui se comparent: chaque espace, plus la ligne "Sans espace" quand
+ * elle a du chiffre ou des commandes (un espace + des ventes a emporter =
+ * deux lignes a comparer).
+ */
+export function comparableRows(rows: VenueRow[]): number {
+  return rows.filter((r) => r.venueId !== null || r.revenue !== 0 || r.orders > 0).length;
+}
+
 export interface VenueTopItem {
   venueId: string | null;
   itemId: string;

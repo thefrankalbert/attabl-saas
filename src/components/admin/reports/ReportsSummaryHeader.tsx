@@ -119,7 +119,7 @@ export function ReportsSummaryHeader({
       <PeriodPills period={period} setPeriod={setPeriod} />
 
       {/* -- KPI Cards -- */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
         {kpis.map(({ key, Icon, accent, label, value, trend, note }) => (
           <div
             key={key}

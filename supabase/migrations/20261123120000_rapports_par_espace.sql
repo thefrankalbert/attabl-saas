@@ -31,6 +31,13 @@
 --    get_staff_stock_report n'est pas concerne: il sert l'historique de stock
 --    (droit inventory.view) et garde son enveloppe actuelle.
 --
+-- 3. CHIFFRE PAR JOUR A L'HEURE DU RESTAURANT. get_daily_revenue groupait par
+--    DATE(created_at), c'est-a-dire par jour UTC: a Douala (UTC+1), les ventes
+--    de 0 h a 1 h tombaient sur la barre de la veille (contre-audit). Son corps
+--    recoit desormais p_timezone (fuseau du restaurant, resolveTenantTimezone
+--    cote application; 'UTC' par defaut, comme avant, pour un appel sans fuseau).
+--    Le type de retour ne change pas.
+--
 -- MEMES REGLES QUE LES RAPPORTS EXISTANTS (migration 20261112140000):
 -- - chiffre d'affaires et nombre de commandes: registre payments, a la date de
 --   chaque ligne ('completed' ajoute, 'refunded' retire), pourboire compris;
@@ -128,6 +135,59 @@ BEGIN
 END;
 $$;
 REVOKE EXECUTE ON FUNCTION public.assert_tenant_reports_ventes(uuid) FROM PUBLIC, anon, authenticated;
+
+-- Fuseau horaire fourni par l'application: refuse s'il n'est pas connu de
+-- PostgreSQL, plutot que de produire des jours ou des heures faux. Conversion
+-- d'essai plutot que pg_timezone_names, qui relit les fichiers de fuseaux a
+-- chaque appel (27 ms mesures, contre moins de 1 ms).
+CREATE OR REPLACE FUNCTION public.assert_valid_timezone(p_timezone text)
+RETURNS void
+LANGUAGE plpgsql
+STABLE
+SET search_path = public
+AS $$
+BEGIN
+  IF p_timezone IS NULL THEN
+    RAISE EXCEPTION 'Unknown time zone: %', p_timezone USING ERRCODE = '22023';
+  END IF;
+  PERFORM now() AT TIME ZONE p_timezone;
+EXCEPTION
+  WHEN invalid_parameter_value THEN
+    RAISE EXCEPTION 'Unknown time zone: %', p_timezone USING ERRCODE = '22023';
+END;
+$$;
+REVOKE EXECUTE ON FUNCTION public.assert_valid_timezone(text) FROM PUBLIC, anon, authenticated;
+
+-- Corps du chiffre par jour, avec le fuseau. L'ancienne signature (3
+-- arguments) et son enveloppe disparaissent: l'enveloppe est recreee juste en
+-- dessous a partir de la nouvelle signature stockee. Memes regles que
+-- 20261112140000 (registre, 'refunded' retire), seul le jour change.
+DROP FUNCTION IF EXISTS public.get_daily_revenue(uuid, timestamptz, timestamptz);
+DROP FUNCTION IF EXISTS public.get_daily_revenue_brut(uuid, timestamptz, timestamptz);
+CREATE OR REPLACE FUNCTION public.get_daily_revenue_brut(
+  p_tenant_id uuid,
+  p_start_date timestamptz,
+  p_end_date timestamptz,
+  p_timezone text DEFAULT 'UTC'
+)
+RETURNS TABLE(day date, revenue numeric, order_count bigint)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+BEGIN
+  PERFORM public.assert_tenant_member(p_tenant_id);
+  PERFORM public.assert_valid_timezone(p_timezone);
+  RETURN QUERY
+  SELECT (p.created_at AT TIME ZONE p_timezone)::date AS day,
+    COALESCE(SUM(CASE WHEN p.status = 'refunded' THEN -p.amount ELSE p.amount END), 0)::NUMERIC AS revenue,
+    COUNT(DISTINCT p.order_id) FILTER (WHERE p.status = 'completed')::BIGINT AS order_count
+  FROM payments p
+  WHERE p.tenant_id = p_tenant_id AND p.created_at >= p_start_date AND p.created_at <= p_end_date
+  GROUP BY 1 ORDER BY 1 ASC;
+END;
+$function$;
+REVOKE EXECUTE ON FUNCTION public.get_daily_revenue_brut(uuid, timestamptz, timestamptz, text) FROM PUBLIC, anon, authenticated;
 
 -- Les enveloppes des cinq fonctions de ventes sont recreees a partir de la
 -- signature STOCKEE de leur corps <nom>_brut (20261121120000): rien n'est

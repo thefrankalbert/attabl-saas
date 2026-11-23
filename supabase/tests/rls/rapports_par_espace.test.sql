@@ -25,7 +25,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(36);
+select plan(39);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 select ('e1000000-0000-4000-8000-00000000000' || n)::uuid, '00000000-0000-0000-0000-000000000000',
@@ -105,7 +105,10 @@ values
   ('e9000000-0000-4000-8000-000000000006', 'e2000000-0000-4000-8000-000000000001',
    'e4000000-0000-4000-8000-000000000009', null, 'ESP-X1', 500, 500, 'served', 'paid', now()),
   ('e9000000-0000-4000-8000-000000000007', 'e2000000-0000-4000-8000-000000000001', null,
-   'e6000000-0000-4000-8000-000000000002', 'ESP-L1', 700, 700, 'served', 'paid', now());
+   'e6000000-0000-4000-8000-000000000002', 'ESP-L1', 700, 700, 'served', 'paid', now()),
+  -- D1: payee le 10 janvier a 23 h 30 UTC, soit le 11 a 0 h 30 a Douala.
+  ('e9000000-0000-4000-8000-000000000008', 'e2000000-0000-4000-8000-000000000001', null, null,
+   'ESP-D1', 900, 900, 'served', 'paid', '2026-01-10 23:30+00');
 -- L1 simule une commande ANTERIEURE a la migration (espace vide): les rapports
 -- la rangent par la zone de sa table (Terrasse).
 update public.orders set venue_id = null where id = 'e9000000-0000-4000-8000-000000000007';
@@ -139,6 +142,8 @@ values
   ('e2000000-0000-4000-8000-000000000001', 'e9000000-0000-4000-8000-000000000005', 1000, 'cash', 'completed'),
   ('e2000000-0000-4000-8000-000000000001', 'e9000000-0000-4000-8000-000000000006', 500, 'cash', 'completed'),
   ('e2000000-0000-4000-8000-000000000001', 'e9000000-0000-4000-8000-000000000007', 700, 'cash', 'completed');
+insert into public.payments (tenant_id, order_id, amount, method, status, created_at)
+values ('e2000000-0000-4000-8000-000000000001', 'e9000000-0000-4000-8000-000000000008', 900, 'cash', 'completed', '2026-01-10 23:30+00');
 
 -- Declencheur: l'espace de la table est inscrit sur la commande.
 select is((select venue_id from public.orders where id = 'e9000000-0000-4000-8000-000000000001'),
@@ -179,6 +184,17 @@ select is((select sum(revenue)::numeric from r), (select total_revenue from s),
   'somme des espaces = chiffre du restaurant (get_order_summary)');
 select is((select sum(order_count)::bigint from r), (select total_orders from s),
   'somme des commandes = commandes du restaurant');
+
+-- Chiffre par jour au calendrier du restaurant.
+select is((select day from public.get_daily_revenue('e2000000-0000-4000-8000-000000000001',
+             '2026-01-10 00:00+00', '2026-01-12 00:00+00', 'Africa/Douala')),
+  '2026-01-11'::date, 'chiffre par jour: 0 h 30 a Douala compte le 11 (jour du restaurant)');
+select is((select day from public.get_daily_revenue('e2000000-0000-4000-8000-000000000001',
+             '2026-01-10 00:00+00', '2026-01-12 00:00+00')),
+  '2026-01-10'::date, 'temoin: sans fuseau (UTC, ancien calcul), la vente tombait la veille');
+select throws_ok(
+  $$select * from public.get_daily_revenue('e2000000-0000-4000-8000-000000000001', now() - interval '1 day', now(), 'Mars/Olympus')$$,
+  '22023', null, 'chiffre par jour: fuseau inconnu refuse');
 
 select is(
   (select item_name from public.get_venue_top_items('e2000000-0000-4000-8000-000000000001',
