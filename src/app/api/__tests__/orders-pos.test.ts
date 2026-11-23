@@ -700,4 +700,45 @@ describe('POST /api/orders/pos - coupure du restaurant', () => {
     expect(status).toBe(404);
     expect(mockCreateOrderWithItems).not.toHaveBeenCalled();
   });
+
+  // Constat E (audit pourboires 2026-11-20). La garde de plan est neutralisee
+  // dans ce fichier (simulee ailleurs); ici on branche la VRAIE garde pour
+  // verifier, au niveau de la route, que Starter refuse un pourboire.
+  describe('pourboire a la caisse selon le plan', () => {
+    afterEach(async () => {
+      if (mockTenantRow.data) mockTenantRow.data.subscription_plan = 'business';
+      // vi.clearAllMocks() garde l'implementation: sans ce reset, la vraie
+      // garde resterait branchee pour tout test ajoute apres ce bloc.
+      const mod = await import('@/services/plan-enforcement.service');
+      vi.mocked(mod.assertOrderFeaturesAllowed).mockReset();
+    });
+
+    async function withRealPlanGate() {
+      const actual = await vi.importActual<typeof import('@/services/plan-enforcement.service')>(
+        '@/services/plan-enforcement.service',
+      );
+      const mod = await import('@/services/plan-enforcement.service');
+      vi.mocked(mod.assertOrderFeaturesAllowed).mockImplementation(
+        actual.assertOrderFeaturesAllowed,
+      );
+    }
+
+    it('Starter: un ticket avec pourboire est refuse (401) et rien n est cree', async () => {
+      await withRealPlanGate();
+      if (mockTenantRow.data) mockTenantRow.data.subscription_plan = 'starter';
+      const { POST } = await import('@/app/api/orders/pos/route');
+      const res = await POST(createMockRequest({ ...validPosBody(), tip_amount: 500 }));
+      expect(res.status).toBe(401);
+      expect((await res.json()).error).toBe('Les pourboires ne sont pas inclus dans votre plan.');
+      expect(mockCreateOrderWithItems).not.toHaveBeenCalled();
+    });
+
+    it('Pro: le meme ticket avec pourboire passe', async () => {
+      await withRealPlanGate();
+      if (mockTenantRow.data) mockTenantRow.data.subscription_plan = 'pro';
+      const { POST } = await import('@/app/api/orders/pos/route');
+      const res = await POST(createMockRequest({ ...validPosBody(), tip_amount: 500 }));
+      expect(res.status).toBe(200);
+    });
+  });
 });
