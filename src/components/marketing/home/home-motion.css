@@ -1,0 +1,435 @@
+/*
+ * Mouvement de la page d'accueil (maquette du studio : mouvement.css).
+ * Tout est prefixe home-. Hors de la condition de la scene (mouvement reduit,
+ * ecran trop bas, sans JS) la page est fixe et tout est visible.
+ */
+
+.home-hero-media {
+  position: absolute;
+  inset: 0;
+  z-index: -10;
+  overflow: hidden;
+  background: var(--color-nuit);
+}
+.home-grain {
+  position: absolute;
+  inset: 0;
+  background: url('/marketing/home/grain-256.webp') repeat;
+  background-size: 256px;
+  mix-blend-mode: overlay;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/*
+ * Fondu releve sur squareup.com le 2026-11-22 : media assombri de 25 %, vignette
+ * circulaire, ombre douce sous les textes. Le degrade vertical s'y ajoute sous
+ * le texte, parce que notre photo a un ecran blanc juste derriere le titre.
+ */
+.home-hero-voile {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      180deg,
+      rgb(0 0 0 / 0) 4%,
+      rgb(0 0 0 / 0.3) 28%,
+      rgb(0 0 0 / 0.5) 56%,
+      rgb(0 0 0 / 0.6) 100%
+    ),
+    radial-gradient(circle, rgb(0 0 0 / 0) 20%, rgb(0 0 0 / 0.6) 100%), rgb(0 0 0 / 0.25);
+}
+@media (max-width: 767.98px) {
+  .home-hero-voile {
+    background:
+      linear-gradient(
+        180deg,
+        rgb(0 0 0 / 0) 2%,
+        rgb(0 0 0 / 0.4) 22%,
+        rgb(0 0 0 / 0.56) 42%,
+        rgb(0 0 0 / 0.62) 100%
+      ),
+      rgb(0 0 0 / 0.25);
+  }
+}
+[data-hero] h1,
+[data-hero] [data-sort='sous'] {
+  text-shadow: 0 0 10px rgb(0 0 0 / 0.16);
+}
+
+/*
+ * En-tete pose sur le hero : transparent, textes blancs, fondu noir derriere.
+ * Plein des que la page defile ou qu'un menu s'ouvre. Sans JS il reste plein,
+ * au-dessus du hero.
+ */
+@media (scripting: enabled) {
+  .home-piste {
+    margin-top: -65px; /* en-tete : 64 px et son filet */
+  }
+  header[data-nav-root]::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: -1;
+    height: 104px;
+    background: linear-gradient(
+      180deg,
+      rgb(0 0 0 / 0.78) 0%,
+      rgb(0 0 0 / 0.56) 48%,
+      rgb(0 0 0 / 0) 100%
+    );
+    opacity: 0;
+    transition: opacity 0.15s linear;
+    pointer-events: none;
+  }
+  /*
+   * Fond presque transparent, pas transparent : Safari iOS teinte sa barre
+   * d'etat d'apres le fond de l'en-tete colle en haut. Transparent, il gardait
+   * le blanc de l'en-tete plein au retour sur le hero (mesure au simulateur).
+   */
+  header[data-nav-root][data-sur-hero] {
+    border-color: transparent;
+    background-color: rgb(11 11 11 / 0.02);
+    color: #fff;
+  }
+  header[data-nav-root][data-sur-hero]::before {
+    opacity: 1;
+  }
+  /*
+   * Meme raison pour le fond de la page, que Safari iOS reprend sous sa barre
+   * d'adresse : sombre tant que le hero est a l'ecran. Le contenu garde son
+   * propre fond.
+   */
+  html:has(header[data-sur-hero]),
+  html:has(header[data-sur-hero]) body {
+    background-color: var(--color-nuit);
+  }
+  /* Les panneaux, blancs pendant leur fermeture, gardent leurs couleurs. */
+  header[data-sur-hero] :is(a, button):not([data-menu-panel] *) {
+    color: #fff;
+    border-color: rgb(255 255 255 / 0.4);
+  }
+  header[data-sur-hero] :is(a, button):not([data-menu-panel] *, [data-nav-cta]):hover {
+    background-color: rgb(255 255 255 / 0.14);
+  }
+  header[data-sur-hero] :is(a, button):not([data-menu-panel] *):focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+  header[data-sur-hero] a[href='/']:hover {
+    background-color: transparent;
+  }
+  header[data-sur-hero] [data-nav-cta]:not([data-menu-panel] *),
+  header[data-sur-hero] [data-brand-mark] {
+    background-color: #fff;
+    color: var(--color-encre);
+  }
+}
+
+/* Champ de tuiles, version fixe */
+.home-champ {
+  padding: 80px 20px;
+}
+.home-champ-tuiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 12px;
+  max-width: 1100px;
+  margin: 40px auto 0;
+  padding: 0;
+  list-style: none;
+}
+.home-tuile {
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 20px;
+}
+.home-tuile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Mot a mot */
+.home-mot {
+  display: inline-block;
+  vertical-align: top;
+}
+.home-mot-masque {
+  display: inline-block;
+  vertical-align: top;
+  overflow: hidden;
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+}
+.home-mot-masque > .home-mot {
+  will-change: transform;
+}
+
+/* Scene : le media du hero devient une tuile. Meme condition que SCENE_QUERY. */
+@media (prefers-reduced-motion: no-preference) and (min-height: 644px) and (scripting: enabled) {
+  /*
+   * Deux hauteurs. svh (barre d'adresse mobile deployee) cale le texte, les
+   * tuiles et les calculs : elle ne bouge jamais. lvh (barre repliee) est la
+   * hauteur de la scene et du media, pour qu'aucune bande claire n'apparaisse
+   * sous le hero quand la barre se replie. Sur ordinateur les deux sont egales.
+   */
+  .home-piste {
+    height: calc(100lvh + (100svh - 64px) * 0.62);
+  }
+  .home-scene {
+    position: sticky;
+    top: 0;
+    height: 100lvh;
+    overflow: hidden;
+  }
+  .home-scene > section {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 100svh;
+    margin: 0;
+  }
+  .home-scene > [data-hero] {
+    z-index: 2;
+    min-height: 0;
+    max-height: none;
+    overflow: visible; /* le media depasse jusqu'a lvh, la scene le decoupe */
+    background: transparent;
+  }
+  .home-hero-media {
+    bottom: calc(100svh - 100lvh);
+    will-change: transform, clip-path;
+    transform-origin: 50% 50%;
+  }
+  /* Le hero passe sous l'en-tete ; les tuiles restent dans la zone visible. */
+  .home-scene > .home-champ {
+    top: 64px;
+    height: calc(100svh - 64px);
+    z-index: 1;
+    padding: 0;
+  }
+  .home-champ-tuiles {
+    --t: min(9.6%, (100svh - 64px) * 0.15, 170px);
+    position: absolute;
+    inset: 0;
+    display: block;
+    max-width: none;
+    margin: 0;
+  }
+  .home-tuile {
+    position: absolute;
+    top: calc(var(--y) * 100%);
+    left: calc(var(--x) * 100%);
+    width: var(--t);
+    margin: calc(var(--t) / -2) 0 0 calc(var(--t) / -2);
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+  .home-champ h2 {
+    position: absolute;
+    top: 52.5%;
+    left: 50%;
+    translate: -50% -50%;
+    width: min(90%, 1180px);
+    max-width: none;
+    font-size: clamp(28px, 3.5vw, 52px);
+  }
+
+  @media (max-width: 767.98px) {
+    .home-champ-tuiles {
+      --t: min(80px, (100svh - 64px) * 0.115);
+    }
+    .home-tuile {
+      top: calc(var(--y-mobile) * 100%);
+      left: calc(var(--x-mobile) * 100%);
+    }
+  }
+
+  @media (max-width: 639.98px) {
+    [data-hero] h1 {
+      font-size: 44px;
+    }
+    [data-hero] [data-sort='sous'] {
+      margin-top: 16px;
+      font-size: 16px;
+    }
+    [data-hero] [data-sort='cta'] {
+      margin-top: 24px;
+    }
+    [data-hero] [data-sort='preuve'] {
+      margin-top: 24px;
+      padding-top: 16px;
+    }
+  }
+}
+
+/* Photo qui se devoile : le cadre s'ouvre, la photo recule de 1,2 a 1 */
+.home-media-revele {
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+.home-media-revele > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+@media (max-width: 767.98px) {
+  .home-media-revele {
+    aspect-ratio: 1;
+  }
+}
+/* Tablette : deux colonnes, la photo remplit la hauteur donnee par le texte. */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .home-media-revele > img {
+    position: absolute;
+    inset: 0;
+  }
+}
+
+/* Pour qui : panneaux toujours sombres */
+.home-panneaux {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.home-panneau {
+  position: relative;
+  overflow: hidden;
+  min-height: 380px;
+  border-radius: 18px;
+  color: #fff;
+  background: var(--color-nuit);
+}
+.home-panneau > img {
+  object-fit: cover;
+}
+.home-panneau:nth-child(1) > img {
+  object-position: 68% 50%;
+}
+.home-panneau:nth-child(2) > img {
+  object-position: 72% 50%;
+}
+.home-panneau:nth-child(3) > img {
+  object-position: 86% 50%;
+}
+.home-panneau-voile {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.82) 0,
+    rgba(0, 0, 0, 0.35) 45%,
+    rgba(0, 0, 0, 0) 72%
+  );
+}
+.home-panneau-texte {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 28px;
+}
+/* Remise a zero du Button shadcn. scale: none compte : une echelle, meme au
+   clic, ferait du bouton le repere de son ::after et le clic serait perdu. */
+.home-panneau-bouton,
+.home-panneau-bouton:hover,
+.home-panneau-bouton:active {
+  display: inline-block;
+  height: auto;
+  min-height: 32px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  white-space: normal;
+  cursor: pointer;
+  scale: none;
+}
+.home-panneau-bouton:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 4px;
+  box-shadow: none;
+}
+.home-panneau-corps {
+  max-width: 30rem;
+}
+@media (min-width: 1024px) {
+  .home-panneaux {
+    flex-direction: row;
+    height: 540px;
+    gap: 20px;
+  }
+  .home-panneau {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 0;
+    transition: flex-grow 0.4s cubic-bezier(0, 0, 0.2, 1);
+  }
+  .home-panneau[data-actif] {
+    flex-grow: 3.28;
+  }
+  .home-panneau-bouton::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 540px;
+  }
+  .home-panneau > img {
+    transition: filter 0.4s;
+  }
+  .home-panneau:not([data-actif]) > img {
+    filter: brightness(0.5);
+  }
+  .home-panneau-corps {
+    width: 420px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .home-panneau[data-actif] .home-panneau-corps {
+    opacity: 1;
+    transition: opacity 0.4s cubic-bezier(0, 0, 0.2, 1) 0.3s;
+  }
+}
+/* Sans JS ou en mouvement reduit : les trois panneaux sont lisibles, sans transition */
+@media (min-width: 1024px) and (prefers-reduced-motion: reduce),
+  (min-width: 1024px) and (scripting: none) {
+  .home-panneau,
+  .home-panneau[data-actif] {
+    flex-grow: 1;
+    transition: none;
+  }
+  .home-panneau > img,
+  .home-panneau:not([data-actif]) > img {
+    filter: none;
+    transition: none;
+  }
+  .home-panneau-corps,
+  .home-panneau[data-actif] .home-panneau-corps {
+    width: auto;
+    opacity: 1;
+    transition: none;
+  }
+}
+
+/* Trainee du CTA final */
+.home-trainee {
+  position: absolute;
+  z-index: 0;
+  width: 132px;
+  height: 132px;
+  margin: -66px 0 0 -66px;
+  border-radius: 20px;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/* Au clavier, ce qui recoit le focus est lisible tout de suite, meme en pleine montee */
+[data-monte]:has(:focus-visible),
+[data-revele]:has(:focus-visible) {
+  opacity: 1 !important; /* le fondu est pose en style en ligne */
+  clip-path: none !important;
+}

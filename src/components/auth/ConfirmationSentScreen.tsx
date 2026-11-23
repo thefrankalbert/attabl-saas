@@ -1,10 +1,12 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Loader2, MailCheck, RefreshCw, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { AuthCard } from './AuthCard';
+import { setAuthSceneOverride } from './auth-scenes';
 
 interface ConfirmationSentScreenProps {
   email: string;
@@ -28,12 +30,17 @@ function ConfirmationSentScreen({
 }: ConfirmationSentScreenProps) {
   const tConfirm = useTranslations('auth.confirm');
 
+  // Cet ecran remplace le formulaire d'inscription sans changer de route: il
+  // demande sa propre photo et sa propre phrase au cadre, et les rend en partant.
+  useEffect(() => {
+    setAuthSceneOverride('confirm');
+    return () => setAuthSceneOverride(null);
+  }, []);
+
   return (
     <div>
       <div className="mb-7 text-center">
-        <h1 className="mb-1.5 text-[22px] font-semibold tracking-[-0.02em] text-[var(--heading)]">
-          {tConfirm('title')}
-        </h1>
+        <h1 className="auth-serif auth-title mb-2">{tConfirm('title')}</h1>
         <p className="text-sm text-[var(--secondary)]">{tConfirm('sentTo')}</p>
       </div>
 
@@ -59,7 +66,7 @@ function ConfirmationSentScreen({
             variant="outline"
             onClick={onResend}
             disabled={resending || resendCooldown > 0}
-            className="mt-1 flex h-10 w-full items-center justify-center gap-2 rounded-lg border-[var(--border)] bg-[var(--card)] text-sm font-medium text-[var(--fg)] transition-colors hover:bg-[var(--surface-hover)] disabled:opacity-50"
+            className="auth-btn-secondary mt-1 disabled:opacity-50"
           >
             {resending ? (
               <>
@@ -95,7 +102,7 @@ function ConfirmationSentScreen({
       </AuthCard>
 
       <p className="mt-6 text-center text-sm text-[var(--secondary)]">
-        <Link href="/login" className="font-medium text-[var(--fg)] hover:underline">
+        <Link href="/login" className="auth-link">
           {tConfirm('backToLogin')}
         </Link>
       </p>

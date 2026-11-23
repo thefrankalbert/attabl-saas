@@ -1,48 +1,42 @@
 import Link from 'next/link';
-import { MessageCircle } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
-import { BlurFade } from '@/components/ui/blur-fade';
+import { AnimatedWords } from './AnimatedWords';
+import { CtaTrail } from './CtaTrail';
+import { WHATSAPP_LINK } from './whatsapp';
 
 export async function FinalCta() {
   const t = await getTranslations('marketing.home.finalCta');
 
   return (
-    <section className="bg-white px-5 pb-[110px] sm:px-7 dark:bg-zinc-950">
-      <BlurFade
-        inView
-        offset={20}
-        blur="0px"
-        duration={0.7}
-        className="relative mx-auto max-w-[1120px] overflow-hidden rounded-3xl bg-zinc-950 px-6 py-20 text-center sm:px-10 sm:py-[84px] dark:bg-zinc-900"
-      >
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.05)_1px,transparent_0)] bg-[length:26px_26px]" />
-        <div className="relative">
-          <h2 className="mx-auto max-w-[620px] text-3xl font-semibold leading-[1.08] tracking-[-0.03em] text-white sm:text-[44px]">
-            {t('title')}
+    <CtaTrail>
+      <div className="relative z-10 px-5 py-20 text-center lg:py-48">
+        <div data-zone-texte className="mx-auto w-fit max-w-full">
+          <h2
+            data-mots
+            id="fin-titre"
+            className="mx-auto max-w-[26ch] text-balance font-titre text-[40px] leading-[1.03] tracking-[-0.015em] sm:text-[60px]"
+          >
+            <AnimatedWords text={t('title')} masked />
           </h2>
-          <p className="mx-auto mt-4 max-w-[460px] text-base leading-relaxed text-zinc-400">
-            {t('subtitle')}
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <p className="mt-5 text-[17px] text-encre/70 dark:text-white/70">{t('subtitle')}</p>
+          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               href="/signup"
-              className="inline-flex items-center rounded-xl bg-white px-[26px] py-3.5 text-[15px] font-semibold text-zinc-950 transition-colors hover:bg-zinc-200"
+              className="inline-flex h-11 items-center justify-center rounded-full bg-encre px-6 text-[16px] font-medium text-white hover:bg-black max-sm:w-full dark:bg-white dark:text-encre dark:hover:bg-white/90"
             >
               {t('ctaPrimary')}
             </Link>
             <a
-              href="https://wa.me/237658651050"
+              href={WHATSAPP_LINK}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/[0.07] px-[22px] py-3.5 text-[15px] font-medium text-white transition-colors hover:bg-white/[0.12]"
+              className="inline-flex h-11 items-center justify-center rounded-full border border-encre/30 px-6 text-[16px] font-medium hover:border-encre max-sm:w-full dark:border-white/30 dark:hover:border-white"
             >
-              <MessageCircle className="h-4 w-4" />
               {t('whatsapp')}
             </a>
           </div>
-          <p className="mt-6 text-[13px] text-zinc-500">{t('trust')}</p>
         </div>
-      </BlurFade>
-    </section>
+      </div>
+    </CtaTrail>
   );
 }

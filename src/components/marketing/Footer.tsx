@@ -1,9 +1,8 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import { AttablLogo } from './AttablLogo';
 
-const COL_LINK =
-  'text-[13px] text-zinc-500 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50';
+const COL_LINK = 'inline-block py-1 hover:text-white';
+const LEGAL_LINK = 'inline-block py-1 underline-offset-4 hover:text-white hover:underline';
 
 export default async function Footer() {
   const t = await getTranslations('marketing.footer');
@@ -39,53 +38,43 @@ export default async function Footer() {
   ];
 
   return (
-    <footer className="border-t border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/40">
-      <div className="mx-auto max-w-[1200px] px-5 py-[52px] sm:px-7">
-        <div className="grid grid-cols-2 gap-8 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
-          <div className="col-span-2 lg:col-span-1">
-            <AttablLogo size="footer" />
-            <p className="mt-3 max-w-[250px] text-[13px] leading-relaxed text-zinc-500 dark:text-zinc-400">
-              {t('tagline')}
-            </p>
-            <a
-              href="mailto:contact@attabl.com"
-              className="mt-3 inline-block text-[13px] font-medium text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-50"
-            >
-              contact@attabl.com
-            </a>
-          </div>
-          {columns.map((col) => (
-            <div key={col.title}>
-              <div className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100">
-                {col.title}
-              </div>
-              <div className="mt-3.5 flex flex-col gap-2.5">
-                {col.links.map((l) => (
-                  <Link key={l.href} href={l.href} className={COL_LINK}>
+    <footer className="bg-nuit text-white">
+      <div className="mx-auto grid max-w-[1440px] gap-10 px-5 py-16 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] lg:px-8">
+        <div>
+          <span className="text-[20px] font-semibold tracking-[-0.03em]">Attabl</span>
+          <p className="mt-3 text-[15px] text-white/60">{t('tagline')}</p>
+          <a
+            href="mailto:contact@attabl.com"
+            className="mt-3 inline-block py-1.5 text-[15px] text-white/80 hover:text-white"
+          >
+            contact@attabl.com
+          </a>
+        </div>
+        {columns.map((col) => (
+          <div key={col.title}>
+            <p className="surtitre text-white/50">{col.title}</p>
+            <ul className="mt-3 space-y-1 text-[15px] text-white/80">
+              {col.links.map((l) => (
+                <li key={l.href}>
+                  <Link href={l.href} className={COL_LINK}>
                     {l.label}
                   </Link>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="mt-11 border-t border-zinc-200 pt-5 text-[13px] text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-          {t('copyright', { year })}
-          {' - '}
-          <Link
-            href="/legal"
-            className="transition-colors hover:text-zinc-900 dark:hover:text-zinc-50"
-          >
-            {t('columns.legal.links.mentions')}
-          </Link>
-          {' - '}
-          <Link
-            href="/privacy"
-            className="transition-colors hover:text-zinc-900 dark:hover:text-zinc-50"
-          >
-            {t('columns.legal.links.privacy')}
-          </Link>
-        </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+      <div className="mx-auto max-w-[1440px] border-t border-white/15 px-5 py-6 text-[13px] text-white/50 lg:px-8">
+        {t('copyright', { year })}{' '}
+        <Link href="/legal" className={LEGAL_LINK}>
+          {t('columns.legal.links.mentions')}
+        </Link>
+        .{' '}
+        <Link href="/privacy" className={LEGAL_LINK}>
+          {t('columns.legal.links.privacy')}
+        </Link>
+        .
       </div>
     </footer>
   );
