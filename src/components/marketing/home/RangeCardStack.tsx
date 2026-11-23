@@ -95,7 +95,7 @@ function PileCard({
     <motion.article
       ref={cardRef}
       className={cn(
-        'carte-pile relative grid overflow-hidden rounded-[24px] bg-white text-encre lg:sticky lg:grid-cols-2 lg:motion-reduce:relative lg:motion-reduce:top-auto dark:bg-encre dark:text-white',
+        'carte-pile relative grid overflow-hidden rounded-[24px] bg-white text-encre md:grid-cols-2 lg:sticky lg:motion-reduce:relative lg:motion-reduce:top-auto dark:bg-encre dark:text-white',
         CARD_CLASS[card.key],
       )}
       style={animated ? { scale, transformOrigin: '50% 0%' } : { transformOrigin: '50% 0%' }}
@@ -106,9 +106,11 @@ function PileCard({
         style={animated ? { opacity } : undefined}
         aria-hidden="true"
       />
-      <div className="flex flex-col p-7 sm:p-10 lg:p-10 xl:p-12">
+      <div className="flex flex-col p-7 sm:p-10 md:max-lg:p-7 lg:p-10 xl:p-12">
         <p className="surtitre text-encre/65 dark:text-white/65">{card.name}</p>
-        <h3 className="mt-4 font-titre text-[32px] leading-[1.08] sm:text-[42px]">{card.title}</h3>
+        <h3 className="mt-4 font-titre text-[32px] leading-[1.08] sm:text-[42px] md:max-lg:text-[32px]">
+          {card.title}
+        </h3>
         <p className="mt-4 max-w-[30rem] text-[17px] leading-[1.6] text-encre/70 dark:text-white/70">
           {card.body}
         </p>
@@ -132,7 +134,7 @@ function PileCard({
           alt={card.imageAlt}
           width={1400}
           height={1400}
-          sizes="(min-width: 1024px) 50vw, 100vw"
+          sizes="(min-width: 768px) 50vw, 100vw"
           className={IMAGE_CLASS[card.key] ?? 'object-center'}
         />
       </div>

@@ -251,9 +251,16 @@
   height: 100%;
   object-fit: cover;
 }
-@media (max-width: 1023.98px) {
+@media (max-width: 767.98px) {
   .home-media-revele {
     aspect-ratio: 1;
+  }
+}
+/* Tablette : deux colonnes, la photo remplit la hauteur donnee par le texte. */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .home-media-revele > img {
+    position: absolute;
+    inset: 0;
   }
 }
 
@@ -273,6 +280,9 @@
 }
 .home-panneau > img {
   object-fit: cover;
+}
+.home-panneau:nth-child(1) > img {
+  object-position: 68% 50%;
 }
 .home-panneau:nth-child(2) > img {
   object-position: 72% 50%;
