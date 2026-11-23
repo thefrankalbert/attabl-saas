@@ -1,0 +1,55 @@
+-- ============================================================================
+-- Un employe ne cree plus de commande ni d'article par l'API directe
+-- (constat B150, contre-audit 1, point 5).
+-- ============================================================================
+--
+-- MIGRATION RESTRICTIVE: elle RETIRE un acces. Elle supprime les deux
+-- politiques INSERT qui laissaient un employe connecte inserer lui-meme dans
+-- `orders` et `order_items`.
+--
+-- ORDRE DE DEPLOIEMENT: peut passer AVANT le code actuellement en ligne.
+-- Prouve dans le rapport du lot B150 (recherche dans src/ avec temoin
+-- positif): AUCUN chemin de l'application n'insere dans `orders` ou
+-- `order_items` avec la session d'un employe. Toute creation de commande passe
+-- par `create_order_with_items` (SECURITY INVOKER, EXECUTE reserve a
+-- service_role), appelee par les routes serveur /api/orders (client QR) et
+-- /api/orders/pos (caisse), toutes deux avec le client service_role, qui ne
+-- passe pas par la RLS. Les seuls autres INSERT sont ceux des scripts de
+-- donnees de demonstration et des tests d'integration, tous en service_role.
+--
+-- LE DEFAUT. Par l'API, avec son propre jeton, un caissier creait une
+-- commande au total de son choix (0 ou 1 FCFA), y ajoutait des plats a
+-- n'importe quel prix (10 000 FCFA), puis la soldait: 'paid', registre a 0 ou
+-- 1. Rien ne liait `orders.total` aux lignes d'une insertion faite sous jeton
+-- d'employe. Les plats etaient servis et l'argent pouvait disparaitre sans
+-- ecart visible, ni au registre ni dans les impayes: le scenario B150 par un
+-- autre chemin. La politique INSERT de `orders` exigeait `orders.pay`, celle
+-- de `order_items` aussi: le caissier, le gerant, l'administrateur, le
+-- proprietaire et tout employe a qui l'encaissement est delegue.
+--
+-- APRES. La RLS de `orders` et `order_items` reste active, sans politique
+-- INSERT: un INSERT de `authenticated` ou `anon` ne correspond a aucune
+-- politique et il est refuse. service_role (routes serveur, crons, scripts) et
+-- le proprietaire `postgres` ne sont pas concernes. Les politiques SELECT,
+-- UPDATE et DELETE sont inchangees.
+--
+-- CE QU'UN EMPLOYE PEUT ENCORE FAIRE sur les articles d'une commande ouverte
+-- (inchange par cette migration):
+--   - UPDATE: politique "Order managers can update own tenant order items"
+--     (`orders.manage`); le declencheur trg_articles_argent_exige_orders_pay
+--     reserve a `orders.pay` tout changement hors du suivi de cuisine
+--     (item_status, course, held, fired_at, preparation_zone). Un caissier
+--     peut donc changer la quantite ou le prix d'une ligne. Cela ne change pas
+--     ce qui est du: `orders.total` est fige apres la creation
+--     (refuser_reecriture_montants_commande) et c'est lui que le registre doit
+--     couvrir. Seuls les rapports par plat et le stock lisent ces lignes.
+--   - DELETE: reserve a l'autorite sur l'argent (has_tenant_money_permission).
+--
+-- Rejouable (DROP POLICY IF EXISTS). Aucune donnee modifiee.
+--
+-- ROLLBACK (rouvre le defaut): recreer les deux politiques telles que posees
+-- par 20261109200000_argent_orders_pay.sql.
+-- ============================================================================
+
+DROP POLICY IF EXISTS "Cashiers can insert own tenant orders" ON public.orders;
+DROP POLICY IF EXISTS "Cashiers can insert own tenant order items" ON public.order_items;

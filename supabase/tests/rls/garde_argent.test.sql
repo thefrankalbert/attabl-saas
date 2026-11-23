@@ -28,8 +28,9 @@
 --   3. mais les QUATRE colonnes de montants ne se reecrivent plus - c'est ce
 --      qui remplace le resserrage abandonne, et ca ferme le chemin `total = 0`
 --      qu'aucune policy ne pouvait fermer;
---   4. `tip_amount` reste ecrivable - c'est le seul montant qu'un chemin
---      applicatif modifie apres creation (`markPaid`);
+--   4. `tip_amount` reste ecrivable A LA HAUSSE - c'est le seul montant qu'un
+--      chemin applicatif modifie apres creation (`markPaid`); la baisse exige
+--      l'autorite sur l'argent depuis 20261124100100;
 --   5. les chemins de CONFIANCE restent exempts: la caisse POS (service_role)
 --      et les migrations (postgres) ecrivent encore les montants. Sans cette
 --      preuve, le declencheur casserait l'encaissement en production;
@@ -48,7 +49,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(60);
+select plan(61);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -470,13 +471,29 @@ select is(
 );
 
 -- ===========================================================================
--- 8. LES BORNES DE LA CREATION (2)
+-- 8. LES BORNES DE LA CREATION (3)
 --    Le declencheur de la section 2 ne garde que l'UPDATE. A la CREATION, le
 --    porteur de `orders.manage` fournit les montants, et `orders` ne portait
 --    AUCUN CHECK sur ses colonnes d'argent.
 -- ===========================================================================
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"b1111111-1111-1111-1111-111111111111"}';
+
+-- Depuis 20261124100200 (constat B150), un employe ne cree plus de commande
+-- par l'API directe: plus aucune politique INSERT sur `orders`. Il choisissait
+-- le total (0 ou 1 FCFA) d'une commande portant des plats payants.
+select throws_ok(
+  $$insert into public.orders (tenant_id, order_number, subtotal, total, payment_status)
+    values ('b3333333-3333-3333-3333-333333333333', 'CMD-EMPLOYE', 1000, 1000, 'pending')$$,
+  '42501',
+  null,
+  'creation: un employe ne cree plus de commande par l API directe'
+);
+
+-- Les bornes de colonnes valent pour tout le monde, y compris le serveur
+-- applicatif (service_role), seul a creer des commandes.
+reset role;
+set local role service_role;
 
 -- 23514 = check_violation. Un total negatif creerait une recette negative dans
 -- les rapports, et un remboursement deguise hors du ledger `payments`.
@@ -496,6 +513,7 @@ select lives_ok(
     values ('b3333333-3333-3333-3333-333333333333', 'CMD-COUPON-100', 0, 0, 'pending')$$,
   'creation: une commande a ZERO reste permise (coupon de 100 pour cent)'
 );
+reset role;
 
 -- ===========================================================================
 -- 9. UNE COMMANDE REGLEE NE SE DEREGLE PAS (6)
@@ -529,7 +547,13 @@ select throws_ok(
 );
 
 -- Le sens AVANT reste ouvert: completer un reglement partiel est le flux normal
--- d'une seconde ligne de paiement.
+-- d'une seconde ligne de paiement. La ligne qui solde le du est ecrite d'abord
+-- (forme de recordTender puis recompute): sans elle, la bascule serait refusee
+-- a la validation de la transaction (20261124100000, constat B150), ce que
+-- paid_exige_registre.test.sql prouve.
+insert into public.payments (tenant_id, order_id, amount, method, status)
+values ('b3333333-3333-3333-3333-333333333333', 'b7100000-0000-4000-8000-000000000002',
+        4000, 'cash', 'completed');
 select lives_ok(
   $$update public.orders set payment_status = 'paid'
     where id = 'b7100000-0000-4000-8000-000000000002'$$,
@@ -623,6 +647,11 @@ select throws_ok(
 --    pour un ecart d'horloge de quelques secondes.
 -- La forme exacte de `markPaid`, moyen de paiement compris: ce qui prouve du
 -- meme coup que la borne sur `payment_method` ne bloque pas le reglement.
+-- La ligne au registre est ecrite d'abord: une bascule sans registre qui couvre
+-- le du serait refusee a la validation (20261124100000, constat B150).
+insert into public.payments (tenant_id, order_id, amount, method, status)
+values ('b3333333-3333-3333-3333-333333333333', 'b7200000-0000-4000-8000-000000000003',
+        3000, 'cash', 'completed');
 select lives_ok(
   $$update public.orders
        set payment_status = 'paid', payment_method = 'cash',
@@ -686,6 +715,14 @@ select throws_ok(
 --     l'application fait deja.
 -- ===========================================================================
 set local request.jwt.claims = '{"sub":"b1111111-1111-1111-1111-111111111111"}';
+
+-- Un employe n'insere plus dans `orders` (20261124100200). La normalisation
+-- reste une seconde barriere si une politique INSERT revenait: on la prouve
+-- avec une politique INSERT temporaire, annulee avec la transaction.
+reset role;
+create policy test_garde_argent_insertion on public.orders for insert to authenticated
+  with check (tenant_id = 'b3333333-3333-3333-3333-333333333333');
+set local role authenticated;
 
 select lives_ok(
   $$insert into public.orders
