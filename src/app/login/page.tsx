@@ -46,7 +46,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   }
 
   return (
-    <AuthShell>
+    <AuthShell scene="login">
       <ClearSwCache />
       <Suspense fallback={<AuthFormSkeleton />}>
         <AuthForm mode="login" />

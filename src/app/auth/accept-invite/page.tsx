@@ -9,30 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-
-// --- ATTABL Logo ---
-function AttablLogo() {
-  return (
-    <Link href="/" className="flex items-center gap-2 w-fit">
-      <div className="bg-black rounded-lg p-1.5">
-        <svg
-          className="h-5 w-5 text-accent"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <rect width="18" height="18" x="3" y="3" rx="2" />
-          <path d="M3 9h18" />
-          <path d="M9 21V9" />
-        </svg>
-      </div>
-      <span className="text-xl font-semibold tracking-tight text-app-text">ATTABL</span>
-    </Link>
-  );
-}
+import { AuthFrame } from '@/components/auth/AuthFrame';
 
 // --- Accept Invite Form ---
 function AcceptInviteForm() {
@@ -81,18 +58,18 @@ function AcceptInviteForm() {
   if (!token || tokenInvalid) {
     return (
       <div className="w-full">
-        <AttablLogo />
-        <div className="mt-10 bg-app-card rounded-xl border border-app-border p-8">
+        <h1 className="sr-only">Invitation</h1>
+        <div>
           <Alert
             variant="destructive"
-            className="bg-red-500/10 text-red-500 border-red-500/20 rounded-lg"
+            className="rounded-lg border-[var(--err-border)] bg-[var(--err-bg)] text-[var(--err-fg)]"
           >
             <AlertDescription className="text-sm">
               Lien d&apos;invitation invalide. V&#233;rifiez le lien dans votre email.
             </AlertDescription>
           </Alert>
-          <p className="mt-6 text-center text-sm text-app-text-secondary">
-            <Link href="/login" className="font-semibold text-app-text hover:underline">
+          <p className="mt-6 text-center text-sm text-[var(--secondary)]">
+            <Link href="/login" className="auth-link">
               Retour &#224; la connexion
             </Link>
           </p>
@@ -105,19 +82,19 @@ function AcceptInviteForm() {
   if (tokenExpired) {
     return (
       <div className="w-full">
-        <AttablLogo />
-        <div className="mt-10 bg-app-card rounded-xl border border-app-border p-8">
+        <h1 className="sr-only">Invitation</h1>
+        <div>
           <Alert
             variant="destructive"
-            className="bg-red-500/10 text-red-500 border-red-500/20 rounded-lg"
+            className="rounded-lg border-[var(--err-border)] bg-[var(--err-bg)] text-[var(--err-fg)]"
           >
             <AlertDescription className="text-sm">
               Ce lien d&apos;invitation a expir&#233;. Demandez &#224; l&apos;administrateur de vous
               renvoyer une invitation.
             </AlertDescription>
           </Alert>
-          <p className="mt-6 text-center text-sm text-app-text-secondary">
-            <Link href="/login" className="font-semibold text-app-text hover:underline">
+          <p className="mt-6 text-center text-sm text-[var(--secondary)]">
+            <Link href="/login" className="auth-link">
               Retour &#224; la connexion
             </Link>
           </p>
@@ -130,12 +107,11 @@ function AcceptInviteForm() {
   if (success) {
     return (
       <div className="w-full">
-        <AttablLogo />
-        <div className="mt-10 bg-app-card rounded-xl border border-app-border p-8 text-center">
-          <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-app-text mb-2">Invitation acceptee !</h2>
-          <p className="text-app-text-secondary text-sm">Redirection vers le tableau de bord...</p>
-          <Loader2 className="h-5 w-5 animate-spin text-app-text-muted mx-auto mt-4" />
+        <div className="text-center">
+          <CheckCircle2 className="mx-auto mb-4 h-12 w-12 text-[var(--ok-fg)]" />
+          <h1 className="auth-serif auth-title mb-2">Invitation acceptee !</h1>
+          <p className="text-sm text-[var(--secondary)]">Redirection vers le tableau de bord...</p>
+          <Loader2 className="mx-auto mt-4 h-5 w-5 animate-spin text-[var(--muted)]" />
         </div>
       </div>
     );
@@ -223,15 +199,11 @@ function AcceptInviteForm() {
 
   return (
     <div className="w-full">
-      <AttablLogo />
-
-      <div className="mt-10 bg-app-card rounded-xl border border-app-border p-8">
+      <div>
         {/* Header */}
-        <div className="mb-8 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight text-app-text mb-2">
-            Vous avez &#233;t&#233; invit&#233; !
-          </h1>
-          <p className="text-app-text-secondary text-sm">
+        <div className="mb-6">
+          <h1 className="auth-serif auth-title mb-2">Vous avez &#233;t&#233; invit&#233; !</h1>
+          <p className="text-[15px] text-[var(--secondary)]">
             Rejoignez l&apos;equipe sur ATTABL en cr&#233;ant votre compte.
           </p>
         </div>
@@ -242,7 +214,7 @@ function AcceptInviteForm() {
           <Button
             type="button"
             variant="outline"
-            className="w-full h-10 text-sm font-medium rounded-md"
+            className="auth-btn-secondary h-auto min-h-[var(--auth-button)] whitespace-normal px-5 py-2"
             disabled={joining || loading}
             onClick={handleJoinWithAccount}
           >
@@ -256,7 +228,7 @@ function AcceptInviteForm() {
             )}
           </Button>
           {needsLogin && (
-            <p className="text-center text-xs text-app-text-muted">
+            <p className="text-center text-xs text-[var(--muted)]">
               Connectez-vous avec l&apos;adresse qui a recu cette invitation, puis rouvrez le lien
               de votre email.
             </p>
@@ -264,9 +236,9 @@ function AcceptInviteForm() {
         </div>
 
         {/* Form */}
-        <form method="post" onSubmit={handleSubmit} className="space-y-5">
+        <form method="post" onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="fullName" className="text-app-text-secondary font-medium text-sm">
+            <Label htmlFor="fullName" className="text-[13.5px] font-medium text-[var(--fg)]">
               Nom complet
             </Label>
             <Input
@@ -278,12 +250,12 @@ function AcceptInviteForm() {
               required
               minLength={2}
               maxLength={100}
-              className="h-10 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-1 focus:ring-accent rounded-md transition-all"
+              className="auth-input placeholder:text-[var(--muted)] focus-visible:border-[var(--fg)] focus-visible:ring-[3px] focus-visible:ring-[var(--ring)] focus-visible:ring-offset-0"
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-app-text-secondary font-medium text-sm">
+            <Label htmlFor="password" className="text-[13.5px] font-medium text-[var(--fg)]">
               Mot de passe
             </Label>
             <div className="relative">
@@ -296,7 +268,7 @@ function AcceptInviteForm() {
                 required
                 minLength={8}
                 maxLength={100}
-                className="h-10 pr-12 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-1 focus:ring-accent rounded-md transition-all"
+                className="auth-input placeholder:text-[var(--muted)] focus-visible:border-[var(--fg)] focus-visible:ring-[3px] focus-visible:ring-[var(--ring)] focus-visible:ring-offset-0 pr-12"
               />
               <Button
                 type="button"
@@ -304,18 +276,15 @@ function AcceptInviteForm() {
                 size="icon"
                 aria-label="Hide password"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-app-text-muted hover:text-app-text-secondary h-auto w-auto p-0"
+                className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-[var(--muted)] hover:bg-transparent hover:text-[var(--fg)]"
               >
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label
-              htmlFor="confirmPassword"
-              className="text-app-text-secondary font-medium text-sm"
-            >
+            <Label htmlFor="confirmPassword" className="text-[13.5px] font-medium text-[var(--fg)]">
               Confirmer le mot de passe
             </Label>
             <div className="relative">
@@ -328,7 +297,7 @@ function AcceptInviteForm() {
                 required
                 minLength={8}
                 maxLength={100}
-                className="h-10 pr-12 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-1 focus:ring-accent rounded-md transition-all"
+                className="auth-input placeholder:text-[var(--muted)] focus-visible:border-[var(--fg)] focus-visible:ring-[3px] focus-visible:ring-[var(--ring)] focus-visible:ring-offset-0 pr-12"
               />
               <Button
                 type="button"
@@ -336,9 +305,9 @@ function AcceptInviteForm() {
                 size="icon"
                 aria-label="Hide password"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-app-text-muted hover:text-app-text-secondary h-auto w-auto p-0"
+                className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-[var(--muted)] hover:bg-transparent hover:text-[var(--fg)]"
               >
-                {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
             </div>
           </div>
@@ -346,17 +315,13 @@ function AcceptInviteForm() {
           {error && (
             <Alert
               variant="destructive"
-              className="bg-red-500/10 text-red-500 border-red-500/20 rounded-lg"
+              className="rounded-lg border-[var(--err-border)] bg-[var(--err-bg)] text-[var(--err-fg)]"
             >
               <AlertDescription className="text-sm">{error}</AlertDescription>
             </Alert>
           )}
 
-          <Button
-            type="submit"
-            className="w-full h-9 bg-accent hover:bg-accent/90 text-accent-text text-sm font-medium rounded-md shadow-sm transition-colors"
-            disabled={loading}
-          >
+          <Button type="submit" className="auth-btn-primary" disabled={loading}>
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -371,24 +336,24 @@ function AcceptInviteForm() {
         {/* Divider */}
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-app-border" />
+            <div className="w-full border-t border-[var(--border)]" />
           </div>
-          <div className="relative flex justify-center text-xs uppercase tracking-widest">
-            <span className="bg-app-card px-4 text-app-text-muted">ou</span>
+          <div className="relative flex justify-center text-[13px]">
+            <span className="bg-[var(--card)] px-3 text-[var(--muted)]">ou</span>
           </div>
         </div>
 
         {/* Login link */}
-        <p className="text-center text-sm text-app-text-secondary">
+        <p className="text-center text-sm text-[var(--secondary)]">
           Vous avez d&#233;j&#224; un compte ?{' '}
-          <Link href="/login" className="font-semibold text-app-text hover:underline">
+          <Link href="/login" className="auth-link">
             Se connecter
           </Link>
         </p>
       </div>
 
       {/* Help text below card */}
-      <p className="mt-6 text-center text-xs text-app-text-muted max-w-sm mx-auto leading-relaxed">
+      <p className="mx-auto mt-6 max-w-sm text-center text-xs leading-relaxed text-[var(--muted)]">
         Si vous avez d&#233;j&#224; un compte ATTABL, connectez-vous pour accepter automatiquement
         l&apos;invitation.
       </p>
@@ -399,8 +364,10 @@ function AcceptInviteForm() {
 // --- Main Page ---
 export default function AcceptInvitePage() {
   return (
-    <div className="w-full flex items-center justify-center bg-app-bg px-4 py-6 sm:py-10">
-      <div className="w-full max-w-md">
+    // Meme cadre photo que les pages de connexion (AuthFrame). Le conteneur
+    // `h-full overflow-y-auto` est le seul qui defile sous 1024px (regle 08).
+    <div className="h-full overflow-y-auto">
+      <AuthFrame scene="invite">
         <Suspense
           fallback={
             <div className="p-8">
@@ -410,7 +377,7 @@ export default function AcceptInvitePage() {
         >
           <AcceptInviteForm />
         </Suspense>
-      </div>
+      </AuthFrame>
     </div>
   );
 }

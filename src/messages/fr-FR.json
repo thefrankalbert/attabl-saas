@@ -858,60 +858,166 @@
     "home": {
       "hero": {
         "title": "Votre restaurant,\nsous contrôle.",
-        "subtitle": "Votre caisse, vos commandes, vos stocks. Une seule application.",
-        "ctaPrimary": "Essayer gratuitement",
-        "ctaDemo": "Demander une démo",
-        "trust": "14 jours gratuits - Aucune carte bancaire requise",
-        "imageAlt": "Le tableau de bord Attabl : ticket moyen, tables actives, codes QR et revenus par canal de vente"
+        "subtitle": "Caisse, commandes, cuisine et stock dans une seule application. Même quand internet coupe.",
+        "ctaPrimary": "Essai gratuit",
+        "ctaWhatsapp": "Nous contacter",
+        "proof": "Ils tiennent leur service avec Attabl",
+        "clientLogoAlt": "Radisson Blu N'Djamena"
       },
-      "stock": {
-        "badge": "Stock & inventaire",
-        "title": "Le stock ne vous surprend plus.",
-        "body": "Chaque produit, son niveau, son coût. Une alerte tombe avant la rupture, et le coût matière reste sous vos yeux, recette par recette.",
-        "link": "Voir la gestion de stock",
-        "browserLabel": "Inventaire",
-        "imageAlt": "Tableau de l'inventaire : stock actuel, seuil d'alerte, coût unitaire et statut de chaque produit"
+      "mosaic": {
+        "title": "Du premier couvert au dernier ticket, Attabl suit le rythme.",
+        "images": {
+          "patron": "Patron d'un restaurant dans sa salle",
+          "poisson": "Filet de capitaine dressé",
+          "bar": "Barmaid au bar d'un hôtel",
+          "douceurs": "Vitrine de pâtisseries fines",
+          "dressage": "Chef qui dresse une assiette",
+          "chef": "Chef en veste blanche au passe",
+          "associes": "Une cheffe et un gérant associés",
+          "verres": "Verrerie d'un bar d'hôtel",
+          "accueil": "Hôtesse à l'accueil d'un restaurant",
+          "serveuse": "Serveuse, sa tablette en main",
+          "comptoir": "Tablette Attabl au comptoir",
+          "gerante": "Gérante d'une pâtisserie",
+          "bureau": "Gérante devant le tableau de bord Attabl",
+          "pintade": "Suprême de pintade dressé",
+          "rire": "Serveuse qui rit avec une cliente",
+          "laiton": "Lampe en laiton au-dessus du passe",
+          "tasses": "Cafés servis au comptoir"
+        }
       },
-      "showcase": {
-        "title": "Un seul écran pour tout le service.",
-        "subtitle": "De la commande à la caisse, de la cuisine au fournisseur. Pensé pour le rythme d'un vrai restaurant.",
-        "tabs": {
-          "dashboard": {
-            "title": "Tableau de bord",
-            "desc": "Chiffre du jour, ticket moyen, tables actives, revenus par canal."
+      "range": {
+        "eyebrow": "La gamme Attabl",
+        "title": "Une installation à votre mesure.",
+        "intro": "Une tablette au comptoir, une dans la main de chaque serveur, une en cuisine, et le bureau du patron. Tout reste synchronisé, même hors ligne.",
+        "cards": {
+          "comptoir": {
+            "name": "Attabl Comptoir",
+            "title": "La caisse qui tient le rush.",
+            "body": "Prise de commande, encaissement en espèces ou par carte, ticket imprimé. Sur l'iPad ou la tablette que vous avez déjà.",
+            "points": {
+              "p1": "Commandes sur place, à emporter, livraison et chambre dans une seule file",
+              "p2": "Ticket de caisse et addition imprimés au comptoir",
+              "p3": "Continue de vendre quand internet coupe"
+            },
+            "cta": "Découvrir Attabl Comptoir",
+            "imageAlt": "Une main encaisse une commande sur la tablette Attabl posée au comptoir, à côté de l'imprimante à tickets"
           },
-          "orders": {
-            "title": "Commandes",
-            "desc": "Sur place, à emporter, livraison ou chambre. Tout dans une file."
+          "service": {
+            "name": "Attabl Service",
+            "title": "La commande part de la table.",
+            "body": "Chaque serveur prend la commande sur sa petite tablette. Elle arrive en cuisine et en caisse au même instant. Personne ne recopie rien.",
+            "points": {
+              "p1": "Plan de salle et tables assignées à chaque serveur",
+              "p2": "La commande part en cuisine dès qu'elle est prise",
+              "p3": "Le statut de chaque commande en direct : en attente, en préparation, prête"
+            },
+            "cta": "Découvrir Attabl Service",
+            "imageAlt": "Serveuse souriante qui tient sa tablette Attabl"
           },
-          "kitchen": {
-            "title": "Écran cuisine",
-            "desc": "Les tickets arrivent à la cuisine, dans le bon ordre, sans papier."
+          "cuisine": {
+            "name": "Attabl Cuisine",
+            "title": "Fini les tickets perdus.",
+            "body": "Une tablette au passe. Chaque commande s'affiche avec son heure et sa table. Le chef voit ce qui attend, ce qui cuit, ce qui part.",
+            "points": {
+              "p1": "Tickets classés par statut : en attente, en préparation, prêt",
+              "p2": "Temps écoulé visible sur chaque commande",
+              "p3": "La salle est prévenue quand le plat est prêt"
+            },
+            "cta": "Découvrir Attabl Cuisine",
+            "imageAlt": "Chef qui nappe un capitaine sur attiéké, la tablette Attabl Cuisine au passe"
           },
-          "stock": {
-            "title": "Stock & inventaire",
-            "desc": "Niveaux, seuils d'alerte et coût matière, toujours à jour."
+          "bureau": {
+            "name": "Attabl Bureau",
+            "title": "Votre activité, d'un coup d'œil.",
+            "body": "Le chiffre du jour, le ticket moyen, le stock et les fournisseurs. Sur l'ordinateur du bureau, pour un ou plusieurs établissements.",
+            "points": {
+              "p1": "Rapports de vente et meilleurs plats",
+              "p2": "Stock, fiches techniques et coût matière par plat",
+              "p3": "Équipe, rôles et accès de chacun"
+            },
+            "cta": "Découvrir Attabl Bureau",
+            "imageAlt": "Gérante d'hôtel qui consulte le tableau de bord Attabl sur son ordinateur"
+          }
+        },
+        "menu": {
+          "name": "Attabl Menu",
+          "title": "Vos clients commandent depuis leur table.",
+          "body": "Ils scannent le QR code, consultent votre carte en français ou en anglais, et commandent. La commande arrive directement en cuisine.",
+          "cta": "Découvrir Attabl Menu"
+        }
+      },
+      "local": {
+        "eyebrow": "Fait pour ici",
+        "title": "La caisse qui tient le service, même quand internet lâche.",
+        "items": {
+          "offline": {
+            "title": "Hors ligne",
+            "body": "La caisse continue en local et se remet à jour toute seule au retour du réseau. Vous ne perdez rien."
+          },
+          "fcfa": {
+            "title": "En FCFA",
+            "body": "Du menu au rapport de fin de journée, tout est pensé pour votre monnaie et vos habitudes."
+          },
+          "whatsapp": {
+            "title": "Sur WhatsApp",
+            "body": "Une vraie personne vous répond et forme votre équipe, sur place ou à distance."
+          },
+          "ready": {
+            "title": "Prêt en 2 minutes",
+            "body": "Votre compte est créé en 2 minutes et votre menu est en ligne le jour même."
           }
         }
       },
-      "allInOne": {
-        "title": "Tout ce qu'il faut, dans une seule application.",
-        "subtitle": "Six familles de fonctionnalités, du menu en ligne aux rapports multi-établissements.",
-        "chips": {
-          "menu": "Menu & commandes",
-          "register": "Caisse & encaissement",
-          "kitchen": "Cuisine & production",
-          "stock": "Stock & fournisseurs",
-          "reports": "Rapports & statistiques",
-          "team": "Équipe & organisation"
-        },
-        "link": "Toutes les fonctionnalités"
+      "audience": {
+        "eyebrow": "Pour qui",
+        "title": "Restaurants, hôtels, bars et cafés.",
+        "items": {
+          "restaurants": {
+            "title": "Restaurants",
+            "body": "Salle, emporter et livraison dans une seule file. La cuisine et la caisse voient la même chose.",
+            "imageAlt": "Hôtesse qui encaisse un client à l'accueil du restaurant"
+          },
+          "hotels": {
+            "title": "Hôtels",
+            "body": "Restaurant, bar et room service. Chaque point de vente a sa caisse, un seul tableau de bord pour tout piloter.",
+            "imageAlt": "Barmaid au bar d'un grand hôtel"
+          },
+          "bars": {
+            "title": "Bars et cafés",
+            "body": "Des commandes rapides au comptoir et un stock de boissons qui tombe juste à la fin de la soirée.",
+            "imageAlt": "Serveuse et cliente au bar à café"
+          }
+        }
       },
       "pricing": {
+        "eyebrow": "Tarifs",
         "title": "Un prix clair. Sans engagement.",
-        "body": "À partir de {price} par mois, soit environ {perDay} par jour. Essai 14 jours, sans carte bancaire.",
-        "ctaPrimary": "Voir les tarifs",
-        "ctaSecondary": "Comparer les offres"
+        "trial": "14 jours d'essai gratuit. Sans carte bancaire.",
+        "perMonth": "FCFA / mois",
+        "perDay": "soit environ {perDay} par jour",
+        "cta": "Essayer gratuitement",
+        "plans": {
+          "starter": {
+            "name": "Starter",
+            "desc": "Pour digitaliser sans se compliquer la vie."
+          },
+          "pro": {
+            "name": "Pro",
+            "badge": "Essai 14 jours",
+            "desc": "Pour plus de 50 couverts par jour."
+          },
+          "business": {
+            "name": "Business",
+            "desc": "Hôtel, chaîne ou plusieurs sites.",
+            "note": "un seul tableau de bord pour tout piloter"
+          }
+        },
+        "enterprise": {
+          "title": "Enterprise.",
+          "body": "Groupes, franchises et chaînes : un tarif sur mesure."
+        },
+        "compare": "Comparer les offres"
       },
       "faq": {
         "title": "Ce qu'on nous demande avant de signer.",
@@ -937,9 +1043,8 @@
       "finalCta": {
         "title": "Votre commerce mérite mieux qu'un carnet et une calculette.",
         "subtitle": "Compte créé en 2 minutes. Votre menu en ligne aujourd'hui.",
-        "ctaPrimary": "Lancer mon restaurant, gratuitement",
-        "whatsapp": "Écrire sur WhatsApp",
-        "trust": "14 jours gratuits - Aucune carte bancaire requise"
+        "ctaPrimary": "Essai gratuit",
+        "whatsapp": "Nous contacter"
       }
     },
     "header": {
@@ -5382,7 +5487,20 @@
     "chooseFile": "Choisir un fichier"
   },
   "authShell": {
-    "secure": "Connexion sécurisée"
+    "secure": "Connexion sécurisée",
+    "photoLabel": "Attabl en situation",
+    "pause": "Mettre en pause le diaporama",
+    "play": "Relancer le diaporama",
+    "phrases": {
+      "login": "Le service reprend là où vous l'avez laissé.",
+      "signup": "Votre restaurant, sous contrôle.",
+      "confirm": "Plus qu'un clic avant votre premier service.",
+      "forgot": "Ça arrive même aux meilleurs.",
+      "reset": "Un mot de passe neuf, et on reprend.",
+      "invite": "Votre équipe vous attend en salle.",
+      "unauthorized": "Chaque établissement a ses clés.",
+      "emailChange": "Une adresse à jour, et on continue."
+    }
   },
   "accountDeletion": {
     "openButton": "Supprimer mon compte",

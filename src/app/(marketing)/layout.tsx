@@ -36,7 +36,7 @@ const organizationLd = {
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="marketing-shell h-full overflow-x-clip overflow-y-auto bg-white font-[family-name:var(--font-geist-sans)] text-zinc-950 antialiased dark:bg-zinc-950 dark:text-zinc-50">
+    <div className="marketing-shell overflow-x-clip bg-white font-[family-name:var(--font-geist-sans)] text-zinc-950 antialiased dark:bg-zinc-950 dark:text-zinc-50">
       <script
         type="application/ld+json"
         // Static, app-controlled data - safe to inline (not user-generated).
