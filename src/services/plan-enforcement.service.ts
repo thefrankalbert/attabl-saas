@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getPlanLimits, isTrialActive, type PlanLimits } from '@/lib/plans/features';
 import type { Tenant } from '@/types/admin.types';
-import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
+import type { SubscriptionStatus } from '@/types/billing';
 import { ServiceError } from './errors';
 
 /**
@@ -10,15 +10,15 @@ import { ServiceError } from './errors';
  */
 
 /**
- * C-080: pendant l'essai, le restaurant a les limites de l'offre Pro, mais les
- * messages citaient son plan enregistre ("starter"), ce qui contredisait la
+ * C-080: pendant l'essai, le restaurant a les limites de l'offre Business, mais
+ * les messages citaient son plan enregistre ("starter"), ce qui contredisait la
  * limite affichee.
  */
 function planLabel(tenant: Tenant): string {
   if (
     isTrialActive(tenant.subscription_status as SubscriptionStatus | null, tenant.trial_ends_at)
   ) {
-    return 'pendant votre essai (offre Pro)';
+    return 'pendant votre essai (offre Business)';
   }
   return `pour votre plan ${tenant.subscription_plan || 'starter'}`;
 }
@@ -73,15 +73,6 @@ export function assertOrderFeaturesAllowed(
 export interface PlanEnforcementService {
   canAddAdmin(tenant: Tenant): Promise<void>;
   canAddStaff(tenant: Tenant): Promise<void>;
-  getMonthlyOrderUsage(
-    tenant: {
-      id: string;
-      subscription_plan?: string | null;
-      subscription_status?: string | null;
-      trial_ends_at?: string | null;
-    },
-    monthStart: Date,
-  ): Promise<{ count: number; limit: number; exceeded: boolean }>;
   canAddMenuItem(tenant: Tenant): Promise<void>;
   canAddVenue(tenant: Tenant): Promise<void>;
   canAddMenu(tenant: Tenant): Promise<void>;
@@ -309,52 +300,6 @@ export function createPlanEnforcementService(supabase: SupabaseClient): PlanEnfo
       }
 
       return Math.max(0, limits.maxItems - (count || 0));
-    },
-
-    /**
-     * Monthly order usage for a tenant. Read-only (non-blocking): used to warn
-     * when the per-plan monthly order quota is exceeded, never to reject orders.
-     * Uses a direct uncached count so it reflects the live total.
-     * limit === -1 means unlimited (never exceeded).
-     */
-    async getMonthlyOrderUsage(
-      tenant: {
-        id: string;
-        subscription_plan?: string | null;
-        subscription_status?: string | null;
-        trial_ends_at?: string | null;
-      },
-      monthStart: Date,
-    ): Promise<{ count: number; limit: number; exceeded: boolean }> {
-      const limits = getPlanLimits(
-        tenant.subscription_plan as SubscriptionPlan | null,
-        tenant.subscription_status as SubscriptionStatus | null,
-        tenant.trial_ends_at,
-      );
-
-      if (limits.maxMonthlyOrders === -1) {
-        return { count: 0, limit: -1, exceeded: false };
-      }
-
-      // Cancelled orders must not consume the monthly quota - they are not real
-      // sales. (A cancelled/duplicate order should never count against the plan.)
-      const { count, error } = await supabase
-        .from('orders')
-        .select('id', { count: 'exact', head: true })
-        .eq('tenant_id', tenant.id)
-        .gte('created_at', monthStart.toISOString())
-        .neq('status', 'cancelled');
-
-      if (error) {
-        throw new ServiceError('Erreur de verification des limites', 'INTERNAL', error);
-      }
-
-      const total = count || 0;
-      return {
-        count: total,
-        limit: limits.maxMonthlyOrders,
-        exceeded: total >= limits.maxMonthlyOrders,
-      };
     },
 
     /**

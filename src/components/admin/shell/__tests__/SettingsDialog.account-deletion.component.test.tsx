@@ -50,3 +50,29 @@ describe('SettingsDialog: suppression du compte dans "Mon compte"', () => {
     expect(screen.queryByText('owner_title')).toBeNull();
   });
 });
+
+// Contre-audit des offres (2026-11-20): il n'existe AUCUN plan gratuit. Sans
+// plan enregistre, le restaurant est Starter, comme le dit getEffectivePlan.
+describe('SettingsDialog: libelle du plan', () => {
+  it('affiche STARTER, jamais GRATUIT, quand aucun plan n est enregistre', () => {
+    render(
+      <PermissionsProvider
+        role="owner"
+        permissions={DEFAULT_PERMISSIONS.owner as Record<PermissionCode, boolean>}
+      >
+        <SettingsDialog
+          open
+          onOpenChange={() => undefined}
+          activeTab="compte"
+          onTabChange={() => undefined}
+          basePath="/sites/demo/admin"
+          userName="Awa"
+          userEmail="awa@example.com"
+          tenant={{ name: 'Chez Awa', slug: 'demo' }}
+        />
+      </PermissionsProvider>,
+    );
+    expect(screen.getByDisplayValue('STARTER')).toBeInTheDocument();
+    expect(screen.queryByDisplayValue('GRATUIT')).toBeNull();
+  });
+});

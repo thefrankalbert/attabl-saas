@@ -866,170 +866,263 @@ describe('OrderService', () => {
     });
   });
 
-  describe('markPaid (idempotency guard)', () => {
-    // Bespoke mock for the update().eq().eq().eq().neq().select() chain.
-    function makeSupabase(selectResult: { data?: unknown; error?: unknown }) {
-      const update = vi.fn();
-      const select = vi.fn().mockResolvedValue(selectResult);
-      const neq = vi.fn().mockReturnValue({ select });
-      const eq3 = vi.fn().mockReturnValue({ neq });
-      const eq2 = vi.fn().mockReturnValue({ eq: eq3 });
-      const eq1 = vi.fn().mockReturnValue({ eq: eq2 });
-      update.mockReturnValue({ eq: eq1 });
-      const paymentsInsert = vi.fn().mockResolvedValue({ error: null });
-      // Read of the tip before the payment (restored if the ledger write fails).
-      const tipRead = vi.fn(() => ({
-        eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { tip_amount: 0 } }) }) }),
-      }));
-      const from = vi.fn((table: string) => {
-        if (table === 'payments') return { insert: paymentsInsert };
-        return { update, select: tipRead };
-      });
-      return {
-        client: { from } as unknown as SupabaseClient,
-        update,
-        eq1,
-        eq2,
-        eq3,
-        neq,
-        select,
-        paymentsInsert,
-      };
-    }
-
-    it('scopes the update to payment_status=pending and returns paid:true when a row flips', async () => {
-      const m = makeSupabase({
-        data: [{ id: 'order-1', total: 1000, tip_amount: 500 }],
+  describe('markPaid: bascule et registre en UNE transaction (encaisser_commande)', () => {
+    // markPaid lit le pourboire deja enregistre (seulement s'il y a un ajout a
+    // la caisse), puis appelle UNE fonction de base qui bascule la commande ET
+    // ecrit la ligne du registre dans la meme transaction (migration
+    // 20261120220000). Ses regles (filtres, ajout, plafond, annulation
+    // automatique) sont prouvees par supabase/tests/rls/encaissement_atomique.test.sql.
+    type Recorded = { tip_amount: number; display_currency: string | null; payment_status: string };
+    function makeSupabase(
+      rpcResult: { data?: unknown; error?: unknown } = {
+        data: { paid: true, session_id: null },
         error: null,
-      });
-      const service = createOrderService(m.client);
-
-      const res = await service.markPaid('order-1', 'tenant-123', {
-        method: 'cash',
-        tipAmount: 500,
-      });
-
-      expect(res).toEqual({ paid: true });
-      // C3: payment is decoupled from fulfillment - markPaid must NOT touch status.
-      expect(m.update.mock.calls[0][0]).not.toHaveProperty('status');
-      // payment_status='pending' guard present (third .eq)
-      expect(m.eq3).toHaveBeenCalledWith('payment_status', 'pending');
-      // Une commande annulee reste 'pending': sans ce filtre on pouvait
-      // l'encaisser et inscrire un tender au ledger.
-      expect(m.neq).toHaveBeenCalledWith('status', 'cancelled');
-      // tip recorded when > 0
-      expect(m.update).toHaveBeenCalledWith(expect.objectContaining({ tip_amount: 500 }));
-      // a tender is appended to the ledger (audit H2/H8) with amount = total + tip
-      expect(m.paymentsInsert).toHaveBeenCalledWith(
-        expect.objectContaining({
-          order_id: 'order-1',
-          method: 'cash',
-          status: 'completed',
-          amount: 1500,
-        }),
+      },
+      recorded: Recorded = { tip_amount: 0, display_currency: 'XOF', payment_status: 'pending' },
+    ) {
+      const rpc = vi.fn<(name: string, args?: Record<string, unknown>) => Promise<unknown>>(
+        async (name) =>
+          name === 'encaisser_commande' ? rpcResult : { data: 'closed', error: null },
       );
-    });
-
-    it('is a no-op (paid:false) on an already-paid order (0 rows matched)', async () => {
-      const m = makeSupabase({ data: [], error: null });
-      const service = createOrderService(m.client);
-
-      const res = await service.markPaid('order-1', 'tenant-123', { method: 'cash' });
-
-      expect(res).toEqual({ paid: false });
-    });
-
-    it('does not record a zero tip', async () => {
-      const m = makeSupabase({ data: [{ id: 'order-1' }], error: null });
-      const service = createOrderService(m.client);
-
-      await service.markPaid('order-1', 'tenant-123', { method: 'cash', tipAmount: 0 });
-
-      expect(m.update).toHaveBeenCalledWith(expect.not.objectContaining({ tip_amount: 0 }));
-    });
-
-    it('throws INTERNAL on database error', async () => {
-      const m = makeSupabase({ data: null, error: { message: 'DB error' } });
-      const service = createOrderService(m.client);
-
-      await expect(
-        service.markPaid('order-1', 'tenant-123', { method: 'cash' }),
-      ).rejects.toMatchObject({
-        code: 'INTERNAL',
-      });
-    });
-  });
-
-  describe('markPaid - table session closing (C1)', () => {
-    // orders.update().eq().eq().eq().neq().select() returns a paid row with a
-    // session. The settle-and-close itself is ONE locked database function
-    // (close_table_session_if_settled, migration 20261115200000): its rule is
-    // proven by supabase/tests/rls/fermeture_table_verrouillee.test.sql; here
-    // we check markPaid asks for it, with the stale-order cutoff.
-    function makeSupabase(tenderError: unknown = null) {
-      const rpc = vi.fn().mockResolvedValue({ data: 'closed', error: null });
-      const updateSelect = vi
-        .fn()
-        .mockResolvedValue({ data: [{ id: 'o1', session_id: 's1' }], error: null });
-      // Second update shape: the undo of a flip whose ledger row failed
-      // (update().eq(id).eq(tenant).eq(payment_status).eq(paid_at).select()).
-      const revertPaidAtEq = vi.fn().mockReturnValue({
-        select: vi.fn().mockResolvedValue({ data: [{ id: 'o1' }], error: null }),
-      });
-      const ordersUpdate = vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              neq: vi.fn().mockReturnValue({ select: updateSelect }),
-              eq: revertPaidAtEq,
-            }),
-          }),
-        }),
-      });
-      const from = vi.fn((table: string) => {
-        if (table === 'orders') return { update: ordersUpdate };
-        if (table === 'payments')
-          return { insert: vi.fn().mockResolvedValue({ error: tenderError }) };
-        return {};
-      });
+      const readEqs: unknown[][] = [];
+      const update = vi.fn();
+      const insert = vi.fn();
+      const tipRead = vi.fn(() => ({
+        eq: (...a1: unknown[]) => {
+          readEqs.push(a1);
+          return {
+            eq: (...a2: unknown[]) => {
+              readEqs.push(a2);
+              return { maybeSingle: async () => ({ data: recorded, error: null }) };
+            },
+          };
+        },
+      }));
+      const from = vi.fn((table: string) =>
+        table === 'orders' ? { select: tipRead, update } : { insert },
+      );
       return {
         client: { from, rpc } as unknown as SupabaseClient,
         rpc,
-        ordersUpdate,
-        revertPaidAtEq,
+        update,
+        insert,
+        tipRead,
+        readEqs,
       };
     }
+    const payCall = (m: ReturnType<typeof makeSupabase>) =>
+      m.rpc.mock.calls.find((c) => c[0] === 'encaisser_commande')?.[1] as
+        Record<string, unknown> | undefined;
 
-    it('asks the database to close the table, tenant-scoped, with the 2 h cutoff', async () => {
+    // Defaut corrige (relecture adversariale du lot pourboires): les deux
+    // ecritures etaient separees, et l'annulation apres un registre en echec
+    // ne pouvait pas reussir pour un caissier (paid_at reecrit par la garde,
+    // retour a pending refuse). Une commande restait payee sans ligne au
+    // registre. Ce test echoue sur l'ancien code, qui ecrivait orders puis payments.
+    it('n ecrit jamais orders ni payments directement: un seul appel transactionnel', async () => {
       const m = makeSupabase();
       const res = await createOrderService(m.client).markPaid('o1', 't1', { method: 'cash' });
-
       expect(res).toEqual({ paid: true });
+      expect(m.update).not.toHaveBeenCalled();
+      expect(m.insert).not.toHaveBeenCalled();
+      expect(payCall(m)).toEqual({
+        p_order_id: 'o1',
+        p_tenant_id: 't1',
+        p_method: 'cash',
+        p_tip_ajout: 0,
+      });
+    });
+
+    it('registre refuse par la base: erreur definitive, rien d ecrit a cote', async () => {
+      const m = makeSupabase({ data: null, error: { code: '22023', message: 'refuse' } });
+      await expect(
+        createOrderService(m.client).markPaid('o1', 't1', { method: 'cash' }),
+      ).rejects.toMatchObject({ code: 'VALIDATION' });
+      expect(m.update).not.toHaveBeenCalled();
+      expect(m.insert).not.toHaveBeenCalled();
+    });
+
+    it('panne passagere: Erreur interne, rejouable par la file hors ligne', async () => {
+      const m = makeSupabase({ data: null, error: { code: '08006', message: 'down' } });
+      await expect(
+        createOrderService(m.client).markPaid('o1', 't1', { method: 'cash' }),
+      ).rejects.toMatchObject({ code: 'INTERNAL', message: 'Erreur interne' });
+    });
+
+    it('commande deja reglee (rejeu): paid false, sans fermer la table', async () => {
+      const m = makeSupabase({
+        data: { paid: false, payment_status: 'paid', status: 'delivered' },
+        error: null,
+      });
+      const res = await createOrderService(m.client).markPaid('o1', 't1', { method: 'cash' });
+      expect(res).toEqual({ paid: false });
+      expect(m.rpc).not.toHaveBeenCalledWith('close_table_session_if_settled', expect.anything());
+    });
+
+    it('ferme la table une fois reglee, borne au restaurant, avec le delai de 2 h', async () => {
+      const m = makeSupabase({ data: { paid: true, session_id: 's1' }, error: null });
+      await createOrderService(m.client).markPaid('o1', 't1', { method: 'cash' });
       expect(m.rpc).toHaveBeenCalledWith('close_table_session_if_settled', {
         p_session_id: 's1',
         p_tenant_id: 't1',
         p_stale_before: expect.any(String),
       });
+      const closeArgs = m.rpc.mock.calls.find((c) => c[0] === 'close_table_session_if_settled')!;
       const cutoff = new Date(
-        (m.rpc.mock.calls[0][1] as { p_stale_before: string }).p_stale_before,
+        (closeArgs[1] as { p_stale_before: string }).p_stale_before,
       ).getTime();
       expect(Math.abs(Date.now() - STALE_PAID_ORDER_MS - cutoff)).toBeLessThan(5_000);
     });
 
-    it('annule le passage a paye si la ligne du registre echoue, sans toucher a la table', async () => {
-      const m = makeSupabase({ message: 'ledger down' });
+    // Constat B: le pourboire de la caisse s'AJOUTE a celui du client (500 sur
+    // la vitrine + 200 a la caisse = 700). Seul l'ajout part a la base, qui
+    // fait la somme dans le meme UPDATE.
+    it('envoie seulement l ajout de la caisse, lu sous le bon restaurant', async () => {
+      const m = makeSupabase(undefined, {
+        tip_amount: 500,
+        display_currency: 'XOF',
+        payment_status: 'pending',
+      });
+      await createOrderService(m.client).markPaid('o1', 't1', { method: 'cash', tipAmount: 200 });
+      expect(payCall(m)).toEqual(expect.objectContaining({ p_tip_ajout: 200 }));
+      expect(payCall(m)).not.toHaveProperty('p_tip_plafond');
+      expect(m.readEqs).toContainEqual(['tenant_id', 't1']);
+    });
 
+    it('n envoie aucun ajout quand la caisse n ajoute rien, sans lecture', async () => {
+      const m = makeSupabase();
+      await createOrderService(m.client).markPaid('o1', 't1', { method: 'cash', tipAmount: 0 });
+      expect(m.tipRead).not.toHaveBeenCalled();
+      expect(payCall(m)).toMatchObject({ p_tip_ajout: 0 });
+    });
+
+    // Constat F: meme plafond que la route de commande, 1 000 000 en unites
+    // MAJEURES de la devise, sur le pourboire obtenu.
+    it('refuse un pourboire au-dela du plafond (XOF), sans appeler la base', async () => {
+      const m = makeSupabase(undefined, {
+        tip_amount: 500,
+        display_currency: 'XOF',
+        payment_status: 'pending',
+      });
+      await expect(
+        createOrderService(m.client).markPaid('o1', 't1', { method: 'cash', tipAmount: 999_501 }),
+      ).rejects.toMatchObject({ code: 'VALIDATION' });
+      expect(payCall(m)).toBeUndefined();
+    });
+
+    it('accepte le plafond exact, et le met a l echelle d une devise a 2 decimales', async () => {
+      const xof = makeSupabase(undefined, {
+        tip_amount: 500,
+        display_currency: 'XOF',
+        payment_status: 'pending',
+      });
+      await createOrderService(xof.client).markPaid('o1', 't1', {
+        method: 'cash',
+        tipAmount: 999_500,
+      });
+      expect(payCall(xof)).toMatchObject({ p_tip_ajout: 999_500 });
+
+      const eur = makeSupabase(undefined, {
+        tip_amount: 0,
+        display_currency: 'EUR',
+        payment_status: 'pending',
+      });
+      // 1 000 000 EUR = 100 000 000 centimes: 2 000 000 centimes passe.
+      await createOrderService(eur.client).markPaid('o1', 't1', {
+        method: 'cash',
+        tipAmount: 2_000_000,
+      });
+      expect(payCall(eur)).toMatchObject({ p_tip_ajout: 2_000_000 });
+    });
+
+    // Un rejeu d'un encaissement deja passe relisait un pourboire DEJA augmente:
+    // pres du plafond, il etait refuse (422 definitif) alors que la commande
+    // etait payee.
+    it('un rejeu sur une commande deja payee n est jamais refuse par le plafond', async () => {
+      const m = makeSupabase(
+        { data: { paid: false, payment_status: 'paid', status: 'delivered' }, error: null },
+        { tip_amount: 999_900, display_currency: 'XOF', payment_status: 'paid' },
+      );
+      const res = await createOrderService(m.client).markPaid('o1', 't1', {
+        method: 'cash',
+        tipAmount: 200,
+      });
+      expect(res).toEqual({ paid: false });
+      expect(payCall(m)).toMatchObject({ p_tip_ajout: 200 });
+    });
+
+    // Contre-verification du 2026-11-21: le refus de plan de la base (PR #444,
+    // code 23514) etait traite comme une panne passagere: "Erreur interne" a
+    // l'ecran, et la file hors ligne relancait en boucle.
+    it('refus de plan (23514): refus definitif, message clair', async () => {
+      const m = makeSupabase({
+        data: null,
+        error: { code: '23514', message: 'Tips require the Pro plan or higher' },
+      });
       await expect(
         createOrderService(m.client).markPaid('o1', 't1', { method: 'cash' }),
-      ).rejects.toThrow();
+      ).rejects.toMatchObject({
+        code: 'VALIDATION',
+        message: 'Pourboire non inclus dans votre plan',
+      });
+    });
 
-      expect(m.ordersUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({ payment_status: 'pending', paid_at: null }),
-      );
-      // Only ITS OWN flip is undone: scoped to the paid_at this call wrote.
-      const written = (m.ordersUpdate.mock.calls[0][0] as { paid_at: string }).paid_at;
-      expect(m.revertPaidAtEq).toHaveBeenCalledWith('paid_at', written);
-      expect(m.rpc).not.toHaveBeenCalled();
+    // Contre-verification finale: tout 23514 devenait "Pourboire non inclus
+    // dans votre plan", alors que la liste des moyens de paiement leve aussi
+    // 23514 (orders_payment_method_check).
+    it('23514 de la liste des moyens de paiement: message propre, pas le plan', async () => {
+      const m = makeSupabase({
+        data: null,
+        error: {
+          code: '23514',
+          message:
+            'new row for relation "orders" violates check constraint "orders_payment_method_check"',
+        },
+      });
+      await expect(
+        createOrderService(m.client).markPaid('o1', 't1', { method: 'cash' }),
+      ).rejects.toMatchObject({ code: 'VALIDATION', message: 'Moyen de paiement non accepte' });
+    });
+
+    it('autre 23514: refus definitif generique, jamais "Erreur interne"', async () => {
+      const m = makeSupabase({ data: null, error: { code: '23514', message: 'autre regle' } });
+      await expect(
+        createOrderService(m.client).markPaid('o1', 't1', { method: 'cash' }),
+      ).rejects.toMatchObject({
+        code: 'VALIDATION',
+        message: "Le paiement n'a pas pu etre enregistre",
+      });
+    });
+
+    // Une commande annulee garde payment_status 'pending': elle revenait en
+    // "deja reglee", et le caissier lisait qu'elle etait encaissee.
+    it('commande annulee: message "annulee", pas "deja reglee"', async () => {
+      const m = makeSupabase({
+        data: { paid: false, payment_status: 'pending', status: 'cancelled' },
+        error: null,
+      });
+      await expect(
+        createOrderService(m.client).markPaid('o1', 't1', { method: 'cash' }),
+      ).rejects.toMatchObject({ code: 'VALIDATION', message: expect.stringMatching(/annulee/) });
+    });
+
+    it('commande introuvable (autre restaurant, supprimee): NOT_FOUND', async () => {
+      const m = makeSupabase({
+        data: { paid: false, payment_status: null, status: null },
+        error: null,
+      });
+      await expect(
+        createOrderService(m.client).markPaid('o1', 't1', { method: 'cash' }),
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    });
+
+    // Une commande partiellement payee repondait "succes, deja reglee": le
+    // caissier croyait avoir encaisse.
+    it('commande partiellement payee: erreur explicite, pas un faux succes', async () => {
+      const m = makeSupabase({ data: { paid: false, payment_status: 'partial' }, error: null });
+      await expect(
+        createOrderService(m.client).markPaid('o1', 't1', { method: 'cash' }),
+      ).rejects.toMatchObject({ code: 'VALIDATION', message: expect.stringMatching(/partiel/) });
     });
   });
 

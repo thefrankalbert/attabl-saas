@@ -307,10 +307,10 @@
   "marketing": {
     "pricing": {
       "metaTitle": "Attabl - Simple pricing for hospitality",
-      "metaDescription": "Clear pricing for every hospitality business. Starter, Pro, Business or Enterprise. 14-day free trial on the Pro plan.",
+      "metaDescription": "Clear pricing for every hospitality business. Starter, Pro, Business or Enterprise. 14-day free trial with every feature.",
       "hero": {
         "title": "Clear pricing. No surprises.",
-        "subtitle": "14-day free trial, whatever plan you pick. During the trial you get the whole Pro plan: register, kitchen screen, stock, tables, reports.",
+        "subtitle": "14-day free trial, whatever plan you pick. During the trial you get everything: register, kitchen screen, stock, tables, reports, delivery, room service.",
         "eyebrow": "Pricing"
       },
       "billing": {
@@ -328,18 +328,12 @@
           "subtitle": "For restaurant owners who want to go digital without the headache.",
           "button": "Try it free",
           "featuresTitle": "Included in STARTER",
-          "benefits": {
-            "b1": "Bilingual QR menu (FR/EN)",
-            "b2": "Basic POS (cash + card)",
-            "b3": "1 admin, 3 staff",
-            "b4": "Email support"
-          },
           "features": {
             "f1": "Bilingual digital QR menu",
             "f2": "Dine-in and takeaway orders",
             "f3": "Cash and card POS",
             "f4": "Dashboard (revenue, orders)",
-            "f5": "1 establishment, 2 menus"
+            "f5": "1 establishment, 1 admin, 3 staff"
           }
         },
         "pro": {
@@ -348,12 +342,6 @@
           "subtitle": "For those serving 50+ covers a day who want full control.",
           "button": "Try for free",
           "featuresTitle": "Included in PRO",
-          "benefits": {
-            "b1": "Everything in STARTER + KDS, tables, stock",
-            "b2": "Multi-currency (XAF, EUR, USD)",
-            "b3": "14-day free trial, no credit card",
-            "b4": "24h WhatsApp support"
-          },
           "features": {
             "f1": "Everything in STARTER",
             "f2": "KDS (kitchen display)",
@@ -361,33 +349,25 @@
             "f4": "Stock management and alerts",
             "f5": "Recipes (cost of ingredients)",
             "f6": "Supplier tracking",
-            "f7": "Mobile money and tips",
+            "f7": "Tips and multi-currency",
             "f8": "Sales reports and best-sellers",
             "f9": "Team management (roles, permissions)",
-            "f10": "10 menus, 10 staff"
+            "f10": "2 establishments, 2 admins, 15 staff"
           }
         },
         "business": {
           "badge": "Multi-site",
           "title": "BUSINESS",
-          "subtitle": "Hotel, chain or multi-site - one dashboard for everything.",
+          "subtitle": "Hotel, delivery, several establishments: everything included.",
           "primaryButton": "Try it free",
           "secondaryButton": "Request a demo",
           "featuresTitle": "Included in BUSINESS",
-          "benefits": {
-            "b1": "Everything in PRO + up to 10 sites",
-            "b2": "Room service and delivery",
-            "b3": "Advanced and multi-site reports",
-            "b4": "Priority 4h support"
-          },
           "features": {
             "f1": "Everything in PRO",
             "f2": "Digital room service",
             "f3": "Delivery orders",
-            "f4": "Advanced reports",
-            "f5": "Multi-site reports",
-            "f6": "Up to 10 establishments",
-            "f7": "99 admins, 999 staff, 99 menus"
+            "f4": "Up to 10 establishments",
+            "f5": "Unlimited admins and staff"
           }
         },
         "enterprise": {
@@ -396,12 +376,6 @@
           "subtitle": "For groups, franchises and chains managing multiple sites.",
           "button": "Contact us",
           "featuresTitle": "Included in ENTERPRISE",
-          "benefits": {
-            "b1": "Everything in BUSINESS + unlimited sites",
-            "b2": "99.9% SLA guaranteed",
-            "b3": "Dedicated account manager",
-            "b4": "1h phone support + custom API"
-          },
           "features": {
             "f1": "Everything in BUSINESS",
             "f2": "Unlimited establishments",
@@ -432,7 +406,6 @@
             "title": "Checkout",
             "features": {
               "pos": "POS (cash + card)",
-              "mobileMoney": "Mobile money",
               "multiCurrency": "Multi-currency (XAF, EUR, USD)",
               "tips": "Built-in tips"
             }
@@ -460,8 +433,7 @@
               "dashboard": "Dashboard (revenue, orders)",
               "salesReports": "Sales reports",
               "bestSellers": "Best-sellers",
-              "advancedReports": "Advanced reports",
-              "multiSiteReports": "Multi-site reports"
+              "aiSuggestions": "Automatic suggestions (AI)"
             }
           },
           "team": {
@@ -487,7 +459,6 @@
           "volumes": {
             "title": "Volumes",
             "features": {
-              "monthlyOrders": "Orders / month",
               "menus": "Menus",
               "items": "Items"
             }
@@ -499,7 +470,7 @@
         "items": {
           "q1": {
             "question": "How does the free trial work?",
-            "answer": "14 days with the whole Pro plan, no credit card: register, kitchen screen, stock, tables, reports. Delivery, room service and AI analytics stay on the Business plan."
+            "answer": "For 14 days you test everything, no credit card: register, kitchen screen, stock, tables, reports, delivery, room service and AI analytics. Then you pick your plan or you stop."
           },
           "q2": {
             "question": "What happens after the 14 days?",
@@ -554,8 +525,8 @@
       "billedTotal": "{total} FCFA total",
       "perDay": "about ~{amount} FCFA per day",
       "essai": {
-        "title": "For 14 days, you test the whole Pro plan.",
-        "body": "The trial gives full access to the Pro plan, no credit card. You judge on your own service.",
+        "title": "For 14 days, you test everything.",
+        "body": "Every feature is open, no credit card. You judge on your own service.",
         "f1": "Kitchen display",
         "f2": "Register",
         "f3": "Stock and recipes",
@@ -605,7 +576,7 @@
         "p2cta": "Take Pro",
         "p3tag": "Growing",
         "p3title": "Hotel, several venues",
-        "p3body": "Room service, delivery, multi-site reports and priority support. One console for everything.",
+        "p3body": "Room service, delivery, up to 10 establishments and priority support.",
         "p3cta": "Go Business",
         "help": "Unsure which one?",
         "helpLink": "We help you decide"
@@ -690,7 +661,6 @@
       "cookieAuth": "Login cookies (Supabase): keep your session open. Essential.",
       "cookieLocale": "NEXT_LOCALE: remembers the language you chose, one year.",
       "cookieRecovery": "attabl_recovery: secures the password change, 15 minutes, hidden from the site's scripts.",
-      "cookieAb": "attabl_ab_id and attabl_ab_trial: used once, to test the length of the free trial (7 or 14 days) on sign-up pages, 60 days. No information about you is attached.",
       "cookieStorage": "Browser local storage: light or dark theme, display preferences, currency, a customer's cart. This data stays on your device.",
       "cookieSentry": "If an error occurs, Sentry may record the current session to help us fix it.",
       "section8Title": "8. How long we keep your data",
@@ -1191,7 +1161,7 @@
           "points": {
             "p1": "Room service from the room",
             "p2": "Multiple points of sale (restaurant, bar)",
-            "p3": "Advanced multi-venue reports",
+            "p3": "Up to 10 establishments in one account",
             "p4": "Built-in delivery"
           },
           "offerWhy": "Room service, delivery and multi-venue come with the Business plan."
@@ -1249,7 +1219,7 @@
         "subtitle": "Account created in 2 minutes. Your menu online today.",
         "s1": {
           "title": "Create your account",
-          "body": "2 minutes, no credit card. 14 days of full access to the Pro plan."
+          "body": "2 minutes, no credit card. 14 days to test everything."
         },
         "s2": {
           "title": "Build your menu",
@@ -2218,9 +2188,9 @@
     },
     "upgradeWall": {
       "planRequired": "Pro Feature",
-      "upgradeCta": "Upgrade to Pro - 14 days free",
+      "upgradeCta": "Upgrade to Pro",
       "askOwner": "The restaurant owner can turn this on.",
-      "trialNote": "Available for free during your Pro trial",
+      "back": "Back to dashboard",
       "kds": {
         "title": "Kitchen Display (KDS)",
         "desc": "Orders go directly to your kitchen screen. No more paper tickets, no more trips back and forth. Your team prepares faster, your customers wait less."
@@ -2676,7 +2646,6 @@
     "reactivate": "Reactivate",
     "required": "Required",
     "principal": "Main",
-    "limitReached": "Plan limit reached. Upgrade your plan",
     "newSpace": "New space",
     "renameSpace": "Rename space",
     "nameLabel": "Space name",
@@ -2694,7 +2663,9 @@
     "newSpaceHint": "Give this service area a clear name.",
     "renameHint": "Pick a new name for this space.",
     "reactivateLimit": "Plan limit reached",
-    "empty": "No spaces yet."
+    "empty": "No spaces yet.",
+    "limitBanner": "Your plan includes {max, plural, one {# active space} other {# active spaces}}, and you have {count}. The ones you have keep working normally. To add one, upgrade your plan.",
+    "limitBannerCta": "See plans"
   },
   "commandPalette": {
     "placeholder": "Search for a page or action...",
@@ -2929,13 +2900,14 @@
     "newOrder": "New order",
     "secCatalogue": "Catalog",
     "secGestion": "Management",
-    "usageMonthlyOrders": "Orders / month",
     "accountMenu": "Account",
     "planLabel": "{plan} plan",
-    "planFree": "Free",
     "planCardTitle": "Current plan",
     "planCardCta": "Upgrade to {plan}",
     "planCardUpsellPro": "Unlock the full POS, kitchen display and inventory.",
+    "planTrial": "Trial",
+    "planCardTrial": "During the trial, everything is open. Pick your plan before it ends.",
+    "planCardTrialCta": "Choose my plan",
     "navSupports": "Print Materials",
     "navInventoryCounts": "Physical inventory",
     "supports": {
@@ -3202,7 +3174,8 @@
     "durationLessThanHour": "less than an hour",
     "durationHours": "{count, plural, one {# hour} other {# hours}}",
     "durationDays": "{count, plural, one {# day} other {# days}}",
-    "invitationExpired": "Invitation expired"
+    "invitationExpired": "Invitation expired",
+    "limitBannerCta": "See plans"
   },
   "reports": {
     "title": "Reports",
@@ -3284,6 +3257,8 @@
     "serverPerformance": "Server Performance",
     "serverName": "Server",
     "ordersCount": "Orders",
+    "tipsLabel": "Tips",
+    "tipsLine": "Tips on orders fully paid in this period: {amount}",
     "avgOrderValue": "Avg. Order",
     "noServerData": "No server data for this period",
     "noDataTitle": "No reports available",
@@ -3817,6 +3792,8 @@
     "totalWithTip": "Total with tip",
     "amountDue": "Amount Due",
     "received": "Received",
+    "tipFromCustomer": "Tip left by the customer: {amount}",
+    "tipAddMore": "Add a tip",
     "customTip": "Custom",
     "numpadClear": "Clear",
     "numpadBackspace": "Backspace",

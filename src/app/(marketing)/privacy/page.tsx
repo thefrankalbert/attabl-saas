@@ -20,7 +20,6 @@ const COOKIE_KEYS = [
   'cookieAuth',
   'cookieLocale',
   'cookieRecovery',
-  'cookieAb',
   'cookieCc',
   'cookieStorage',
   'cookieSentry',

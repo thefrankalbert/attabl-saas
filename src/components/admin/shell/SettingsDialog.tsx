@@ -56,8 +56,14 @@ export function SettingsDialog({
   isDark = false,
 }: SettingsDialogProps) {
   const t = useTranslations('admin');
+  const tSidebar = useTranslations('sidebar');
   const clientUrl = getTenantUrl(tenant.slug);
-  const planLabel = tenant.subscription_plan?.toUpperCase() || 'GRATUIT';
+  // Aucun plan gratuit: sans plan enregistre, c'est Starter (repli de getEffectivePlan).
+  // Essai actif: le layout transmet 'trial'.
+  const planLabel =
+    tenant.subscription_plan === 'trial'
+      ? tSidebar('planTrial').toUpperCase()
+      : (tenant.subscription_plan || 'starter').toUpperCase();
 
   // Chaque onglet ne fait que renvoyer vers une page: on ne montre que ceux dont
   // la page s'ouvre pour ce membre (meme regle que le middleware), au lieu

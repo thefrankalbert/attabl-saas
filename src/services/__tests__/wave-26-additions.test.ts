@@ -171,28 +171,38 @@ describe('order.service Wave 26 additions', () => {
     await expect(svc.updateStatus('o', 't', 'delivered')).rejects.toBeInstanceOf(ServiceError);
   });
 
-  it('markPaid sets payment_method/payment_status/paid_at and filters tenant_id', async () => {
-    const supabase = buildSupabase({ orders: { data: null, error: null } });
+  it('markPaid encaisse en un appel transactionnel, borne au restaurant', async () => {
+    // Lecture du pourboire deja enregistre (filtre tenant_id), puis UN appel
+    // encaisser_commande: bascule et registre dans la meme transaction.
+    const supabase = buildSupabase({
+      orders: {
+        data: { tip_amount: 0, display_currency: 'XOF', payment_status: 'pending' },
+        error: null,
+      },
+    });
+    supabase.rpc.mockResolvedValue({ data: { paid: true, session_id: null }, error: null });
     const svc = createOrderService(asSupabase(supabase));
     await svc.markPaid('order-1', 'tenant-A', { method: 'cash', tipAmount: 500 });
-    // A tip first reads the current tip (restored if the ledger write fails).
-    const chain = supabase._chains.orders.find((c) => c._calls.some((x) => x.method === 'update'))!;
-    expect(hasTenantFilter(chain, 'tenant-A')).toBe(true);
-    const updateCall = chain._calls.find((c) => c.method === 'update');
-    expect(updateCall).toBeDefined();
-    const payload = updateCall!.args[0] as Record<string, unknown>;
-    expect(payload.payment_method).toBe('cash');
-    expect(payload.payment_status).toBe('paid');
-    expect(payload.tip_amount).toBe(500);
-    expect(payload.paid_at).toBeTypeOf('string');
+    expect(hasTenantFilter(supabase._chains.orders[0], 'tenant-A')).toBe(true);
+    expect(supabase._chains.orders[0]._calls.some((c) => c.method === 'update')).toBe(false);
+    expect(supabase.rpc).toHaveBeenCalledWith('encaisser_commande', {
+      p_order_id: 'order-1',
+      p_tenant_id: 'tenant-A',
+      p_method: 'cash',
+      p_tip_ajout: 500,
+    });
   });
 
-  it('markPaid omits tip_amount when 0', async () => {
-    const supabase = buildSupabase({ orders: { data: null, error: null } });
+  it('markPaid sans pourboire: aucun ajout, aucune lecture', async () => {
+    const supabase = buildSupabase({});
+    supabase.rpc.mockResolvedValue({ data: { paid: true, session_id: null }, error: null });
     const svc = createOrderService(asSupabase(supabase));
     await svc.markPaid('order-1', 'tenant-A', { method: 'card' });
-    const updateCall = supabase._chains.orders[0]._calls.find((c) => c.method === 'update');
-    expect((updateCall!.args[0] as Record<string, unknown>).tip_amount).toBeUndefined();
+    expect(supabase._chains.orders ?? []).toHaveLength(0);
+    expect(supabase.rpc).toHaveBeenCalledWith(
+      'encaisser_commande',
+      expect.objectContaining({ p_tip_ajout: 0 }),
+    );
   });
 
   it('listReadyOrdersToday filters by tenant_id and status=ready', async () => {

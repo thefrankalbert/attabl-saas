@@ -24,6 +24,7 @@ import {
   actionDeactivateVenue,
   actionReactivateVenue,
 } from '@/app/actions/venues';
+import { PlanLimitBanner } from '@/components/admin/PlanLimitBanner';
 
 export type EspaceRow = {
   id: string;
@@ -139,15 +140,10 @@ export function EspacesManager({
           <p className="mt-1 text-sm text-app-text-secondary">{t('subtitle')}</p>
         </div>
         {atLimit ? (
-          <div className="flex flex-col items-end gap-1">
-            <Button disabled className="min-h-[44px]">
-              <Plus className="mr-2" />
-              {t('add')}
-            </Button>
-            <Link href={subscriptionUrl} className="text-xs text-status-info hover:underline">
-              {t('limitReached')}
-            </Link>
-          </div>
+          <Button disabled className="min-h-[44px]">
+            <Plus className="mr-2" />
+            {t('add')}
+          </Button>
         ) : (
           <Button className="min-h-[44px]" onClick={() => setAddOpen(true)} disabled={isPending}>
             <Plus className="mr-2" />
@@ -155,6 +151,14 @@ export function EspacesManager({
           </Button>
         )}
       </div>
+
+      {atLimit && (
+        <PlanLimitBanner
+          message={t('limitBanner', { max: maxEspaces, count: activeCount })}
+          ctaLabel={t('limitBannerCta')}
+          href={subscriptionUrl}
+        />
+      )}
 
       {espaces.length === 0 ? (
         <Card className="p-6 flex flex-col items-center gap-3 text-center">
