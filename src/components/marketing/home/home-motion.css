@@ -82,13 +82,27 @@
     transition: opacity 0.15s linear;
     pointer-events: none;
   }
+  /*
+   * Fond presque transparent, pas transparent : Safari iOS teinte sa barre
+   * d'etat d'apres le fond de l'en-tete colle en haut. Transparent, il gardait
+   * le blanc de l'en-tete plein au retour sur le hero (mesure au simulateur).
+   */
   header[data-nav-root][data-sur-hero] {
     border-color: transparent;
-    background-color: transparent;
+    background-color: rgb(11 11 11 / 0.02);
     color: #fff;
   }
   header[data-nav-root][data-sur-hero]::before {
     opacity: 1;
+  }
+  /*
+   * Meme raison pour le fond de la page, que Safari iOS reprend sous sa barre
+   * d'adresse : sombre tant que le hero est a l'ecran. Le contenu garde son
+   * propre fond.
+   */
+  html:has(header[data-sur-hero]),
+  html:has(header[data-sur-hero]) body {
+    background-color: var(--color-nuit);
   }
   /* Les panneaux, blancs pendant leur fermeture, gardent leurs couleurs. */
   header[data-sur-hero] :is(a, button):not([data-menu-panel] *) {
@@ -154,34 +168,43 @@
 
 /* Scene : le media du hero devient une tuile. Meme condition que SCENE_QUERY. */
 @media (prefers-reduced-motion: no-preference) and (min-height: 644px) and (scripting: enabled) {
+  /*
+   * Deux hauteurs. svh (barre d'adresse mobile deployee) cale le texte, les
+   * tuiles et les calculs : elle ne bouge jamais. lvh (barre repliee) est la
+   * hauteur de la scene et du media, pour qu'aucune bande claire n'apparaisse
+   * sous le hero quand la barre se replie. Sur ordinateur les deux sont egales.
+   */
   .home-piste {
-    height: calc(100svh + (100svh - 64px) * 0.62);
+    height: calc(100lvh + (100svh - 64px) * 0.62);
   }
   .home-scene {
     position: sticky;
     top: 0;
-    height: 100svh;
+    height: 100lvh;
     overflow: hidden;
   }
   .home-scene > section {
     position: absolute;
-    inset: 0;
+    inset: 0 0 auto;
+    height: 100svh;
     margin: 0;
   }
   .home-scene > [data-hero] {
     z-index: 2;
-    height: 100%;
     min-height: 0;
     max-height: none;
+    overflow: visible; /* le media depasse jusqu'a lvh, la scene le decoupe */
     background: transparent;
   }
   .home-hero-media {
+    bottom: calc(100svh - 100lvh);
     will-change: transform, clip-path;
     transform-origin: 50% 50%;
   }
   /* Le hero passe sous l'en-tete ; les tuiles restent dans la zone visible. */
   .home-scene > .home-champ {
     top: 64px;
+    height: calc(100svh - 64px);
     z-index: 1;
     padding: 0;
   }

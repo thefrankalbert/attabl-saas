@@ -1,12 +1,16 @@
 import { animate } from 'framer-motion';
-import { SCENE_QUERY, clamp01 } from './motion-math';
+import { REST_ZONE, SCENE_QUERY, clamp01 } from './motion-math';
 
 /** Pause du defilement avant de finir l'effet, en ms. */
 const IDLE_MS = 140;
-/** En dessous, ce n'est pas un defilement voulu. */
-const DEAD_ZONE = 8;
-/** Au-dela de cet ecart avec la position posee, quelqu'un d'autre fait defiler. */
-const FOREIGN_SCROLL = 4;
+/**
+ * Au-dela de cet ecart avec la position posee, quelqu'un d'autre fait defiler.
+ * Large : sur iOS le defilement programme s'applique avec quelques images de
+ * retard, et un seuil serre arretait l'animation a chaque image.
+ */
+const FOREIGN_SCROLL = 80;
+/** Apres le relachement du doigt, sans attendre la fin de l'inertie. */
+const AFTER_TOUCH_MS = 60;
 
 /**
  * L'effet ne reste jamais arrete a mi-course (releve sur squareup.com le
@@ -21,12 +25,14 @@ export function startSceneCompletion(track: HTMLElement, effectEnd: () => number
   let expectedY = 0;
   let goingUp = false;
   let held = false; // doigt pose, ou barre de defilement tenue
+  let afterTouch = false; // doigt relache : la completion part sans attendre l'inertie
 
   const complete = (): void => {
+    afterTouch = false;
     if (held || !media.matches) return;
     const travelled = -track.getBoundingClientRect().top;
     const end = effectEnd();
-    if (travelled <= DEAD_ZONE || travelled >= end - 2) return;
+    if (travelled <= REST_ZONE || travelled >= end - 2) return;
 
     const from = window.scrollY;
     expectedY = from;
@@ -72,7 +78,7 @@ export function startSceneCompletion(track: HTMLElement, effectEnd: () => number
     const y = window.scrollY;
     if (y !== lastY) goingUp = y < lastY;
     lastY = y;
-    wait();
+    if (!afterTouch) wait(); // l'inertie du doigt ne repousse pas la completion
   };
   const takeOver = (): void => {
     stop();
@@ -80,12 +86,19 @@ export function startSceneCompletion(track: HTMLElement, effectEnd: () => number
   };
   const hold = (): void => {
     held = true;
+    afterTouch = false;
     stop();
   };
-  const release = (): void => {
+  const release = (event?: Event): void => {
     if (!held) return;
     held = false;
-    wait();
+    if (event?.type === 'touchend') {
+      afterTouch = true;
+      clearTimeout(timer);
+      timer = setTimeout(complete, AFTER_TOUCH_MS);
+    } else {
+      wait();
+    }
   };
   // La barre de defilement n'envoie pas toujours mouseup.
   const onMouseMove = ({ buttons }: MouseEvent): void => {

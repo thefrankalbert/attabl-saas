@@ -13,6 +13,12 @@ export const HEADER_HEIGHT = 64;
 export const TRAVEL = 0.35;
 /** Piste : l'ecran, puis (TRACK - 1) fois la zone sous l'en-tete. */
 export const TRACK = 1.62;
+/**
+ * Premiers pixels sans effet. Sur telephone l'inertie du doigt laisse souvent la
+ * page a 2 ou 3 px du haut : le media, deja reduit d'un cheveu, montrait un
+ * lisere clair sur ses bords.
+ */
+export const REST_ZONE = 8;
 
 export const MOSAIC_TILES = [
   'patron',
