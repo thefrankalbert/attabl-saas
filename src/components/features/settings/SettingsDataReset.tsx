@@ -13,10 +13,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Loader2, Trash2, AlertTriangle, BarChart3, ShoppingBag } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import RoleGuard from '@/components/admin/RoleGuard';
 import { useTranslations } from 'next-intl';
 import { logger } from '@/lib/logger';
+import { SecurityRow } from './SecuritySection';
 
 // --- Types ----------------------------------------------
 
@@ -24,11 +25,8 @@ type ResetType = 'orders' | 'statistics' | 'all';
 
 const CONFIRMATION_PHRASE = 'CONFIRMER SUPPRESSION';
 
-interface ResetOption {
-  type: ResetType;
-  icon: React.ReactNode;
-  dangerLevel: 'warning' | 'destructive';
-}
+/** Least to most destructive, the order the owner reads them in. */
+const RESET_TYPES: ResetType[] = ['statistics', 'orders', 'all'];
 
 // --- Component ------------------------------------------
 
@@ -40,24 +38,6 @@ export default function SettingsDataReset({ tenantSlug }: { tenantSlug: string }
   const [confirmText, setConfirmText] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
-
-  const resetOptions: ResetOption[] = [
-    {
-      type: 'statistics',
-      icon: <BarChart3 className="w-4 h-4" />,
-      dangerLevel: 'warning',
-    },
-    {
-      type: 'orders',
-      icon: <ShoppingBag className="w-4 h-4" />,
-      dangerLevel: 'destructive',
-    },
-    {
-      type: 'all',
-      icon: <Trash2 className="w-4 h-4" />,
-      dangerLevel: 'destructive',
-    },
-  ];
 
   const openDialog = (type: ResetType) => {
     setSelectedType(type);
@@ -115,44 +95,28 @@ export default function SettingsDataReset({ tenantSlug }: { tenantSlug: string }
 
   return (
     <RoleGuard roles={['owner']} fallback={null}>
-      <div className="mt-8 border-t border-status-error/20 pt-6">
-        <div className="flex items-center gap-2 mb-1">
-          <AlertTriangle className="w-4 h-4 text-status-error" />
-          <h3 className="text-sm font-semibold text-status-error">{t('dangerZone')}</h3>
-        </div>
-        <p className="text-xs text-app-text-muted mb-4">{t('dangerZoneDescription')}</p>
-
-        <div className="space-y-2">
-          {resetOptions.map((option) => (
-            <Button
-              key={option.type}
-              type="button"
-              variant="outline"
-              onClick={() => openDialog(option.type)}
-              className="w-full flex items-center gap-3 p-3 rounded-xl hover:border-status-error/40 bg-app-elevated hover:bg-app-status-error-bg/30 text-left group min-h-[44px] h-auto whitespace-normal"
-            >
-              <div className="p-1.5 rounded-lg bg-app-status-error-bg text-status-error group-hover:bg-status-error/20 transition-colors">
-                {option.icon}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-app-text">
-                  {t(`reset_${option.type}_title`)}
-                </div>
-                <div className="text-xs text-app-text-muted">
-                  {t(`reset_${option.type}_description`)}
-                </div>
-              </div>
-            </Button>
-          ))}
-        </div>
-      </div>
+      {RESET_TYPES.map((type) => (
+        <SecurityRow
+          key={type}
+          title={t(`reset_${type}_title`)}
+          description={t(`reset_${type}_description`)}
+        >
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => openDialog(type)}
+            className="min-h-[44px] text-status-error hover:text-status-error"
+          >
+            {t('resetAction')}
+          </Button>
+        </SecurityRow>
+      ))}
 
       {/* Confirmation Dialog */}
       <Dialog open={dialogOpen} onOpenChange={closeDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-status-error">
-              <AlertTriangle className="w-5 h-5" />
+            <DialogTitle className="text-status-error">
               {selectedType && t(`reset_${selectedType}_title`)}
             </DialogTitle>
             <DialogDescription className="text-app-text-secondary">
@@ -230,10 +194,7 @@ export default function SettingsDataReset({ tenantSlug }: { tenantSlug: string }
                     {t('resetInProgress')}
                   </>
                 ) : (
-                  <>
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    {t('resetConfirmButton')}
-                  </>
+                  t('resetConfirmButton')
                 )}
               </Button>
             )}
