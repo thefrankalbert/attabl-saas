@@ -165,6 +165,7 @@ function createMockSupabase(overrides?: {
     c.eq = vi.fn().mockImplementation(() => c);
     c.in = vi.fn().mockImplementation(() => c);
     c.neq = vi.fn().mockImplementation(() => c);
+    c.is = vi.fn().mockImplementation(() => c);
     return c;
   };
 
@@ -207,6 +208,7 @@ function createMockDeleteSupabase(overrides?: {
       c.eq = vi.fn().mockImplementation(() => c);
       c.in = vi.fn().mockImplementation(() => c);
       c.neq = vi.fn().mockImplementation(() => c);
+      c.is = vi.fn().mockImplementation(() => c);
       return c;
     };
     return { select: vi.fn().mockImplementation(() => chain()) };

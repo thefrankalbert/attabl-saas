@@ -8,6 +8,12 @@ import { ServiceError } from '@/services/errors';
 import { pickOnboardingTenantIndex } from '@/lib/onboarding/select-onboarding-tenant';
 import { mapMembershipRows, postLoginDestination } from '@/lib/auth/post-login-destination';
 import {
+  APPAREIL_CONNU_COOKIE,
+  cookieAppareilDeLaRequete,
+  optionsCookieAppareil,
+} from '@/lib/auth/appareil-connu';
+import { traiterConnexionReussie } from '@/lib/auth/alerte-nouvelle-connexion';
+import {
   RECOVERY_MARKER_COOKIE,
   RECOVERY_MARKER_TTL_SECONDS,
   signRecoveryMarker,
@@ -151,9 +157,26 @@ export async function GET(request: Request) {
         // annuaire de ses etablissements (ou reprise d'onboarding), tout autre
         // role -> l'espace de son etablissement. Avant, cette branche envoyait
         // TOUT LE MONDE sur `/admin/tenants`, qui refuse les non-proprietaires.
-        return NextResponse.redirect(
+        const response = NextResponse.redirect(
           `${requestUrl.origin}${postLoginDestination(mapMembershipRows(existingAdminRows))}`,
         );
+
+        // Alerte "nouvelle connexion" si l'appareil est inconnu (audit Q19).
+        // Meilleur effort: ne leve jamais, l'e-mail part apres la reponse.
+        const provider = session.user.app_metadata?.provider;
+        const cookieAppareil = await traiterConnexionReussie({
+          supabase,
+          userId: session.user.id,
+          email: session.user.email,
+          compteCreeLe: session.user.created_at,
+          cookieAppareil: cookieAppareilDeLaRequete(request),
+          methode: provider === 'google' ? 'google' : 'autre',
+          origine: requestUrl.origin,
+        });
+        if (cookieAppareil) {
+          response.cookies.set(APPAREIL_CONNU_COOKIE, cookieAppareil, optionsCookieAppareil());
+        }
+        return response;
       }
 
       // User has no tenant - create one directly in-process.

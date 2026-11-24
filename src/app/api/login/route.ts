@@ -15,6 +15,12 @@ import { getTranslations } from 'next-intl/server';
 import { isHoneypotTriggered } from '@/lib/honeypot';
 import { verifyTurnstileToken } from '@/lib/turnstile';
 import { mapMembershipRows, postLoginDestination } from '@/lib/auth/post-login-destination';
+import {
+  APPAREIL_CONNU_COOKIE,
+  cookieAppareilDeLaRequete,
+  optionsCookieAppareil,
+} from '@/lib/auth/appareil-connu';
+import { traiterConnexionReussie } from '@/lib/auth/alerte-nouvelle-connexion';
 
 export async function POST(request: Request) {
   try {
@@ -171,10 +177,26 @@ export async function POST(request: Request) {
     // abandon d'onboarding, pas une erreur. La regle le renvoie au parcours
     // plutot que de laisser filtrer "ce compte existe mais n'a pas
     // d'etablissement".
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       redirect: postLoginDestination(mapMembershipRows(adminUsers)),
     });
+
+    // 5. Alerte "nouvelle connexion" si l'appareil est inconnu (audit Q19).
+    // Meilleur effort: ne leve jamais, l'e-mail part apres la reponse.
+    const cookieAppareil = await traiterConnexionReussie({
+      supabase,
+      userId: authData.user.id,
+      email: authData.user.email,
+      compteCreeLe: authData.user.created_at,
+      cookieAppareil: cookieAppareilDeLaRequete(request),
+      methode: 'mot_de_passe',
+      origine: new URL(request.url).origin,
+    });
+    if (cookieAppareil) {
+      response.cookies.set(APPAREIL_CONNU_COOKIE, cookieAppareil, optionsCookieAppareil());
+    }
+    return response;
   } catch (error) {
     logger.error('Login route error', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

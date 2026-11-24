@@ -269,6 +269,10 @@ describe('classement de toutes les routes API', () => {
     'billing/flutterwave/checkout',
     'billing/flutterwave/confirm',
     'webhooks/flutterwave',
+    // Rebonds et plaintes Resend: plateforme, aucun restaurant (signature Svix).
+    'webhooks/resend',
+    // Rapports de violation CSP des navigateurs: journalise, n'ecrit rien.
+    'csp-report',
     'cron/flutterwave-renewals',
     'cron/flutterwave-reconcile',
     'cron/freeze-expired-trials',

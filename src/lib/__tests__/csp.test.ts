@@ -34,6 +34,10 @@ describe('buildCspHeader en production', () => {
     expect(all).toContain("object-src 'none'");
   });
 
+  it('envoie les violations a la route de rapports (audit K3.16)', () => {
+    expect(directives()).toContain('report-uri /api/csp-report');
+  });
+
   it("n'autorise plus d'appel du navigateur vers le service de taux de change", () => {
     const connect = directives().find((d) => d.startsWith('connect-src')) ?? '';
     expect(connect).not.toContain('exchangerate-api.com');

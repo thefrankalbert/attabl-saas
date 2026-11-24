@@ -67,6 +67,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       .eq('user_id', user.id)
       .eq('tenant_id', existingInvitation.tenant_id)
       .eq('is_active', true)
+      .is('deleted_at', null)
       .maybeSingle();
 
     if (!adminUser || !['owner', 'admin'].includes(adminUser.role)) {

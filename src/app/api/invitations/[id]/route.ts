@@ -59,6 +59,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       .eq('user_id', user.id)
       .eq('tenant_id', invitation.tenant_id)
       .eq('is_active', true)
+      .is('deleted_at', null)
       .maybeSingle();
 
     if (!adminUser || !['owner', 'admin'].includes(adminUser.role)) {
