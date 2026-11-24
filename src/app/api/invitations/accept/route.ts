@@ -1,3 +1,4 @@
+import { isMfaSatisfied, MFA_REQUIRED_CODE, MFA_REQUIRED_MESSAGE } from '@/lib/auth/mfa-assurance';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
@@ -69,6 +70,13 @@ export async function POST(request: Request) {
     const {
       data: { user: sessionUser },
     } = await sessionClient.auth.getUser();
+    // Double authentification: un compte qui a un facteur n'accepte qu'en aal2.
+    if (sessionUser && !(await isMfaSatisfied(sessionClient, sessionUser))) {
+      return NextResponse.json(
+        { error: MFA_REQUIRED_MESSAGE, code: MFA_REQUIRED_CODE },
+        { status: 403 },
+      );
+    }
 
     const adminClient = createAdminClient();
     const service = createInvitationService(adminClient);

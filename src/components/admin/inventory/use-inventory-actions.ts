@@ -12,7 +12,7 @@ import {
   actionReceiveStock,
   actionRecordLoss,
 } from '@/app/actions/inventory';
-import { MAX_STOCK_QUANTITY } from '@/lib/inventory/quantity-format';
+import { MAX_STOCK_QUANTITY, MAX_UNIT_COST } from '@/lib/inventory/quantity-format';
 import type {
   Ingredient,
   IngredientUnit,
@@ -43,6 +43,9 @@ export function useInventoryActions(tenantId: string) {
   const [adjustType, setAdjustType] = useState<MovementType>('manual_add');
   const [adjustNotes, setAdjustNotes] = useState('');
   const [adjustSupplierId, setAdjustSupplierId] = useState('');
+  // Optional purchase price of a receipt (manual_add), per ENTERED unit. When
+  // set, the server recalculates the product's weighted average cost.
+  const [adjustUnitCost, setAdjustUnitCost] = useState('');
   // When receiving a manual_add on an ingredient that has a purchase_unit, the
   // quantity can be entered in the base unit ('base') or the purchase unit
   // ('purchase'); 'purchase' routes to actionReceiveStock (server converts).
@@ -74,6 +77,7 @@ export function useInventoryActions(tenantId: string) {
     setAdjustType('manual_add');
     setAdjustNotes('');
     setAdjustSupplierId('');
+    setAdjustUnitCost('');
     setReceiveUnitMode('base');
     setLossQty('');
     setLossReason('breakage');
@@ -104,6 +108,7 @@ export function useInventoryActions(tenantId: string) {
     setAdjustQty('');
     setAdjustType('manual_add');
     setAdjustNotes('');
+    setAdjustUnitCost('');
     setReceiveUnitMode('base');
     setModalMode('adjust');
   };
@@ -246,6 +251,18 @@ export function useInventoryActions(tenantId: string) {
       return;
     }
 
+    // Purchase price: receipts only, optional. Empty = the cost does not change.
+    const unitCostRaw = adjustType === 'manual_add' ? adjustUnitCost.trim() : '';
+    const unitCost = unitCostRaw === '' ? undefined : parseFloat(unitCostRaw);
+    if (unitCost !== undefined && !(Number.isFinite(unitCost) && unitCost > 0)) {
+      toast({ title: t('purchasePriceInvalid'), variant: 'destructive' });
+      return;
+    }
+    if (unitCost !== undefined && unitCost > MAX_UNIT_COST) {
+      toast({ title: t('purchasePriceTooLarge'), variant: 'destructive' });
+      return;
+    }
+
     // Receiving in the purchase unit routes to actionReceiveStock, which
     // converts to the base unit server-side before the ledger write. Only
     // manual_add on an ingredient that has a purchase_unit offers this mode.
@@ -267,6 +284,7 @@ export function useInventoryActions(tenantId: string) {
               inPurchaseUnit: true,
               supplier_id: adjustSupplierId || undefined,
               notes: adjustNotes.trim() || undefined,
+              unit_cost: unitCost,
             })
           : await actionAdjustStock(tenantId, {
               ingredient_id: selectedIngredient.id,
@@ -274,6 +292,7 @@ export function useInventoryActions(tenantId: string) {
               movement_type: adjustType,
               notes: adjustNotes.trim() || undefined,
               supplier_id: adjustSupplierId || undefined,
+              unit_cost: unitCost,
             });
       if (r.error) throw new Error(r.error);
       toast({ title: t('stockAdjusted') });
@@ -355,6 +374,8 @@ export function useInventoryActions(tenantId: string) {
     setAdjustNotes,
     adjustSupplierId,
     setAdjustSupplierId,
+    adjustUnitCost,
+    setAdjustUnitCost,
     receiveUnitMode,
     setReceiveUnitMode,
     lossQty,

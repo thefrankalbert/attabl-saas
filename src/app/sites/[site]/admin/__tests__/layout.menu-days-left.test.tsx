@@ -9,6 +9,7 @@ import { isValidElement, type ReactElement, type ReactNode } from 'react';
 const state = vi.hoisted(() => ({
   tenant: {} as Record<string, unknown>,
   billing: vi.fn(),
+  enforceMfa: vi.fn(async () => undefined),
 }));
 
 // Composants du shell: remplaces par des doublures nommees. Le layout est
@@ -66,6 +67,9 @@ vi.mock('@/components/admin/LockedSubscriptionRedirect', () => ({
   LockedSubscriptionRedirect: stub('LockedSubscriptionRedirect'),
 }));
 vi.mock('@/lib/app-version', () => ({ APP_VERSION: 'test' }));
+// Double authentification: la regle est testee dans lib/auth (mfa-guard); ici
+// seul le branchement du layout compte.
+vi.mock('@/lib/auth/mfa-guard', () => ({ enforceMfa: state.enforceMfa }));
 
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }));
 vi.mock('@/lib/cache', () => ({ getTenant: async () => state.tenant }));
@@ -261,5 +265,28 @@ describe('AdminLayout - cuisine ouverte a la fin de l essai', () => {
     await expect(
       kitchenMayFinish({ subscription_status: 'active', trial_ends_at: ilYa(30 * JOUR) }),
     ).resolves.toBe(false);
+  });
+});
+
+describe('AdminLayout - double authentification (K6.13)', () => {
+  beforeEach(() => {
+    state.enforceMfa.mockClear();
+    state.billing.mockResolvedValue({ stripe_subscription_id: null });
+  });
+
+  it('membre direct: garde appelee, destination = son espace, activation non exigee', async () => {
+    await menuDaysLeft({ subscription_status: 'active', trial_ends_at: null });
+    expect(state.enforceMfa).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ id: 'u1' }),
+      { next: '/sites/resto/admin', requireEnrollment: false },
+    );
+  });
+
+  it('session aal1 avec facteur: la garde redirige et rien n est rendu', async () => {
+    state.enforceMfa.mockRejectedValueOnce(new Error('REDIRECT:/auth/mfa'));
+    await expect(
+      menuDaysLeft({ subscription_status: 'active', trial_ends_at: null }),
+    ).rejects.toThrow('REDIRECT:/auth/mfa');
   });
 });

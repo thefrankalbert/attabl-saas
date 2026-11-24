@@ -30,6 +30,8 @@ interface InventoryAdjustModalProps {
   setAdjustNotes: Dispatch<SetStateAction<string>>;
   adjustSupplierId: string;
   setAdjustSupplierId: Dispatch<SetStateAction<string>>;
+  adjustUnitCost: string;
+  setAdjustUnitCost: Dispatch<SetStateAction<string>>;
   receiveUnitMode: 'base' | 'purchase';
   setReceiveUnitMode: Dispatch<SetStateAction<'base' | 'purchase'>>;
   activeSuppliers: Supplier[];
@@ -49,6 +51,8 @@ export default function InventoryAdjustModal({
   setAdjustNotes,
   adjustSupplierId,
   setAdjustSupplierId,
+  adjustUnitCost,
+  setAdjustUnitCost,
   receiveUnitMode,
   setReceiveUnitMode,
   activeSuppliers,
@@ -88,6 +92,11 @@ export default function InventoryAdjustModal({
       convertedHint = t('convertedTo', { qty: converted, unit: baseUnitShort });
     }
   }
+  // The purchase price is typed in the SAME unit as the quantity.
+  const enteredUnit =
+    canReceiveInPurchaseUnit && receiveUnitMode === 'purchase'
+      ? (selectedIngredient?.purchase_unit ?? baseUnitShort)
+      : baseUnitShort;
   return (
     <AdminModal
       isOpen={isOpen}
@@ -193,6 +202,31 @@ export default function InventoryAdjustModal({
                   </p>
                 )}
             </div>
+
+            {adjustType === 'manual_add' && (
+              <div>
+                <Label
+                  htmlFor="adjust-unit-cost"
+                  className="text-xs font-medium text-app-text-secondary mb-1 block"
+                >
+                  {t('purchasePriceLabel', { unit: enteredUnit })}
+                </Label>
+                <Input
+                  id="adjust-unit-cost"
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="0.01"
+                  value={adjustUnitCost}
+                  onChange={(e) => setAdjustUnitCost(e.target.value)}
+                  placeholder={t('purchasePricePlaceholder')}
+                  aria-describedby="adjust-unit-cost-hint"
+                />
+                <p id="adjust-unit-cost-hint" className="text-xs text-app-text-muted mt-1">
+                  {t('purchasePriceHint')}
+                </p>
+              </div>
+            )}
 
             {adjustType === 'manual_add' && activeSuppliers.length > 0 && (
               <div>

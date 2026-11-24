@@ -1,5 +1,6 @@
 'use server';
 
+import { isMfaSatisfied, MFA_REQUIRED_MESSAGE } from '@/lib/auth/mfa-assurance';
 import { after } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { z } from 'zod';
@@ -125,6 +126,10 @@ export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResp
 
   if (authError || !user) {
     return { error: 'Unauthorized' };
+  }
+
+  if (!(await isMfaSatisfied(supabase, user))) {
+    return { error: MFA_REQUIRED_MESSAGE };
   }
 
   // Verify the user is an admin for the tenant(s) of these orders.

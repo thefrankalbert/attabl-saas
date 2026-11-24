@@ -140,6 +140,89 @@ describe("handleAdjust: stock d'ouverture", () => {
   });
 });
 
+describe("handleAdjust: prix d'achat (cout moyen pondere)", () => {
+  it('transmet le prix saisi avec une reception', async () => {
+    const { result } = setup();
+    act(() => result.current.openAdjust(ING));
+    act(() => {
+      result.current.setAdjustQty('5');
+      result.current.setAdjustUnitCost('1600');
+    });
+    await act(async () => {
+      await result.current.handleAdjust();
+    });
+
+    expect(mockAdjust).toHaveBeenCalledWith(
+      TENANT,
+      expect.objectContaining({ quantity: 5, movement_type: 'manual_add', unit_cost: 1600 }),
+    );
+  });
+
+  it('en unite d achat, le prix part avec actionReceiveStock (meme unite que la quantite)', async () => {
+    mockReceive.mockResolvedValue({ success: true });
+    const { result } = setup();
+    act(() => result.current.openAdjust({ ...ING, purchase_unit: 'sac', units_per_purchase: 25 }));
+    act(() => {
+      result.current.setReceiveUnitMode('purchase');
+      result.current.setAdjustQty('2');
+      result.current.setAdjustUnitCost('25000');
+    });
+    await act(async () => {
+      await result.current.handleAdjust();
+    });
+
+    expect(mockReceive).toHaveBeenCalledWith(
+      TENANT,
+      expect.objectContaining({ quantity: 2, inPurchaseUnit: true, unit_cost: 25000 }),
+    );
+  });
+
+  it('champ vide: aucun prix envoye, le cout ne change pas', async () => {
+    const { result } = setup();
+    act(() => result.current.openAdjust(ING));
+    act(() => result.current.setAdjustQty('5'));
+    await act(async () => {
+      await result.current.handleAdjust();
+    });
+
+    const [, input] = mockAdjust.mock.calls[0] as [string, { unit_cost?: number }];
+    expect(input.unit_cost).toBeUndefined();
+  });
+
+  it('refuse un prix nul avec un message, sans appeler le serveur', async () => {
+    const { result } = setup();
+    act(() => result.current.openAdjust(ING));
+    act(() => {
+      result.current.setAdjustQty('5');
+      result.current.setAdjustUnitCost('0');
+    });
+    await act(async () => {
+      await result.current.handleAdjust();
+    });
+
+    expect(mockAdjust).not.toHaveBeenCalled();
+    expect(mockToast).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'purchasePriceInvalid' }),
+    );
+  });
+
+  it('ignore un prix reste saisi quand le type passe a "Retrait manuel"', async () => {
+    const { result } = setup();
+    act(() => result.current.openAdjust(ING));
+    act(() => {
+      result.current.setAdjustUnitCost('1600');
+      result.current.setAdjustType('manual_remove');
+      result.current.setAdjustQty('1');
+    });
+    await act(async () => {
+      await result.current.handleAdjust();
+    });
+
+    const [, input] = mockAdjust.mock.calls[0] as [string, { unit_cost?: number }];
+    expect(input.unit_cost).toBeUndefined();
+  });
+});
+
 describe('handleRecordLoss', () => {
   it('refuse une perte nulle ou negative avec un message, sans appeler le serveur', async () => {
     const { result } = setup();

@@ -34,8 +34,6 @@ export interface ConnexionReussie {
   compteCreeLe: string | undefined;
   cookieAppareil: string | undefined;
   methode: NewLoginEmailData['methode'];
-  /** Origine de la requete, pour le lien de changement de mot de passe. */
-  origine: string;
 }
 
 function libelleDate(maintenant: Date): string {
@@ -81,7 +79,10 @@ export async function traiterConnexionReussie(c: ConnexionReussie): Promise<stri
     const donnees: NewLoginEmailData = {
       dateLabel: libelleDate(maintenant),
       methode: c.methode,
-      changePasswordUrl: `${c.origine}/forgot-password`,
+      // Adresse CONFIGUREE du site, jamais celle de la requete: l'en-tete Host
+      // vient du client, et un lien d'e-mail de securite ne doit pas pouvoir
+      // pointer ailleurs que sur ATTABL.
+      changePasswordUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com'}/forgot-password`,
     };
     after(async () => {
       const resultat = await createEmailService().sendNewLoginEmail(destinataire, donnees);

@@ -19,7 +19,7 @@ import type {
   LossByReason,
 } from '@/types/inventory.types';
 import { LOSS_REASONS } from '@/types/inventory.types';
-import { MAX_STOCK_QUANTITY } from '@/lib/inventory/quantity-format';
+import { MAX_STOCK_QUANTITY, MAX_UNIT_COST } from '@/lib/inventory/quantity-format';
 
 // Le module Inventaire est une fonctionnalite Pro. La page la gate deja
 // (inventory/page.tsx, canAccessInventory), mais une Server Action est un
@@ -45,19 +45,33 @@ const positiveQuantityField = z
   .positive('La quantité doit être supérieure à 0.')
   .max(MAX_STOCK_QUANTITY, 'La quantité est trop grande (9 999 999 au maximum).');
 
-const adjustStockSchema = z.object({
-  tenantId: uuidField,
-  ingredient_id: uuidField,
-  // Magnitude only; the service derives the sign from movement_type.
-  quantity: positiveQuantityField,
-  // 'order_destock' is system-only (written by destock_order via service_role).
-  // A manual adjustment must never forge an order-attributed movement.
-  movement_type: z.enum(['manual_add', 'manual_remove', 'adjustment', 'opening'], {
-    error: 'Type de mouvement invalide.',
-  }),
-  notes: z.string().optional(),
-  supplier_id: uuidField.optional(),
-});
+// Prix d'achat d'une livraison, dans l'unite de la quantite saisie. Il
+// recalcule le cout moyen pondere du produit (adjust_ingredient_stock_tx).
+const unitCostField = z
+  .number({ error: "Saisissez un prix d'achat valide." })
+  .finite("Saisissez un prix d'achat valide.")
+  .positive("Le prix d'achat doit être supérieur à 0.")
+  .max(MAX_UNIT_COST, "Le prix d'achat est trop grand (99 999 999 au maximum).");
+
+const adjustStockSchema = z
+  .object({
+    tenantId: uuidField,
+    ingredient_id: uuidField,
+    // Magnitude only; the service derives the sign from movement_type.
+    quantity: positiveQuantityField,
+    // 'order_destock' is system-only (written by destock_order via service_role).
+    // A manual adjustment must never forge an order-attributed movement.
+    movement_type: z.enum(['manual_add', 'manual_remove', 'adjustment', 'opening'], {
+      error: 'Type de mouvement invalide.',
+    }),
+    notes: z.string().optional(),
+    supplier_id: uuidField.optional(),
+    unit_cost: unitCostField.optional(),
+  })
+  .refine((v) => v.unit_cost === undefined || v.movement_type === 'manual_add', {
+    message: "Un prix d'achat se saisit seulement pour une réception.",
+    path: ['unit_cost'],
+  });
 
 const recordLossSchema = z.object({
   tenantId: uuidField,
@@ -136,6 +150,7 @@ const receiveStockSchema = z.object({
   supplier_id: uuidField.nullable().optional(),
   // Capped so the operator note appended to the auto receipt breakdown stays bounded.
   notes: z.string().max(500, 'La note est trop longue (500 caractères au maximum).').optional(),
+  unit_cost: unitCostField.optional(),
 });
 
 const setRecipeSchema = z.object({
@@ -258,6 +273,7 @@ export async function actionAdjustStock(
       movement_type: parsed.data.movement_type,
       notes: parsed.data.notes,
       supplier_id: parsed.data.supplier_id,
+      unit_cost: parsed.data.unit_cost,
     });
     return { success: true };
   } catch (err) {
@@ -293,6 +309,7 @@ export async function actionReceiveStock(
       inPurchaseUnit: parsed.data.inPurchaseUnit,
       supplier_id: parsed.data.supplier_id,
       notes: parsed.data.notes,
+      unit_cost: parsed.data.unit_cost,
     });
     return { success: true };
   } catch (err) {

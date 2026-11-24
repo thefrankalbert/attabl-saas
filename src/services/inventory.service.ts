@@ -122,6 +122,9 @@ function isNumericOverflow(error: { code?: string; message?: string }): boolean 
   return error.code === '22003' || /numeric field overflow/i.test(error.message ?? '');
 }
 
+const INVALID_UNIT_COST_MESSAGE =
+  "Prix d'achat invalide : il doit être supérieur à 0 et se saisit seulement pour une réception.";
+
 /**
  * Set an ingredient's quantity through the canonical ledger path: the RPC writes
  * the 'opening' movement for the DELTA, so current_stock never moves without a
@@ -403,6 +406,12 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
           ? Math.abs(input.quantity)
           : -Math.abs(input.quantity);
 
+      // A purchase price only means something for a receipt: it feeds the
+      // weighted average cost computed by the RPC.
+      if (input.unit_cost !== undefined && input.movement_type !== 'manual_add') {
+        throw new ServiceError(INVALID_UNIT_COST_MESSAGE, 'VALIDATION');
+      }
+
       // Get current user for the audit trail.
       const {
         data: { user },
@@ -420,11 +429,16 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
         p_notes: input.notes || undefined,
         p_created_by: user?.id || undefined,
         p_supplier_id: input.supplier_id || undefined,
+        // Per base unit (the quantity here is already in the base unit).
+        p_unit_cost: input.unit_cost,
       });
 
       if (error) {
         if (error.message?.includes('INVALID_SUPPLIER')) {
           throw new ServiceError('Fournisseur invalide', 'VALIDATION', error);
+        }
+        if (error.message?.includes('INVALID_UNIT_COST')) {
+          throw new ServiceError(INVALID_UNIT_COST_MESSAGE, 'VALIDATION', error);
         }
         if (error.message?.includes('INGREDIENT_NOT_FOUND')) {
           throw new ServiceError('Ingrédient introuvable', 'NOT_FOUND', error);
@@ -458,6 +472,11 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
 
       let baseQty: number;
       let autoNote: string;
+      // The price is typed in the SAME unit as the quantity. The ledger and the
+      // cost are per base unit: a price per purchase unit is divided by the
+      // conversion factor (1 casier of 24 at 12000 = 500 per bouteille). The
+      // RPC rounds it to 4 decimals and computes the weighted average cost.
+      let baseUnitCost: number | undefined = input.unit_cost;
       if (input.inPurchaseUnit) {
         try {
           baseQty = convertToBaseUnit({
@@ -468,6 +487,9 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
           });
         } catch {
           throw new ServiceError('Facteur de conversion invalide', 'VALIDATION');
+        }
+        if (baseUnitCost !== undefined) {
+          baseUnitCost = baseUnitCost / Number(ing.units_per_purchase);
         }
         // ASCII-only ledger note describing the receipt, e.g. "Recu: 2 casier (48 bouteille)".
         autoNote = `Recu: ${input.quantity} ${ing.purchase_unit ?? ing.unit} (${baseQty} ${ing.unit})`;
@@ -502,11 +524,15 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
         p_notes: note,
         p_created_by: user?.id || undefined,
         p_supplier_id: input.supplier_id || undefined,
+        p_unit_cost: baseUnitCost,
       });
 
       if (error) {
         if (error.message?.includes('INVALID_SUPPLIER')) {
           throw new ServiceError('Fournisseur invalide', 'VALIDATION', error);
+        }
+        if (error.message?.includes('INVALID_UNIT_COST')) {
+          throw new ServiceError(INVALID_UNIT_COST_MESSAGE, 'VALIDATION', error);
         }
         if (error.message?.includes('INGREDIENT_NOT_FOUND')) {
           throw new ServiceError('Ingrédient introuvable', 'NOT_FOUND', error);

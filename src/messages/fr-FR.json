@@ -329,7 +329,7 @@
   },
   "marketing": {
     "pricing": {
-      "metaTitle": "Attabl - Tarifs simples pour la restauration",
+      "metaTitle": "Tarifs simples pour la restauration",
       "metaDescription": "Des prix clairs pour chaque établissement. Starter, Pro, Business ou Enterprise. Essai gratuit 14 jours avec toutes les fonctionnalités.",
       "hero": {
         "title": "Un prix clair. Pas de surprise.",
@@ -339,7 +339,7 @@
       "billing": {
         "monthly": "Mensuel",
         "yearly": "Annuel",
-        "yearlyDiscount": "-15%",
+        "yearlyDiscount": "environ -15%",
         "noCommitment": "Sans carte bancaire. Sans engagement."
       },
       "priceSuffix": "FCFA/mois",
@@ -410,7 +410,7 @@
         }
       },
       "comparison": {
-        "title": "Comparatif complet des fonctionnalités",
+        "title": "Comparatif détaillé des fonctionnalités",
         "featureColumn": "Fonctionnalité",
         "unlimited": "Illimité",
         "categories": {
@@ -689,7 +689,7 @@
       "cookieCc": "attabl-cc-theme : retient le thème de la console d'administration d'ATTABL, un an. Réservé à l'équipe ATTABL."
     },
     "features": {
-      "metaTitle": "Fonctionnalités - Attabl",
+      "metaTitle": "Fonctionnalités",
       "metaDescription": "Menu, caisse, cuisine, stock, rapports, équipe : tout ce qu'il faut pour faire tourner votre service.",
       "eyebrow": "Fonctionnalités",
       "heroTitle": "Tout ce qu'il faut pour faire tourner votre service.",
@@ -1049,7 +1049,7 @@
       }
     },
     "header": {
-      "solutions": "Solutions",
+      "solutions": "Pour qui",
       "features": "Fonctionnalités",
       "pricing": "Tarifs",
       "news": "Nouveautés",
@@ -1067,7 +1067,7 @@
           "label": "Hôtels"
         },
         "quickService": {
-          "label": "Quick-Service"
+          "label": "Restauration rapide"
         },
         "barsCafes": {
           "label": "Bars & Cafés"
@@ -1081,10 +1081,6 @@
         "stock": "Stock & fournisseurs",
         "reports": "Rapports & statistiques",
         "team": "Équipe & organisation"
-      },
-      "newsMenu": {
-        "releases": "Notes de version",
-        "changelog": "Journal des fonctionnalités"
       },
       "searchPlaceholder": "Rechercher sur attabl.com",
       "searchLabel": "Rechercher"
@@ -1103,7 +1099,7 @@
           }
         },
         "solutions": {
-          "title": "Solutions",
+          "title": "Pour qui",
           "links": {
             "restaurants": "Restaurants",
             "hotels": "Hôtels",
@@ -1122,7 +1118,7 @@
         "legal": {
           "links": {
             "privacy": "Confidentialité",
-            "mentions": "Mentions légales"
+            "mentions": "Conditions d'utilisation"
           }
         }
       }
@@ -1134,8 +1130,8 @@
       "intro": "ATTABL est un outil conçu pour digitaliser la gestion des restaurants, hôtels et établissements de restauration. Notre mission : simplifier le quotidien des restaurateurs grâce à des outils modernes et intuitifs.",
       "visionTitle": "Notre vision",
       "visionBody": "Nous croyons que chaque établissement, du petit bistrot au grand hôtel, mérite des outils digitaux qui fonctionnent vraiment. ATTABL regroupe menu QR code, commandes en temps réel, POS tactile, écran cuisine (KDS) et analytics - tout au même endroit.",
-      "techTitle": "Technologie",
-      "techBody": "Construite avec les technologies les plus récentes (Next.js, React, Supabase, Tailwind CSS), ATTABL est rapide, sécurisée et disponible en tant que Progressive Web App (PWA) sur tous les appareils.",
+      "techTitle": "Sur tous vos appareils",
+      "techBody": "ATTABL s'ouvre dans le navigateur de votre téléphone, de votre tablette ou de votre ordinateur. Vous pouvez aussi l'ajouter à l'écran d'accueil, comme une application. Rien à installer depuis un magasin d'applications.",
       "contactButton": "Nous contacter",
       "pricingButton": "Voir les tarifs"
     },
@@ -1158,12 +1154,11 @@
       "section5Body": "Pour toute question relative aux présentes CGU, contactez-nous à"
     },
     "nouveautes": {
-      "metaTitle": "Nouveautés - Attabl",
+      "metaTitle": "Nouveautés",
       "metaDescription": "Le journal des mises à jour d'Attabl : nouvelles fonctionnalités, améliorations et correctifs.",
       "eyebrow": "Nouveautés",
       "title": "Ce qui vient d'arriver dans Attabl.",
-      "subtitle": "On améliore Attabl chaque semaine, à partir de vos retours de service. Voici le journal.",
-      "subscribe": "S'abonner aux mises à jour",
+      "subtitle": "On améliore Attabl régulièrement, à partir de vos retours de service. Voici le journal.",
       "filters": {
         "all": "Tout",
         "new": "Nouveau",
@@ -1245,9 +1240,9 @@
       }
     },
     "solutions": {
-      "metaTitle": "Solutions par établissement - Attabl",
+      "metaTitle": "Pour chaque type d'établissement",
       "metaDescription": "Restaurant, hôtel, restauration rapide, bar & café : Attabl s'adapte à votre type d'établissement.",
-      "eyebrow": "Solutions",
+      "eyebrow": "Pour qui",
       "title": "Une application. Chaque type d'établissement.",
       "subtitle": "Vos clients commandent depuis leur téléphone. Votre cuisine voit tout en temps réel. Vos chiffres tombent sans effort.",
       "recommended": "Recommandé",
@@ -1359,15 +1354,265 @@
       "subtitle": "Gestion, service, stock, chiffres. Des idées concrètes, écrites pour les restaurateurs d'ici.",
       "all": "Tout",
       "author": "Équipe Attabl",
-      "readingSuffix": "de lecture",
       "cta": {
         "title": "Essayez tout ça sur votre propre service.",
         "subtitle": "14 jours gratuits. Aucune carte bancaire requise.",
         "button": "Essayer gratuitement"
+      },
+      "categories": {
+        "management": "Gestion",
+        "restauration": "Restauration",
+        "payments": "Paiements"
+      },
+      "readTime": "{minutes} min de lecture",
+      "back": "Retour au blog",
+      "articles": {
+        "stock": {
+          "title": "Gestion de stock en restauration : le guide pratique",
+          "excerpt": "Comment suivre vos stocks sur le téléphone pour éviter les ruptures et commander au bon moment chez vos fournisseurs.",
+          "metaDescription": "Comment suivre vos stocks en cuisine pour éviter les ruptures et commander au bon moment. Guide pratique pour restaurants et hôtels en Afrique.",
+          "ogDescription": "Guide pratique pour suivre vos stocks en restauration en Afrique.",
+          "ctaLead": "Prêt à suivre vos stocks en cuisine ?",
+          "body": {
+            "b01": {
+              "type": "p",
+              "text": "La gestion de stock est le nerf de la guerre pour tout restaurant ou hôtel en Afrique. Qu'il s'agisse d'un restaurant à Douala, d'un hôtel à Abidjan ou d'un service traiteur à Dakar, les ruptures de stock en cuisine représentent une perte de chiffre d'affaires directe et une atteinte à la satisfaction client."
+            },
+            "b02": {
+              "type": "h2",
+              "text": "Pourquoi la gestion de stock est critique en restauration"
+            },
+            "b03": {
+              "type": "p",
+              "text": "En Afrique, les délais de réapprovisionnement sont souvent plus longs et plus imprévisibles qu'ailleurs. Les chaînes logistiques sont complexes, les fournisseurs multiples, et les fluctuations de prix fréquentes. Sans un suivi rigoureux, les restaurateurs se retrouvent avec soit trop de stock (gaspillage alimentaire), soit pas assez (plats indisponibles)."
+            },
+            "b04": {
+              "type": "ul",
+              "items": {
+                "i1": {
+                  "lead": "Ruptures fréquentes",
+                  "text": "Beaucoup de restaurants doivent retirer des plats de la carte en pleine semaine, faute de stock"
+                },
+                "i2": {
+                  "lead": "Gaspillage alimentaire",
+                  "text": "Le sur-stockage en cuisine se paie en pertes sur le budget ingrédients"
+                },
+                "i3": {
+                  "lead": "Manque de visibilité",
+                  "text": "Sans outil digital, il est impossible de connaître son stock exact en temps réel"
+                }
+              }
+            },
+            "b05": {
+              "type": "h2",
+              "text": "Les étapes pour passer du cahier au téléphone"
+            },
+            "b06": {
+              "type": "p",
+              "text": "La transition du cahier papier vers un outil digital ne se fait pas en un jour. Voici les étapes clés pour une migration réussie."
+            },
+            "b07": {
+              "type": "h2",
+              "text": "1. Inventaire initial"
+            },
+            "b08": {
+              "type": "p",
+              "text": "Commencez par un inventaire complet de tous vos ingrédients et produits. Notez pour chaque article : le nom, la référence fournisseur, le prix d'achat, l'unité de mesure et la quantité en stock. C'est la base de votre gestion digitale."
+            },
+            "b09": {
+              "type": "h2",
+              "text": "2. Choisissez un outil adapté"
+            },
+            "b10": {
+              "type": "p",
+              "text": "Un bon outil de gestion de stock pour la restauration en Afrique doit supporter plusieurs devises (XAF, EUR, USD), fonctionner sur mobile (même en cuisine), et proposer des alertes de réapprovisionnement automatiques. ATTABL offre toutes ces fonctionnalités nativement."
+            },
+            "b11": {
+              "type": "h2",
+              "text": "3. Configurez vos alertes"
+            },
+            "b12": {
+              "type": "p",
+              "text": "Définissez des seuils d'alerte pour chaque ingrédient. Quand le stock descend en dessous du seuil, l'outil vous prévient automatiquement. Plus besoin de vérifier manuellement le frigo chaque matin."
+            },
+            "b13": {
+              "type": "h2",
+              "text": "4. Suivez vos fournisseurs"
+            },
+            "b14": {
+              "type": "p",
+              "text": "Centralisez les informations de vos fournisseurs : contacts, délais de livraison moyens, historique de commandes. Cela vous permet de passer commande au bon moment et au bon fournisseur."
+            },
+            "b15": {
+              "type": "h2",
+              "text": "Conclusion"
+            },
+            "b16": {
+              "type": "p",
+              "text": "Suivre ses stocks sur un outil digital n'est plus un luxe réservé aux grandes chaînes hôtelières. Des outils comme ATTABL permettent à tout restaurant - du petit maquis de quartier au restaurant gastronomique - de suivre ses stocks en temps réel, de prévenir les ruptures et d'acheter au plus juste."
+            }
+          }
+        },
+        "qr": {
+          "title": "Menu QR code : pourquoi chaque restaurant devrait en avoir un",
+          "excerpt": "Du papier au digital : comment le menu QR change l'expérience de vos clients et allège votre quotidien.",
+          "metaDescription": "Du papier au digital : comment le menu QR change l'expérience des clients et allège le quotidien des restaurants en Afrique.",
+          "ogDescription": "Comment le menu QR code change l'expérience des clients et allège le quotidien en restauration.",
+          "ctaLead": "Prêt à créer votre menu QR code ?",
+          "body": {
+            "b01": {
+              "type": "p",
+              "text": "Le menu papier a longtemps été le standard dans la restauration. Mais en Afrique comme ailleurs, les habitudes changent. Les clients veulent consulter le menu sur leur téléphone, passer commande rapidement et ne plus attendre qu'un serveur soit disponible. Le menu QR code répond à tous ces besoins."
+            },
+            "b02": {
+              "type": "h2",
+              "text": "Qu'est-ce qu'un menu QR code ?"
+            },
+            "b03": {
+              "type": "p",
+              "text": "Un menu QR code est un menu digital accessible en scannant un code QR avec un smartphone. Le client pointe son appareil photo vers le code, et le menu s'affiche instantanément dans son navigateur - sans application à télécharger. Il peut consulter les plats, voir les photos, lire les descriptions et même passer commande directement."
+            },
+            "b04": {
+              "type": "h2",
+              "text": "Les avantages pour votre restaurant"
+            },
+            "b05": {
+              "type": "ul",
+              "items": {
+                "i1": {
+                  "lead": "Zéro impression",
+                  "text": "Plus besoin de réimprimer les menus à chaque changement de prix ou de plat. Mettez à jour votre carte en temps réel depuis votre téléphone."
+                },
+                "i2": {
+                  "lead": "Expérience client moderne",
+                  "text": "Vos clients accèdent au menu instantanément. Les belles photos de plats donnent envie et peuvent faire monter le panier moyen."
+                },
+                "i3": {
+                  "lead": "Commandes directes",
+                  "text": "Le client commande depuis sa table. Moins d'attente, moins d'erreurs de prise de commande, et vos serveurs se concentrent sur le service."
+                },
+                "i4": {
+                  "lead": "Multilingue automatique",
+                  "text": "Pour les hôtels et restaurants touristiques, proposez le menu en français, anglais et d'autres langues sans effort supplémentaire."
+                }
+              }
+            },
+            "b06": {
+              "type": "h2",
+              "text": "Comment mettre en place un menu QR en Afrique"
+            },
+            "b07": {
+              "type": "p",
+              "text": "La mise en place est plus simple qu'on ne le pense. Avec un outil comme ATTABL, vous créez votre menu digital en moins d'une heure. Ajoutez vos catégories (entrées, plats, desserts, boissons), saisissez vos plats avec prix et descriptions, et importez vos photos."
+            },
+            "b08": {
+              "type": "p",
+              "text": "ATTABL génère automatiquement un QR code unique pour votre restaurant. Imprimez-le et placez-le sur chaque table, au comptoir ou à l'entrée. Vos clients n'ont qu'à scanner pour accéder à votre menu - même avec une connexion internet limitée."
+            },
+            "b09": {
+              "type": "h2",
+              "text": "Un investissement qui se rentabilise vite"
+            },
+            "b10": {
+              "type": "p",
+              "text": "Le coût d'un menu QR code est dérisoire comparé aux impressions régulières de menus papier. Mais le vrai gain est ailleurs : les restaurants qui passent au menu digital peuvent voir leur panier moyen monter grâce aux photos de plats, aux suggestions automatiques et à la facilité de commande."
+            },
+            "b11": {
+              "type": "p",
+              "text": "Pour les hôtels, le menu QR simplifie le room service. Le client scanne le code dans sa chambre, commande depuis son lit, et la cuisine reçoit la commande instantanément. Plus d'appels téléphoniques, plus de malentendus."
+            },
+            "b12": {
+              "type": "h2",
+              "text": "Conclusion"
+            },
+            "b13": {
+              "type": "p",
+              "text": "Le menu QR code n'est plus une tendance passagère - c'est le nouveau standard. Pour les restaurants et hôtels en Afrique, c'est une occasion de moderniser le service sans investissement lourd. Un smartphone, un compte ATTABL, et votre menu digital est prêt en quelques minutes."
+            }
+          }
+        },
+        "pos": {
+          "title": "POS et Mobile Money : encaisser sans friction en Afrique",
+          "excerpt": "Cash, carte, mobile money : ce qu'un bon POS doit savoir encaisser, et où en est ATTABL.",
+          "metaDescription": "Cash, carte, mobile money : ce qu'un bon POS doit savoir encaisser pour les commerces africains, et où en est ATTABL.",
+          "ogDescription": "Guide pratique sur la caisse en ligne et le mobile money pour les commerces africains.",
+          "ctaLead": "Prêt à moderniser votre encaissement ?",
+          "body": {
+            "b01": {
+              "type": "p",
+              "text": "En Afrique, les habitudes de paiement sont radicalement différentes du reste du monde. Le cash domine encore largement, mais le mobile money explose - avec plus de 600 millions de comptes actifs sur le continent. Pour les commerçants, proposer plusieurs moyens de paiement n'est plus un bonus, c'est une nécessité."
+            },
+            "b02": {
+              "type": "h2",
+              "text": "Le paysage des paiements en Afrique"
+            },
+            "b03": {
+              "type": "p",
+              "text": "Le continent africain est le leader mondial du mobile money. Des services comme Orange Money, MTN Mobile Money, Wave ou M-Pesa ont transformé la manière dont les gens transfèrent et dépensent leur argent. Pourtant, la majorité des commerces n'acceptent encore que le cash, créant un décalage entre les habitudes des consommateurs et l'offre des commerçants."
+            },
+            "b04": {
+              "type": "p",
+              "text": "Une caisse enregistreuse en ligne (POS) moderne doit pouvoir gérer tous ces flux : espèces, carte bancaire, mobile money, et même les paiements différés pour les clients professionnels."
+            },
+            "b05": {
+              "type": "h2",
+              "text": "Pourquoi adopter un POS digital"
+            },
+            "b06": {
+              "type": "ul",
+              "items": {
+                "i1": {
+                  "lead": "Encaissement multi-canal",
+                  "text": "Un bon POS accepte cash, carte et mobile money depuis une seule interface"
+                },
+                "i2": {
+                  "lead": "Traçabilité de chaque vente",
+                  "text": "Chaque transaction est enregistrée automatiquement, fini les erreurs de caisse en fin de journée"
+                },
+                "i3": {
+                  "lead": "Rapports en temps réel",
+                  "text": "Suivez votre chiffre d'affaires par heure, par jour, par moyen de paiement"
+                },
+                "i4": {
+                  "lead": "Rapidité",
+                  "text": "Réduisez le temps d'encaissement et les files d'attente"
+                }
+              }
+            },
+            "b07": {
+              "type": "h2",
+              "text": "L'intégration mobile money"
+            },
+            "b08": {
+              "type": "p",
+              "text": "L'intégration du mobile money dans votre POS élimine les frictions pour vos clients. Plus besoin de rendre la monnaie, plus de faux billets à craindre, et les transactions sont confirmées instantanément. Pour le commerçant, l'argent est disponible immédiatement sur son compte."
+            },
+            "b09": {
+              "type": "p",
+              "text": "Où en est ATTABL ? Aujourd'hui, la caisse encaisse en espèces et par carte. Le mobile money arrive prochainement."
+            },
+            "b10": {
+              "type": "h2",
+              "text": "Bien choisir son POS"
+            },
+            "b11": {
+              "type": "p",
+              "text": "Un bon POS pour l'Afrique doit fonctionner même avec une connexion internet instable, supporter plusieurs devises (XAF, EUR, USD), et proposer une interface simple que n'importe quel employé peut prendre en main en quelques minutes. Évitez les systèmes qui nécessitent du matériel coûteux - un smartphone ou une tablette suffit."
+            },
+            "b12": {
+              "type": "h2",
+              "text": "Conclusion"
+            },
+            "b13": {
+              "type": "p",
+              "text": "Le futur du commerce en Afrique est multi-canal. Les commerçants qui adoptent aujourd'hui un POS digital prêt pour le mobile money prennent une longueur d'avance. La technologie est accessible, les coûts sont maîtrisés, et le retour sur investissement est rapide grâce à la réduction des erreurs de caisse et à l'augmentation du panier moyen."
+            }
+          }
+        }
       }
     },
     "materiel": {
-      "metaTitle": "Matériel compatible - Attabl",
+      "metaTitle": "Matériel compatible",
       "metaDescription": "Attabl tourne sur les appareils que vous avez déjà. Téléphone, tablette, imprimante ticket : ajoutez du matériel à votre rythme.",
       "eyebrow": "Matériel",
       "title": "Rien à acheter pour commencer.",
@@ -1400,7 +1645,7 @@
       },
       "kits": {
         "title": "Trois configurations, selon votre salle.",
-        "subtitle": "Commencez avec ce que vous avez. Ajoutez une piece quand vous en avez besoin.",
+        "subtitle": "Commencez avec ce que vous avez. Ajoutez une pièce quand vous en avez besoin.",
         "recommended": "Recommandé",
         "items": {
           "counter": {
@@ -1434,7 +1679,7 @@
       "reassure": {
         "wireless": {
           "title": "Bluetooth et réseau",
-          "body": "Vos imprimantes se connectent sans cable complique."
+          "body": "Vos imprimantes se connectent sans câble compliqué."
         },
         "brands": {
           "title": "Marques courantes",
@@ -1457,7 +1702,7 @@
       }
     },
     "recherche": {
-      "metaTitle": "Recherche - Attabl",
+      "metaTitle": "Recherche",
       "metaDescription": "Trouvez une page du site Attabl.",
       "title": "Rechercher",
       "subtitle": "Tapez pour rechercher dans le site.",
@@ -1466,7 +1711,7 @@
       "empty": "Aucune page ne correspond à votre recherche.",
       "pages": {
         "solutions": {
-          "title": "Solutions",
+          "title": "Pour qui",
           "description": "Restaurant, hôtel, restauration rapide, bar et café : Attabl s'adapte à votre établissement."
         },
         "features": {
@@ -1495,7 +1740,7 @@
         },
         "contact": {
           "title": "Contact",
-          "description": "Une question ? Écrivez-nous, on repond vite. Demander une démo."
+          "description": "Une question ? Écrivez-nous, on répond vite. Demander une démo."
         },
         "support": {
           "title": "Support",
@@ -1524,8 +1769,8 @@
       }
     },
     "support": {
-      "metaTitle": "Support - Attabl",
-      "metaDescription": "Questions fréquentes, guides de démarrage et contact du support Attabl. Réponse le jour même, en français.",
+      "metaTitle": "Support",
+      "metaDescription": "Questions fréquentes, guides de démarrage et contact du support Attabl. Réponse sous 24 heures en général, du lundi au vendredi, en français.",
       "eyebrow": "Support",
       "title": "On ne vous laisse pas seul.",
       "subtitle": "Une aide en français, par des gens qui ont vu un service du soir. Cherchez une réponse, ou écrivez-nous.",
@@ -1561,7 +1806,7 @@
       "faq": {
         "title": "Questions fréquentes",
         "subtitle": "Aucune réponse ne correspond ?",
-        "cta": "Écrivez-nous, on repond vite.",
+        "cta": "Écrivez-nous, on répond vite.",
         "items": {
           "q1": {
             "q": "Combien de temps pour être opérationnel ?",
@@ -1610,17 +1855,17 @@
           }
         },
         "perks": {
-          "p1": "Réponse le jour même, en français",
+          "p1": "Réponse sous 24 heures en général, en français",
           "p2": "On forme votre équipe avec vous",
           "p3": "Même hors-ligne, le service continue"
         }
       },
       "contact": {
         "title": "Vous n'avez pas trouvé ?",
-        "hours": "Une personne vous repond, du lundi au samedi, de 8 h à 22 h.",
+        "hours": "Une personne vous répond, du lundi au vendredi, en général sous 24 heures.",
         "whatsapp": {
           "title": "WhatsApp",
-          "body": "Le plus rapide, même pendant le service."
+          "body": "Le plus direct : un message, une vraie personne."
         },
         "email": {
           "title": "E-mail",
@@ -2459,6 +2704,11 @@
     "enterInBaseUnit": "Unité de base ({unit})",
     "enterInPurchaseUnit": "Achat ({unit})",
     "convertedTo": "= {qty} {unit}",
+    "purchasePriceLabel": "Prix d'achat par {unit} (facultatif)",
+    "purchasePricePlaceholder": "Ex. 1500",
+    "purchasePriceHint": "Avec un prix, le coût du produit devient la moyenne entre le stock déjà là et cette livraison. Sans prix, le coût ne change pas.",
+    "purchasePriceInvalid": "Le prix d'achat doit être supérieur à 0.",
+    "purchasePriceTooLarge": "Le prix d'achat est trop grand (99 999 999 au maximum).",
     "purchaseFactorInvalid": "Le nombre d'unités par achat doit être supérieur à 0",
     "qtyPlaceholder": "Qté",
     "noIngredientDefined": "Aucun ingrédient défini",
@@ -2939,7 +3189,7 @@
         "steps": {
           "s1": "En bas du menu de gauche, touchez votre nom, puis \"Abonnement\".",
           "s2": "Vous voyez votre formule, et la date de fin d'essai ou du prochain paiement.",
-          "s3": "Pour changer de formule, choisissez-la. Mensuel ou annuel : l'annuel coûte 15 % de moins.",
+          "s3": "Pour changer de formule, choisissez-la. Mensuel ou annuel : l'annuel coûte environ 15 % de moins.",
           "s4": "En cours de mois, vous ne payez que la différence pour les jours restants."
         }
       }
@@ -5316,12 +5566,13 @@
     "disclaimer": "En envoyant, vous acceptez d'être contacté par notre équipe.",
     "eyebrow": "Contact",
     "heroTitle": "Parlons de votre restaurant.",
-    "heroSubtitle": "Une équipe en français, à Yaoundé, Ouagadougou et N'Djamena. On vous répond sous 24 h.",
+    "heroSubtitle": "Une équipe en français, à Yaoundé, Ouagadougou et N'Djamena. On vous répond en général sous 24 heures, du lundi au vendredi.",
     "formTitle": "Écrivez-nous",
     "formSubtitle": "Dites-nous où vous en êtes. On revient vers vous avec une réponse concrète, pas un discours.",
-    "formNote": "On vous répond en général le jour même, en français.",
+    "formNote": "On vous répond en général sous 24 heures, du lundi au vendredi, en français.",
+    "networkError": "Votre message n'est pas parti : la connexion semble coupée. Vérifiez-la et réessayez. Votre texte est conservé.",
     "chWhatsapp": "WhatsApp",
-    "chWhatsappDesc": "Le plus rapide. On répond pendant le service.",
+    "chWhatsappDesc": "Le plus direct : un message, une vraie personne.",
     "chWhatsappCta": "Ouvrir WhatsApp",
     "chEmail": "E-mail",
     "chOffices": "Nos bureaux",
@@ -5351,7 +5602,7 @@
     "faq": {
       "q1": {
         "q": "Vous répondez en combien de temps ?",
-        "a": "Sous 24 h en général, souvent le jour même. Sur WhatsApp, on répond pendant le service."
+        "a": "En général sous 24 heures, du lundi au vendredi, sur WhatsApp comme par e-mail."
       },
       "q2": {
         "q": "Je peux tester avant de parler à quelqu'un ?",
@@ -5600,5 +5851,47 @@
     "body": "Vous n'avez pas les permissions nécessaires pour accéder à cet établissement.",
     "myEstablishments": "Mes établissements",
     "signInAgain": "Se reconnecter"
+  },
+  "mfa": {
+    "settingsTitle": "Double authentification",
+    "settingsSub": "En plus du mot de passe, un code à 6 chiffres de votre téléphone. Si quelqu'un vole votre mot de passe, il reste dehors.",
+    "statusOn": "Activée sur ce compte",
+    "statusOff": "Pas encore activée",
+    "enable": "Activer la double authentification",
+    "disable": "Désactiver",
+    "loading": "Chargement...",
+    "enrollStep1": "1. Ouvrez votre application d'authentification (Google Authenticator, Microsoft Authenticator, Authy...) et scannez ce QR code.",
+    "enrollManual": "Le QR code ne passe pas ? Tapez cette clé dans l'application :",
+    "enrollStep2": "2. Tapez le code à 6 chiffres affiché par l'application.",
+    "qrAlt": "QR code à scanner avec votre application d'authentification",
+    "copyKey": "Copier la clé",
+    "keyCopied": "Clé copiée",
+    "codeLabel": "Code à 6 chiffres",
+    "confirmEnable": "Activer",
+    "cancel": "Annuler",
+    "enabledToast": "C'est fait. Votre compte demandera un code à chaque connexion.",
+    "disableTitle": "Désactiver la double authentification ?",
+    "disableSub": "Votre compte ne sera plus protégé que par le mot de passe. Tapez un code de votre application pour confirmer.",
+    "confirmDisable": "Désactiver",
+    "disabledToast": "Double authentification désactivée.",
+    "challengeTitle": "Un dernier code",
+    "challengeSub": "Ouvrez votre application d'authentification et tapez le code à 6 chiffres affiché pour ATTABL.",
+    "challengeSubmit": "Valider et entrer",
+    "checking": "Vérification...",
+    "otherAccount": "Utiliser un autre compte",
+    "requiredTitle": "Protégez la console",
+    "requiredSub": "La console de la plateforme exige la double authentification. Activez-la une fois, ça prend une minute.",
+    "requiredStart": "Commencer",
+    "errors": {
+      "invalidCode": "Ce code ne marche pas. Attendez le suivant et réessayez.",
+      "expired": "Le code a expiré. Tapez le nouveau code de l'application.",
+      "unavailable": "La double authentification n'est pas disponible pour le moment. Contactez le support.",
+      "alreadyEnabled": "La double authentification est déjà activée sur ce compte.",
+      "noFactor": "Aucune application d'authentification n'est liée à ce compte.",
+      "failed": "Ça n'a pas marché. Réessayez dans un instant.",
+      "rateLimited": "Trop d'essais. Attendez 15 minutes avant de réessayer.",
+      "invalidInput": "Tapez les 6 chiffres du code.",
+      "unauthenticated": "Votre session a expiré. Reconnectez-vous."
+    }
   }
 }

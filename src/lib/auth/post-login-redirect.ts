@@ -36,6 +36,20 @@ function isUnder(path: string, base: string): boolean {
   return path === base || path.startsWith(`${base}/`);
 }
 
+/** Destination apres la double authentification quand `next` est absent ou refuse. */
+export const MFA_FALLBACK_DESTINATION = '/admin/tenants';
+
+/**
+ * Destination apres la page /auth/mfa (`?next=`). Meme filtre que ci-dessus:
+ * un chemin INTERNE uniquement. /auth/mfa elle-meme est refusee (boucle).
+ * `/admin/tenants` renvoie de lui-meme chaque compte vers son espace.
+ */
+export function resolveMfaNext(requested: string | null | undefined): string {
+  const url = parseInternalPath(requested);
+  if (!url || isUnder(url.pathname, '/auth/mfa')) return MFA_FALLBACK_DESTINATION;
+  return `${url.pathname}${url.search}`;
+}
+
 export function resolvePostLoginRedirect(
   defaultDestination: string,
   requested: string | null | undefined,

@@ -57,6 +57,9 @@ const h = vi.hoisted(() => {
 
 vi.mock('@/lib/logger', () => ({ logger: h.logger }));
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => h.client }));
+// Double authentification: session renforcee par defaut, refusee dans son test.
+const mfa = vi.hoisted(() => ({ hasStrongSession: vi.fn(async () => true) }));
+vi.mock('@/lib/auth/mfa-guard', () => mfa);
 
 import { isSuperAdmin, requireSuperAdmin } from '../require-super-admin';
 import { AuthError } from '../get-session';
@@ -70,6 +73,7 @@ beforeEach(() => {
   etat.filtres = [];
   etat.reponse = { data: [], error: null };
   getUser.mockResolvedValue({ data: { user: { id: 'u1', email: 'op@attabl.com' } }, error: null });
+  mfa.hasStrongSession.mockResolvedValue(true);
 });
 
 describe('isSuperAdmin', () => {
@@ -153,6 +157,17 @@ describe('isSuperAdmin', () => {
 });
 
 describe('requireSuperAdmin', () => {
+  it('rejette en 403 un super admin sans double authentification (K6.13)', async () => {
+    etat.reponse = { data: [{ is_super_admin: true, role: 'owner' }], error: null };
+    mfa.hasStrongSession.mockResolvedValue(false);
+
+    await expect(requireSuperAdmin()).rejects.toMatchObject({ name: 'AuthError', status: 403 });
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('without MFA'),
+      expect.objectContaining({ userId: 'u1' }),
+    );
+  });
+
   it('rend l utilisateur et le client a un super admin', async () => {
     etat.reponse = { data: [{ is_super_admin: true, role: 'owner' }], error: null };
 

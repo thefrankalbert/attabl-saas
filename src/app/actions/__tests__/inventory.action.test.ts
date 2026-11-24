@@ -264,6 +264,95 @@ describe('actionReceiveStock (WRITE gated at inventory.edit)', () => {
   });
 });
 
+describe("prix d'achat a la reception (cout moyen pondere)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetAuthUserForTenant.mockResolvedValue({
+      supabase: supabaseOnPlan('pro'),
+      user: { id: 'user-9' },
+    });
+    mockReceiveStock.mockResolvedValue(undefined);
+    mockAdjustStock.mockResolvedValue(undefined);
+  });
+
+  it('actionReceiveStock transmet le prix valide au service', async () => {
+    const { actionReceiveStock } = await import('@/app/actions/inventory');
+    const result = await actionReceiveStock(TENANT_ID, {
+      ingredient_id: INGREDIENT_ID,
+      quantity: 2,
+      inPurchaseUnit: true,
+      unit_cost: 12000,
+    });
+
+    expect(result).toEqual({ success: true });
+    expect(mockReceiveStock).toHaveBeenCalledWith(
+      TENANT_ID,
+      expect.objectContaining({ quantity: 2, inPurchaseUnit: true, unit_cost: 12000 }),
+    );
+  });
+
+  it.each([
+    [0, "Le prix d'achat doit être supérieur à 0."],
+    [-5, "Le prix d'achat doit être supérieur à 0."],
+    [100_000_000, "Le prix d'achat est trop grand (99 999 999 au maximum)."],
+    [Number.NaN, "Saisissez un prix d'achat valide."],
+  ])('actionReceiveStock refuse le prix %s avec un message en francais', async (cost, message) => {
+    const { actionReceiveStock } = await import('@/app/actions/inventory');
+    const result = await actionReceiveStock(TENANT_ID, {
+      ingredient_id: INGREDIENT_ID,
+      quantity: 2,
+      inPurchaseUnit: false,
+      unit_cost: cost,
+    });
+
+    expect(result).toEqual({ error: message });
+    expect(mockReceiveStock).not.toHaveBeenCalled();
+  });
+
+  it('actionAdjustStock transmet le prix pour une reception', async () => {
+    const { actionAdjustStock } = await import('@/app/actions/inventory');
+    const result = await actionAdjustStock(TENANT_ID, {
+      ingredient_id: INGREDIENT_ID,
+      quantity: 5,
+      movement_type: 'manual_add',
+      unit_cost: 1600,
+    });
+
+    expect(result).toEqual({ success: true });
+    expect(mockAdjustStock).toHaveBeenCalledWith(
+      TENANT_ID,
+      expect.objectContaining({ quantity: 5, movement_type: 'manual_add', unit_cost: 1600 }),
+    );
+  });
+
+  it('actionAdjustStock refuse un prix sur un retrait ou un stock d ouverture', async () => {
+    const { actionAdjustStock } = await import('@/app/actions/inventory');
+    for (const movement_type of ['manual_remove', 'opening'] as const) {
+      const result = await actionAdjustStock(TENANT_ID, {
+        ingredient_id: INGREDIENT_ID,
+        quantity: 5,
+        movement_type,
+        unit_cost: 1600,
+      });
+      expect(result).toEqual({ error: "Un prix d'achat se saisit seulement pour une réception." });
+    }
+    expect(mockAdjustStock).not.toHaveBeenCalled();
+    expect(mockSetOpeningStock).not.toHaveBeenCalled();
+  });
+
+  it('actionAdjustStock sans prix: unit_cost absent (le cout ne change pas)', async () => {
+    const { actionAdjustStock } = await import('@/app/actions/inventory');
+    await actionAdjustStock(TENANT_ID, {
+      ingredient_id: INGREDIENT_ID,
+      quantity: 5,
+      movement_type: 'manual_add',
+    });
+
+    const [, input] = mockAdjustStock.mock.calls[0] as unknown as [string, { unit_cost?: number }];
+    expect(input.unit_cost).toBeUndefined();
+  });
+});
+
 describe('actionCreateIngredient / actionUpdateIngredient purchase-unit schema', () => {
   beforeEach(() => {
     vi.clearAllMocks();

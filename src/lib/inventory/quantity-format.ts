@@ -7,6 +7,12 @@
 /** Plus grande quantite acceptee par la colonne numeric(10,3). */
 export const MAX_STOCK_QUANTITY = 9_999_999;
 
+/**
+ * Plus grand prix d'achat accepte a la reception: la colonne du cout
+ * (ingredients.cost_per_unit, numeric(10,2)) va jusqu'a 99 999 999.99.
+ */
+export const MAX_UNIT_COST = 99_999_999;
+
 /** Arrondit a 3 decimales (ecarts de calcul flottant, jamais de -0). */
 export function roundQuantity(value: number): number {
   if (!Number.isFinite(value)) return 0;

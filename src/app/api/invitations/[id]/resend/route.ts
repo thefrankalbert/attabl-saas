@@ -1,3 +1,4 @@
+import { isMfaSatisfied, MFA_REQUIRED_CODE, MFA_REQUIRED_MESSAGE } from '@/lib/auth/mfa-assurance';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
@@ -39,6 +40,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Non autorise' }, { status: 401 });
+    }
+
+    if (!(await isMfaSatisfied(supabase, user))) {
+      return NextResponse.json(
+        { error: MFA_REQUIRED_MESSAGE, code: MFA_REQUIRED_CODE },
+        { status: 403 },
+      );
     }
 
     const { id: rawId } = await params;

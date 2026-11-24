@@ -92,6 +92,8 @@ export default function InventoryClient({ tenantId, currency, tenantSlug }: Inve
     setAdjustNotes,
     adjustSupplierId,
     setAdjustSupplierId,
+    adjustUnitCost,
+    setAdjustUnitCost,
     receiveUnitMode,
     setReceiveUnitMode,
     lossQty,
@@ -301,6 +303,8 @@ export default function InventoryClient({ tenantId, currency, tenantSlug }: Inve
               setAdjustNotes={setAdjustNotes}
               adjustSupplierId={adjustSupplierId}
               setAdjustSupplierId={setAdjustSupplierId}
+              adjustUnitCost={adjustUnitCost}
+              setAdjustUnitCost={setAdjustUnitCost}
               receiveUnitMode={receiveUnitMode}
               setReceiveUnitMode={setReceiveUnitMode}
               activeSuppliers={activeSuppliers}

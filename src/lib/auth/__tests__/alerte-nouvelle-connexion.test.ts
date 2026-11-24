@@ -70,7 +70,6 @@ describe('traiterConnexionReussie', () => {
     email: 'gerant@exemple.com',
     compteCreeLe: IL_Y_A_UN_AN,
     methode: 'mot_de_passe' as const,
-    origine: 'https://attabl.com',
   };
 
   beforeEach(() => {
@@ -94,6 +93,22 @@ describe('traiterConnexionReussie', () => {
       }),
     );
     expect(cookie && estAppareilConnu(cookie, 'u-1')).toBe(true);
+  });
+
+  it('le lien de l e-mail vient de l adresse configuree du site, jamais de la requete', async () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://attabl.com');
+    const { supabase } = client(true);
+    await traiterConnexionReussie({ ...base, supabase, cookieAppareil: undefined });
+    await viderTaches();
+    const donnees = sendNewLoginEmail.mock.calls[0][1] as { changePasswordUrl: string };
+    expect(donnees.changePasswordUrl).toBe('https://attabl.com/forgot-password');
+    // Temoin: changer l'adresse configuree change bien le lien.
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://autre.example');
+    sendNewLoginEmail.mockClear();
+    await traiterConnexionReussie({ ...base, supabase, cookieAppareil: undefined });
+    await viderTaches();
+    const temoin = sendNewLoginEmail.mock.calls[0][1] as { changePasswordUrl: string };
+    expect(temoin.changePasswordUrl).toBe('https://autre.example/forgot-password');
   });
 
   it('appareil connu: ni reservation ni e-mail (temoin)', async () => {

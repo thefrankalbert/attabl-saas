@@ -144,6 +144,7 @@ export function useAuthForm(mode: AuthMode) {
           error?: string;
           code?: string;
           redirect?: string;
+          mfaRequired?: boolean;
         };
 
         if (!response.ok) {
@@ -155,10 +156,15 @@ export function useAuthForm(mode: AuthMode) {
 
         // Destination du serveur, ou la page demandee avant la connexion
         // (`?redirect=`) si elle est interne et coherente avec ce compte.
-        window.location.href = resolvePostLoginRedirect(
+        // Compte en double authentification: le code d'abord, la destination
+        // ensuite (gardee dans `next`).
+        const destination = resolvePostLoginRedirect(
           data.redirect || '/admin/tenants',
           searchParams.get('redirect'),
         );
+        window.location.href = data.mfaRequired
+          ? `/auth/mfa?next=${encodeURIComponent(destination)}`
+          : destination;
       }
     } catch (err) {
       logger.error('Auth form submit failed', err);

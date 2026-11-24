@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { getLocale, getMessages, getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
+import { getStorefrontMessages } from '@/i18n/storefront-messages';
 import { getTranslatedContent } from '@/lib/utils/translate';
 import { NextIntlClientProvider } from 'next-intl';
 import { getCachedTenant, getTableOccupied } from '@/lib/cache';
@@ -98,7 +99,7 @@ export default async function HomePage({
   // codes are already printed that way: honor ?table here exactly like /menu.
   const scannedTable = resolveTableParam(await searchParams);
   const [messages, t, locale] = await Promise.all([
-    getMessages(),
+    getStorefrontMessages(),
     getTranslations('homePage'),
     getLocale(),
   ]);

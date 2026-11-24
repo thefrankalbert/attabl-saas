@@ -25,8 +25,6 @@ const PANEL_BASE =
 const PANEL_OPEN = 'visible translate-y-0 opacity-100';
 const MEGA_BIG =
   'text-[30px] font-semibold tracking-[-0.025em] transition-colors group-hover/panel:text-encre/35 hover:!text-encre dark:group-hover/panel:text-white/35 dark:hover:!text-white';
-const NEWS_LINK =
-  'text-[15px] font-medium text-encre/75 hover:text-encre dark:text-white/75 dark:hover:text-white';
 const CTA_PRIMARY =
   'inline-flex h-10 items-center rounded-full bg-encre px-5 text-[15px] font-medium text-white hover:bg-black dark:bg-white dark:text-encre dark:hover:bg-white/90';
 // Intention de survol : delai avant de fermer ou de basculer vers un autre
@@ -63,7 +61,6 @@ export default function Header() {
   const graceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const solId = useId();
   const featId = useId();
-  const newsId = useId();
   const searchId = useId();
   const atTop = useSyncExternalStore(subscribeScroll, isAtTop, isAtTopServer);
   const overHero = usePathname() === '/' && atTop && !open;
@@ -241,25 +238,9 @@ export default function Header() {
             {t('pricing')}
           </Link>
 
-          {/* Nouveautes */}
-          <div className="static" {...hoverProps('news')}>
-            {trigger('news', newsId, t('news'))}
-            <div
-              id={newsId}
-              role="menu"
-              data-menu-panel="news"
-              className={cn(PANEL_BASE, open === 'news' && PANEL_OPEN)}
-            >
-              <div className="mx-auto flex max-w-[1376px] flex-col gap-1 px-8 py-11">
-                <Link role="menuitem" href="/nouveautes" className={NEWS_LINK}>
-                  {t('newsMenu.releases')}
-                </Link>
-                <Link role="menuitem" href="/nouveautes" className={NEWS_LINK}>
-                  {t('newsMenu.changelog')}
-                </Link>
-              </div>
-            </div>
-          </div>
+          <Link href="/nouveautes" className={NAV_LINK}>
+            {t('news')}
+          </Link>
 
           <Link href="/blog" className={NAV_LINK}>
             {t('blog')}
@@ -363,6 +344,7 @@ export default function Header() {
                   { label: t('news'), href: '/nouveautes' },
                   { label: t('blog'), href: '/blog' },
                   { label: t('support'), href: '/support' },
+                  { label: t('searchLabel'), href: '/recherche' },
                   { label: t('login'), href: '/login' },
                 ].map((l) => (
                   <SheetClose asChild key={`${l.label}-${l.href}`}>

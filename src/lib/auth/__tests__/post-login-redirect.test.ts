@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { resolvePostLoginRedirect } from '../post-login-redirect';
+import {
+  MFA_FALLBACK_DESTINATION,
+  resolveMfaNext,
+  resolvePostLoginRedirect,
+} from '../post-login-redirect';
 
 const TENANT = '/sites/lepicurien/admin';
 
@@ -58,5 +62,28 @@ describe('resolvePostLoginRedirect', () => {
 
   it('un compte renvoye a l onboarding y reste', () => {
     expect(resolvePostLoginRedirect('/onboarding', '/checkout?plan=pro')).toBe('/onboarding');
+  });
+});
+
+describe('resolveMfaNext', () => {
+  it('garde un chemin interne avec sa requete', () => {
+    expect(resolveMfaNext('/sites/resto/admin/orders?tab=open')).toBe(
+      '/sites/resto/admin/orders?tab=open',
+    );
+  });
+
+  it.each([
+    null,
+    '',
+    'https://evil.example/x',
+    '//evil.example',
+    '/\\evil.example',
+    'javascript:alert(1)',
+  ])('refuse %j et retombe sur la destination par defaut', (next) => {
+    expect(resolveMfaNext(next)).toBe(MFA_FALLBACK_DESTINATION);
+  });
+
+  it('refuse /auth/mfa elle-meme (boucle)', () => {
+    expect(resolveMfaNext('/auth/mfa?next=/auth/mfa')).toBe(MFA_FALLBACK_DESTINATION);
   });
 });

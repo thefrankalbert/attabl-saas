@@ -199,6 +199,10 @@ export interface ReceiveStockInput {
   inPurchaseUnit: boolean;
   supplier_id?: string | null;
   notes?: string;
+  // Purchase price per ENTERED unit (purchase unit when inPurchaseUnit, base
+  // unit otherwise). When set, the product cost becomes the weighted average
+  // cost (adjust_ingredient_stock_tx); absent, the cost does not change.
+  unit_cost?: number;
 }
 
 export interface RecipeLineInput {
@@ -213,6 +217,9 @@ export interface AdjustStockInput {
   movement_type: MovementType;
   notes?: string;
   supplier_id?: string;
+  // Purchase price per base unit, receipts (manual_add) only: recalculates the
+  // weighted average cost. Absent, the cost does not change.
+  unit_cost?: number;
 }
 
 export interface RecordLossInput {

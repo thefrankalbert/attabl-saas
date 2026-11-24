@@ -13,6 +13,7 @@ import {
   optionsCookieAppareil,
 } from '@/lib/auth/appareil-connu';
 import { traiterConnexionReussie } from '@/lib/auth/alerte-nouvelle-connexion';
+import { hasVerifiedFactor } from '@/lib/auth/mfa-assurance';
 import {
   RECOVERY_MARKER_COOKIE,
   RECOVERY_MARKER_TTL_SECONDS,
@@ -157,8 +158,15 @@ export async function GET(request: Request) {
         // annuaire de ses etablissements (ou reprise d'onboarding), tout autre
         // role -> l'espace de son etablissement. Avant, cette branche envoyait
         // TOUT LE MONDE sur `/admin/tenants`, qui refuse les non-proprietaires.
+        //
+        // Double authentification (audit K6.13): un compte avec facteur verifie
+        // sort de l'echange OAuth en session aal1 et passe d'abord par
+        // /auth/mfa, qui garde la destination dans `next`.
+        const destination = postLoginDestination(mapMembershipRows(existingAdminRows));
         const response = NextResponse.redirect(
-          `${requestUrl.origin}${postLoginDestination(mapMembershipRows(existingAdminRows))}`,
+          hasVerifiedFactor(session.user)
+            ? `${requestUrl.origin}/auth/mfa?next=${encodeURIComponent(destination)}`
+            : `${requestUrl.origin}${destination}`,
         );
 
         // Alerte "nouvelle connexion" si l'appareil est inconnu (audit Q19).
@@ -171,7 +179,6 @@ export async function GET(request: Request) {
           compteCreeLe: session.user.created_at,
           cookieAppareil: cookieAppareilDeLaRequete(request),
           methode: provider === 'google' ? 'google' : 'autre',
-          origine: requestUrl.origin,
         });
         if (cookieAppareil) {
           response.cookies.set(APPAREIL_CONNU_COOKIE, cookieAppareil, optionsCookieAppareil());

@@ -329,7 +329,7 @@
   },
   "marketing": {
     "pricing": {
-      "metaTitle": "Attabl - Simple pricing for hospitality",
+      "metaTitle": "Simple pricing for hospitality",
       "metaDescription": "Clear pricing for every hospitality business. Starter, Pro, Business or Enterprise. 14-day free trial with every feature.",
       "hero": {
         "title": "Clear pricing. No surprises.",
@@ -339,7 +339,7 @@
       "billing": {
         "monthly": "Monthly",
         "yearly": "Yearly",
-        "yearlyDiscount": "-15%",
+        "yearlyDiscount": "about -15%",
         "noCommitment": "No credit card. No commitment."
       },
       "priceSuffix": "FCFA/mo",
@@ -689,7 +689,7 @@
       "cookieCc": "attabl-cc-theme: remembers the theme of the ATTABL administration console, one year. Reserved for the ATTABL team."
     },
     "features": {
-      "metaTitle": "Features - Attabl",
+      "metaTitle": "Features",
       "metaDescription": "Menu, register, kitchen, stock, reports, team: everything you need to run your service.",
       "eyebrow": "Features",
       "heroTitle": "Everything you need to run your service.",
@@ -1049,7 +1049,7 @@
       }
     },
     "header": {
-      "solutions": "Solutions",
+      "solutions": "Who it's for",
       "features": "Features",
       "pricing": "Pricing",
       "news": "What's new",
@@ -1067,7 +1067,7 @@
           "label": "Hotels"
         },
         "quickService": {
-          "label": "Quick-Service"
+          "label": "Quick-service"
         },
         "barsCafes": {
           "label": "Bars & Cafes"
@@ -1081,10 +1081,6 @@
         "stock": "Stock & suppliers",
         "reports": "Reports & analytics",
         "team": "Team & staff"
-      },
-      "newsMenu": {
-        "releases": "Release notes",
-        "changelog": "Feature log"
       },
       "searchPlaceholder": "Search attabl.com",
       "searchLabel": "Search"
@@ -1103,7 +1099,7 @@
           }
         },
         "solutions": {
-          "title": "Solutions",
+          "title": "Who it's for",
           "links": {
             "restaurants": "Restaurants",
             "hotels": "Hotels",
@@ -1122,7 +1118,7 @@
         "legal": {
           "links": {
             "privacy": "Privacy",
-            "mentions": "Legal notice"
+            "mentions": "Terms of use"
           }
         }
       }
@@ -1134,8 +1130,8 @@
       "intro": "ATTABL is a tool that digitizes the management of restaurants, hotels and dining venues. Our mission: simplify operators' daily work with modern, intuitive tools.",
       "visionTitle": "Our vision",
       "visionBody": "We believe every venue, from the small bistro to the large hotel, deserves digital tools that really work. ATTABL brings together a QR code menu, real-time orders, a touch POS, a kitchen display (KDS) and analytics - all in one place.",
-      "techTitle": "Technology",
-      "techBody": "Built on the latest technologies (Next.js, React, Supabase, Tailwind CSS), ATTABL is fast, secure and available as a Progressive Web App (PWA) across all devices.",
+      "techTitle": "On every device",
+      "techBody": "ATTABL opens in the browser of your phone, tablet or computer. You can also add it to your home screen, like an app. Nothing to install from an app store.",
       "contactButton": "Contact us",
       "pricingButton": "View pricing"
     },
@@ -1158,12 +1154,11 @@
       "section5Body": "For any question regarding these ToS, contact us at"
     },
     "nouveautes": {
-      "metaTitle": "What's new - Attabl",
+      "metaTitle": "What's new",
       "metaDescription": "Attabl's update log: new features, improvements and fixes.",
       "eyebrow": "What's new",
       "title": "What just landed in Attabl.",
-      "subtitle": "We improve Attabl every week, from your service feedback. Here is the log.",
-      "subscribe": "Subscribe to updates",
+      "subtitle": "We improve Attabl regularly, from your service feedback. Here is the log.",
       "filters": {
         "all": "All",
         "new": "New",
@@ -1245,9 +1240,9 @@
       }
     },
     "solutions": {
-      "metaTitle": "Solutions by venue type - Attabl",
+      "metaTitle": "For every type of venue",
       "metaDescription": "Restaurant, hotel, quick-service, bar & cafe: Attabl adapts to your kind of venue.",
-      "eyebrow": "Solutions",
+      "eyebrow": "Who it's for",
       "title": "One app. Every kind of venue.",
       "subtitle": "Your guests order from their phone. Your kitchen sees everything in real time. Your numbers add up on their own.",
       "recommended": "Recommended",
@@ -1359,15 +1354,265 @@
       "subtitle": "Management, service, stock, numbers. Concrete ideas, written for local restaurateurs.",
       "all": "All",
       "author": "Attabl team",
-      "readingSuffix": "read",
       "cta": {
         "title": "Try it all on your own service.",
         "subtitle": "14 days free. No credit card required.",
         "button": "Try it free"
+      },
+      "categories": {
+        "management": "Management",
+        "restauration": "Dining",
+        "payments": "Payments"
+      },
+      "readTime": "{minutes} min read",
+      "back": "Back to the blog",
+      "articles": {
+        "stock": {
+          "title": "Stock management for restaurants: the practical guide",
+          "excerpt": "How to track your stock on your phone, avoid shortages and order from your suppliers at the right time.",
+          "metaDescription": "How to track your kitchen stock, avoid shortages and order at the right time. A practical guide for restaurants and hotels in Africa.",
+          "ogDescription": "A practical guide to tracking restaurant stock in Africa.",
+          "ctaLead": "Ready to track your kitchen stock?",
+          "body": {
+            "b01": {
+              "type": "p",
+              "text": "Stock management is the backbone of any restaurant or hotel in Africa. Whether it is a restaurant in Douala, a hotel in Abidjan or a catering service in Dakar, kitchen stockouts mean lost sales and unhappy customers."
+            },
+            "b02": {
+              "type": "h2",
+              "text": "Why stock management matters so much in restaurants"
+            },
+            "b03": {
+              "type": "p",
+              "text": "In Africa, restocking lead times are often longer and less predictable than elsewhere. Supply chains are complicated, suppliers are many, and prices change often. Without careful tracking, restaurateurs end up with either too much stock (food waste) or too little (dishes sold out)."
+            },
+            "b04": {
+              "type": "ul",
+              "items": {
+                "i1": {
+                  "lead": "Frequent stockouts",
+                  "text": "Many restaurants have to pull dishes off the menu mid-week because they ran out"
+                },
+                "i2": {
+                  "lead": "Food waste",
+                  "text": "Overstocking in the kitchen costs you in lost ingredient budget"
+                },
+                "i3": {
+                  "lead": "No visibility",
+                  "text": "Without a digital tool, there is no way to know your exact stock in real time"
+                }
+              }
+            },
+            "b05": {
+              "type": "h2",
+              "text": "The steps to go from notebook to phone"
+            },
+            "b06": {
+              "type": "p",
+              "text": "Moving from a paper notebook to a digital tool does not happen in a day. Here are the key steps for a smooth switch."
+            },
+            "b07": {
+              "type": "h2",
+              "text": "1. Initial inventory"
+            },
+            "b08": {
+              "type": "p",
+              "text": "Start with a full inventory of all your ingredients and products. For each item, write down the name, the supplier reference, the purchase price, the unit of measure and the quantity in stock. This is the foundation of your digital stock management."
+            },
+            "b09": {
+              "type": "h2",
+              "text": "2. Pick the right tool"
+            },
+            "b10": {
+              "type": "p",
+              "text": "A good stock tool for restaurants in Africa should support several currencies (XAF, EUR, USD), work on mobile (even in the kitchen) and send automatic restock alerts. ATTABL offers all of these natively."
+            },
+            "b11": {
+              "type": "h2",
+              "text": "3. Set up your alerts"
+            },
+            "b12": {
+              "type": "p",
+              "text": "Set an alert threshold for each ingredient. When stock drops below the threshold, the tool warns you automatically. No more checking the fridge by hand every morning."
+            },
+            "b13": {
+              "type": "h2",
+              "text": "4. Keep track of your suppliers"
+            },
+            "b14": {
+              "type": "p",
+              "text": "Keep your supplier details in one place: contacts, average delivery times, order history. That lets you place an order at the right time, with the right supplier."
+            },
+            "b15": {
+              "type": "h2",
+              "text": "Conclusion"
+            },
+            "b16": {
+              "type": "p",
+              "text": "Tracking stock with a digital tool is no longer a luxury reserved for large hotel chains. Tools like ATTABL let any restaurant, from the small neighborhood maquis to the fine-dining room, follow stock in real time, prevent stockouts and buy exactly what it needs."
+            }
+          }
+        },
+        "qr": {
+          "title": "QR code menus: why every restaurant should have one",
+          "excerpt": "From paper to digital: how a QR menu changes your guests' experience and lightens your day-to-day work.",
+          "metaDescription": "From paper to digital: how a QR menu changes the guest experience and lightens the daily work of restaurants in Africa.",
+          "ogDescription": "How a QR code menu changes the guest experience and lightens daily work in restaurants.",
+          "ctaLead": "Ready to create your QR code menu?",
+          "body": {
+            "b01": {
+              "type": "p",
+              "text": "The paper menu was the standard in restaurants for a long time. But in Africa as elsewhere, habits are changing. Guests want to browse the menu on their phone, order quickly and stop waiting for a waiter to be free. A QR code menu meets all of these needs."
+            },
+            "b02": {
+              "type": "h2",
+              "text": "What is a QR code menu?"
+            },
+            "b03": {
+              "type": "p",
+              "text": "A QR code menu is a digital menu you open by scanning a QR code with a smartphone. The guest points the camera at the code and the menu appears instantly in the browser, with no app to download. They can browse dishes, see photos, read descriptions and even order directly."
+            },
+            "b04": {
+              "type": "h2",
+              "text": "The benefits for your restaurant"
+            },
+            "b05": {
+              "type": "ul",
+              "items": {
+                "i1": {
+                  "lead": "Zero printing",
+                  "text": "No more reprinting menus every time a price or a dish changes. Update your menu in real time from your phone."
+                },
+                "i2": {
+                  "lead": "A modern guest experience",
+                  "text": "Your guests get the menu instantly. Good photos of your dishes make people hungry and can lift the average order."
+                },
+                "i3": {
+                  "lead": "Direct orders",
+                  "text": "Guests order from their table. Less waiting, fewer order-taking mistakes, and your waiters can focus on service."
+                },
+                "i4": {
+                  "lead": "Automatic multilingual menu",
+                  "text": "For hotels and tourist restaurants, offer the menu in French, English and other languages with no extra effort."
+                }
+              }
+            },
+            "b06": {
+              "type": "h2",
+              "text": "How to set up a QR menu in Africa"
+            },
+            "b07": {
+              "type": "p",
+              "text": "Setting it up is simpler than you might think. With a tool like ATTABL, you create your digital menu in under an hour. Add your categories (starters, mains, desserts, drinks), enter your dishes with prices and descriptions, and upload your photos."
+            },
+            "b08": {
+              "type": "p",
+              "text": "ATTABL automatically generates a unique QR code for your restaurant. Print it and put it on every table, at the counter or at the entrance. Your guests just scan it to open your menu, even on a limited internet connection."
+            },
+            "b09": {
+              "type": "h2",
+              "text": "An investment that pays for itself fast"
+            },
+            "b10": {
+              "type": "p",
+              "text": "The cost of a QR code menu is tiny compared with regularly reprinting paper menus. But the real gain is elsewhere: restaurants that switch to a digital menu can see their average order grow thanks to dish photos, automatic suggestions and easy ordering."
+            },
+            "b11": {
+              "type": "p",
+              "text": "For hotels, a QR menu makes room service simpler. The guest scans the code in their room, orders from bed, and the kitchen gets the order instantly. No more phone calls, no more misunderstandings."
+            },
+            "b12": {
+              "type": "h2",
+              "text": "Conclusion"
+            },
+            "b13": {
+              "type": "p",
+              "text": "The QR code menu is no longer a passing trend, it is the new standard. For restaurants and hotels in Africa, it is a chance to modernize service without a heavy investment. A smartphone, an ATTABL account, and your digital menu is ready in a few minutes."
+            }
+          }
+        },
+        "pos": {
+          "title": "POS and Mobile Money: taking payments without friction in Africa",
+          "excerpt": "Cash, card, mobile money: what a good POS should be able to take, and where ATTABL stands.",
+          "metaDescription": "Cash, card, mobile money: what a good POS should be able to take for businesses in Africa, and where ATTABL stands.",
+          "ogDescription": "A practical guide to online cash registers and mobile money for businesses in Africa.",
+          "ctaLead": "Ready to modernize how you take payments?",
+          "body": {
+            "b01": {
+              "type": "p",
+              "text": "In Africa, payment habits are very different from the rest of the world. Cash still dominates, but mobile money is booming, with more than 600 million active accounts on the continent. For merchants, offering several ways to pay is no longer a bonus, it is a necessity."
+            },
+            "b02": {
+              "type": "h2",
+              "text": "The payments landscape in Africa"
+            },
+            "b03": {
+              "type": "p",
+              "text": "Africa leads the world in mobile money. Services like Orange Money, MTN Mobile Money, Wave and M-Pesa have changed how people send and spend money. Yet most businesses still accept only cash, which creates a gap between what customers do and what merchants offer."
+            },
+            "b04": {
+              "type": "p",
+              "text": "A modern online cash register (POS) has to handle all of these flows: cash, bank card, mobile money, and even deferred payments for business customers."
+            },
+            "b05": {
+              "type": "h2",
+              "text": "Why adopt a digital POS"
+            },
+            "b06": {
+              "type": "ul",
+              "items": {
+                "i1": {
+                  "lead": "Multi-channel payments",
+                  "text": "A good POS accepts cash, card and mobile money from a single screen"
+                },
+                "i2": {
+                  "lead": "Every sale on record",
+                  "text": "Each transaction is recorded automatically, so no more cash-up mistakes at the end of the day"
+                },
+                "i3": {
+                  "lead": "Real-time reports",
+                  "text": "Follow your revenue by hour, by day and by payment method"
+                },
+                "i4": {
+                  "lead": "Speed",
+                  "text": "Cut checkout time and queues"
+                }
+              }
+            },
+            "b07": {
+              "type": "h2",
+              "text": "Mobile money integration"
+            },
+            "b08": {
+              "type": "p",
+              "text": "Adding mobile money to your POS removes friction for your customers. No more handing back change, no more worrying about fake notes, and transactions are confirmed instantly. For the merchant, the money is available right away in their account."
+            },
+            "b09": {
+              "type": "p",
+              "text": "Where does ATTABL stand? Today, the till takes cash and card. Mobile money is coming soon."
+            },
+            "b10": {
+              "type": "h2",
+              "text": "How to choose your POS"
+            },
+            "b11": {
+              "type": "p",
+              "text": "A good POS for Africa has to work even with an unstable internet connection, support several currencies (XAF, EUR, USD), and offer a simple screen that any employee can pick up in a few minutes. Avoid systems that need expensive hardware: a smartphone or a tablet is enough."
+            },
+            "b12": {
+              "type": "h2",
+              "text": "Conclusion"
+            },
+            "b13": {
+              "type": "p",
+              "text": "The future of commerce in Africa is multi-channel. Merchants who adopt a digital POS ready for mobile money today get a head start. The technology is within reach, costs are under control, and the payback is quick thanks to fewer cash-up mistakes and a higher average order."
+            }
+          }
+        }
       }
     },
     "materiel": {
-      "metaTitle": "Compatible hardware - Attabl",
+      "metaTitle": "Compatible hardware",
       "metaDescription": "Attabl runs on the devices you already own. Phone, tablet, receipt printer: add hardware at your own pace.",
       "eyebrow": "Hardware",
       "title": "Nothing to buy to get started.",
@@ -1457,7 +1702,7 @@
       }
     },
     "recherche": {
-      "metaTitle": "Search - Attabl",
+      "metaTitle": "Search",
       "metaDescription": "Find a page on the Attabl site.",
       "title": "Search",
       "subtitle": "Type to search the site.",
@@ -1466,7 +1711,7 @@
       "empty": "No page matches your search.",
       "pages": {
         "solutions": {
-          "title": "Solutions",
+          "title": "Who it's for",
           "description": "Restaurant, hotel, quick service, bar and cafe: Attabl fits your venue."
         },
         "features": {
@@ -1524,8 +1769,8 @@
       }
     },
     "support": {
-      "metaTitle": "Support - Attabl",
-      "metaDescription": "Frequently asked questions, getting-started guides and Attabl support contact. Same-day answers, in French.",
+      "metaTitle": "Support",
+      "metaDescription": "Frequently asked questions, getting-started guides and Attabl support contact. We usually reply within 24 hours, Monday to Friday, in French.",
       "eyebrow": "Support",
       "title": "You are never on your own.",
       "subtitle": "Help in French, from people who have seen an evening rush. Search for an answer, or write to us.",
@@ -1610,17 +1855,17 @@
           }
         },
         "perks": {
-          "p1": "Same-day answers, in French",
+          "p1": "We usually reply within 24 hours, in French",
           "p2": "We train your team with you",
           "p3": "Even offline, service goes on"
         }
       },
       "contact": {
         "title": "Still stuck?",
-        "hours": "A person answers you, Monday to Saturday, from 8 am to 10 pm.",
+        "hours": "A person answers you, Monday to Friday, usually within 24 hours.",
         "whatsapp": {
           "title": "WhatsApp",
-          "body": "The fastest, even during service."
+          "body": "The most direct way: one message, a real person."
         },
         "email": {
           "title": "Email",
@@ -2459,6 +2704,11 @@
     "enterInBaseUnit": "Base unit ({unit})",
     "enterInPurchaseUnit": "Purchase unit ({unit})",
     "convertedTo": "= {qty} {unit}",
+    "purchasePriceLabel": "Purchase price per {unit} (optional)",
+    "purchasePricePlaceholder": "E.g. 1500",
+    "purchasePriceHint": "With a price, the product cost becomes the average of the stock already there and this delivery. Without a price, the cost does not change.",
+    "purchasePriceInvalid": "The purchase price must be greater than 0.",
+    "purchasePriceTooLarge": "The purchase price is too large (99,999,999 maximum).",
     "purchaseFactorInvalid": "Units per purchase must be greater than 0",
     "qtyPlaceholder": "Qty",
     "noIngredientDefined": "No ingredient defined",
@@ -2939,7 +3189,7 @@
         "steps": {
           "s1": "At the bottom of the left menu, tap your name, then \"Subscription\".",
           "s2": "You see your plan, and when your trial ends or your next payment is due.",
-          "s3": "To change plan, pick it. Monthly or yearly: yearly costs 15% less.",
+          "s3": "To change plan, pick it. Monthly or yearly: yearly costs about 15% less.",
           "s4": "Mid-month, you only pay the difference for the days left."
         }
       }
@@ -5316,12 +5566,13 @@
     "disclaimer": "By submitting, you agree to be contacted by our team.",
     "eyebrow": "Contact",
     "heroTitle": "Let's talk about your restaurant.",
-    "heroSubtitle": "A French-speaking team in Yaounde, Ouagadougou and N'Djamena. We reply within 24 h.",
+    "heroSubtitle": "A French-speaking team in Yaounde, Ouagadougou and N'Djamena. We usually reply within 24 hours, Monday to Friday.",
     "formTitle": "Write to us",
     "formSubtitle": "Tell us where you stand. We come back with a concrete answer, not a pitch.",
-    "formNote": "We usually reply the same day, in French.",
+    "formNote": "We usually reply within 24 hours, Monday to Friday, in French.",
+    "networkError": "Your message was not sent: the connection seems to be down. Check it and try again. Your text is kept.",
     "chWhatsapp": "WhatsApp",
-    "chWhatsappDesc": "The fastest. We answer during service.",
+    "chWhatsappDesc": "The most direct way: one message, a real person.",
     "chWhatsappCta": "Open WhatsApp",
     "chEmail": "Email",
     "chOffices": "Our offices",
@@ -5351,7 +5602,7 @@
     "faq": {
       "q1": {
         "q": "How fast do you reply?",
-        "a": "Within 24 h usually, often the same day. On WhatsApp, we answer during service."
+        "a": "Usually within 24 hours, Monday to Friday, on WhatsApp as well as by email."
       },
       "q2": {
         "q": "Can I try before talking to anyone?",
@@ -5600,5 +5851,47 @@
     "body": "You do not have the permissions needed to open this venue.",
     "myEstablishments": "My venues",
     "signInAgain": "Sign in again"
+  },
+  "mfa": {
+    "settingsTitle": "Two-factor authentication",
+    "settingsSub": "On top of your password, a 6-digit code from your phone. If someone steals your password, they still stay out.",
+    "statusOn": "On for this account",
+    "statusOff": "Not turned on yet",
+    "enable": "Turn on two-factor authentication",
+    "disable": "Turn off",
+    "loading": "Loading...",
+    "enrollStep1": "1. Open your authenticator app (Google Authenticator, Microsoft Authenticator, Authy...) and scan this QR code.",
+    "enrollManual": "QR code not working? Type this key in the app:",
+    "enrollStep2": "2. Type the 6-digit code shown in the app.",
+    "qrAlt": "QR code to scan with your authenticator app",
+    "copyKey": "Copy key",
+    "keyCopied": "Key copied",
+    "codeLabel": "6-digit code",
+    "confirmEnable": "Turn on",
+    "cancel": "Cancel",
+    "enabledToast": "Done. Your account will ask for a code at every sign-in.",
+    "disableTitle": "Turn off two-factor authentication?",
+    "disableSub": "Your account will only be protected by your password. Type a code from your app to confirm.",
+    "confirmDisable": "Turn off",
+    "disabledToast": "Two-factor authentication turned off.",
+    "challengeTitle": "One last code",
+    "challengeSub": "Open your authenticator app and type the 6-digit code shown for ATTABL.",
+    "challengeSubmit": "Confirm and enter",
+    "checking": "Checking...",
+    "otherAccount": "Use another account",
+    "requiredTitle": "Protect the console",
+    "requiredSub": "The platform console requires two-factor authentication. Turn it on once, it takes a minute.",
+    "requiredStart": "Get started",
+    "errors": {
+      "invalidCode": "This code does not work. Wait for the next one and try again.",
+      "expired": "The code has expired. Type the new code from the app.",
+      "unavailable": "Two-factor authentication is not available right now. Contact support.",
+      "alreadyEnabled": "Two-factor authentication is already on for this account.",
+      "noFactor": "No authenticator app is linked to this account.",
+      "failed": "That did not work. Try again in a moment.",
+      "rateLimited": "Too many attempts. Wait 15 minutes before trying again.",
+      "invalidInput": "Type the 6 digits of the code.",
+      "unauthenticated": "Your session has expired. Sign in again."
+    }
   }
 }

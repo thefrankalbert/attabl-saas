@@ -28,6 +28,7 @@ import { getTenantUrl } from '@/lib/constants';
 import { usePermissions } from '@/hooks/usePermissions';
 import { canOpenAdminSubPath } from '@/lib/auth/admin-route-permissions';
 import DeleteAccountSection from '@/components/features/settings/DeleteAccountSection';
+import { MfaSettingsSection } from '@/components/shared/mfa/MfaSettingsSection';
 
 export type SettingsTab = 'compte' | 'etablissement' | 'imprimantes' | 'tva' | 'personnel';
 
@@ -153,6 +154,7 @@ export function SettingsDialog({
                 {canOpen('/subscription') && (
                   <div>{linkBtn(`${basePath}/subscription`, t('setManageSub'))}</div>
                 )}
+                <MfaSettingsSection />
                 {/* Suppression du compte, rendue ICI et pas seulement dans
                     Parametres: un restaurant gele est renvoye sur /subscription
                     par le proxy, et ce volet y reste ouvert. */}

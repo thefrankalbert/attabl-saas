@@ -21,6 +21,7 @@ import {
   optionsCookieAppareil,
 } from '@/lib/auth/appareil-connu';
 import { traiterConnexionReussie } from '@/lib/auth/alerte-nouvelle-connexion';
+import { hasVerifiedFactor } from '@/lib/auth/mfa-assurance';
 
 export async function POST(request: Request) {
   try {
@@ -177,9 +178,15 @@ export async function POST(request: Request) {
     // abandon d'onboarding, pas une erreur. La regle le renvoie au parcours
     // plutot que de laisser filtrer "ce compte existe mais n'a pas
     // d'etablissement".
+    //
+    // Double authentification (audit K6.13): un compte qui a un facteur verifie
+    // sort d'ici en session aal1. `mfaRequired` fait passer le formulaire par
+    // /auth/mfa, qui garde la destination. Ce n'est qu'un aiguillage: les
+    // layouts serveur refusent de toute facon une session aal1 de ce compte.
     const response = NextResponse.json({
       success: true,
       redirect: postLoginDestination(mapMembershipRows(adminUsers)),
+      mfaRequired: hasVerifiedFactor(authData.user),
     });
 
     // 5. Alerte "nouvelle connexion" si l'appareil est inconnu (audit Q19).
@@ -191,7 +198,6 @@ export async function POST(request: Request) {
       compteCreeLe: authData.user.created_at,
       cookieAppareil: cookieAppareilDeLaRequete(request),
       methode: 'mot_de_passe',
-      origine: new URL(request.url).origin,
     });
     if (cookieAppareil) {
       response.cookies.set(APPAREIL_CONNU_COOKIE, cookieAppareil, optionsCookieAppareil());

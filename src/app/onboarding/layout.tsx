@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { NextIntlClientProvider } from 'next-intl';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { loadSessionMemberships } from '@/lib/auth/session-destination';
@@ -40,5 +41,7 @@ export default async function OnboardingLayout({ children }: { children: React.R
     if (destination) redirect(destination);
   }
 
-  return children;
+  // The root layout only sends its own messages: the onboarding keeps the full
+  // catalog (see src/i18n/client-messages.ts).
+  return <NextIntlClientProvider>{children}</NextIntlClientProvider>;
 }

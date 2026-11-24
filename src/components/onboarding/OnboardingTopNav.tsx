@@ -101,13 +101,13 @@ export function OnboardingTopNav({
       {/* Right: auto-save status + theme toggle */}
       <div className="flex items-center gap-2 shrink-0">
         {autoSaveStatus === 'saving' && (
-          <span className="text-[10px] text-app-text-muted flex items-center gap-1">
+          <span className="text-xs text-app-text-muted flex items-center gap-1">
             <Loader2 className="w-3 h-3 animate-spin" />
             <span className="hidden sm:inline">{t('autoSaving')}</span>
           </span>
         )}
         {autoSaveStatus === 'saved' && (
-          <span className="text-[10px] text-accent flex items-center gap-1">
+          <span className="text-xs text-accent flex items-center gap-1">
             <Check className="w-3 h-3" />
             <span className="hidden sm:inline">{t('autoSaved')}</span>
           </span>

@@ -1,3 +1,4 @@
+import { isMfaSatisfied, MFA_REQUIRED_CODE, MFA_REQUIRED_MESSAGE } from '@/lib/auth/mfa-assurance';
 import { createClient } from '@/lib/supabase/server';
 import { readTenantSlug } from '@/lib/auth/tenant-header';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -44,6 +45,13 @@ export async function GET(request: Request) {
       } = await supabase.auth.getUser();
       if (!user) {
         return NextResponse.json({ error: 'Non autorise' }, { status: 401 });
+      }
+
+      if (!(await isMfaSatisfied(supabase, user))) {
+        return NextResponse.json(
+          { error: MFA_REQUIRED_MESSAGE, code: MFA_REQUIRED_CODE },
+          { status: 403 },
+        );
       }
 
       // Scope to the tenant being managed (middleware-injected header), then verify
@@ -150,6 +158,13 @@ export async function POST(request: Request) {
       } = await supabase.auth.getUser();
       if (!user) {
         return NextResponse.json({ error: 'Non autorise' }, { status: 401 });
+      }
+
+      if (!(await isMfaSatisfied(supabase, user))) {
+        return NextResponse.json(
+          { error: MFA_REQUIRED_MESSAGE, code: MFA_REQUIRED_CODE },
+          { status: 403 },
+        );
       }
 
       const body: unknown = await request.json();

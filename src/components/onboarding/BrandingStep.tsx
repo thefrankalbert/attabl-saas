@@ -148,7 +148,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Left: Logo & Description */}
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
+                <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-4">
                   {t('identityVisualLabel')}
                 </p>
 
@@ -209,7 +209,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                       ) : (
                         <>
                           <Upload className="h-5 w-5 text-app-text-muted mb-1.5" />
-                          <span className="text-[10px] text-app-text-muted text-center px-2">
+                          <span className="text-xs text-app-text-muted text-center px-2">
                             {t('logoUpload')}
                           </span>
                         </>
@@ -261,7 +261,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
 
               {/* Right: Colors */}
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
+                <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-4">
                   {t('colorsLabel')}
                 </p>
 
@@ -299,7 +299,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                               style={{ backgroundColor: preset.primary }}
                             />
                           </div>
-                          <span className="text-[10px] font-semibold text-app-text-muted truncate w-full text-center">
+                          <span className="text-xs font-semibold text-app-text-muted truncate w-full text-center">
                             {preset.name}
                           </span>
                         </Button>
@@ -313,9 +313,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                   <Label className="mb-2 block text-xs font-medium text-app-text-secondary">
                     {t('customColorsLabel')}
                     {!hasPresetMatch && (
-                      <span className="ml-1.5 text-[10px] text-accent">
-                        {t('customColorsActive')}
-                      </span>
+                      <span className="ml-1.5 text-xs text-accent">{t('customColorsActive')}</span>
                     )}
                   </Label>
                   <div className="space-y-4">

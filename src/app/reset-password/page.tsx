@@ -133,6 +133,11 @@ function ResetPasswordContent() {
         setSessionReady(false);
         return;
       }
+      if (code === 'MFA_REQUIRED') {
+        // Compte protege par un code: on le demande, puis /auth/mfa revient ici.
+        router.push('/auth/mfa?next=/reset-password');
+        return;
+      }
       if (code === 'SAME_PASSWORD') {
         form.setError('root', { message: t('samePasswordError') });
         return;

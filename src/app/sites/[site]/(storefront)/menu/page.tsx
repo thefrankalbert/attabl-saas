@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { getMessages } from 'next-intl/server';
+import { getStorefrontMessages } from '@/i18n/storefront-messages';
 import { NextIntlClientProvider } from 'next-intl';
 import ClientMenuDetailPage from '@/components/tenant/ClientMenuDetailPage';
 import { getCachedTenant, getCachedMenuData, getTableOccupied, toPublicTenant } from '@/lib/cache';
@@ -58,7 +58,7 @@ export default async function MenuDetailPage({
   const initialVenueSlug = resolvedSearchParams.v || undefined;
   const initialSection = resolvedSearchParams.section || undefined;
   const initialItemId = resolvedSearchParams.item || undefined;
-  const messages = await getMessages();
+  const messages = await getStorefrontMessages();
 
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;

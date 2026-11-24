@@ -32,7 +32,7 @@ export function DetailsSection({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Left: Address */}
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-5">
+        <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-5">
           {t('addressLabel')}
         </p>
 
@@ -118,7 +118,7 @@ export function DetailsSection({
 
       {/* Right: Configuration */}
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-5">
+        <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-5">
           {t('configurationLabel')}
         </p>
 
@@ -199,7 +199,7 @@ export function DetailsSection({
           {/* Type-specific fields */}
           {data.establishmentType && (
             <div className="pt-2 border-t border-app-border">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-3">
                 {t('typeSpecificLabel')}
               </p>
 
