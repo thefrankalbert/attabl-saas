@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Utensils, Edit2, Trash2, Eye, EyeOff, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function CategoryCard({ vm, cat }: Props) {
+  const tc = useTranslations('common');
   const {
     t,
     expandedCategories,
@@ -78,7 +80,7 @@ export function CategoryCard({ vm, cat }: Props) {
               variant="outline"
               size="sm"
               onClick={() => handleDeleteCategory(cat)}
-              title="Supprimer"
+              title={tc('delete')}
               className="text-xs h-8 text-[var(--destructive)] hover:bg-[var(--accent)]"
             >
               <Trash2 className="w-3.5 h-3.5" />

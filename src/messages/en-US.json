@@ -42,7 +42,17 @@
       "select": "Select",
       "remove": "Remove",
       "scanQr": "Scan QR",
-      "addItem": "Add item"
+      "addItem": "Add item",
+      "removeImage": "Remove image",
+      "dragToReorder": "Drag to reorder",
+      "selectPage": "Select page",
+      "selectOrder": "Select order",
+      "closeSearch": "Close search",
+      "reset": "Reset",
+      "preview": "Preview",
+      "addEstablishment": "Add an establishment",
+      "switchToEnglish": "Switch to English",
+      "switchToFrench": "Switch to French"
     },
     "back": "Back",
     "add": "Add",
@@ -130,7 +140,9 @@
     "next": "Next",
     "notFoundSearch": "Search",
     "notFoundPopular": "Most visited pages",
-    "teamMember": "Team member"
+    "teamMember": "Team member",
+    "searchIconPlaceholder": "Search an icon...",
+    "firstStepsTitle": "First steps"
   },
   "checkout": {
     "successTitle": "Payment successful!",

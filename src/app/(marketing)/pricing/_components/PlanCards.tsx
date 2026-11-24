@@ -71,7 +71,7 @@ export function PlanCards({ effectivePeriod }: { effectivePeriod: BillingPeriod 
                   className={cn(
                     'mt-1.5 min-h-[38px] text-[13px] leading-[1.45]',
                     plan.dark
-                      ? 'text-zinc-400 dark:text-zinc-500'
+                      ? 'text-zinc-400 dark:text-zinc-600'
                       : 'text-zinc-500 dark:text-zinc-400',
                   )}
                 >
@@ -96,7 +96,7 @@ export function PlanCards({ effectivePeriod }: { effectivePeriod: BillingPeriod 
                         className={cn(
                           'whitespace-nowrap text-sm font-medium',
                           plan.dark
-                            ? 'text-zinc-400 dark:text-zinc-500'
+                            ? 'text-zinc-400 dark:text-zinc-600'
                             : 'text-zinc-500 dark:text-zinc-400',
                         )}
                       >
@@ -107,7 +107,7 @@ export function PlanCards({ effectivePeriod }: { effectivePeriod: BillingPeriod 
                       className={cn(
                         'mt-1 text-xs',
                         plan.dark
-                          ? 'text-zinc-400 dark:text-zinc-500'
+                          ? 'text-zinc-400 dark:text-zinc-600'
                           : 'text-zinc-500 dark:text-zinc-400',
                       )}
                     >
@@ -119,7 +119,7 @@ export function PlanCards({ effectivePeriod }: { effectivePeriod: BillingPeriod 
                       className={cn(
                         'mt-0.5 text-xs',
                         plan.dark
-                          ? 'text-zinc-400 dark:text-zinc-500'
+                          ? 'text-zinc-400 dark:text-zinc-600'
                           : 'text-zinc-500 dark:text-zinc-400',
                       )}
                     >
@@ -183,7 +183,7 @@ export function PlanCards({ effectivePeriod }: { effectivePeriod: BillingPeriod 
             );
           })}
         </div>
-        <p className="mt-[22px] text-[13px] text-zinc-400 dark:text-zinc-500">{t('priceNote')}</p>
+        <p className="mt-[22px] text-[13px] text-zinc-500 dark:text-zinc-400">{t('priceNote')}</p>
       </div>
     </section>
   );

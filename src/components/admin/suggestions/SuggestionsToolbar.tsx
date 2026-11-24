@@ -91,7 +91,7 @@ export default function SuggestionsToolbar({
               variant="destructive"
               size="sm"
               className="gap-1.5"
-              title="Supprimer"
+              title={tc('delete')}
               onClick={onBulkDelete}
             >
               <XCircle className="w-4 h-4" />

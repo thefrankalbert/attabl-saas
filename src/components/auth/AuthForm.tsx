@@ -9,6 +9,8 @@ import { Loader2, Eye, EyeOff, MailCheck } from 'lucide-react';
 import Link from 'next/link';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { HONEYPOT_FIELD } from '@/lib/honeypot';
+import { cn } from '@/lib/utils';
+import { HIT_AREA_ICON_POSITIONED, HIT_AREA_ROW_UP_POSITIONED } from '@/lib/ui/hit-area';
 import { GoogleIcon } from './GoogleIcon';
 import { AuthCard } from './AuthCard';
 import { ConfirmationSentScreen } from './ConfirmationSentScreen';
@@ -242,7 +244,10 @@ function AuthForm({ mode }: AuthFormProps) {
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-[var(--muted)] hover:bg-transparent hover:text-[var(--fg)]"
+                className={cn(
+                  HIT_AREA_ICON_POSITIONED,
+                  'absolute right-1 top-1/2 z-10 h-8 w-8 -translate-y-1/2 text-[var(--muted)] hover:bg-transparent hover:text-[var(--fg)]',
+                )}
                 aria-label={showPassword ? tForm('hidePassword') : tForm('showPassword')}
                 aria-pressed={showPassword}
               >
@@ -253,7 +258,10 @@ function AuthForm({ mode }: AuthFormProps) {
               {isLogin && (
                 <Link
                   href="/forgot-password"
-                  className="absolute bottom-full right-0 mb-0 flex h-6 items-center text-xs font-medium text-[var(--subtle)] transition-colors hover:text-[var(--fg)]"
+                  className={cn(
+                    HIT_AREA_ROW_UP_POSITIONED,
+                    'absolute bottom-full right-0 mb-0 flex h-6 items-center text-xs font-medium text-[var(--subtle)] transition-colors hover:text-[var(--fg)]',
+                  )}
                 >
                   {tForm('forgotPassword')}
                 </Link>

@@ -70,7 +70,7 @@ export function NotificationCenter({ tenantId, userId }: NotificationCenterProps
   // to avoid NextIntlClientProvider context errors during SSR→client fallback
   if (!mounted) {
     return (
-      <Button variant="ghost" size="icon" aria-label="Notifications">
+      <Button variant="ghost" size="icon" aria-hidden="true" tabIndex={-1}>
         <Bell className="w-4 h-4" />
       </Button>
     );

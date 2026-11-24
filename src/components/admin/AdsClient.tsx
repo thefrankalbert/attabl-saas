@@ -222,7 +222,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0 text-status-error hover:text-status-error hover:bg-status-error-bg"
-                    title="Supprimer"
+                    title={tc('delete')}
                     onClick={() => handleDelete(ad.id)}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -257,7 +257,13 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
               />
               {previewUrl ? (
                 <div className="relative aspect-video rounded-lg overflow-hidden bg-app-bg">
-                  <Image src={previewUrl} alt="Preview" fill className="object-cover" unoptimized />
+                  <Image
+                    src={previewUrl}
+                    alt={tc('aria.preview')}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
                 </div>
               ) : (
                 <div className="py-8 text-app-text-muted">

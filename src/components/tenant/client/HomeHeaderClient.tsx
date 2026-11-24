@@ -5,6 +5,8 @@ import dynamic from 'next/dynamic';
 import { MapPin, Search, QrCode, ChevronDown, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { HIT_AREA_ICON, HIT_AREA_ROW } from '@/lib/ui/hit-area';
 import type { Table, MenuItem } from '@/types/admin.types';
 import type { ClientMenuItem } from '@/components/tenant/client/MenuItemCard';
 import ItemDetailSheet from '@/components/tenant/ItemDetailSheet';
@@ -83,7 +85,10 @@ export function HomeHeaderClient({
             </div>
             <Link
               href={`/sites/${site}/settings`}
-              className="flex min-w-0 items-center gap-1 text-[14px] font-semibold leading-tight tracking-[-0.02em] text-[var(--color-ink)]"
+              className={cn(
+                HIT_AREA_ROW,
+                'flex min-w-0 items-center gap-1 text-[14px] font-semibold leading-tight tracking-[-0.02em] text-[var(--color-ink)]',
+              )}
             >
               <span className="truncate">{tenantName}</span>
               {tableNum && (
@@ -117,7 +122,10 @@ export function HomeHeaderClient({
             type="button"
             variant="ghost"
             onClick={openSearch}
-            className="h-auto flex-1 justify-start p-0 text-[13.5px] font-normal tracking-[-0.01em] text-[var(--color-ink-muted)] hover:bg-transparent"
+            className={cn(
+              HIT_AREA_ROW,
+              'h-auto flex-1 justify-start p-0 text-[13.5px] font-normal tracking-[-0.01em] text-[var(--color-ink-muted)] hover:bg-transparent',
+            )}
           >
             {t('searchPlaceholder')}
           </Button>
@@ -127,7 +135,10 @@ export function HomeHeaderClient({
             size="icon"
             onClick={() => setIsQROpen(true)}
             aria-label={t('scanQR')}
-            className="h-[26px] w-[26px] rounded-lg bg-[var(--color-ink)] p-0 hover:bg-[var(--color-ink)]"
+            className={cn(
+              HIT_AREA_ICON,
+              'h-[26px] w-[26px] rounded-lg bg-[var(--color-ink)] p-0 hover:bg-[var(--color-ink)]',
+            )}
           >
             <QrCode className="h-3.5 w-3.5 text-white" strokeWidth={2} />
           </Button>

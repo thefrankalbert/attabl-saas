@@ -104,7 +104,7 @@ export function FeatureComparison() {
                   <TableRow className="border-0 hover:bg-transparent">
                     <TableCell
                       colSpan={5}
-                      className="px-5 pb-3 pt-8 text-xs font-semibold uppercase tracking-[0.08em] text-zinc-400 dark:text-zinc-500"
+                      className="px-5 pb-3 pt-8 text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400"
                     >
                       {t(`comparison.categories.${cat.key}.title`)}
                     </TableCell>

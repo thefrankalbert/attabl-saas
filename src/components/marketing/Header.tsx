@@ -16,10 +16,13 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
+import { HIT_AREA_ICON, HIT_AREA_ROW } from '@/lib/ui/hit-area';
 import { LocaleToggle } from './LocaleToggle';
 
-const NAV_LINK =
-  'inline-flex items-center gap-1 whitespace-nowrap rounded-full px-3 py-2 text-[15px] lg:max-xl:px-2 font-normal text-encre transition-colors hover:bg-gris dark:text-white';
+const NAV_LINK = cn(
+  'inline-flex items-center gap-1 whitespace-nowrap rounded-full px-3 py-2 text-[15px] lg:max-xl:px-2 font-normal text-encre transition-colors hover:bg-gris dark:text-white',
+  HIT_AREA_ROW,
+);
 const PANEL_BASE =
   'invisible absolute inset-x-0 top-full z-50 -translate-y-2.5 border-b border-trait bg-white text-encre opacity-0 shadow-[0_26px_44px_-30px_rgba(9,9,11,0.22)] transition-[opacity,transform,visibility] duration-200 motion-reduce:transition-none dark:bg-encre dark:text-white';
 const PANEL_OPEN = 'visible translate-y-0 opacity-100';
@@ -27,8 +30,10 @@ const MEGA_BIG =
   'text-[30px] font-semibold tracking-[-0.025em] transition-colors group-hover/panel:text-encre/35 hover:!text-encre dark:group-hover/panel:text-white/35 dark:hover:!text-white';
 const NEWS_LINK =
   'text-[15px] font-medium text-encre/75 hover:text-encre dark:text-white/75 dark:hover:text-white';
-const CTA_PRIMARY =
-  'inline-flex h-10 items-center rounded-full bg-encre px-5 text-[15px] font-medium text-white hover:bg-black dark:bg-white dark:text-encre dark:hover:bg-white/90';
+const CTA_PRIMARY = cn(
+  'inline-flex h-10 items-center rounded-full bg-encre px-5 text-[15px] font-medium text-white hover:bg-black dark:bg-white dark:text-encre dark:hover:bg-white/90',
+  HIT_AREA_ROW,
+);
 // Intention de survol : delai avant de fermer ou de basculer vers un autre
 // menu, pour descendre en diagonale vers les liens du panneau sans le perdre.
 const HOVER_GRACE_MS = 180;
@@ -193,7 +198,7 @@ export default function Header() {
         )}
       />
       <div className="mx-auto flex h-16 max-w-[1440px] items-center gap-6 px-5 lg:px-8 lg:max-xl:gap-3 lg:max-xl:px-5">
-        <Link href="/" className="inline-flex shrink-0 items-center">
+        <Link href="/" className={cn('inline-flex shrink-0 items-center', HIT_AREA_ROW)}>
           <Brand />
         </Link>
 
@@ -298,7 +303,10 @@ export default function Header() {
               aria-controls={searchId}
               aria-label={t('searchLabel')}
               onClick={() => toggle('search')}
-              className="size-10 rounded-full text-encre hover:bg-gris dark:text-white dark:hover:bg-gris [&_svg]:size-[18px]"
+              className={cn(
+                HIT_AREA_ICON,
+                'size-10 rounded-full text-encre hover:bg-gris dark:text-white dark:hover:bg-gris [&_svg]:size-[18px]',
+              )}
             >
               <Search className="size-[18px]" />
             </Button>
@@ -335,7 +343,10 @@ export default function Header() {
                 variant="ghost"
                 size="icon"
                 aria-label={t('openMenu')}
-                className="size-10 rounded-full border border-trait bg-transparent text-encre hover:bg-gris lg:hidden dark:text-white dark:hover:bg-gris [&_svg]:size-[18px]"
+                className={cn(
+                  HIT_AREA_ICON,
+                  'size-10 rounded-full border border-trait bg-transparent text-encre hover:bg-gris lg:hidden dark:text-white dark:hover:bg-gris [&_svg]:size-[18px]',
+                )}
               >
                 <Menu className="size-[18px]" />
               </Button>

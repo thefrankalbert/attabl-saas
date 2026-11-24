@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Download, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -36,6 +37,7 @@ if (typeof window !== 'undefined') {
  * admin bottom-nav) so two fixed elements never overlap.
  */
 export function InstallPrompt({ className, label }: { className?: string; label: string }) {
+  const t = useTranslations('installPrompt');
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
@@ -120,7 +122,7 @@ export function InstallPrompt({ className, label }: { className?: string; label:
         variant="ghost"
         size="icon"
         onClick={dismiss}
-        aria-label="Fermer"
+        aria-label={t('close')}
         className="h-9 w-9 shrink-0"
       >
         <X className="h-4 w-4" />

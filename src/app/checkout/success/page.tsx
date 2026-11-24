@@ -71,8 +71,8 @@ function CheckoutSuccessContent() {
               la page annoncait quand meme un succes (audit 2026-11-10, C-036). */}
           {tenantSlug ? (
             <>
-              <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="h-8 w-8 text-green-600" />
+              <div className="h-16 w-16 bg-status-success-bg rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="h-8 w-8 text-status-success" />
               </div>
               <h2 className="text-2xl font-bold mb-2">{t('successTitle')}</h2>
               <p className="text-app-text-muted mb-6">{t('successDescription')}</p>

@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { cn } from '@/lib/utils';
+import { HIT_AREA_ROW } from '@/lib/ui/hit-area';
 
 interface Props {
   title: string;
@@ -26,7 +28,10 @@ export function SectionHeader({ title, subtitle, seeAllHref, seeAllLabel }: Prop
       {seeAllHref && seeAllLabel && (
         <Link
           href={seeAllHref}
-          className="flex shrink-0 items-center gap-0.5 text-[13px] font-medium text-[var(--color-accent)]"
+          className={cn(
+            HIT_AREA_ROW,
+            'flex shrink-0 items-center gap-0.5 text-[13px] font-medium text-[var(--color-accent)]',
+          )}
         >
           {seeAllLabel} <ChevronRight className="h-3.5 w-3.5" strokeWidth={2} />
         </Link>

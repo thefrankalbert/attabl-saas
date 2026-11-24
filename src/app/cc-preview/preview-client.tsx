@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -226,6 +226,7 @@ export function PreviewClient() {
   const [chartMode, setChartMode] = useState<ChartMode>('revenue');
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>('day');
   const locale = useLocale();
+  const tc = useTranslations('common');
 
   const isEmpty = scenario === 'empty';
   const locations = isEmpty ? EMPTY_LOCATIONS : ACTIVE_LOCATIONS;
@@ -298,7 +299,7 @@ export function PreviewClient() {
               onClick={noop}
               className="min-h-[44px] min-w-[44px] rounded-md"
               style={{ color: 'var(--cc-text-3)' }}
-              aria-label="Ajouter un etablissement"
+              aria-label={tc('aria.addEstablishment')}
             >
               <Plus className="size-4" strokeWidth={2} />
             </Button>
@@ -363,7 +364,7 @@ export function PreviewClient() {
                 <span className="cc-mono text-[15px] font-semibold text-[var(--cc-text-3)]">-</span>
               </div>
             </div>
-            <FirstSteps title="Premiers pas" steps={FIRST_STEPS} columns={3} />
+            <FirstSteps title={tc('firstStepsTitle')} steps={FIRST_STEPS} columns={3} />
           </div>
         ) : (
           <section className="grid grid-cols-1 gap-y-6 lg:grid-cols-[1.15fr_1fr] lg:gap-x-10">

@@ -225,7 +225,6 @@ function ResetPasswordContent() {
                             type="email"
                             autoComplete="email"
                             placeholder={t('accountEmailPlaceholder')}
-                            autoFocus
                             className={inputClass}
                             {...field}
                           />

@@ -27,7 +27,7 @@ export async function SolutionsSteps() {
               delay={i * 0.08}
               className="rounded-[14px] border border-zinc-200 bg-white px-6 py-[26px] dark:border-zinc-800 dark:bg-zinc-950"
             >
-              <div className="text-[13px] font-semibold text-zinc-400 dark:text-zinc-500">
+              <div className="text-[13px] font-semibold text-zinc-500 dark:text-zinc-400">
                 {String(i + 1).padStart(2, '0')}
               </div>
               <div className="mt-2.5 text-[17px] font-semibold tracking-[-0.015em] text-zinc-950 dark:text-zinc-50">

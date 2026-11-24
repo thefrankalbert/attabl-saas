@@ -33,7 +33,7 @@ export async function FeatureCategory({
           duration={0.7}
           className="flex items-baseline gap-3.5"
         >
-          <span className="text-[13px] font-semibold tabular-nums text-zinc-400 dark:text-zinc-500">
+          <span className="text-[13px] font-semibold tabular-nums text-zinc-500 dark:text-zinc-400">
             {num}
           </span>
           <div>

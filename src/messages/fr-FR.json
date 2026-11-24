@@ -42,7 +42,17 @@
       "select": "Sélectionner",
       "remove": "Retirer",
       "scanQr": "Scanner QR",
-      "addItem": "Ajouter un élément"
+      "addItem": "Ajouter un élément",
+      "removeImage": "Retirer l'image",
+      "dragToReorder": "Glisser pour réorganiser",
+      "selectPage": "Sélectionner la page",
+      "selectOrder": "Sélectionner la commande",
+      "closeSearch": "Fermer la recherche",
+      "reset": "Réinitialiser",
+      "preview": "Aperçu",
+      "addEstablishment": "Ajouter un établissement",
+      "switchToEnglish": "Passer en anglais",
+      "switchToFrench": "Passer en français"
     },
     "back": "Retour",
     "add": "Ajouter",
@@ -130,7 +140,9 @@
     "next": "Suivant",
     "notFoundSearch": "Rechercher",
     "notFoundPopular": "Pages les plus consultées",
-    "teamMember": "Membre de l'équipe"
+    "teamMember": "Membre de l'équipe",
+    "searchIconPlaceholder": "Rechercher une icône...",
+    "firstStepsTitle": "Premiers pas"
   },
   "checkout": {
     "successTitle": "Paiement réussi !",

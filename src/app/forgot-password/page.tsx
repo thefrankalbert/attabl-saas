@@ -112,7 +112,6 @@ export default function ForgotPasswordPage() {
                           <Input
                             type="email"
                             placeholder={t('emailPlaceholder')}
-                            autoFocus
                             className={inputClass}
                             {...field}
                           />

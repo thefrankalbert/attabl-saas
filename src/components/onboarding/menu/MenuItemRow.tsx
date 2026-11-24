@@ -33,6 +33,7 @@ export function MenuItemRow({
   handleItemPhotoUpload,
 }: MenuItemRowProps) {
   const t = useTranslations('onboarding');
+  const tc = useTranslations('common');
 
   return (
     <div className="flex items-center gap-2.5 rounded-lg border border-app-border bg-app-elevated p-2 shadow-sm transition-colors hover:bg-app-hover">
@@ -62,7 +63,7 @@ export function MenuItemRow({
               type="button"
               variant="destructive"
               size="icon"
-              aria-label="Remove image"
+              aria-label={tc('aria.removeImage')}
               onClick={() => updateArticle(categoryId, item.id, 'imageUrl', '')}
               className="absolute -right-1 -top-1 h-4 w-4 min-h-0 min-w-0 rounded-full p-0"
             >

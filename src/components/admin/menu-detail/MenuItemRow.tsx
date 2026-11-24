@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Utensils, Edit2, Check, X, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function MenuItemRow({ vm, item }: Props) {
+  const tc = useTranslations('common');
   const {
     t,
     editingPriceId,
@@ -81,7 +83,7 @@ export function MenuItemRow({ vm, item }: Props) {
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Edit"
+            aria-label={tc('edit')}
             onClick={() => openEditItemModal(item)}
             title={t('editItem')}
           >
@@ -90,7 +92,7 @@ export function MenuItemRow({ vm, item }: Props) {
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Settings"
+            aria-label={tc('aria.settings')}
             onClick={(e) => {
               e.stopPropagation();
               setEditingModifiersItem(item);

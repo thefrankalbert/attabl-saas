@@ -26,6 +26,7 @@ export function useSupplierColumns({
   setDeleteConfirm,
 }: UseSupplierColumnsArgs): ColumnDef<Supplier, unknown>[] {
   const t = useTranslations('suppliers');
+  const tc = useTranslations('common');
 
   return useMemo<ColumnDef<Supplier, unknown>[]>(
     () => [
@@ -154,7 +155,7 @@ export function useSupplierColumns({
                   variant="ghost"
                   size="sm"
                   onClick={() => setDeleteConfirm(supplier.id)}
-                  title="Supprimer"
+                  title={tc('delete')}
                   className="text-xs text-status-error hover:text-status-error"
                 >
                   <Trash2 className="w-3 h-3" />

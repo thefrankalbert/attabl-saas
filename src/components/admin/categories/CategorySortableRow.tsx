@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { GripVertical, Utensils, Edit2, Trash2, Wine, Shuffle } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -15,6 +16,7 @@ interface SortableRowProps {
 }
 
 export function SortableRow({ cat, onEdit, onDelete }: SortableRowProps) {
+  const tc = useTranslations('common');
   // Lecture seule sans `menu.edit`: ni deplacement, ni modification, ni suppression.
   const canEdit = usePermissions().can('menu.edit');
   const {
@@ -50,7 +52,7 @@ export function SortableRow({ cat, onEdit, onDelete }: SortableRowProps) {
           size="icon"
           ref={setActivatorNodeRef}
           className="touch-none cursor-grab active:cursor-grabbing focus:outline-none p-1 -m-1 h-auto w-auto rounded hover:bg-app-bg transition-colors"
-          aria-label="Drag to reorder"
+          aria-label={tc('aria.dragToReorder')}
           {...attributes}
           {...listeners}
         >
@@ -91,7 +93,7 @@ export function SortableRow({ cat, onEdit, onDelete }: SortableRowProps) {
             variant="ghost"
             size="sm"
             onClick={() => onDelete(cat)}
-            title="Supprimer"
+            title={tc('delete')}
             className="h-9 w-9 p-0 text-[var(--destructive)] hover:bg-[var(--accent)]"
           >
             <Trash2 className="w-4 h-4" />

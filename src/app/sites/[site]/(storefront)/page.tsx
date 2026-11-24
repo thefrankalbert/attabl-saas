@@ -245,6 +245,9 @@ export default async function HomePage({
   return (
     <NextIntlClientProvider messages={messages}>
       <div className="pb-20">
+        {/* O13: un titre de page par ecran. Le nom du restaurant est affiche par
+            l'en-tete (lien), d'ou un h1 reserve aux lecteurs d'ecran. */}
+        <h1 className="sr-only">{tenant.name}</h1>
         <HomeHeaderClient
           site={site}
           tenantName={tenant.name}
