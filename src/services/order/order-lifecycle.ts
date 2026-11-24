@@ -295,11 +295,15 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
      * reversing money. restock/unclaim are themselves idempotent, so a partial
      * failure can be safely retried.
      *
-     * A 'partial' order still holds money in the ledger (a deposit): cancelling
-     * it is a decision on money kept in the till, reserved to the money
-     * authority (owner, admin, manager; migration 20261124120000). Without it we
-     * refuse here, with a clear message, instead of letting the database answer
-     * a generic error.
+     * Meme critere que la base (migration 20261124120000): c'est le NET du
+     * registre `payments` (encaissements 'completed' moins remboursements
+     * 'refunded' de la commande, filtre par tenant_id) qui juge, pas la colonne
+     * `payment_status` qu'un caissier peut reecrire. Net couvrant le du: il faut
+     * un remboursement d'abord. Net positif sous le du (acompte): decision sur
+     * de l'argent encore en caisse, reservee a l'autorite sur l'argent (owner,
+     * admin, manager). Sans elle on refuse ici avec un message clair, au lieu de
+     * laisser la base repondre une erreur generique. La base reste l'arbitre
+     * final.
      */
     async cancelOrder(
       orderId: string,
@@ -308,7 +312,7 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
     ): Promise<void> {
       const { data: order, error: fetchError } = await supabase
         .from('orders')
-        .select('id, status, payment_status, coupon_id')
+        .select('id, status, payment_status, coupon_id, total, tip_amount')
         .eq('id', orderId)
         .eq('tenant_id', tenantId)
         .maybeSingle();
@@ -322,13 +326,37 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
       if (order.status === 'cancelled') {
         return; // already cancelled - no-op
       }
-      if (order.payment_status === 'paid') {
-        throw new ServiceError(
+      const refundFirst = () =>
+        new ServiceError(
           'Une commande payee ne peut pas etre annulee - utiliser un remboursement',
           'CONFLICT',
         );
+      if (order.payment_status === 'paid') {
+        throw refundFirst();
       }
-      if (order.payment_status === 'partial' && !options.canManageMoney) {
+
+      const { data: ledger, error: ledgerError } = await supabase
+        .from('payments')
+        .select('amount, status')
+        .eq('order_id', orderId)
+        .eq('tenant_id', tenantId);
+      if (ledgerError) {
+        throw new ServiceError('Erreur lors du chargement du registre', 'INTERNAL', ledgerError);
+      }
+      const net = ((ledger ?? []) as Array<{ amount: number | string; status: string }>).reduce(
+        (sum, row) =>
+          row.status === 'completed'
+            ? sum + Number(row.amount)
+            : row.status === 'refunded'
+              ? sum - Number(row.amount)
+              : sum,
+        0,
+      );
+      const due = Number(order.total ?? 0) + Number(order.tip_amount ?? 0);
+      if (net >= Math.max(due, 1)) {
+        throw refundFirst();
+      }
+      if (net > 0 && !options.canManageMoney) {
         throw new ServiceError(
           "Cette commande a un acompte au registre : l'annuler revient a un gerant, un administrateur ou le proprietaire",
           'CONFLICT',

@@ -1272,6 +1272,7 @@ describe('OrderService', () => {
     // rpc() for restock/unclaim, from('orders').update().eq().eq() for the flip.
     function makeSupabase(opts: {
       order: Record<string, unknown> | null;
+      ledger?: Array<{ amount: number; status: string }>;
       fetchError?: unknown;
       restockError?: unknown;
       unclaimError?: unknown;
@@ -1291,7 +1292,17 @@ describe('OrderService', () => {
           return Promise.resolve({ error: opts.unclaimError ?? null });
         return Promise.resolve({ error: null });
       });
-      const from = vi.fn().mockReturnValue({ select, update });
+      // Registre: from('payments').select().eq().eq() rend les lignes de la commande.
+      const ledgerSelect = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValue({ data: opts.ledger ?? [], error: null }),
+        }),
+      });
+      const from = vi
+        .fn()
+        .mockImplementation((table: string) =>
+          table === 'payments' ? { select: ledgerSelect } : { select, update },
+        );
       return { client: { from, rpc } as unknown as SupabaseClient, rpc, update };
     }
 
@@ -1354,12 +1365,23 @@ describe('OrderService', () => {
       });
     });
 
-    // Acompte au registre (partial): annulable par l'autorite sur l'argent
-    // (gerant, admin, proprietaire), refuse au caissier (migration 20261124120000).
+    // Acompte au registre: annulable par l'autorite sur l'argent (gerant, admin,
+    // proprietaire), refuse au caissier (migration 20261124120000). Le NET du
+    // registre juge, comme la base.
+    const acompte = {
+      order: {
+        id: 'o1',
+        status: 'preparing',
+        payment_status: 'partial',
+        coupon_id: null,
+        total: 5000,
+        tip_amount: 0,
+      },
+      ledger: [{ amount: 2000, status: 'completed' }],
+    };
+
     it('cancels a partial order when the caller holds the money authority (manager)', async () => {
-      const m = makeSupabase({
-        order: { id: 'o1', status: 'preparing', payment_status: 'partial', coupon_id: null },
-      });
+      const m = makeSupabase(acompte);
       const service = createOrderService(m.client);
 
       await service.cancelOrder('o1', 'tenant-123', { canManageMoney: true });
@@ -1368,9 +1390,7 @@ describe('OrderService', () => {
     });
 
     it('refuses a partial order without the money authority (cashier)', async () => {
-      const m = makeSupabase({
-        order: { id: 'o1', status: 'preparing', payment_status: 'partial', coupon_id: 'c1' },
-      });
+      const m = makeSupabase({ ...acompte, order: { ...acompte.order, coupon_id: 'c1' } });
       const service = createOrderService(m.client);
 
       await expect(
@@ -1384,6 +1404,48 @@ describe('OrderService', () => {
       });
       expect(m.rpc).not.toHaveBeenCalled();
       expect(m.update).not.toHaveBeenCalled();
+    });
+
+    it('judges on the ledger, not on payment_status: pending with money in the ledger is refused to a cashier', async () => {
+      const m = makeSupabase({
+        ...acompte,
+        order: { ...acompte.order, payment_status: 'pending' },
+      });
+      const service = createOrderService(m.client);
+
+      await expect(
+        service.cancelOrder('o1', 'tenant-123', { canManageMoney: false }),
+      ).rejects.toMatchObject({ details: { reason: 'cancel_needs_money_authority' } });
+      expect(m.update).not.toHaveBeenCalled();
+    });
+
+    it('a ledger that covers the due needs a refund first, even for the money authority', async () => {
+      const m = makeSupabase({
+        ...acompte,
+        order: { ...acompte.order, payment_status: 'pending' },
+        ledger: [{ amount: 5000, status: 'completed' }],
+      });
+      const service = createOrderService(m.client);
+
+      await expect(
+        service.cancelOrder('o1', 'tenant-123', { canManageMoney: true }),
+      ).rejects.toMatchObject({ code: 'CONFLICT' });
+      expect(m.update).not.toHaveBeenCalled();
+    });
+
+    it('a fully refunded ledger (net 0) can be cancelled by a cashier', async () => {
+      const m = makeSupabase({
+        ...acompte,
+        ledger: [
+          { amount: 5000, status: 'completed' },
+          { amount: 5000, status: 'refunded' },
+        ],
+      });
+      const service = createOrderService(m.client);
+
+      await service.cancelOrder('o1', 'tenant-123', { canManageMoney: false });
+
+      expect(m.update).toHaveBeenCalledWith({ status: 'cancelled' });
     });
 
     it('a cashier can still cancel an unpaid order', async () => {

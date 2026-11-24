@@ -85,26 +85,17 @@ export function createFlutterwaveAnomalyRecorder(
   }
 
   /**
-   * Argent encaisse et NON applique: journal d'erreur "remboursement a faire"
-   * (alerte) puis ligne "a rembourser" (trace durable).
+   * Argent encaisse et NON applique: ligne "a rembourser" (trace durable) puis
+   * journal "remboursement a faire". L'alerte (error) ne part que si la ligne est
+   * NOUVELLE: un rejeu du meme evenement ne relance pas l'alerte (warn).
    */
-  function refundDue(
+  async function refundDue(
     tx: VerifiedTransaction,
     reason: string,
     payment: { id: string; tenant_id: string } | null,
     contexte: Record<string, unknown> = {},
   ): Promise<boolean> {
-    logger.error('Flutterwave: paiement encaisse mais NON applique, remboursement a faire', {
-      tenantId: payment?.tenant_id ?? null,
-      paymentId: payment?.id ?? null,
-      txRef: tx.tx_ref,
-      flwTransactionId: tx.id,
-      amount: tx.amount,
-      currency: tx.currency,
-      reason,
-      ...contexte,
-    });
-    return recordAnomaly({
+    const nouvelle = await recordAnomaly({
       kind: 'refund_due',
       flwTransactionId: tx.id,
       reason,
@@ -114,6 +105,20 @@ export function createFlutterwaveAnomalyRecorder(
       amount: tx.amount,
       currency: tx.currency,
     });
+    const message = 'Flutterwave: paiement encaisse mais NON applique, remboursement a faire';
+    const detail = {
+      tenantId: payment?.tenant_id ?? null,
+      paymentId: payment?.id ?? null,
+      txRef: tx.tx_ref,
+      flwTransactionId: tx.id,
+      amount: tx.amount,
+      currency: tx.currency,
+      reason,
+      ...contexte,
+    };
+    if (nouvelle) logger.error(message, detail);
+    else logger.warn(message, { ...detail, rejeu: true });
+    return nouvelle;
   }
 
   return { recordAnomaly, refundDue };

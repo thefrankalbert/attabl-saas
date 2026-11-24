@@ -155,7 +155,10 @@ export async function actionCreateCategory(
   try {
     const supabase = await createClient();
     const categoryService = createCategoryService(supabase);
-    const data = await categoryService.createCategory({ ...input, tenant_id: tenantId }, options);
+    const data = await categoryService.createCategory(
+      { ...input, name: parsedName.data, name_en: parsedNameEn.data, tenant_id: tenantId },
+      options,
+    );
     revalidateTag(CACHE_TAG_MENUS, 'max');
     return { success: true, data };
   } catch (err) {
@@ -217,7 +220,12 @@ export async function actionUpdateCategory(
       data.image_url !== undefined
         ? await cleanup.imageUrlsOf('categories', categoryId, tenantId)
         : [];
-    await categoryService.updateCategory(categoryId, { ...data, tenant_id: tenantId });
+    await categoryService.updateCategory(categoryId, {
+      ...data,
+      name: parsedName.data,
+      name_en: parsedNameEn.data,
+      tenant_id: tenantId,
+    });
     if (data.image_url !== undefined) await cleanup.release(tenantId, previousImages);
     revalidateTag(CACHE_TAG_MENUS, 'max');
     return { success: true };

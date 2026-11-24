@@ -36,4 +36,27 @@ describe('getUsdXafRate', () => {
     const { getUsdXafRate } = await import('../exchange-rate');
     expect(await getUsdXafRate()).toBe(605);
   });
+
+  it('garde l echec 5 minutes: deux appels pendant la panne = un seul appel sortant', async () => {
+    vi.useFakeTimers();
+    try {
+      const fetchMock = vi.fn().mockRejectedValue(new Error('panne'));
+      vi.stubGlobal('fetch', fetchMock);
+      const { getUsdXafRate } = await import('../exchange-rate');
+      expect(await getUsdXafRate()).toBe(605);
+      vi.advanceTimersByTime(60_000);
+      expect(await getUsdXafRate()).toBe(605);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      // Temoin: apres le delai, un nouvel essai part, et il reussit.
+      vi.advanceTimersByTime(5 * 60_000);
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ rates: { XAF: 612 } }),
+      });
+      expect(await getUsdXafRate()).toBe(612);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

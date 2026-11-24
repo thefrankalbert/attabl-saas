@@ -4,6 +4,7 @@ vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
+import { logger } from '@/lib/logger';
 import { TENANT_A, REF, iso, DAY, payment, setup, tx } from './helpers/flutterwave-fixtures';
 
 /**
@@ -84,6 +85,24 @@ describe('SM10: trace durable de l argent encaisse et non applique', () => {
     vi.mocked(xaf.client.verifyTransaction).mockResolvedValue(tx({ id: 7001, currency: 'XAF' }));
     await xaf.service.processTransaction(7001);
     expect(xaf.anomalies()).toEqual([expect.objectContaining({ reason: 'CURRENCY_MISMATCH' })]);
+  });
+
+  it('alerte une seule fois: premier passage = error, rejeu du meme evenement = warn', async () => {
+    const s = setup();
+    vi.mocked(s.client.verifyTransaction).mockResolvedValue(tx({ id: 7001, amount: 1000 }));
+    vi.mocked(logger.error).mockClear();
+    vi.mocked(logger.warn).mockClear();
+    const alerte = expect.stringContaining('remboursement a faire');
+
+    await s.service.processTransaction(7001);
+    expect(logger.error).toHaveBeenCalledWith(alerte, expect.anything());
+    expect(logger.warn).not.toHaveBeenCalledWith(alerte, expect.anything());
+
+    vi.mocked(logger.error).mockClear();
+    await s.service.processTransaction(7001);
+    expect(logger.error).not.toHaveBeenCalledWith(alerte, expect.anything());
+    expect(logger.warn).toHaveBeenCalledWith(alerte, expect.objectContaining({ rejeu: true }));
+    expect(s.anomalies()).toHaveLength(1);
   });
 
   it('reference ATTABL sans tentative en base: refund_due SANS restaurant (non cru)', async () => {

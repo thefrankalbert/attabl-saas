@@ -84,4 +84,19 @@ describe('nom de categorie: 100 caracteres au plus', () => {
     expect(r.success).toBe(true);
     expect(updateCategory).toHaveBeenCalledTimes(1);
   });
+
+  it('creation: le nom est enregistre sans les espaces autour', async () => {
+    const { actionCreateCategory } = await import('@/app/actions/categories');
+    await actionCreateCategory(T, { name: '  Entrees  ', name_en: '  Starters ', tenant_id: T });
+    expect(createCategory).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Entrees', name_en: 'Starters' }),
+      undefined,
+    );
+  });
+
+  it('modification: le nom est enregistre sans les espaces autour', async () => {
+    const { actionUpdateCategory } = await import('@/app/actions/categories');
+    await actionUpdateCategory(T, C, { name: '  Desserts ', tenant_id: T });
+    expect(updateCategory).toHaveBeenCalledWith(C, expect.objectContaining({ name: 'Desserts' }));
+  });
 });
