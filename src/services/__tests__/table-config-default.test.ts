@@ -40,7 +40,7 @@ function db(zones: Zone[]) {
         select: () => q,
         eq: (c: string, v: unknown) => (filters.push((r) => r[c] === v), q),
         like: (c: string, pattern: string) => {
-          const prefix = pattern.replace('%', '');
+          const prefix = pattern.replaceAll('%', '');
           filters.push((r) => String(r[c]).startsWith(prefix));
           return q;
         },
