@@ -13,7 +13,6 @@ const PROCESSOR_IDS = [
   'cloudflare',
   'stripe',
   'push',
-  'improvmx',
   'anthropic',
   'exchangerate',
   'flutterwave',
