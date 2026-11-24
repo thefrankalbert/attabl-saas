@@ -8,6 +8,7 @@ import { classifyExistingSubscription } from '@/lib/billing/existing-subscriptio
 import { FREEZE_REASONS } from '@/lib/billing/freeze-reason';
 import type { VerifiedTransaction } from '@/lib/billing/flutterwave/schemas';
 import { ServiceError } from './errors';
+import { createFlutterwaveAnomalyRecorder } from './flutterwave-reconciliation.service';
 import type { BillingInterval, SubscriptionPlan } from '@/types/billing';
 
 type PayablePlan = Exclude<SubscriptionPlan, 'enterprise'>;
@@ -19,7 +20,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * `apply_flutterwave_payment` (SQL): au-dela, la tentative n'est plus reutilisee
  * et un paiement tardif doit couvrir le prix ACTUEL.
  */
-export const PENDING_TTL_DAYS = 7;
+const PENDING_TTL_DAYS = 7;
 
 /** Un changement de plan n'est admis qu'a moins d'un jour de l'echeance (meme valeur que le SQL). */
 const PLAN_CHANGE_WINDOW_MS = DAY_MS;
@@ -67,7 +68,7 @@ interface PaymentRow {
 const TENANT_COLUMNS =
   'id, slug, name, currency, subscription_status, subscription_plan, subscription_current_period_end, stripe_subscription_id, freeze_reason, suspended_at, deleted_at';
 
-export type PaymentRejection =
+type PaymentRejection =
   | 'NOT_SUCCESSFUL'
   | 'UNKNOWN_TX_REF'
   | 'WRONG_TENANT'
@@ -160,6 +161,18 @@ export function createFlutterwaveBillingService(
   deps: FlutterwaveBillingDeps,
 ) {
   const now = deps.now ?? (() => new Date());
+  const { refundDue } = createFlutterwaveAnomalyRecorder(supabase, now);
+
+  /** Argent pris, rien d'applique: journal + ligne a rembourser, puis le refus. */
+  async function refuse(
+    tx: VerifiedTransaction,
+    reason: PaymentRejection,
+    payment: PaymentRow | null,
+    contexte?: Record<string, unknown>,
+  ): Promise<ProcessOutcome> {
+    await refundDue(tx, reason, payment, contexte);
+    return { kind: 'rejected', reason };
+  }
 
   async function loadTenant(tenantId: string): Promise<TenantRow | null> {
     const { data, error } = await supabase
@@ -206,41 +219,37 @@ export function createFlutterwaveBillingService(
       .maybeSingle();
     if (findError) throw new ServiceError('Lecture du paiement impossible', 'INTERNAL');
     const payment = found as PaymentRow | null;
-    if (!payment) return { kind: 'rejected', reason: 'UNKNOWN_TX_REF' };
+    // Reference ATTABL reussie sur NOTRE compte sans tentative en base: le
+    // restaurant de la reference n'est pas cru (il peut ne pas exister).
+    if (!payment) return refuse(tx, 'UNKNOWN_TX_REF', null);
 
+    // Pas d'anomalie: le webhook appliquera la transaction a SON restaurant.
     if (expectedTenantId && payment.tenant_id !== expectedTenantId) {
       return { kind: 'rejected', reason: 'WRONG_TENANT' };
     }
-    if (tx.currency !== payment.currency) {
-      return { kind: 'rejected', reason: 'CURRENCY_MISMATCH' };
-    }
+    if (tx.currency !== payment.currency) return refuse(tx, 'CURRENCY_MISMATCH', payment);
     // Doc officielle (verification): montant paye superieur OU EGAL a l'attendu.
-    if (tx.amount < Number(payment.amount)) {
-      return { kind: 'rejected', reason: 'AMOUNT_MISMATCH' };
-    }
+    if (tx.amount < Number(payment.amount)) return refuse(tx, 'AMOUNT_MISMATCH', payment);
     if (payment.status !== 'pending') {
       // Meme transaction rejouee: doublon ordinaire. UNE AUTRE transaction sur une
       // reference deja reglee (le client a paye deux fois sur le meme lien): son
       // argent est pris et rien ne s'applique, comme les autres rejets.
       const recorded = payment.flw_transaction_id;
       if (recorded != null && Number(recorded) !== tx.id) {
-        logger.error('Flutterwave: paiement encaisse mais NON applique, remboursement a faire', {
-          tenantId: payment.tenant_id,
-          paymentId: payment.id,
-          txRef: payment.tx_ref,
+        return refuse(tx, 'ALREADY_SETTLED_BY_OTHER_TRANSACTION', payment, {
           recordedFlwTransactionId: Number(recorded),
-          flwTransactionId: tx.id,
-          amount: tx.amount,
-          currency: tx.currency,
-          reason: 'ALREADY_SETTLED_BY_OTHER_TRANSACTION',
         });
-        return { kind: 'rejected', reason: 'ALREADY_SETTLED_BY_OTHER_TRANSACTION' };
       }
+      // Rejeu d'un refus SQL (statut = nom de l'issue): ligne a rembourser
+      // reaffirmee, ce qui rattrape un premier enregistrement echoue.
+      const rejectedReason =
+        payment.status.startsWith('rejected_') && SQL_REJECTIONS[payment.status];
+      if (rejectedReason && recorded != null) await refundDue(tx, rejectedReason, payment);
       return { kind: 'duplicate' };
     }
 
     const tenant = await loadTenant(payment.tenant_id);
-    if (!tenant || tenant.deleted_at) return { kind: 'rejected', reason: 'TENANT_NOT_FOUND' };
+    if (!tenant || tenant.deleted_at) return refuse(tx, 'TENANT_NOT_FOUND', payment);
 
     // Une panne Stripe leve: le webhook repondra 500 et Flutterwave relancera.
     const stripeLive = await stripeIsLive(tenant);
@@ -284,18 +293,8 @@ export function createFlutterwaveBillingService(
     if (!reason) {
       throw new ServiceError('Reponse inattendue de l application du paiement', 'INTERNAL');
     }
-    if (outcome !== 'tenant_not_found') {
-      // L'argent est PRIS et rien n'est applique: a rembourser a la main.
-      logger.error('Flutterwave: paiement encaisse mais NON applique, remboursement a faire', {
-        tenantId: payment.tenant_id,
-        paymentId: payment.id,
-        flwTransactionId: tx.id,
-        amount: tx.amount,
-        currency: tx.currency,
-        reason,
-      });
-    }
-    return { kind: 'rejected', reason };
+    // Argent PRIS, rien d'applique (restaurant supprime entre-temps compris).
+    return refuse(tx, reason, payment);
   }
 
   return {

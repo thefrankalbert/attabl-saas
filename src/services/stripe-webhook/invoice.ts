@@ -9,21 +9,12 @@ import {
 import { ServiceError } from '../errors';
 import type { StripeWebhookDeps } from './deps';
 import { isActiveUnlessLocked, isHealthySubscriptionStatus } from './status';
+import { abonnementDeLaFacture, abonnementEnRegle } from './etat-stripe';
 
 /**
  * Les evenements de FACTURE: l'impaye, l'action de paiement requise, et la
  * facture encaissee - le seul evenement de ce webhook qui prouve un paiement.
  */
-
-/** Identifiant de l'abonnement que la facture regle, `null` si elle n'en porte pas. */
-function abonnementDeLaFacture(invoice: Stripe.Invoice): string | null {
-  const lien: unknown =
-    invoice.parent?.subscription_details?.subscription ??
-    (invoice as { subscription?: unknown }).subscription;
-  if (typeof lien === 'string') return lien;
-  if (lien && typeof lien === 'object' && 'id' in lien) return String(lien.id);
-  return null;
-}
 
 /**
  * Intrusion M-02, cote factures: la facture regle-t-elle un AUTRE abonnement
@@ -199,49 +190,36 @@ export function handleInvoicePaymentActionRequired(invoice: Stripe.Invoice): voi
 /** 9999-12-31: au-dela, `new Date(...).toISOString()` leve une RangeError. */
 const MAX_DATE_SECONDS = 253402300800;
 
-/**
- * Audit B94: avant de lever un gel pour remboursement, l'abonnement de la
- * facture est relu chez Stripe (seconde condition du degel, freeze-reason.ts).
- * `true` seulement s'il est en regle (active, trialing). Introuvable ou absent:
- * `false`, l'evenement est consomme. Panne de lecture: ServiceError INTERNAL,
- * la route retire la ligne d'idempotence et Stripe rejoue.
- */
-async function abonnementEnRegle(
-  stripe: StripeWebhookDeps['stripe'],
-  invoice: Stripe.Invoice,
-  customerId: string,
-): Promise<boolean> {
-  const abonnementId = abonnementDeLaFacture(invoice);
-  if (!abonnementId) return false;
-  try {
-    const abonnement = await stripe.subscriptions.retrieve(abonnementId);
-    return abonnement.status === 'active' || abonnement.status === 'trialing';
-  } catch (err) {
-    const introuvable =
-      typeof err === 'object' &&
-      err !== null &&
-      (err as { code?: string }).code === 'resource_missing';
-    if (introuvable) return false;
-    logger.error('invoice.paid: abonnement illisible, evenement a rejouer', err, {
-      customerId,
-      abonnementId,
-    });
-    throw new ServiceError('Subscription state unreadable', 'INTERNAL');
-  }
-}
-
 export async function handleInvoicePaid(
   { supabase, stripe }: StripeWebhookDeps,
   invoice: Stripe.Invoice,
 ): Promise<void> {
   const customerId = invoice.customer as string;
 
-  // Lecture prealable, pour la seule garde M-02. Une lecture en echec ne bloque
-  // pas le filet: il s'applique alors comme avant.
+  // L'etat de l'abonnement chez Stripe, relu au plus une fois par evenement.
+  let enRegle: boolean | null = null;
+  const abonnementEstEnRegle = async (): Promise<boolean> => {
+    if (enRegle === null) enRegle = await abonnementEnRegle(stripe, invoice, customerId);
+    return enRegle;
+  };
+
+  // Audit X8: une facture payee ne prouve pas que l'abonnement est sorti de
+  // l'impaye. Une VIEILLE facture reglee alors qu'une plus recente reste
+  // impayee, ou un `invoice.paid` arrive apres le `customer.subscription.updated`
+  // qui a mis l'abonnement en impaye, remettait `active` et effacait
+  // `past_due_since` (donc le compteur de grace de 15 jours). L'impaye n'est
+  // donc leve que si Stripe dit l'abonnement `active` ou `trialing` - meme
+  // relecture que pour le gel pour remboursement (audit B94).
+  // Une facture sans abonnement ne peut pas etre relue: le filet F10 s'applique
+  // comme avant.
+  let leverImpaye = true;
+
+  // Lecture prealable, pour la garde M-02 et pour savoir s'il y a un impaye a
+  // lever. Une lecture en echec ne bloque pas le filet: Stripe est alors relu.
   if (abonnementDeLaFacture(invoice)) {
     const { data: courant } = await supabase
       .from('tenants')
-      .select('id, stripe_subscription_id')
+      .select('id, stripe_subscription_id, subscription_status')
       .eq('stripe_customer_id', customerId)
       .maybeSingle();
     if (courant && factureDUnAutreAbonnement(courant, invoice)) {
@@ -251,36 +229,49 @@ export async function handleInvoicePaid(
       });
       return;
     }
+    // Stripe n'est relu que s'il y a (peut-etre) un impaye a lever: l'ecriture
+    // ci-dessous est filtree sur `past_due`, un autre statut ne change rien.
+    if (!courant || courant.subscription_status === 'past_due') {
+      leverImpaye = await abonnementEstEnRegle();
+      if (!leverImpaye) {
+        logger.warn('invoice.paid: abonnement pas en regle chez Stripe, impaye maintenu', {
+          customerId,
+          invoiceId: invoice.id,
+        });
+      }
+    }
   }
 
-  const { error: paidError } = await updateTolerantToMissingFreezeReason(
-    {
-      subscription_status: 'active',
-      past_due_since: null,
-      is_active: true,
-      // Sortie d'impaye: aucune cause de gel ne doit survivre.
-      freeze_reason: null,
-    },
-    (payload) =>
-      supabase
-        .from('tenants')
-        .update(payload)
-        .eq('stripe_customer_id', customerId)
-        // 'frozen' est volontairement EXCLU: un gel pour litige
-        // (chargeback) ne doit pas etre leve par la facture du mois
-        // suivant. Seul un impaye regularise se recupere ici; un litige se
-        // resout par dispute.closed.
-        .eq('subscription_status', 'past_due')
-        // CTR7-1: ce gestionnaire n'a aucune lecture prealable (filet
-        // idempotent volontairement minimal), donc la garde ne peut etre
-        // qu'un filtre d'ecriture. Son payload est EXCLUSIVEMENT un bloc
-        // d'acces: rien n'est perdu a ne pas l'appliquer a un tenant que
-        // la plateforme a coupe. Une facture payee ne leve pas une
-        // suspension - seul `unsuspendTenant` le fait.
-        .is('suspended_at', null)
-        .is('deleted_at', null),
-    { customerId, handler: 'invoice.paid' },
-  );
+  const { error: paidError } = !leverImpaye
+    ? { error: null }
+    : await updateTolerantToMissingFreezeReason(
+        {
+          subscription_status: 'active',
+          past_due_since: null,
+          is_active: true,
+          // Sortie d'impaye: aucune cause de gel ne doit survivre.
+          freeze_reason: null,
+        },
+        (payload) =>
+          supabase
+            .from('tenants')
+            .update(payload)
+            .eq('stripe_customer_id', customerId)
+            // 'frozen' est volontairement EXCLU: un gel pour litige
+            // (chargeback) ne doit pas etre leve par la facture du mois
+            // suivant. Seul un impaye regularise se recupere ici; un litige se
+            // resout par dispute.closed.
+            .eq('subscription_status', 'past_due')
+            // CTR7-1: ce gestionnaire n'a aucune lecture prealable (filet
+            // idempotent volontairement minimal), donc la garde ne peut etre
+            // qu'un filtre d'ecriture. Son payload est EXCLUSIVEMENT un bloc
+            // d'acces: rien n'est perdu a ne pas l'appliquer a un tenant que
+            // la plateforme a coupe. Une facture payee ne leve pas une
+            // suspension - seul `unsuspendTenant` le fait.
+            .is('suspended_at', null)
+            .is('deleted_at', null),
+        { customerId, handler: 'invoice.paid' },
+      );
 
   if (paidError) {
     logger.error('invoice.paid recovery failed', paidError);
@@ -337,7 +328,7 @@ export async function handleInvoicePaid(
       throw new ServiceError('DB read failed', 'INTERNAL');
     }
     if (geleRemboursement) {
-      leverGelRemboursement = await abonnementEnRegle(stripe, invoice, customerId);
+      leverGelRemboursement = await abonnementEstEnRegle();
       if (!leverGelRemboursement) {
         logger.warn('invoice.paid: abonnement plus en regle, gel pour remboursement maintenu', {
           customerId,
