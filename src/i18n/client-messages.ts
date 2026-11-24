@@ -66,6 +66,9 @@ export function pickMessages(
   const picked: AbstractIntlMessages = {};
   for (const path of paths) {
     const keys = path.split('.');
+    // Les chemins sont des constantes du code, jamais une saisie: on refuse
+    // quand meme toute cle qui toucherait au prototype des objets.
+    if (keys.some((k) => k === '__proto__' || k === 'constructor' || k === 'prototype')) continue;
     let source: AbstractIntlMessages | string | undefined = messages;
     for (const key of keys) {
       source = typeof source === 'object' ? source[key] : undefined;
@@ -75,11 +78,13 @@ export function pickMessages(
     let target = picked;
     keys.forEach((key, i) => {
       if (i === keys.length - 1) {
+        // nosemgrep: prototype-pollution-loop -- cles de prototype refusees plus haut, chemins constants du code
         target[key] = source as AbstractIntlMessages | string;
         return;
       }
       const next = target[key];
       if (typeof next !== 'object') target[key] = {};
+      // nosemgrep: prototype-pollution-loop -- cles de prototype refusees plus haut, chemins constants du code
       target = target[key] as AbstractIntlMessages;
     });
   }

@@ -43,8 +43,10 @@ function resolveImport(from: string, spec: string): string | null {
   return candidates.find((c) => existsSync(c) && statSync(c).isFile()) ?? null;
 }
 
+// `from '<module>'` suffit a reperer import et export (sans balayer la clause
+// avant `from`, ce qui exposait l'expression a un retour arriere couteux).
 const IMPORT_RE =
-  /(?:import|export)\s[^'";]*?from\s*['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)|^\s*import\s+['"]([^'"]+)['"]/gm;
+  /\bfrom\s*['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)|^\s*import\s+['"]([^'"]+)['"]/gm;
 const USE_CLIENT_RE = /^\s*(?:\/\/[^\n]*\n|\/\*[\s\S]*?\*\/\s*)*['"]use client['"]/;
 
 /**

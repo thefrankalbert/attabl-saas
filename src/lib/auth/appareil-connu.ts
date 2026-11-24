@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHmac } from 'node:crypto';
 import { signPayload, verifyPayload } from './signed-payload';
 
 /**
@@ -27,8 +27,13 @@ const APPAREIL_CONNU_TTL_SECONDS = 400 * 24 * 60 * 60;
 const LABEL = 'attabl:appareil-connu:v1:';
 const COMPTES_MAX = 5;
 
+// HMAC avec le secret serveur plutot qu'un simple hachage: la marque ne doit
+// pas pouvoir etre recalculee par quelqu'un qui connait seulement l'identifiant
+// du compte (et ce n'est pas un mot de passe: aucune derivation lente utile).
 function marqueDuCompte(userId: string): string {
-  return createHash('sha256').update(`appareil:${userId}`).digest('base64url').slice(0, 16);
+  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!secret) throw new Error('Secret de signature absent');
+  return createHmac('sha256', secret).update(`appareil:${userId}`).digest('base64url').slice(0, 16);
 }
 
 function lireMarques(cookie: string | undefined, maintenant: number): string[] {
