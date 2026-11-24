@@ -1,6 +1,14 @@
 /**
  * Sound Library - Pre-installed notification sounds for ATTABL
  *
+ * Source: Kenney "Interface Sounds" (https://kenney.nl/assets/interface-sounds),
+ * licence CC0 (domaine public). Each file plays the Kenney sound twice with a
+ * short gap, so an alert stays audible in a noisy kitchen.
+ *
+ * The ids (classic-bell, zen-bowl, ...) are historical: they are saved in
+ * tenants.notification_sound_id, so they are kept as-is when the sound behind
+ * them changes. Only the name shown to the restaurateur follows the sound.
+ *
  * 3 sounds available on Plan Essentiel (isPremium: false)
  * All 10 sounds available on Plan Premium (isPremium: true)
  */
@@ -15,89 +23,96 @@ export interface SoundDefinition {
   duration: number;
 }
 
+/**
+ * Bump when a file under public/sounds changes: the service worker caches audio
+ * by URL (serwist defaultCache, up to 24 h), so a new URL is what makes
+ * restaurants already set up hear the new sound right away.
+ */
+const SOUND_FILES_VERSION = 2;
+
 export const SOUND_LIBRARY: SoundDefinition[] = [
   // --- Free sounds (Plan Essentiel) ---------------------
   {
     id: 'classic-bell',
-    name: 'Cloche classique',
-    description: 'Son de cloche simple et clair',
-    file: '/sounds/classic-bell.wav',
+    name: 'Confirmation',
+    description: 'Deux notes claires, bien audibles en salle',
+    file: `/sounds/classic-bell.wav?v=${SOUND_FILES_VERSION}`,
     isPremium: false,
-    duration: 0.8,
+    duration: 1.3,
   },
   {
     id: 'gentle-chime',
-    name: 'Carillon doux',
-    description: 'Carillon court et agréable',
-    file: '/sounds/gentle-chime.wav',
+    name: 'Verre',
+    description: 'Tintement de verre net et lumineux',
+    file: `/sounds/gentle-chime.wav?v=${SOUND_FILES_VERSION}`,
     isPremium: false,
-    duration: 1.2,
+    duration: 1.6,
   },
   {
     id: 'simple-ding',
-    name: 'Ding simple',
-    description: 'Notification discrète et rapide',
-    file: '/sounds/simple-ding.wav',
+    name: 'Note claire',
+    description: 'Double note courte et franche',
+    file: `/sounds/simple-ding.wav?v=${SOUND_FILES_VERSION}`,
     isPremium: false,
-    duration: 0.5,
+    duration: 1.2,
   },
 
   // --- Premium sounds -----------------------------------
   {
     id: 'elegant-tone',
-    name: 'Ton élégant',
-    description: 'Son raffiné pour restaurants haut de gamme',
-    file: '/sounds/elegant-tone.wav',
-    isPremium: true,
-    duration: 1.5,
-  },
-  {
-    id: 'crystal-bell',
-    name: 'Cloche cristalline',
-    description: 'Tintement de cristal clair et pur',
-    file: '/sounds/crystal-bell.wav',
-    isPremium: true,
-    duration: 1.0,
-  },
-  {
-    id: 'soft-marimba',
-    name: 'Marimba doux',
-    description: 'Notes de marimba chaleureuses',
-    file: '/sounds/soft-marimba.wav',
+    name: 'Confirmation douce',
+    description: 'Deux notes rondes et posées',
+    file: `/sounds/elegant-tone.wav?v=${SOUND_FILES_VERSION}`,
     isPremium: true,
     duration: 1.2,
   },
   {
-    id: 'zen-bowl',
-    name: 'Bol tibétain',
-    description: 'Résonance zen et apaisante',
-    file: '/sounds/zen-bowl.wav',
+    id: 'crystal-bell',
+    name: 'Cristal',
+    description: 'Double tintement bref et brillant',
+    file: `/sounds/crystal-bell.wav?v=${SOUND_FILES_VERSION}`,
     isPremium: true,
-    duration: 2.0,
+    duration: 0.8,
+  },
+  {
+    id: 'soft-marimba',
+    name: 'Bois',
+    description: 'Deux notes boisées et chaleureuses',
+    file: `/sounds/soft-marimba.wav?v=${SOUND_FILES_VERSION}`,
+    isPremium: true,
+    duration: 0.8,
+  },
+  {
+    id: 'zen-bowl',
+    name: 'Montée',
+    description: 'Deux notes qui montent, pour ne rien manquer',
+    file: `/sounds/zen-bowl.wav?v=${SOUND_FILES_VERSION}`,
+    isPremium: true,
+    duration: 1.2,
   },
   {
     id: 'luxury-chime',
-    name: 'Carillon luxe',
-    description: 'Carillon harmonieux multi-notes',
-    file: '/sounds/luxury-chime.wav',
+    name: 'Montée courte',
+    description: 'Deux notes montantes et rapides',
+    file: `/sounds/luxury-chime.wav?v=${SOUND_FILES_VERSION}`,
     isPremium: true,
-    duration: 1.5,
+    duration: 1.0,
   },
   {
     id: 'wooden-knock',
-    name: 'Frappe bois',
-    description: 'Percussion bois douce et naturelle',
-    file: '/sounds/wooden-knock.wav',
+    name: 'Ouverture',
+    description: 'Double signal discret',
+    file: `/sounds/wooden-knock.wav?v=${SOUND_FILES_VERSION}`,
     isPremium: true,
-    duration: 0.6,
+    duration: 0.8,
   },
   {
     id: 'brass-bell',
-    name: 'Cloche laiton',
-    description: 'Cloche de service traditionnelle',
-    file: '/sounds/brass-bell.wav',
+    name: 'Signal bref',
+    description: 'Double signal très court',
+    file: `/sounds/brass-bell.wav?v=${SOUND_FILES_VERSION}`,
     isPremium: true,
-    duration: 1.0,
+    duration: 0.8,
   },
 ];
 
