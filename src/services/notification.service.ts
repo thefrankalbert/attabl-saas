@@ -19,8 +19,39 @@ interface StockAlertRow {
 }
 
 /**
+ * E-mails des membres du restaurant. Une erreur de lecture est journalisee et
+ * vaut "aucun destinataire": elle ne doit pas faire taire les autres canaux (B57).
+ *
+ * B58: seulement les membres ACTIFS et non supprimes (un membre banni ou retire
+ * recevait encore les ruptures de stock), en une seule lecture.
+ */
+async function fetchAdminEmails(
+  supabase: ReturnType<typeof createAdminClient>,
+  tenantId: string,
+): Promise<string[]> {
+  const { data: emailData, error: emailError } = await supabase
+    .from('admin_users')
+    .select('email')
+    .eq('tenant_id', tenantId)
+    .eq('is_active', true)
+    .is('deleted_at', null)
+    .not('email', 'is', null);
+
+  if (emailError) {
+    logger.error('checkAndNotifyLowStock: failed to fetch admin emails', {
+      tenantId,
+      error: emailError,
+    });
+    return [];
+  }
+
+  return [...new Set((emailData || []).map((u) => u.email).filter(Boolean) as string[])];
+}
+
+/**
  * Check for low/out-of-stock ingredients and send email notifications.
- * Rate-limited: max 1 email per ingredient per hour.
+ * Rate-limited: max 1 alert per ingredient per hour. In-app and push alerts go
+ * out even when the email cannot (B57).
  */
 export async function checkAndNotifyLowStock(tenantId: string): Promise<void> {
   const supabase = createAdminClient();
@@ -76,42 +107,10 @@ export async function checkAndNotifyLowStock(tenantId: string): Promise<void> {
 
   if (itemsToNotify.length === 0) return;
 
-  // 3. Fetch admin emails for this tenant
-  const { data: adminUsers, error: adminUsersError } = await supabase
-    .from('admin_users')
-    .select('user_id')
-    .eq('tenant_id', tenantId);
-
-  if (adminUsersError) {
-    logger.error('checkAndNotifyLowStock: failed to fetch admin users', {
-      tenantId,
-      error: adminUsersError,
-    });
-    return;
-  }
-  if (!adminUsers || adminUsers.length === 0) return;
-
-  const userIds = adminUsers.map((au) => au.user_id);
-
-  // Fetch emails directly from admin_users table (avoids auth API pagination issues)
-  const { data: emailData, error: emailError } = await supabase
-    .from('admin_users')
-    .select('email')
-    .eq('tenant_id', tenantId)
-    .in('user_id', userIds)
-    .not('email', 'is', null);
-
-  if (emailError) {
-    logger.error('checkAndNotifyLowStock: failed to fetch admin emails', {
-      tenantId,
-      error: emailError,
-    });
-    return;
-  }
-
-  const emails = (emailData || []).map((u) => u.email).filter(Boolean) as string[];
-
-  if (emails.length === 0) return;
+  // 3. Fetch admin emails for this tenant.
+  // B57: l'e-mail n'est qu'UN des canaux. Sans destinataire (ou si la lecture
+  // echoue), la notification dans l'application et le push partent quand meme.
+  const emails = await fetchAdminEmails(supabase, tenantId);
 
   // 4. Fetch tenant info for email
   const { data: tenant, error: tenantError } = await supabase
@@ -141,13 +140,13 @@ export async function checkAndNotifyLowStock(tenantId: string): Promise<void> {
     is_out: i.current_stock <= 0,
   }));
 
-  const sent = await sendStockAlertEmail(emails, {
-    tenantName: tenant.name,
-    items: emailItems,
-    dashboardUrl,
-  });
-
-  if (!sent) return;
+  const sent =
+    emails.length > 0 &&
+    (await sendStockAlertEmail(emails, {
+      tenantName: tenant.name,
+      items: emailItems,
+      dashboardUrl,
+    }));
 
   // 6. Create in-app notifications so NotificationCenter picks them up via realtime
   // Batched into a single INSERT to avoid N+1 round-trips
@@ -212,7 +211,9 @@ export async function checkAndNotifyLowStock(tenantId: string): Promise<void> {
     tenant_id: tenantId,
     ingredient_id: i.id,
     alert_type: i.current_stock <= 0 ? 'out_of_stock' : 'low_stock',
-    sent_to: emails,
+    // B57: limite posee meme sans e-mail (l'alerte est partie dans l'application
+    // et par push); `sent_to` dit a qui l'e-mail est reellement parti.
+    sent_to: sent ? emails : [],
   }));
 
   // If this insert fails, the rate-limit record is missing and the next check

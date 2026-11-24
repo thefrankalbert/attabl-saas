@@ -88,7 +88,7 @@ function createMockSupabase() {
       }),
 
       // select(...) supports several read shapes:
-      // - addTablesToZone max-number lookup: .eq().like() (awaited)
+      // - addTablesToZone max-number lookup: .eq().eq().like() (awaited)
       // - ownership guards: .eq('id', x).maybeSingle() (zones/tables)
       //   and .eq('id', x).eq('tenant_id', y).maybeSingle() (venues)
       // - insertTables guard: .in('id', ids).eq('venues.tenant_id', y) (awaited)
@@ -102,6 +102,8 @@ function createMockSupabase() {
               }),
             }),
             maybeSingle: chain.maybeSingle,
+            // addTablesToZone max-number lookup: .eq('tenant_id').eq('zone_id').like()
+            like: chain.like,
           }),
           like: chain.like,
           // zones/tables ownership guard: single .eq('id', x).maybeSingle()

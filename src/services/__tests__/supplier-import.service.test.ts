@@ -52,13 +52,48 @@ function makeSupabase(opts: MockOpts = {}) {
   return { supabase: { from } as unknown as SupabaseClient, inserts, updates };
 }
 
+// B100 (revue ligne par ligne, lot B2b-2): "Inactif" / "Inactive" n'etait pas
+// reconnu, la valeur par defaut `true` s'appliquait: le fournisseur etait cree
+// ou REMIS actif sans erreur.
+describe('supplier-import.service parseExcel - statut actif (B100)', () => {
+  it('reconnait actif, inactif, active, inactive (toute casse)', async () => {
+    const { supabase } = makeSupabase();
+    const { rows, errors } = await createSupplierImportService(supabase).parseExcel(
+      await buildXlsx([
+        ['Nom', 'Statut'],
+        ['A', 'Inactif'],
+        ['B', 'inactive'],
+        ['C', 'Actif'],
+        ['D', 'ACTIVE'],
+        ['E', 'oui'],
+      ]),
+    );
+    expect(errors).toEqual([]);
+    expect(rows.map((r) => r.is_active)).toEqual([false, false, true, true, true]);
+  });
+
+  it('une valeur non reconnue est une erreur de ligne, pas un fournisseur actif', async () => {
+    const { supabase } = makeSupabase();
+    const { rows, errors } = await createSupplierImportService(supabase).parseExcel(
+      await buildXlsx([
+        ['Nom', 'Statut'],
+        ['A', 'en pause'],
+        ['B', 'non'],
+      ]),
+    );
+    expect(rows.map((r) => r.name)).toEqual(['B']);
+    expect(errors).toHaveLength(1);
+    expect(errors[0].row).toBe(2);
+  });
+});
+
 describe('supplier-import.service parseExcel', () => {
   it('maps tolerant FR/EN headers and parses rows', async () => {
     const { supabase } = makeSupabase();
     const svc = createSupplierImportService(supabase);
     const buffer = await buildXlsx([
       ['Nom', 'Contact', 'Téléphone', 'Email', 'Adresse', 'Notes', 'Actif'],
-      ['Boulangerie', 'Amadou', '+225 07', 'a@b.ci', 'Abidjan', 'Lundi', 'Oui'],
+      ['Boulangerie', 'Amadou', '+225 07 07 07 07', 'a@b.ci', 'Abidjan', 'Lundi', 'Oui'],
     ]);
 
     const { rows, errors } = await svc.parseExcel(buffer);
@@ -67,7 +102,7 @@ describe('supplier-import.service parseExcel', () => {
     expect(rows[0]).toMatchObject({
       name: 'Boulangerie',
       contact_name: 'Amadou',
-      phone: '+225 07',
+      phone: '+225 07 07 07 07',
       email: 'a@b.ci',
       is_active: true,
     });
@@ -115,8 +150,8 @@ describe('supplier-import.service importFromExcel', () => {
     const svc = createSupplierImportService(supabase);
     const buffer = await buildXlsx([
       ['Name', 'Phone'],
-      ['boulangerie', '+225 11'], // case-insensitive match -> update
-      ['Nouveau Fournisseur', '+225 22'], // new -> insert
+      ['boulangerie', '+225 11 11 11 11'], // case-insensitive match -> update
+      ['Nouveau Fournisseur', '+225 22 22 22 22'], // new -> insert
     ]);
 
     const result = await svc.importFromExcel('tenant-1', buffer);
@@ -125,7 +160,7 @@ describe('supplier-import.service importFromExcel', () => {
     expect(result.suppliersSkipped).toBe(0);
     expect(result.errors).toHaveLength(0);
     expect(updates).toHaveLength(1);
-    expect(updates[0]).toMatchObject({ phone: '+225 11' });
+    expect(updates[0]).toMatchObject({ phone: '+225 11 11 11 11' });
     expect(inserts).toHaveLength(1);
     expect(inserts[0]).toMatchObject({ tenant_id: 'tenant-1', name: 'Nouveau Fournisseur' });
   });
@@ -159,5 +194,31 @@ describe('supplier-import.service importFromExcel', () => {
     const headers = headerRow!.join(',');
     expect(/^[\x00-\x7F]*$/.test(headers)).toBe(true);
     expect(headers).toContain('Name');
+  });
+});
+
+describe('supplier-import.service: memes bornes que la modification (B101)', () => {
+  it('refuse un nom de 101 caracteres et un telephone que la fiche refuserait', async () => {
+    const { supabase } = makeSupabase();
+    const { rows, errors } = await createSupplierImportService(supabase).parseExcel(
+      await buildXlsx([
+        ['Nom', 'Téléphone'],
+        ['N'.repeat(101), ''],
+        ['Telephone trop long', '+225 07 07 07 07 07 07 07'],
+        ['Telephone sans chiffres', 'appeler le gerant'],
+        ['Fiche valide', '+225 07 07 07 07'],
+      ]),
+    );
+    expect(rows.map((r) => r.name)).toEqual(['Fiche valide']);
+    expect(errors.map((e) => e.row)).toEqual([2, 3, 4]);
+  });
+
+  it('temoin: un nom de 100 caracteres reste accepte', async () => {
+    const { supabase } = makeSupabase();
+    const { rows, errors } = await createSupplierImportService(supabase).parseExcel(
+      await buildXlsx([['Nom'], ['N'.repeat(100)]]),
+    );
+    expect(errors).toEqual([]);
+    expect(rows).toHaveLength(1);
   });
 });

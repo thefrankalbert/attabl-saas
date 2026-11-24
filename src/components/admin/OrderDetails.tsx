@@ -46,9 +46,9 @@ export default function OrderDetails({
 
   return (
     <>
-      <div className="flex flex-col lg:flex-row gap-4 lg:flex-1 lg:min-h-0">
-        {/* -- Left: order info + scrollable items ----------- */}
-        <div className="lg:flex-1 flex flex-col lg:min-h-0 min-w-0">
+      <div className="flex flex-col lg:flex-row lg:items-start gap-4">
+        {/* -- Left: order info + items ---------------------- */}
+        <div className="lg:flex-1 flex flex-col min-w-0">
           {/* Static: status bar + info - compact */}
           <OrderInfoHeader
             order={order}
@@ -61,7 +61,7 @@ export default function OrderDetails({
             serviceLabels={serviceLabels}
           />
 
-          {/* Scrollable: items list only */}
+          {/* Items list (scrolls with the page, audit B129) */}
           <OrderItemsList
             order={order}
             itemCount={itemCount}
@@ -73,7 +73,7 @@ export default function OrderDetails({
           />
         </div>
 
-        {/* -- Right: static actions panel ------------------- */}
+        {/* -- Right: actions panel ------------------------- */}
         <OrderActionsPanel
           order={order}
           loading={loading}

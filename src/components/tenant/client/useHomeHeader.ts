@@ -8,15 +8,16 @@ import type { MenuItem } from '@/types/admin.types';
 import type { ClientMenuItem } from '@/components/tenant/client/MenuItemCard';
 import { sanitizeTypography } from '@/lib/utils/sanitize-typography';
 import { saveScannedTable, useScannedTable } from '@/hooks/useScannedTable';
+import { matchesSearch, normalizeSearch } from '@/lib/utils/normalize-search';
+import { MENU_SEARCH_MIN_LENGTH } from '@/lib/validations/menu-search.schema';
 
 const MAX_RECENT = 4;
-
-function normalize(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-}
+/**
+ * Attente apres la derniere frappe avant d'interroger le serveur. La limite de
+ * debit est partagee par tous les convives du meme Wi-Fi (300 par minute et par
+ * adresse): une requete par pause de frappe, pas par lettre (contre-audit 1).
+ */
+const SEARCH_DEBOUNCE_MS = 400;
 
 interface UseHomeHeaderArgs {
   site: string;
@@ -34,10 +35,14 @@ export function useHomeHeader({
 }: UseHomeHeaderArgs) {
   const router = useRouter();
   const [detailItem, setDetailItem] = useState<MenuItem | null>(null);
-  // Search corpus is lazy-loaded on first search open (keeps it off the home LCP).
+  // Resultats du serveur pour le dernier terme tape (B4: la recherche se fait
+  // cote serveur sur toute la carte, plus sur un corpus des 150 premiers plats).
   const [searchFull, setSearchFull] = useState<MenuItem[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const searchLoadedRef = useRef(false);
+  // Dernier terme pour lequel le serveur a repondu (ou echoue).
+  const [settledQuery, setSettledQuery] = useState('');
+  // Dernier terme dont la recherche a ECHOUE (429, 500, reseau): l'ecran dit
+  // "recherche indisponible", pas "aucun resultat".
+  const [failedQuery, setFailedQuery] = useState<string | null>(null);
   const [isQROpen, setIsQROpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -52,26 +57,48 @@ export function useHomeHeader({
     setSearchQuery('');
   }, []);
 
-  // Lazy-load the full search corpus once, on first search open.
-  const loadCorpus = useCallback(async () => {
-    if (searchLoadedRef.current) return;
-    searchLoadedRef.current = true;
-    setSearchLoading(true);
-    try {
-      const res = await fetch('/api/menu-search');
-      if (res.ok) {
-        const json = (await res.json()) as { items?: MenuItem[] };
-        setSearchFull(json.items ?? []);
-      } else {
-        searchLoadedRef.current = false; // allow a retry on next open
-      }
-    } catch (err) {
-      searchLoadedRef.current = false;
-      logger.warn('Search corpus load failed', { error: err });
-    } finally {
-      setSearchLoading(false);
-    }
-  }, []);
+  // Interroge le serveur apres une courte pause de frappe. La requete
+  // precedente est annulee: une reponse lente ne remplace jamais une recente.
+  const trimmedQuery = searchQuery.trim();
+  const searchAbortRef = useRef<AbortController | null>(null);
+  useEffect(() => {
+    if (!isSearchOpen || trimmedQuery.length < MENU_SEARCH_MIN_LENGTH) return;
+    const timer = setTimeout(() => {
+      searchAbortRef.current?.abort();
+      const controller = new AbortController();
+      searchAbortRef.current = controller;
+      fetch(`/api/menu-search?q=${encodeURIComponent(trimmedQuery.slice(0, 80))}`, {
+        signal: controller.signal,
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            if (searchAbortRef.current === controller) setFailedQuery(trimmedQuery);
+            return;
+          }
+          const json = (await res.json()) as { items?: MenuItem[] };
+          setSearchFull(json.items ?? []);
+          setFailedQuery(null);
+        })
+        .catch((err: unknown) => {
+          if (controller.signal.aborted) return;
+          setFailedQuery(trimmedQuery);
+          logger.warn('Menu search failed', { error: err });
+        })
+        .finally(() => {
+          if (searchAbortRef.current === controller) setSettledQuery(trimmedQuery);
+        });
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [isSearchOpen, trimmedQuery]);
+
+  // Annule une recherche en vol quand l'ecran disparait.
+  useEffect(() => () => searchAbortRef.current?.abort(), []);
+  // En attente tant que le terme affiche n'a pas recu sa reponse (pause de
+  // frappe comprise): l'ecran montre le squelette, pas "aucun resultat".
+  const searchTooShort = trimmedQuery.length > 0 && trimmedQuery.length < MENU_SEARCH_MIN_LENGTH;
+  const searchLoading =
+    trimmedQuery.length >= MENU_SEARCH_MIN_LENGTH && settledQuery !== trimmedQuery;
+  const searchError = !searchLoading && !searchTooShort && failedQuery === trimmedQuery;
 
   // Load persisted recents synchronously when opening (avoids setState-in-effect).
   const openSearch = useCallback(() => {
@@ -85,8 +112,7 @@ export function useHomeHeader({
       // ignore malformed/unavailable storage
     }
     setIsSearchOpen(true);
-    void loadCorpus();
-  }, [recentKey, loadCorpus]);
+  }, [recentKey]);
 
   const pushRecent = useCallback(
     (term: string) => {
@@ -149,15 +175,16 @@ export function useHomeHeader({
     [searchFull, featuredLabel],
   );
 
-  const q = normalize(searchQuery.trim());
-  const searchResults =
-    q.length > 0
-      ? searchItems.filter(
-          (item) =>
-            normalize(item.name).includes(q) ||
-            (item.description !== null && normalize(item.description).includes(q)),
-        )
-      : [];
+  // Affinage local: les resultats affiches correspondent toujours au terme
+  // courant, meme pendant que la reponse du terme suivant est en route. Meme
+  // regle que le serveur (nom, nom anglais, description).
+  const q = normalizeSearch(trimmedQuery);
+  const matchingIds = new Set(
+    q.length >= MENU_SEARCH_MIN_LENGTH
+      ? searchFull.filter((it) => matchesSearch(it, q)).map((it) => it.id)
+      : [],
+  );
+  const searchResults = searchItems.filter((item) => matchingIds.has(item.id));
 
   function handleQRScan(result: QRScanResult) {
     if (result.tableNumber) {
@@ -177,6 +204,8 @@ export function useHomeHeader({
     setDetailItem,
     searchFull,
     searchLoading,
+    searchError,
+    searchTooShort,
     isQROpen,
     setIsQROpen,
     isSearchOpen,

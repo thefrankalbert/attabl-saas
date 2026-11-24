@@ -146,7 +146,11 @@ const writes: Call[] = [
 
   ['actionToggleCategoryActive', () => categories.actionToggleCategoryActive(T, X, true)],
   ['actionCreateCategory', () => categories.actionCreateCategory(T, categoryPayload)],
-  ['actionUpdateCategory', () => categories.actionUpdateCategory(T, X, categoryPayload)],
+  [
+    'actionUpdateCategory',
+    // La carte est requise a la modification (controle de doublon, audit B33).
+    () => categories.actionUpdateCategory(T, X, { ...categoryPayload, menu_id: null }),
+  ],
   ['actionDeleteCategory', () => categories.actionDeleteCategory(T, X)],
   ['actionReorderCategories', () => categories.actionReorderCategories(T, [])],
   ['actionAssignCategoryToMenu', () => categories.actionAssignCategoryToMenu(T, X, Y)],

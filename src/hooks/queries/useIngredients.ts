@@ -7,7 +7,6 @@ import { queryTimeoutSignal } from './query-timeout';
 
 /**
  * Fetch active ingredients for a tenant, ordered by name.
- * Matches the query in inventory.service.ts getIngredients().
  */
 export function useIngredients(tenantId: string) {
   return useQuery<Ingredient[]>({

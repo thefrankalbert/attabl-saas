@@ -10,6 +10,7 @@ import { checkoutLimiter, getClientIp } from '@/lib/rate-limit';
 import { jsonWithCache } from '@/lib/cache-headers';
 import { withStripeBreaker } from '@/lib/stripe/circuit-breaker';
 import { getTenantBillingIds } from '@/lib/billing/tenant-billing-ids';
+import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
 
 /**
  * GET /api/invoices
@@ -73,6 +74,18 @@ export async function GET(request: Request) {
 
     // RBAC: financial documents are owner/admin only.
     if (!['owner', 'admin'].includes(adminUser.role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Meme droit que la page des factures: un administrateur a qui le
+    // proprietaire a retire `settings.view` ne lit plus les factures par l'API.
+    const { allowed: canViewSettings } = await resolveAdminPermission(
+      supabase,
+      user.id,
+      tenantCtx.id,
+      'settings.view',
+    );
+    if (!canViewSettings) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

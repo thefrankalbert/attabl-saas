@@ -378,6 +378,22 @@ describe('POST /api/invitations', () => {
     expect(json.error).toContain('invalide');
   });
 
+  it('B3: un corps qui n est pas du JSON repond 400, pas 500', async () => {
+    mockRateLimit(true);
+    const mock = createMockSupabase();
+    vi.mocked(createClient).mockResolvedValue(mock as never);
+
+    const res = await POST(
+      new Request('http://localhost:3000/api/invitations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: 'pas du json{',
+      }),
+    );
+
+    expect(res.status).toBe(400);
+  });
+
   it('names the email field in the error when the address is invalid', async () => {
     mockRateLimit(true);
     vi.mocked(createClient).mockResolvedValue(createMockSupabase() as never);
@@ -495,6 +511,35 @@ describe('POST /api/invitations', () => {
     expect(res.status).toBe(400);
     expect(body.code).toBe('PLAN_LIMIT');
     expect(body.error).toMatch(/Limite atteinte/);
+    expect(createInvitation).not.toHaveBeenCalled();
+  });
+
+  // B54: une adresse retiree de ce restaurant n'est pas reinvitable. La route
+  // renvoie le code metier MEMBER_REMOVED (409) et ne cree rien.
+  it('B54: adresse retiree -> 409 avec le code MEMBER_REMOVED, sans rien creer', async () => {
+    mockRateLimit(true);
+    const mock = createMockSupabase();
+    vi.mocked(createClient).mockResolvedValue(mock as never);
+    setupMockAdminClient();
+    const createInvitation = vi.fn();
+    vi.mocked(createInvitationService).mockReturnValue({
+      getPendingInvitations: vi.fn(),
+      assertNotAlreadyMember: vi.fn().mockRejectedValue(
+        new ServiceError('Cette adresse a ete retiree de votre equipe.', 'CONFLICT', {
+          reason: 'MEMBER_REMOVED',
+        }),
+      ),
+      createInvitation,
+      cancelInvitation: vi.fn(),
+      resendInvitation: vi.fn(),
+    } as never);
+
+    const res = await POST(buildPostRequest({ email: 'awa@test.com', role: 'admin' }));
+    const body = (await res.json()) as { error: string; code?: string };
+
+    expect(res.status).toBe(409);
+    expect(body.code).toBe('MEMBER_REMOVED');
+    expect(body.error).toMatch(/retiree/);
     expect(createInvitation).not.toHaveBeenCalled();
   });
 

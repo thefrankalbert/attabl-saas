@@ -8,11 +8,15 @@ import { logger } from '@/lib/logger';
 import { HONEYPOT_FIELD } from '@/lib/honeypot';
 import { prepareLogoutInBrowser } from '@/lib/offline/browser-logout-cleanup';
 import { resolvePostLoginRedirect } from '@/lib/auth/post-login-redirect';
+import { usePasswordIssueText } from './PasswordRules';
+import { passwordSchema } from '@/lib/validations/common.schema';
 
 type AuthMode = 'login' | 'signup';
 
 export function useAuthForm(mode: AuthMode) {
   const tErr = useTranslations('auth.errors');
+  // Les refus du mot de passe arrivent en codes (common.schema.ts): traduits ici.
+  const passwordIssueText = usePasswordIssueText();
 
   const searchParams = useSearchParams();
   const urlEmail = searchParams.get('email') || '';
@@ -88,6 +92,18 @@ export function useAuthForm(mode: AuthMode) {
           return;
         }
 
+        // Contre-audit 4: plus de bulle native du navigateur (dans sa langue a
+        // lui); l'envoi est bloque ici, avec la phrase traduite qui nomme tout
+        // ce qui manque. Memes regles que le serveur.
+        const passwordCheck = passwordSchema.safeParse(password);
+        if (!passwordCheck.success) {
+          setError(
+            passwordIssueText(passwordCheck.error.issues[0]?.message) ?? tErr('signupGeneric'),
+          );
+          setLoading(false);
+          return;
+        }
+
         const hpValue = honeypotRef.current?.value?.trim() ?? '';
         const signupBody: Record<string, string> = {
           restaurantName: trimmedRestaurant,
@@ -117,7 +133,7 @@ export function useAuthForm(mode: AuthMode) {
               : data.code === 'CAPTCHA_FAILED'
                 ? tErr('captchaFailed')
                 : typeof data.error === 'string' && data.error.length > 0
-                  ? data.error
+                  ? (passwordIssueText(data.error) ?? data.error)
                   : tErr('signupGeneric');
           throw new Error(apiError);
         }

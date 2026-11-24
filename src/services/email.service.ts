@@ -15,8 +15,9 @@ import {
   buildEmailChangeEmail,
   buildEmailChangeApprovalEmail,
   buildAccountExistsEmail,
+  buildSignupPasswordRejectedEmail,
+  buildSignupFailedEmail,
   buildTeamInvitationEmail,
-  buildOrderConfirmationEmail,
   buildLowStockAlertEmail,
   buildFirstOrderTriggerEmail,
   buildTenthOrderTriggerEmail,
@@ -35,8 +36,9 @@ import type {
   EmailChangeEmailData,
   EmailChangeApprovalEmailData,
   AccountExistsEmailData,
+  SignupPasswordRejectedEmailData,
+  SignupFailedEmailData,
   TeamInvitationEmailData,
-  OrderConfirmationEmailData,
   LowStockAlertEmailData,
   RenewalReminderEmailData,
 } from './email.types';
@@ -97,8 +99,16 @@ async function estBloqueeParDefaut(email: string): Promise<boolean> {
 // Factory
 // ---------------------------------------------------------------------------
 
+/**
+ * L'envoi est-il configure ? Meme test que `send` (sans cle, rien ne part):
+ * un appelant qui reserve un envoi avant de le faire le verifie d'abord.
+ */
+export function isEmailDeliveryConfigured(): boolean {
+  return Boolean(process.env.RESEND_API_KEY);
+}
+
 export function createEmailService(deps: EmailServiceDeps = {}): EmailService {
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = isEmailDeliveryConfigured() ? process.env.RESEND_API_KEY : undefined;
   const from = process.env.RESEND_FROM_EMAIL || 'noreply@attabl.com';
   const fromCycleDeVie = process.env.RESEND_MARKETING_FROM_EMAIL || from;
   const resend = apiKey ? new Resend(apiKey) : null;
@@ -207,16 +217,21 @@ export function createEmailService(deps: EmailServiceDeps = {}): EmailService {
       return send(to, subject, html, text, 'securite');
     },
 
-    async sendTeamInvitationEmail(to: string, data: TeamInvitationEmailData): Promise<EmailResult> {
-      const { subject, html, text } = buildTeamInvitationEmail(data);
-      return send(to, subject, html, text, 'service');
+    async sendSignupPasswordRejectedEmail(
+      to: string,
+      data: SignupPasswordRejectedEmailData,
+    ): Promise<EmailResult> {
+      const { subject, html, text } = buildSignupPasswordRejectedEmail(data);
+      return send(to, subject, html, text, 'securite');
     },
 
-    async sendOrderConfirmationEmail(
-      to: string,
-      data: OrderConfirmationEmailData,
-    ): Promise<EmailResult> {
-      const { subject, html, text } = buildOrderConfirmationEmail(data);
+    async sendSignupFailedEmail(to: string, data: SignupFailedEmailData): Promise<EmailResult> {
+      const { subject, html, text } = buildSignupFailedEmail(data);
+      return send(to, subject, html, text, 'securite');
+    },
+
+    async sendTeamInvitationEmail(to: string, data: TeamInvitationEmailData): Promise<EmailResult> {
+      const { subject, html, text } = buildTeamInvitationEmail(data);
       return send(to, subject, html, text, 'service');
     },
 
@@ -305,6 +320,16 @@ export const sendSignupAccountExistsEmail = async (
   to: string,
   data: { loginUrl: string; forgotPasswordUrl: string },
 ): Promise<boolean> => (await _svc.sendAccountExistsEmail(to, data)).success;
+
+export const sendSignupPasswordRejectedEmail = async (
+  to: string,
+  data: SignupPasswordRejectedEmailData,
+): Promise<boolean> => (await _svc.sendSignupPasswordRejectedEmail(to, data)).success;
+
+export const sendSignupFailedEmail = async (
+  to: string,
+  data: SignupFailedEmailData,
+): Promise<boolean> => (await _svc.sendSignupFailedEmail(to, data)).success;
 
 export const sendWelcomeOnboardingEmail = async (
   to: string,

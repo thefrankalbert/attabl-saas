@@ -5,7 +5,7 @@ describe('signupSchema', () => {
   const validInput = {
     restaurantName: 'Mon Restaurant',
     email: 'test@example.com',
-    password: 'securepass123',
+    password: 'Securepass-123!',
   };
 
   it('should accept valid signup data', () => {

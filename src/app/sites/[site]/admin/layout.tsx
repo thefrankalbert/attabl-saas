@@ -183,7 +183,6 @@ export default async function AdminLayout({
 
         const eventKey = determineTrialEventKey({
           trialEndsAt: tenant.trial_ends_at,
-          lastActiveAt: tenant.last_active_at ?? null,
           activationEvents,
         });
 

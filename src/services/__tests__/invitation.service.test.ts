@@ -16,7 +16,8 @@ function createMockSupabase(
   options: {
     existingAuthUser?: { id: string; email: string } | null;
     adminUsersInsertError?: boolean;
-    invitationInsertError?: boolean;
+    invitationInsertError?: boolean | { code: string; message: string };
+    pendingReadError?: { code: string; message: string };
     invitationSelectResult?: Record<string, unknown> | null;
     existingPendingInvitation?: Record<string, unknown> | null;
     invitationUpdateError?: boolean;
@@ -58,13 +59,17 @@ function createMockSupabase(
       return {
         insert: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
-            single: vi
-              .fn()
-              .mockResolvedValue(
-                options.invitationInsertError
-                  ? { data: null, error: { message: 'Insert failed' } }
-                  : { data: invitationRow, error: null },
-              ),
+            single: vi.fn().mockResolvedValue(
+              options.invitationInsertError
+                ? {
+                    data: null,
+                    error:
+                      typeof options.invitationInsertError === 'object'
+                        ? options.invitationInsertError
+                        : { message: 'Insert failed' },
+                  }
+                : { data: invitationRow, error: null },
+            ),
           }),
         }),
         // Self-chaining select: supports validateToken (eq.eq.single) AND the
@@ -72,6 +77,7 @@ function createMockSupabase(
         select: vi.fn(() => {
           const selChain: Record<string, unknown> = {};
           selChain.eq = vi.fn(() => selChain);
+          selChain.limit = vi.fn(() => selChain);
           selChain.single = vi
             .fn()
             .mockResolvedValue(
@@ -79,9 +85,10 @@ function createMockSupabase(
                 ? { data: null, error: { code: 'PGRST116', message: 'Not found' } }
                 : { data: options.tokenLookupResult ?? invitationRow, error: null },
             );
-          selChain.maybeSingle = vi
-            .fn()
-            .mockResolvedValue({ data: options.existingPendingInvitation ?? null, error: null });
+          selChain.maybeSingle = vi.fn().mockResolvedValue({
+            data: options.existingPendingInvitation ?? null,
+            error: options.pendingReadError ?? null,
+          });
           return selChain;
         }),
         update: vi.fn().mockReturnValue({
@@ -99,6 +106,9 @@ function createMockSupabase(
                   error: null,
                 }),
               }),
+              // createInvitation: expiration des invitations perimees
+              // (.eq tenant .eq email .eq status .lt expires_at).
+              eq: vi.fn(() => ({ lt: vi.fn().mockResolvedValue({ error: null, count: 0 }) })),
               then: undefined,
               count: 1,
               ...(options.invitationUpdateError
@@ -219,6 +229,56 @@ describe('InvitationService', () => {
           invitedBy: 'owner-123',
         }),
       ).rejects.toMatchObject({ code: 'VALIDATION' });
+    });
+
+    it('B53: le doublon tranche par l index unique (23505) donne le meme refus', async () => {
+      const supabase = createMockSupabase({
+        invitationInsertError: {
+          code: '23505',
+          message:
+            'duplicate key value violates unique constraint "invitations_pending_email_unique"',
+        },
+      });
+      const err = await createInvitationService(supabase)
+        .createInvitation({
+          tenantId: 'tenant-xyz',
+          email: 'new@example.com',
+          role: 'staff',
+          invitedBy: 'owner-123',
+        })
+        .catch((e: unknown) => e);
+      expect(err).toMatchObject({ code: 'VALIDATION' });
+      expect((err as ServiceError).message).toContain('deja en attente');
+    });
+
+    it('B53: une erreur de lecture du garde est une panne, pas un feu vert', async () => {
+      const supabase = createMockSupabase({
+        pendingReadError: { code: 'PGRST116', message: 'multiple rows' },
+      });
+      await expect(
+        createInvitationService(supabase).createInvitation({
+          tenantId: 'tenant-xyz',
+          email: 'new@example.com',
+          role: 'staff',
+          invitedBy: 'owner-123',
+        }),
+      ).rejects.toMatchObject({ code: 'INTERNAL' });
+    });
+
+    it('B66: une autre erreur d insertion ne renvoie pas le message Postgres', async () => {
+      const supabase = createMockSupabase({
+        invitationInsertError: { code: '23503', message: 'insert violates foreign key "x_fkey"' },
+      });
+      const err = await createInvitationService(supabase)
+        .createInvitation({
+          tenantId: 'tenant-xyz',
+          email: 'new@example.com',
+          role: 'staff',
+          invitedBy: 'owner-123',
+        })
+        .catch((e: unknown) => e);
+      expect(err).toMatchObject({ code: 'INTERNAL' });
+      expect((err as ServiceError).message).not.toContain('fkey');
     });
 
     // SECURITE (constat SVC-12): un compte qui existe deja ne doit JAMAIS etre
@@ -408,5 +468,100 @@ describe('InvitationService', () => {
       expect(err).toMatchObject({ code: 'INTERNAL' });
       expect((err as Error).message).not.toMatch(/JSON object requested/);
     });
+  });
+});
+
+/**
+ * B53 (retouche): une invitation `pending` perimee ne doit pas bloquer une
+ * nouvelle invitation a la meme adresse. Fausse base a etat: l'UPDATE applique
+ * ses filtres, la lecture anti-doublon voit le resultat.
+ */
+describe('createInvitation: invitation perimee restee pending (B53)', () => {
+  type Row = { id: string; tenant_id: string; email: string; status: string; expires_at: string };
+
+  function statefulClient(rows: Row[]) {
+    const updateFilters: [string, string, unknown][] = [];
+    const from = () => {
+      const filters: [string, string, unknown][] = [];
+      const matches = (r: Row) =>
+        filters.every(([op, col, val]) => {
+          const cell = (r as Record<string, string>)[col];
+          return op === 'eq' ? cell === val : cell < (val as string);
+        });
+      let patch: Partial<Row> | null = null;
+      const chain: Record<string, unknown> = {};
+      chain.select = () => chain;
+      chain.limit = () => chain;
+      chain.eq = (col: string, val: unknown) => (filters.push(['eq', col, val]), chain);
+      chain.lt = (col: string, val: unknown) => (filters.push(['lt', col, val]), chain);
+      chain.update = (p: Partial<Row>) => ((patch = p), chain);
+      chain.then = (ok: (v: unknown) => unknown) => {
+        const hit = rows.filter(matches);
+        if (patch) {
+          updateFilters.push(...filters);
+          hit.forEach((r) => Object.assign(r, patch));
+        }
+        return Promise.resolve({ error: null, count: hit.length }).then(ok);
+      };
+      chain.maybeSingle = async () => ({ data: rows.filter(matches)[0] ?? null, error: null });
+      chain.insert = (payload: Row) => ({
+        select: () => ({
+          single: async () => {
+            rows.push({ ...payload, id: 'inv-nouvelle' });
+            return { data: { ...payload, id: 'inv-nouvelle', token: 't' }, error: null };
+          },
+        }),
+      });
+      return chain;
+    };
+    return {
+      client: { from } as unknown as Parameters<typeof createInvitationService>[0],
+      updateFilters,
+    };
+  }
+
+  const input = {
+    tenantId: 'tenant-xyz',
+    email: 'serveur@example.com',
+    role: 'waiter',
+    invitedBy: 'owner-123',
+  };
+  const row = (expiresAt: string): Row => ({
+    id: 'inv-ancienne',
+    tenant_id: 'tenant-xyz',
+    email: 'serveur@example.com',
+    status: 'pending',
+    expires_at: expiresAt,
+  });
+
+  it('l invitation perimee passe a expired, la nouvelle est creee', async () => {
+    const rows = [row('2020-01-01T00:00:00.000Z')];
+    const { client, updateFilters } = statefulClient(rows);
+
+    const created = await createInvitationService(client).createInvitation(input);
+
+    expect(created.id).toBe('inv-nouvelle');
+    expect(rows[0].status).toBe('expired');
+    expect(updateFilters).toContainEqual(['eq', 'tenant_id', 'tenant-xyz']);
+  });
+
+  it('temoin: une invitation encore valide reste en attente, la nouvelle est refusee', async () => {
+    const rows = [row('2999-01-01T00:00:00.000Z')];
+    const { client } = statefulClient(rows);
+
+    await expect(createInvitationService(client).createInvitation(input)).rejects.toMatchObject({
+      code: 'VALIDATION',
+    });
+    expect(rows[0].status).toBe('pending');
+    expect(rows).toHaveLength(1);
+  });
+
+  it('temoin: l invitation perimee d un AUTRE restaurant n est pas touchee', async () => {
+    const rows = [{ ...row('2020-01-01T00:00:00.000Z'), tenant_id: 'autre-resto' }];
+    const { client } = statefulClient(rows);
+
+    await createInvitationService(client).createInvitation(input);
+
+    expect(rows[0].status).toBe('pending');
   });
 });

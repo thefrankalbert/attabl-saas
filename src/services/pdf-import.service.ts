@@ -2,13 +2,14 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
 import { bulkImportMenuRows, type MenuBulkImportRow } from '@/lib/menu-bulk-import';
+import { readMenuPrice, type MenuPriceRejection } from '@/lib/utils/parse-price-text';
 
 // --- Types ----------------------------------------------------
 
 /** Plafond de lignes retenues d'un import par IA. */
 const MAX_EXTRACTED_ITEMS = 500;
-/** Au-dela, la colonne numeric(10,2) refuse la ligne et tout l'import echoue. */
-const MAX_EXTRACTED_PRICE = 99_999_999;
+/** Texte du PDF envoye au modele. Au-dela, la carte est lue en partie (B71). */
+const PDF_TEXT_LIMIT = 15_000;
 
 export interface PdfExtractedItem {
   category: string;
@@ -21,6 +22,25 @@ interface PdfExtractionResult {
   items: PdfExtractedItem[];
   pageCount: number;
   textLength: number;
+  /**
+   * B71: le texte depassait PDF_TEXT_LIMIT, seule la premiere partie de la carte
+   * a ete lue. L'apercu le signale; l'import direct est refuse.
+   */
+  truncated: boolean;
+  /**
+   * B72 (contre-audit 2): plats NON importes parce que leur prix est refuse
+   * (illisible, centimes en FCFA, nul, negatif, trop eleve). Ils ne sont pas
+   * dans `items`: un plat a 0 serait en vente gratuitement. L'apercu les
+   * nomme; l'import direct refuse.
+   */
+  notImported: PdfNotImportedItem[];
+}
+
+interface PdfNotImportedItem {
+  name: string;
+  /** Le prix tel que lu dans la reponse du modele. */
+  price: string;
+  reason: MenuPriceRejection;
 }
 
 interface PdfImportResult {
@@ -52,7 +72,7 @@ function cleanJsonResponse(raw: string): string {
 // --- Service --------------------------------------------------
 
 export interface PdfImportService {
-  extractFromPdf(pdfBuffer: Buffer): Promise<PdfExtractionResult>;
+  extractFromPdf(pdfBuffer: Buffer, currency?: string | null): Promise<PdfExtractionResult>;
   importItems(
     tenantId: string,
     menuId: string,
@@ -78,7 +98,10 @@ export function createPdfImportService(supabase: SupabaseClient): PdfImportServi
      * 2. Sends the text to Claude Haiku for structured extraction
      * 3. Returns an array of extracted items with category, name, description, price
      */
-    async extractFromPdf(pdfBuffer: Buffer): Promise<PdfExtractionResult> {
+    async extractFromPdf(
+      pdfBuffer: Buffer,
+      currency?: string | null,
+    ): Promise<PdfExtractionResult> {
       const apiKey = process.env.ANTHROPIC_API_KEY;
 
       if (!apiKey) {
@@ -93,18 +116,24 @@ export function createPdfImportService(supabase: SupabaseClient): PdfImportServi
 
       let pdfText: string;
       let pageCount: number;
+      // Audit B73: `destroy()` dans un `finally`, sinon une lecture en echec
+      // laissait le parseur (et son worker) ouvert.
+      let parser: InstanceType<typeof PDFParse> | null = null;
       try {
-        const parser = new PDFParse({ data: new Uint8Array(pdfBuffer) });
+        parser = new PDFParse({ data: new Uint8Array(pdfBuffer) });
         const textResult = await parser.getText();
         pdfText = textResult.text.trim();
         pageCount = textResult.pages.length;
-        await parser.destroy();
       } catch (err) {
         logger.error('Failed to parse PDF', err);
         throw new ServiceError(
           'Failed to parse the PDF file. Ensure it is a valid, non-corrupted PDF.',
           'VALIDATION',
         );
+      } finally {
+        await parser?.destroy().catch((err: unknown) => {
+          logger.warn('Failed to release the PDF parser', { error: String(err) });
+        });
       }
 
       if (!pdfText || pdfText.length < 10) {
@@ -136,6 +165,7 @@ Rules:
 - Preserve the exact order of items as they appear in the menu
 - If a dish has no description, set description to null
 - If a price contains a comma as decimal separator (e.g., "12,50"), convert it to a dot (12.50)
+- A dot, comma or space followed by exactly three digits is a thousands separator: "1.500" is 1500, "12 500 FCFA" is 12500
 - If you cannot determine the price, set it to 0
 - Group items under their correct category as shown in the menu
 - Do NOT invent or hallucinate items that are not in the text
@@ -143,7 +173,7 @@ Rules:
 
 Menu text:
 ---
-${pdfText.substring(0, 15000)}
+${pdfText.substring(0, PDF_TEXT_LIMIT)}
 ---`;
 
       let response;
@@ -158,6 +188,17 @@ ${pdfText.substring(0, 15000)}
         throw new ServiceError(
           'Failed to extract menu data from PDF. The AI service is unavailable.',
           'INTERNAL',
+        );
+      }
+
+      // B71: une reponse coupee par la limite de jetons est un JSON tronque.
+      // Sans ce controle, l'erreur disait "pas du JSON valide", ce qui ne dit
+      // pas quoi faire.
+      if (response.stop_reason === 'max_tokens') {
+        logger.warn('PDF extraction truncated by max_tokens', { pageCount });
+        throw new ServiceError(
+          'Cette carte est trop longue pour etre lue en une fois. Coupez le PDF en plusieurs fichiers (par exemple une partie par page) et importez-les un par un.',
+          'VALIDATION',
         );
       }
 
@@ -186,6 +227,7 @@ ${pdfText.substring(0, 15000)}
 
       // Validate and clean each item
       const items: PdfExtractedItem[] = [];
+      const notImported: PdfNotImportedItem[] = [];
 
       for (const raw of parsed) {
         if (typeof raw !== 'object' || raw === null) continue;
@@ -195,27 +237,32 @@ ${pdfText.substring(0, 15000)}
         const name = typeof item.name === 'string' ? item.name.trim() : '';
         const description =
           typeof item.description === 'string' ? item.description.trim() || null : null;
-        let price = typeof item.price === 'number' ? item.price : 0;
-
-        if (typeof item.price === 'string') {
-          const cleaned = item.price.replace(/[^0-9.,]/g, '').replace(',', '.');
-          price = parseFloat(cleaned) || 0;
-        }
-
         // Skip items without a name or category
         if (!name || !category) continue;
 
         // La sortie du modele n'est pas une entree de confiance: un PDF peut
         // contenir des instructions. Longueurs et prix sont bornes ici, donc
         // sur les deux chemins d'import (apercu puis import, ou import direct).
-        if (!Number.isFinite(price) || price < 0 || price > MAX_EXTRACTED_PRICE) price = 0;
+        // B72: meme lecture du prix que l'import Excel; un prix refuse (y
+        // compris nul, negatif ou trop eleve) sort le plat de la liste.
+        const reading = readMenuPrice(item.price, currency);
+        if (!reading.ok) {
+          if (notImported.length < MAX_EXTRACTED_ITEMS) {
+            notImported.push({
+              name: name.slice(0, 200),
+              price: String(item.price ?? '').slice(0, 50),
+              reason: reading.reason,
+            });
+          }
+          continue;
+        }
         if (items.length >= MAX_EXTRACTED_ITEMS) break;
 
         items.push({
           category: category.slice(0, 100),
           name: name.slice(0, 200),
           description: description ? description.slice(0, 1000) : null,
-          price,
+          price: reading.price,
         });
       }
 
@@ -228,6 +275,8 @@ ${pdfText.substring(0, 15000)}
         items,
         pageCount,
         textLength: pdfText.length,
+        truncated: pdfText.length > PDF_TEXT_LIMIT,
+        notImported,
       };
     },
 

@@ -111,7 +111,7 @@ export function CancelOrderButton({
               void handleConfirm();
             }}
             disabled={loading}
-            className="bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:opacity-90"
+            className="bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:bg-[var(--destructive)] hover:opacity-90"
           >
             {loading && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
             {t('cancelOrderButton')}

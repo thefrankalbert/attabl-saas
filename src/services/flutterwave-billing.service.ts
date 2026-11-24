@@ -22,6 +22,15 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  */
 const PENDING_TTL_DAYS = 7;
 
+/**
+ * Fenetre du rattrapage (B47). PLUS LARGE que la reutilisation des liens
+ * (PENDING_TTL_DAYS): un lien redonne au jour 6 peut etre paye au jour 8. Avec
+ * la meme borne, ce paiement n'etait jamais rattrape si le webhook se perdait
+ * (argent pris, abonnement non prolonge). Un paiement tardif reste juge par
+ * `apply_flutterwave_payment` (prix actuel, journal de remboursement sinon).
+ */
+const RECONCILE_WINDOW_DAYS = 30;
+
 /** Un changement de plan n'est admis qu'a moins d'un jour de l'echeance (meme valeur que le SQL). */
 const PLAN_CHANGE_WINDOW_MS = DAY_MS;
 
@@ -468,7 +477,7 @@ export function createFlutterwaveBillingService(
 
     /**
      * Rattrapage: relit chez Flutterwave, PAR REFERENCE, les tentatives `pending`
-     * des 7 derniers jours et applique celles qui sont payees. Couvre un webhook
+     * des 30 derniers jours (RECONCILE_WINDOW_DAYS) et applique celles qui sont payees. Couvre un webhook
      * perdu et un client qui n'est pas revenu sur le site. Meme verification et
      * meme application idempotente que le webhook. Le lot tourne (colonne
      * `last_checked_at`): les plus anciennement verifiees passent d'abord.
@@ -476,7 +485,7 @@ export function createFlutterwaveBillingService(
     async reconcilePending(
       limit = 100,
     ): Promise<{ checked: number; applied: number; errors: number }> {
-      const cutoff = new Date(now().getTime() - PENDING_TTL_DAYS * DAY_MS).toISOString();
+      const cutoff = new Date(now().getTime() - RECONCILE_WINDOW_DAYS * DAY_MS).toISOString();
       const { data, error } = await supabase
         .from('flutterwave_payments')
         .select('id, tenant_id, tx_ref')

@@ -9,6 +9,7 @@ import { onboardingDataToQRConfig } from '@/lib/qr/onboarding-qr-config';
 import { getSegmentFeatures } from '@/lib/segment-features';
 import { getTenantUrl } from '@/lib/constants';
 import type { OnboardingData } from '@/app/onboarding/page';
+import { findZoneIssues } from '@/lib/validations/onboarding.schema';
 import { LaunchSummaryCard } from './launch/LaunchSummaryCard';
 import { LaunchMenuUrl } from './launch/LaunchMenuUrl';
 import { LaunchDashboardNote } from './launch/LaunchDashboardNote';
@@ -33,11 +34,22 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
   const menuUrl = data.tenantSlug ? getTenantUrl(data.tenantSlug) : 'https://attabl.com';
 
   const features = getSegmentFeatures(data.establishmentType);
+  // Contre-audit 3 et 4: une zone en doublon bloque le lancement; l'ecran le dit.
+  const tablesBlocked =
+    features.showTables &&
+    data.tableConfigMode !== 'skip' &&
+    findZoneIssues(data.tableZones ?? []).length > 0;
   const completedItems = [
     { label: t('checkAccountCreated'), done: true },
     { label: t('checkIdentityConfigured'), done: !!data.establishmentType },
     ...(features.showTables
-      ? [{ label: t('checkTablesConfigured'), done: data.tableConfigMode !== 'skip' }]
+      ? [
+          {
+            label: tablesBlocked ? t('checkTablesToFix') : t('checkTablesConfigured'),
+            done: data.tableConfigMode !== 'skip' && !tablesBlocked,
+            blocked: tablesBlocked,
+          },
+        ]
       : []),
     { label: t('checkBrandingCustomized'), done: !!data.primaryColor },
     { label: t('checkMenuInitialized'), done: data.menuOption !== 'skip' },
@@ -61,9 +73,13 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
             {/* Header */}
             <div className="mb-8">
               <h1 className="mb-1.5 text-xl font-semibold tracking-tight text-app-text">
-                {showSummary ? t('launchTitle') : t('qrCodeTitle')}
+                {showSummary
+                  ? t(tablesBlocked ? 'launchTitleBlocked' : 'launchTitle')
+                  : t('qrCodeTitle')}
               </h1>
-              <p className="text-sm text-app-text-secondary">{t('launchSubtitle')}</p>
+              <p className="text-sm text-app-text-secondary">
+                {t(tablesBlocked ? 'launchSubtitleBlocked' : 'launchSubtitle')}
+              </p>
             </div>
 
             {/* Summary Card -- Full width */}

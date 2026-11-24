@@ -1,3 +1,5 @@
+import type { LaunchIssue } from '../launch-issues';
+
 export type LaunchFixKey =
   | 'launchFixName'
   | 'launchFixDetails'
@@ -26,14 +28,13 @@ const FIELD_TO_KEY: Record<string, LaunchFixKey> = {
 };
 
 /**
- * Traduit les erreurs de validation du serveur ("data.tableZones.0.tableCount:
- * Too big...") en cle de texte qui dit quel ecran corriger. Le texte technique
- * du serveur n'est jamais montre a l'utilisateur.
+ * Traduit les refus de validation du serveur (chemin `data.tableZones.0.tableCount`)
+ * en cle de texte qui dit quel ecran corriger. Le texte technique du serveur
+ * n'est jamais montre a l'utilisateur.
  */
-export function launchFixKey(details: readonly string[]): LaunchFixKey {
+export function launchFixKey(details: readonly LaunchIssue[]): LaunchFixKey {
   for (const detail of details) {
-    const path = detail.split(':')[0] ?? '';
-    const field = path.split('.')[1] ?? '';
+    const field = detail.path[1] ?? '';
     const key = FIELD_TO_KEY[field];
     if (key) return key;
   }

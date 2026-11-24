@@ -49,6 +49,7 @@ import { menuSearchLimiter } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { headers } from 'next/headers';
+import { menuQuery, type MenuRow } from './menu-search-double';
 
 type TenantRow = Record<string, unknown> | null;
 
@@ -56,12 +57,24 @@ type TenantRow = Record<string, unknown> | null;
 interface Harness {
   tenantFilters: Array<[string, unknown]>;
   tenantColumns: string[];
+  /** Carte de remplacement (B4), lue a chaque requete. */
+  menuOverride?: MenuRow[];
 }
 
 function setupSupabase(tenant: TenantRow): Harness {
   const harness: Harness = { tenantFilters: [], tenantColumns: [] };
 
-  const menuItems = [{ id: 'item-1', name: 'Poulet bicyclette', price: 4500 }];
+  const menuItems: MenuRow[] = [
+    {
+      id: 'item-1',
+      tenant_id: 'tenant-1',
+      name: 'Poulet bicyclette',
+      description: null,
+      price: 4500,
+      is_available: true,
+      deleted_at: null,
+    },
+  ];
 
   // Le tenant n'est lisible QUE par le client service_role: comme en prod depuis
   // 20261109002847, le client anon recoit 42501 sur les colonnes de verrou.
@@ -105,16 +118,7 @@ function setupSupabase(tenant: TenantRow): Harness {
   vi.mocked(createClient).mockResolvedValue({
     from: (table: string) => {
       if (table === 'tenants') return anonTenantsDenied();
-      if (table === 'menu_items') {
-        const chain = {
-          select: () => chain,
-          eq: () => chain,
-          is: () => chain,
-          order: () => chain,
-          limit: async () => ({ data: menuItems, error: null }),
-        };
-        return chain;
-      }
+      if (table === 'menu_items') return menuQuery(harness.menuOverride ?? menuItems);
       throw new Error(`Table inattendue: ${table}`);
     },
     // Double reduit a `from`: la route n'utilise rien d'autre du client.
@@ -140,8 +144,8 @@ beforeEach(() => {
   mockHeaders('radisson');
 });
 
-function request(): Request {
-  return new Request('http://localhost:3000/api/menu-search');
+function request(q = 'poulet'): Request {
+  return new Request(`http://localhost:3000/api/menu-search?q=${encodeURIComponent(q)}`);
 }
 
 describe('GET /api/menu-search - etat du tenant', () => {

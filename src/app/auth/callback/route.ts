@@ -48,8 +48,6 @@ export async function GET(request: Request) {
   const code = requestUrl.searchParams.get('code');
   const tokenHash = requestUrl.searchParams.get('token_hash');
   const type = requestUrl.searchParams.get('type');
-  const plan = requestUrl.searchParams.get('plan');
-  const restaurantName = requestUrl.searchParams.get('restaurant_name');
 
   // Handle token_hash-based recovery (custom password reset email flow)
   if (tokenHash && type === 'recovery') {
@@ -86,9 +84,8 @@ export async function GET(request: Request) {
         origin: requestUrl.origin,
         hasCode: !!code,
       });
-      return NextResponse.redirect(
-        `${requestUrl.origin}/login?error=oauth_failed&reason=${encodeURIComponent(error.message)}`,
-      );
+      // B66: le message brut de GoTrue reste au journal, jamais dans l'URL.
+      return NextResponse.redirect(`${requestUrl.origin}/login?error=oauth_failed`);
     }
 
     // No recovery branch here on purpose: every reset link the app sends uses
@@ -191,9 +188,11 @@ export async function GET(request: Request) {
       // session.user here. A loopback fetch to an API route (the former
       // /api/signup-oauth, now removed) cannot work: it forwards no
       // Origin/Referer (CSRF 403) and no auth cookies (getUser 401).
-      // Restrict plan to known values; query params are attacker-controllable.
-      const signupPlan = plan === 'pro' || plan === 'business' ? plan : 'starter';
-      const signupName = (restaurantName || 'Mon Établissement').slice(0, 100);
+      // B18: aucun lien n'envoie `plan` ni `restaurant_name` (useAuthForm ne
+      // passe que /auth/callback): l'inscription Google part toujours de la
+      // formule de depart et d'un nom provisoire, modifie a l'onboarding.
+      const signupPlan = 'starter';
+      const signupName = 'Mon Établissement';
 
       try {
         const adminSupabase = createAdminClient();
@@ -219,9 +218,9 @@ export async function GET(request: Request) {
         } else {
           logger.error('OAuth signup failed', { error: message });
         }
-        return NextResponse.redirect(
-          `${requestUrl.origin}/signup?error=${encodeURIComponent(message)}&email=${encodeURIComponent(session.user.email || '')}`,
-        );
+        // B17: /signup n'affiche aucun bandeau d'erreur venu de l'URL (ni une
+        // phrase libre): l'echec restait muet. /login affiche `oauth_failed`.
+        return NextResponse.redirect(`${requestUrl.origin}/login?error=oauth_failed`);
       }
     }
   }

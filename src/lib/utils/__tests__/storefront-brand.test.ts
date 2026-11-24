@@ -43,6 +43,12 @@ describe('storefrontBrandStyle', () => {
     expect(tokens('#1E40AF')['--brand-accent']).toBe('#1E40AF');
   });
 
+  // B27: a color saved as #RGB before the fix was shown as the ATTABL lime.
+  it('reads a stored 3-digit color as its #RRGGBB form', () => {
+    expect(resolveStorefrontPrimary('#f80')).toBe('#FF8800');
+    expect(tokens('#F00')['--brand-cta']).toBe('#FF0000');
+  });
+
   it('falls back to the ATTABL lime when the tenant has no valid color', () => {
     for (const bad of [null, undefined, '', 'red; background: url(x)']) {
       expect(tokens(bad)['--brand-cta']).toBe(STOREFRONT_DEFAULT_PRIMARY);

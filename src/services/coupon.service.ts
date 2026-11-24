@@ -5,6 +5,7 @@ import type { CurrencyCode } from '@/lib/constants';
 import { roundForCurrency } from '@/lib/utils/money';
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
+import { zonedCouponValidity } from './coupon-validity';
 
 export interface CouponValidationResult {
   valid: boolean;
@@ -242,6 +243,12 @@ export function createCouponService(supabase: SupabaseClient): CouponService {
         max_uses?: number | null;
       },
     ): Promise<Coupon> {
+      const validity = await zonedCouponValidity(
+        supabase,
+        tenantId,
+        data.valid_from,
+        data.valid_until,
+      );
       const { data: coupon, error } = await supabase
         .from('coupons')
         .insert({
@@ -251,8 +258,8 @@ export function createCouponService(supabase: SupabaseClient): CouponService {
           discount_value: data.discount_value,
           min_order_amount: data.min_order_amount || 0,
           max_discount_amount: data.max_discount_amount || null,
-          valid_from: data.valid_from || new Date().toISOString(),
-          valid_until: data.valid_until || null,
+          valid_from: validity.from || new Date().toISOString(),
+          valid_until: validity.until || null,
           max_uses: data.max_uses || null,
           is_active: true,
           current_uses: 0,
@@ -289,18 +296,29 @@ export function createCouponService(supabase: SupabaseClient): CouponService {
         max_uses?: number | null;
       },
     ): Promise<void> {
-      const { error } = await supabase
+      const validity = await zonedCouponValidity(
+        supabase,
+        tenantId,
+        data.valid_from,
+        data.valid_until,
+      );
+      // `count: 'exact'`: un UPDATE qui ne touche aucune ligne (coupon supprime
+      // entre-temps, ou d'un autre restaurant) ne rend AUCUNE erreur.
+      const { error, count } = await supabase
         .from('coupons')
-        .update({
-          code: data.code.toUpperCase().trim(),
-          discount_type: data.discount_type,
-          discount_value: data.discount_value,
-          min_order_amount: data.min_order_amount ?? null,
-          max_discount_amount: data.max_discount_amount ?? null,
-          valid_from: data.valid_from ?? null,
-          valid_until: data.valid_until ?? null,
-          max_uses: data.max_uses ?? null,
-        })
+        .update(
+          {
+            code: data.code.toUpperCase().trim(),
+            discount_type: data.discount_type,
+            discount_value: data.discount_value,
+            min_order_amount: data.min_order_amount ?? null,
+            max_discount_amount: data.max_discount_amount ?? null,
+            valid_from: validity.from ?? null,
+            valid_until: validity.until ?? null,
+            max_uses: data.max_uses ?? null,
+          },
+          { count: 'exact' },
+        )
         .eq('id', couponId)
         .eq('tenant_id', tenantId);
 
@@ -310,21 +328,23 @@ export function createCouponService(supabase: SupabaseClient): CouponService {
         }
         throw new ServiceError('Erreur lors de la mise a jour du coupon', 'INTERNAL', error);
       }
+      if (count === 0) throw new ServiceError('Coupon introuvable', 'NOT_FOUND');
     },
 
     /**
      * Delete a coupon.
      */
     async deleteCoupon(couponId: string, tenantId: string): Promise<void> {
-      const { error } = await supabase
+      const { error, count } = await supabase
         .from('coupons')
-        .delete()
+        .delete({ count: 'exact' })
         .eq('id', couponId)
         .eq('tenant_id', tenantId);
 
       if (error) {
         throw new ServiceError('Erreur lors de la suppression', 'INTERNAL', error);
       }
+      if (count === 0) throw new ServiceError('Coupon introuvable', 'NOT_FOUND');
     },
 
     /**
@@ -347,15 +367,16 @@ export function createCouponService(supabase: SupabaseClient): CouponService {
      * Toggle the is_active flag on a coupon.
      */
     async toggleActive(couponId: string, tenantId: string, newValue: boolean): Promise<void> {
-      const { error } = await supabase
+      const { error, count } = await supabase
         .from('coupons')
-        .update({ is_active: newValue })
+        .update({ is_active: newValue }, { count: 'exact' })
         .eq('id', couponId)
         .eq('tenant_id', tenantId);
 
       if (error) {
         throw new ServiceError('Erreur lors de la mise a jour', 'INTERNAL', error);
       }
+      if (count === 0) throw new ServiceError('Coupon introuvable', 'NOT_FOUND');
     },
   };
 }

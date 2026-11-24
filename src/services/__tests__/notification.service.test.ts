@@ -47,6 +47,26 @@ function ingredientsChain(data: unknown, error: unknown = null) {
   return chain;
 }
 
+// B58: une seule lecture des destinataires, terminale sur `.not('email', ...)`.
+// Les filtres poses sont gardes pour verifier actif et non supprime.
+function adminUsersChain(emails: string[], error: unknown = null) {
+  const filters: unknown[][] = [];
+  const chain = {
+    filters,
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn((...a: unknown[]) => {
+      filters.push(['eq', ...a]);
+      return chain;
+    }),
+    is: vi.fn((...a: unknown[]) => {
+      filters.push(['is', ...a]);
+      return chain;
+    }),
+    not: vi.fn(async () => ({ data: emails.map((email) => ({ email })), error })),
+  };
+  return chain;
+}
+
 describe('checkAndNotifyLowStock', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -77,7 +97,6 @@ describe('checkAndNotifyLowStock', () => {
     ];
 
     let callIndex = 0;
-    let adminCallIndex = 0;
     mockFrom.mockImplementation((table: string) => {
       if (table === 'ingredients') {
         return ingredientsChain(lowStockItems);
@@ -93,19 +112,7 @@ describe('checkAndNotifyLowStock', () => {
         // Insert call
         return { insert: vi.fn().mockResolvedValue({ data: null, error: null }) };
       }
-      if (table === 'admin_users') {
-        if (adminCallIndex === 0) {
-          adminCallIndex++;
-          // First call: fetch user_ids
-          const chain = setupChain(null);
-          chain.eq.mockResolvedValue({ data: [{ user_id: 'user-1' }], error: null });
-          return chain;
-        }
-        // Second call: fetch emails
-        const chain = setupChain(null);
-        chain.not.mockResolvedValue({ data: [{ email: 'admin@test.com' }], error: null });
-        return chain;
-      }
+      if (table === 'admin_users') return adminUsersChain(['admin@test.com']);
       if (table === 'tenants') {
         return {
           select: vi.fn().mockReturnThis(),
@@ -132,6 +139,46 @@ describe('checkAndNotifyLowStock', () => {
     );
   });
 
+  it('B58: n ecrit qu aux membres actifs et non supprimes, chaque adresse une fois', async () => {
+    const admins = adminUsersChain(['a@test.com', 'a@test.com', 'b@test.com']);
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'ingredients') {
+        return ingredientsChain([
+          { id: 'ing-1', name: 'Riz', unit: 'kg', current_stock: 0, min_stock_alert: 5 },
+        ]);
+      }
+      if (table === 'stock_alert_notifications') {
+        const chain = setupChain(null);
+        chain.gte.mockResolvedValue({ data: [], error: null });
+        return chain;
+      }
+      if (table === 'admin_users') return admins;
+      if (table === 'tenants') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          single: vi.fn().mockResolvedValue({ data: { name: 'R', slug: 'r' }, error: null }),
+        };
+      }
+      return setupChain(null);
+    });
+    mockSendStockAlertEmail.mockResolvedValue(true);
+
+    await checkAndNotifyLowStock('tenant-1');
+
+    expect(admins.filters).toEqual(
+      expect.arrayContaining([
+        ['eq', 'tenant_id', 'tenant-1'],
+        ['eq', 'is_active', true],
+        ['is', 'deleted_at', null],
+      ]),
+    );
+    expect(mockSendStockAlertEmail).toHaveBeenCalledWith(
+      ['a@test.com', 'b@test.com'],
+      expect.anything(),
+    );
+  });
+
   it('returns early when no admin users exist', async () => {
     const lowStockItems = [
       { id: 'ing-1', name: 'Salt', unit: 'kg', current_stock: 0, min_stock_alert: 5 },
@@ -146,12 +193,7 @@ describe('checkAndNotifyLowStock', () => {
         chain.gte.mockResolvedValue({ data: [], error: null });
         return chain;
       }
-      if (table === 'admin_users') {
-        // First call returns empty admin users list
-        const chain = setupChain(null);
-        chain.eq.mockResolvedValue({ data: [], error: null });
-        return chain;
-      }
+      if (table === 'admin_users') return adminUsersChain([]);
       return setupChain(null);
     });
 
@@ -164,7 +206,6 @@ describe('checkAndNotifyLowStock', () => {
       { id: 'ing-1', name: 'Salt', unit: 'kg', current_stock: 0, min_stock_alert: 5 },
     ];
 
-    let adminCallIndex = 0;
     mockFrom.mockImplementation((table: string) => {
       if (table === 'ingredients') {
         return ingredientsChain(lowStockItems);
@@ -174,17 +215,7 @@ describe('checkAndNotifyLowStock', () => {
         chain.gte.mockResolvedValue({ data: [], error: null });
         return chain;
       }
-      if (table === 'admin_users') {
-        if (adminCallIndex === 0) {
-          adminCallIndex++;
-          const chain = setupChain(null);
-          chain.eq.mockResolvedValue({ data: [{ user_id: 'user-1' }], error: null });
-          return chain;
-        }
-        const chain = setupChain(null);
-        chain.not.mockResolvedValue({ data: [{ email: 'admin@test.com' }], error: null });
-        return chain;
-      }
+      if (table === 'admin_users') return adminUsersChain(['admin@test.com']);
       if (table === 'tenants') {
         return {
           select: vi.fn().mockReturnThis(),
@@ -211,7 +242,6 @@ describe('checkAndNotifyLowStock', () => {
 
     const insertMock = vi.fn().mockResolvedValue({ data: null, error: null });
 
-    let adminCallIndex = 0;
     mockFrom.mockImplementation((table: string) => {
       if (table === 'ingredients') {
         return ingredientsChain(lowStockItems);
@@ -223,23 +253,7 @@ describe('checkAndNotifyLowStock', () => {
         chain.insert = insertMock;
         return chain;
       }
-      if (table === 'admin_users') {
-        if (adminCallIndex === 0) {
-          adminCallIndex++;
-          const chain = setupChain(null);
-          chain.eq.mockResolvedValue({
-            data: [{ user_id: 'user-1' }, { user_id: 'user-2' }] as unknown[],
-            error: null,
-          });
-          return chain;
-        }
-        const chain = setupChain(null);
-        chain.not.mockResolvedValue({
-          data: [{ email: 'admin1@test.com' }, { email: 'admin2@test.com' }],
-          error: null,
-        });
-        return chain;
-      }
+      if (table === 'admin_users') return adminUsersChain(['admin1@test.com', 'admin2@test.com']);
       if (table === 'tenants') {
         return {
           select: vi.fn().mockReturnThis(),
@@ -278,7 +292,6 @@ describe('checkAndNotifyLowStock', () => {
 
     const insertMock = vi.fn().mockResolvedValue({ data: null, error: null });
 
-    let adminCallIndex = 0;
     mockFrom.mockImplementation((table: string) => {
       if (table === 'ingredients') {
         return ingredientsChain(lowStockItems);
@@ -289,17 +302,7 @@ describe('checkAndNotifyLowStock', () => {
         chain.insert = insertMock;
         return chain;
       }
-      if (table === 'admin_users') {
-        if (adminCallIndex === 0) {
-          adminCallIndex++;
-          const chain = setupChain(null);
-          chain.eq.mockResolvedValue({ data: [{ user_id: 'user-1' }], error: null });
-          return chain;
-        }
-        const chain = setupChain(null);
-        chain.not.mockResolvedValue({ data: [{ email: 'admin@test.com' }], error: null });
-        return chain;
-      }
+      if (table === 'admin_users') return adminUsersChain(['admin@test.com']);
       if (table === 'tenants') {
         return {
           select: vi.fn().mockReturnThis(),
@@ -325,6 +328,72 @@ describe('checkAndNotifyLowStock', () => {
         sent_to: ['admin@test.com'],
       }),
     ]);
+  });
+});
+
+// B57 (revue ligne par ligne, lot B2b-2): si l'e-mail ne partait pas (envoi en
+// echec, ou aucun membre avec e-mail), la fonction s'arretait AVANT la
+// notification dans l'application et le push, et sans poser la limite d'une
+// heure: meme echec, meme silence, a chaque commande.
+describe('checkAndNotifyLowStock - alerte sans e-mail (B57)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function harness(emails: Array<{ email: string }>) {
+    const notifInsert = vi.fn().mockResolvedValue({ data: null, error: null });
+    const rateInsert = vi.fn().mockResolvedValue({ data: null, error: null });
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'ingredients') {
+        return ingredientsChain([
+          { id: 'ing-1', name: 'Riz', unit: 'kg', current_stock: 0, min_stock_alert: 5 },
+        ]);
+      }
+      if (table === 'stock_alert_notifications') {
+        const chain = setupChain(null);
+        chain.gte.mockResolvedValue({ data: [], error: null });
+        chain.insert = rateInsert;
+        return chain;
+      }
+      if (table === 'notifications') {
+        return { insert: notifInsert };
+      }
+      if (table === 'admin_users') return adminUsersChain(emails.map((e) => e.email));
+      if (table === 'tenants') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          single: vi
+            .fn()
+            .mockResolvedValue({ data: { name: 'Resto', slug: 'resto' }, error: null }),
+        };
+      }
+      return setupChain(null);
+    });
+    return { notifInsert, rateInsert };
+  }
+
+  it('e-mail en echec: la notification dans l application part, la limite d une heure est posee', async () => {
+    const { notifInsert, rateInsert } = harness([{ email: 'patron@resto.test' }]);
+    mockSendStockAlertEmail.mockResolvedValue(false);
+
+    await checkAndNotifyLowStock('tenant-1');
+
+    expect(notifInsert).toHaveBeenCalledWith([
+      expect.objectContaining({ tenant_id: 'tenant-1', type: 'stock_alert' }),
+    ]);
+    expect(rateInsert).toHaveBeenCalledWith([
+      expect.objectContaining({ ingredient_id: 'ing-1', sent_to: [] }),
+    ]);
+  });
+
+  it('aucun membre avec e-mail: la notification dans l application part quand meme', async () => {
+    const { notifInsert } = harness([]);
+
+    await checkAndNotifyLowStock('tenant-1');
+
+    expect(mockSendStockAlertEmail).not.toHaveBeenCalled();
+    expect(notifInsert).toHaveBeenCalledTimes(1);
   });
 });
 

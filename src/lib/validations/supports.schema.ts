@@ -1,6 +1,12 @@
 import { z } from 'zod';
+import { expandShortHex } from '@/lib/utils/hex-color';
 
-const hexColorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Couleur hex invalide (#RRGGBB)');
+// B11: les reglages du restaurant acceptent #RGB; l'export le convertit en
+// #RRGGBB (format du PDF) au lieu de le refuser.
+const hexColorSchema = z
+  .string()
+  .regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/, 'Couleur hex invalide (#RGB ou #RRGGBB)')
+  .transform(expandShortHex);
 
 const logoConfigSchema = z.object({
   visible: z.boolean(),
@@ -45,9 +51,9 @@ export const chevaletConfigSchema = z.object({
   verso: z.enum(['none', 'logo', 'mirror']),
 });
 
+// B29: la route ne produit qu'un PDF et lit le restaurant de la session. Les
+// anciens champs `format`, `menuUrl` et `tenantSlug` etaient exiges puis
+// ignores (`format: 'png'` rendait un PDF): retires.
 export const exportRequestSchema = z.object({
   config: chevaletConfigSchema,
-  format: z.enum(['pdf', 'png']).default('pdf'),
-  menuUrl: z.string().url(),
-  tenantSlug: z.string().min(1).max(100),
 });

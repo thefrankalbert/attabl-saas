@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
+import { phoneSchema } from '@/lib/validations/common.schema';
 import {
   findHeaderRow,
   mapHeaders,
@@ -41,17 +42,36 @@ const SUPPLIER_ALIASES: Record<string, string[]> = {
 
 // --- Row validation schema --------------------------------
 
+const ACTIVE_WORDS = ['actif', 'active'];
+const INACTIVE_WORDS = ['inactif', 'inactive'];
+
+/**
+ * Statut d'un fournisseur: actif / inactif / active / inactive, ou les valeurs
+ * oui/non de `parseBooleanCell`. `undefined` = valeur non reconnue (B100).
+ */
+function parseSupplierActive(value: unknown): boolean | undefined {
+  const word = String(value).trim().toLowerCase();
+  if (ACTIVE_WORDS.includes(word)) return true;
+  if (INACTIVE_WORDS.includes(word)) return false;
+  // Deux defauts opposes: une valeur reconnue rend la meme reponse aux deux.
+  const asTrue = parseBooleanCell(value, true);
+  const asFalse = parseBooleanCell(value, false);
+  return asTrue === asFalse ? asTrue : undefined;
+}
+
+// Audit B101: memes bornes que `actionUpdateSupplier` (actions/suppliers.ts).
+// L'import acceptait un nom de 200 caracteres et un telephone libre de 50: la
+// fiche importee ne pouvait ensuite plus etre modifiee (message generique).
 const supplierRowSchema = z.object({
   name: z
     .string({ error: 'Le nom du fournisseur est requis' })
     .min(1, 'Le nom du fournisseur est requis')
-    .max(200, 'Le nom doit faire 200 caractères ou moins'),
-  contact_name: z.string().max(200).nullable(),
-  // phone kept lenient (formats vary): length-bounded string only.
-  phone: z.string().max(50, 'Le téléphone doit faire 50 caractères ou moins').nullable(),
+    .max(100, 'Le nom doit faire 100 caractères ou moins'),
+  contact_name: z.string().max(100, 'Le contact doit faire 100 caractères ou moins').nullable(),
+  phone: phoneSchema.nullable(),
   // email is optional; when provided it must be a valid address (else row error).
   email: z.string().email('Email invalide').max(255).nullable(),
-  address: z.string().max(500).nullable(),
+  address: z.string().max(300, 'L adresse doit faire 300 caracteres ou moins').nullable(),
   notes: z.string().max(1000).nullable(),
   is_active: z.boolean().nullable(),
 });
@@ -122,6 +142,24 @@ export function createSupplierImportService(supabase: SupabaseClient): SupplierI
           rawRow[fieldName] = cells[colIndex] ?? null;
         }
 
+        // B100: un statut non reconnu ("en pause") est une erreur de ligne. Avant,
+        // la valeur par defaut `true` s'appliquait: "Inactif" creait ou remettait
+        // le fournisseur actif, sans un mot.
+        const rawActive =
+          mappedFields.has('is_active') &&
+          rawRow.is_active != null &&
+          String(rawRow.is_active).trim() !== ''
+            ? rawRow.is_active
+            : null;
+        const isActive = rawActive === null ? null : parseSupplierActive(rawActive);
+        if (isActive === undefined) {
+          errors.push({
+            row: rowNumber,
+            message: `Statut non reconnu : ${String(rawActive).trim()} (attendu : actif ou inactif)`,
+          });
+          continue;
+        }
+
         const rowToValidate = {
           name: rawRow.name != null ? String(rawRow.name).trim() : '',
           contact_name: cellToTrimmedStringOrNull(rawRow.contact_name),
@@ -129,11 +167,7 @@ export function createSupplierImportService(supabase: SupabaseClient): SupplierI
           email: cellToTrimmedStringOrNull(rawRow.email),
           address: cellToTrimmedStringOrNull(rawRow.address),
           notes: cellToTrimmedStringOrNull(rawRow.notes),
-          is_active: mappedFields.has('is_active')
-            ? rawRow.is_active == null || String(rawRow.is_active).trim() === ''
-              ? null
-              : parseBooleanCell(rawRow.is_active, true)
-            : null,
+          is_active: isActive,
         };
 
         const result = supplierRowSchema.safeParse(rowToValidate);

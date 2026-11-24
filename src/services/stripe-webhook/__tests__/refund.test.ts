@@ -25,6 +25,7 @@ type LigneTenant = {
   id: string;
   subscription_status: string | null;
   freeze_reason?: string | null;
+  refund_frozen_at?: string | null;
 };
 
 let ligneTenant: LigneTenant | null;
@@ -150,6 +151,34 @@ describe('handleChargeRefunded', () => {
       is_active: false,
       refund_frozen_at: '2027-01-15T08:00:00.000Z',
     });
+  });
+
+  it('B93: un rejeu tardif d un ANCIEN remboursement ne fait pas reculer la date du gel', async () => {
+    ligneTenant = {
+      id: 't-1',
+      subscription_status: 'frozen',
+      freeze_reason: 'refund',
+      refund_frozen_at: '2027-02-01T00:00:00.000Z',
+    };
+    // Evenement date du 15/01/2027, ANTERIEUR au gel deja pose le 01/02/2027.
+    await handleChargeRefunded(deps(), charge(), 1_800_000_000);
+
+    expect(ecritures[0].payload).toEqual({
+      is_active: false,
+      refund_frozen_at: '2027-02-01T00:00:00.000Z',
+    });
+  });
+
+  it('B93 temoin: un remboursement plus recent redate bien le gel', async () => {
+    ligneTenant = {
+      id: 't-1',
+      subscription_status: 'frozen',
+      freeze_reason: 'refund',
+      refund_frozen_at: '2027-01-01T00:00:00.000Z',
+    };
+    await handleChargeRefunded(deps(), charge(), 1_800_000_000);
+
+    expect(ecritures[0].payload).toMatchObject({ refund_frozen_at: '2027-01-15T08:00:00.000Z' });
   });
 
   it('tenant gele SANS cause: la cause refund peut etre posee', async () => {

@@ -16,7 +16,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createOrderService } from '../order.service';
 import { createCategoryService } from '../category.service';
-import { createMenuService } from '../menu.service';
 import { createInventoryService } from '../inventory.service';
 import { createSuggestionService } from '../suggestion.service';
 import { createTableConfigService } from '../table-config.service';
@@ -244,93 +243,23 @@ describe('order.service Wave 26 additions', () => {
 describe('category.service Wave 26 additions', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('reorderCategories filters tenant_id on every update', async () => {
-    const supabase = buildSupabase({ categories: { data: null, error: null } });
+  it('reorderCategories writes in ONE tenant-scoped RPC (B32)', async () => {
+    const supabase = buildSupabase();
+    supabase.rpc.mockResolvedValue({ data: 2, error: null });
     const svc = createCategoryService(asSupabase(supabase));
     await svc.reorderCategories('tenant-A', [
       { id: 'cat-1', display_order: 0 },
       { id: 'cat-2', display_order: 1 },
     ]);
-    const chains = supabase._chains.categories;
-    expect(chains).toHaveLength(2);
-    for (const chain of chains) {
-      expect(hasTenantFilter(chain, 'tenant-A')).toBe(true);
-    }
-  });
-
-  it('isCategoryLinkedToMenu returns true when category has menu_id + filters tenant_id', async () => {
-    const supabase = buildSupabase({
-      categories: { data: { menu_id: 'menu-1' }, error: null },
-    });
-    const svc = createCategoryService(asSupabase(supabase));
-    const linked = await svc.isCategoryLinkedToMenu('cat-1', 'tenant-A');
-    expect(linked).toBe(true);
-    const chain = supabase._chains.categories[0];
-    expect(hasTenantFilter(chain, 'tenant-A')).toBe(true);
-  });
-
-  it('isCategoryLinkedToMenu returns false when menu_id is null', async () => {
-    const supabase = buildSupabase({
-      categories: { data: { menu_id: null }, error: null },
-    });
-    const svc = createCategoryService(asSupabase(supabase));
-    expect(await svc.isCategoryLinkedToMenu('cat-1', 'tenant-A')).toBe(false);
-  });
-});
-
-// --- menu.service -------------------------------------------
-
-describe('menu.service Wave 26 additions', () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  it('getMenuDetailBundle filters menus AND categories AND items by tenant_id', async () => {
-    const supabase = buildSupabase({
-      menus: { data: { id: 'm1', name: 'Menu' }, error: null },
-      categories: [
-        { data: [{ id: 'c1' }], error: null }, // categories of menu
-        { data: [], error: null }, // available (unassigned) categories
-      ],
-      menu_items: { data: [{ id: 'i1' }], error: null },
-    });
-    const svc = createMenuService(asSupabase(supabase));
-    const bundle = await svc.getMenuDetailBundle('tenant-A', 'menu-1');
-
-    // Wave 31 added tenant filter to the menus SELECT
-    expect(hasTenantFilter(supabase._chains.menus[0], 'tenant-A')).toBe(true);
-    // Both categories queries filter tenant
-    for (const c of supabase._chains.categories) {
-      expect(hasTenantFilter(c, 'tenant-A')).toBe(true);
-    }
-    // Items filter tenant
-    expect(hasTenantFilter(supabase._chains.menu_items[0], 'tenant-A')).toBe(true);
-
-    expect(bundle.menu).toEqual({ id: 'm1', name: 'Menu' });
-    expect(bundle.categories).toEqual([{ id: 'c1' }]);
-    expect(bundle.items).toEqual([{ id: 'i1' }]);
-  });
-
-  it('getMenuDetailBundle skips items query when no categories', async () => {
-    const supabase = buildSupabase({
-      menus: { data: { id: 'm1' }, error: null },
-      categories: [
-        { data: [], error: null },
-        { data: [], error: null },
+    expect(supabase.rpc).toHaveBeenCalledTimes(1);
+    expect(supabase.rpc).toHaveBeenCalledWith('reorder_categories', {
+      p_tenant_id: 'tenant-A',
+      p_updates: [
+        { id: 'cat-1', display_order: 0 },
+        { id: 'cat-2', display_order: 1 },
       ],
     });
-    const svc = createMenuService(asSupabase(supabase));
-    const bundle = await svc.getMenuDetailBundle('tenant-A', 'menu-1');
-    expect(bundle.items).toEqual([]);
-    expect(supabase._chains.menu_items).toBeUndefined();
-  });
-
-  it('getMenuDetailBundle throws ServiceError when menu fetch fails', async () => {
-    const supabase = buildSupabase({
-      menus: { data: null, error: { message: 'denied' } },
-    });
-    const svc = createMenuService(asSupabase(supabase));
-    await expect(svc.getMenuDetailBundle('tenant-A', 'menu-1')).rejects.toBeInstanceOf(
-      ServiceError,
-    );
+    expect(supabase._chains.categories).toBeUndefined();
   });
 });
 

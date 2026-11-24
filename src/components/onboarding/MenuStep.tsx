@@ -415,7 +415,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                 if (categoryPendingDelete) deleteCategory(categoryPendingDelete);
                 setCategoryPendingDelete(null);
               }}
-              className="bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:opacity-90"
+              className="bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:bg-[var(--destructive)] hover:opacity-90"
             >
               {t('deleteCategory')}
             </AlertDialogAction>

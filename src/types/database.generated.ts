@@ -1033,6 +1033,7 @@ export type Database = {
           id: string;
           is_active: boolean;
           menu_item_id: string;
+          source: string;
           suggested_item_id: string;
           suggestion_type: string;
           tenant_id: string;
@@ -1044,6 +1045,7 @@ export type Database = {
           id?: string;
           is_active?: boolean;
           menu_item_id: string;
+          source?: string;
           suggested_item_id: string;
           suggestion_type?: string;
           tenant_id: string;
@@ -1055,6 +1057,7 @@ export type Database = {
           id?: string;
           is_active?: boolean;
           menu_item_id?: string;
+          source?: string;
           suggested_item_id?: string;
           suggestion_type?: string;
           tenant_id?: string;
@@ -3765,7 +3768,7 @@ export type Database = {
         Returns: boolean;
       };
       import_recipes_tx: {
-        Args: { p_rows: Json; p_tenant_id: string };
+        Args: { p_removals?: Json; p_rows: Json; p_tenant_id: string };
         Returns: Json;
       };
       increment_login_count: {
@@ -3860,6 +3863,18 @@ export type Database = {
           p_tenant_id: string;
         };
         Returns: string;
+      };
+      regenerate_auto_suggestions: {
+        Args: { p_rows: Json; p_tenant_id: string };
+        Returns: number;
+      };
+      reorder_categories: {
+        Args: { p_tenant_id: string; p_updates: Json };
+        Returns: number;
+      };
+      reorder_menus: {
+        Args: { p_ordered_ids: string[]; p_tenant_id: string };
+        Returns: number;
       };
       reminder_coach_items: {
         Args: {

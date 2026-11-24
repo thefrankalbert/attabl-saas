@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { SuggestionType } from '@/types/inventory.types';
 import { ServiceError } from './errors';
+import { logger } from '@/lib/logger';
 
 interface MenuItem {
   id: string;
@@ -57,7 +58,10 @@ export function createSuggestionService(supabase: SupabaseClient): SuggestionSer
      */
     async createSuggestion(data: CreateSuggestionInput): Promise<void> {
       // Doublon: meme plat source et meme plat suggere, deja actif pour ce tenant.
-      const { data: existing } = await supabase
+      // Cette lecture donne un message clair; l'index unique partiel
+      // `item_suggestions_active_pair_key` tranche les envois simultanes
+      // (double clic), d'ou la traduction du 23505 plus bas (audit B97).
+      const { data: existing, error: readError } = await supabase
         .from('item_suggestions')
         .select('id')
         .eq('tenant_id', data.tenant_id)
@@ -65,6 +69,13 @@ export function createSuggestionService(supabase: SupabaseClient): SuggestionSer
         .eq('suggested_item_id', data.suggested_item_id)
         .eq('is_active', true)
         .limit(1);
+      if (readError) {
+        throw new ServiceError(
+          'Erreur lors de la creation de la suggestion',
+          'INTERNAL',
+          readError,
+        );
+      }
       if (existing && existing.length > 0) {
         throw new ServiceError('Cette suggestion existe déjà.', 'VALIDATION');
       }
@@ -72,6 +83,9 @@ export function createSuggestionService(supabase: SupabaseClient): SuggestionSer
       const { error } = await supabase.from('item_suggestions').insert(data);
 
       if (error) {
+        if (error.code === '23505') {
+          throw new ServiceError('Cette suggestion existe déjà.', 'CONFLICT', error);
+        }
         throw new ServiceError('Erreur lors de la creation de la suggestion', 'INTERNAL', error);
       }
     },
@@ -244,31 +258,42 @@ export async function generateAndSaveSuggestions(
     .eq('tenant_id', tenantId)
     .eq('is_available', true);
 
-  if (itemsError || !items) return 0;
+  // Audit B96: une lecture en echec n'est pas "0 suggestion generee". Le
+  // restaurateur doit lire une erreur, pas un succes vide.
+  if (itemsError || !items) {
+    logger.error('Suggestion generation: menu items read failed', {
+      tenantId,
+      error: itemsError?.message,
+    });
+    throw new ServiceError('Erreur lors du chargement des articles', 'INTERNAL');
+  }
 
   const generated = generateSuggestions(items as MenuItem[]);
   if (generated.length === 0) return 0;
 
-  // Clear existing suggestions before inserting new ones. A silent delete
-  // failure followed by a successful insert would duplicate suggestions.
-  const { error: deleteError } = await supabase
-    .from('item_suggestions')
-    .delete()
-    .eq('tenant_id', tenantId);
-  if (deleteError) throw deleteError;
-
+  // B95: une seule fonction SQL, en transaction: elle n'efface que les
+  // suggestions GENEREES (source = 'auto') et garde celles creees a la main.
+  // Avant, un DELETE de toutes les suggestions du restaurant puis un INSERT en
+  // deux requetes: les suggestions manuelles disparaissaient, et un INSERT en
+  // echec laissait le restaurant sans aucune suggestion.
   const rows = generated.map((s, i) => ({
-    tenant_id: tenantId,
     menu_item_id: s.menu_item_id,
     suggested_item_id: s.suggested_item_id,
     suggestion_type: s.suggestion_type,
-    description: s.description,
     display_order: i,
-    is_active: true,
   }));
 
-  const { error } = await supabase.from('item_suggestions').insert(rows);
-  if (error) throw error;
+  const { data, error } = await supabase.rpc('regenerate_auto_suggestions', {
+    p_tenant_id: tenantId,
+    p_rows: rows,
+  });
+  if (error) {
+    logger.error('Suggestion generation: regenerate_auto_suggestions failed', {
+      tenantId,
+      error: error.message,
+    });
+    throw new ServiceError('Erreur lors de la generation des suggestions', 'INTERNAL');
+  }
 
-  return generated.length;
+  return typeof data === 'number' ? data : generated.length;
 }

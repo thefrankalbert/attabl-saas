@@ -16,6 +16,7 @@ import type { PhaseDefinition } from './onboarding-steps';
 import type { OnboardingData } from './types';
 import { launchFixKey } from './utils/launch-errors';
 import { stepBlockingError } from './utils/step-validation';
+import { describeLaunchIssues, isZoneLaunchIssue, type LaunchIssue } from './launch-issues';
 
 export function useOnboarding() {
   const t = useTranslations('onboarding');
@@ -498,13 +499,20 @@ export function useOnboarding() {
 
       const result = (await res.json().catch(() => ({}))) as {
         error?: string;
-        details?: string[];
+        details?: LaunchIssue[];
         slug?: string;
       };
 
       if (!res.ok) {
         if (result.details && Array.isArray(result.details)) {
-          throw new Error(t(launchFixKey(result.details)));
+          // Une phrase par refus de zone, la zone nommee par son numero
+          // affiche; les autres refus disent quel ecran corriger, jamais le
+          // texte technique du serveur.
+          const zoneIssues = result.details.filter(isZoneLaunchIssue);
+          const otherIssues = result.details.filter((issue) => !isZoneLaunchIssue(issue));
+          const lines = describeLaunchIssues(zoneIssues, data.tableZones ?? [], t);
+          if (otherIssues.length > 0) lines.push(t(launchFixKey(otherIssues)));
+          throw new Error(lines.join(' '));
         }
         if (result.error === 'RESTAURANT_NAME_TAKEN') {
           throw new Error(t('nameTaken'));

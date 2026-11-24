@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { establishmentDetailsSchema } from './establishment-details.schema';
 import { phoneSchema } from './common.schema';
+import { expandShortHex } from '@/lib/utils/hex-color';
 
 /**
  * Zod schemas for tenant validation.
@@ -51,10 +52,13 @@ export const updateTenantSettingsSchema = z.object({
   primaryColor: z
     .string()
     .regex(hexColorRegex, 'Couleur primaire invalide (format: #RGB ou #RRGGBB)')
+    // B27: enregistree en #RRGGBB, seul format que lit la vitrine.
+    .transform(expandShortHex)
     .optional(),
   secondaryColor: z
     .string()
     .regex(hexColorRegex, 'Couleur secondaire invalide (format: #RGB ou #RRGGBB)')
+    .transform(expandShortHex)
     .optional(),
   address: z.string().max(200, "L'adresse ne doit pas dépasser 200 caractères").optional(),
   city: z.string().max(100, 'La ville ne doit pas dépasser 100 caractères').optional(),

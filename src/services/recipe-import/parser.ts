@@ -3,7 +3,9 @@ import { ServiceError } from '../errors';
 import {
   findHeaderRow,
   mapHeaders,
-  parseNumericCell,
+  parseQuantityCell,
+  isAmbiguousQuantityText,
+  isMalformedQuantityText,
   readFirstSheetRows,
   isEmptyRow,
   type ImportRowError,
@@ -129,7 +131,26 @@ export async function parseRecipeSheet(buffer: ArrayBuffer): Promise<ParsedRecip
       notes: cellText(rawRow.notes) !== '' ? cellText(rawRow.notes) : null,
     });
 
-    const quantity = parseNumericCell(rawRow.quantity);
+    // B83 (contre-audit 2): "1/2", "2 x 0,5", "1e3" etaient lus 12, 20,5 et 13.
+    if (isMalformedQuantityText(rawRow.quantity)) {
+      const texte = String(rawRow.quantity).trim();
+      errors.push({
+        row: rowNumber,
+        message: `Quantite illisible : "${texte}". Ecrivez un seul nombre, suivi si besoin de l'unite : 0,5 ou 0,5 kg (pas de fraction ni de calcul).`,
+      });
+      continue;
+    }
+    // B83: une ecriture ambigue ("1,500": 1500 ou 1,5 ?) est refusee.
+    if (isAmbiguousQuantityText(rawRow.quantity)) {
+      const texte = String(rawRow.quantity).trim();
+      errors.push({
+        row: rowNumber,
+        message: `Quantite ambigue : "${texte}". Ecrivez-la sans separateur de milliers : 1500 pour mille cinq cents, ou 1,5 pour un et demi.`,
+      });
+      continue;
+    }
+    // B83: regle des QUANTITES ("0,250" kg = 0,25 kg), pas celle des prix.
+    const quantity = parseQuantityCell(rawRow.quantity);
 
     // Quantity 0 = remove this ingredient from the dish (unit not needed).
     if (quantity === 0) {

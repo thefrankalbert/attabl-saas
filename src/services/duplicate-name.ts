@@ -12,6 +12,8 @@ interface DuplicateCheck {
   scope?: { column: string; value: string | null | undefined };
   /** Ignore les lignes supprimees (menu_items est en suppression douce). */
   excludeSoftDeleted?: boolean;
+  /** Renommage: la ligne modifiee ne compte pas comme doublon d'elle-meme. */
+  excludeId?: string;
 }
 
 /** Echappe % _ \ pour que ilike compare le texte tel quel (insensible a la casse). */
@@ -36,8 +38,15 @@ export async function assertNameAvailable(
     .eq('tenant_id', check.tenantId)
     .ilike('name', escapeIlike(name));
 
-  if (check.scope?.value) query = query.eq(check.scope.column, check.scope.value);
+  // Parent nul (categorie sans carte, plat sans categorie): on compare aux
+  // seules lignes sans parent, pas a tout le restaurant (audit B37).
+  if (check.scope) {
+    query = check.scope.value
+      ? query.eq(check.scope.column, check.scope.value)
+      : query.is(check.scope.column, null);
+  }
   if (check.excludeSoftDeleted) query = query.is('deleted_at', null);
+  if (check.excludeId) query = query.neq('id', check.excludeId);
 
   const { data, error } = await query.limit(1);
   if (error) {

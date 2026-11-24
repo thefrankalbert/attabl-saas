@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError } from './errors';
-import type { TableAssignment, AdminUser } from '@/types/admin.types';
+import type { TableAssignment } from '@/types/admin.types';
 
 export interface AssignmentService {
   assignServerToTable(
@@ -10,12 +10,7 @@ export interface AssignmentService {
   ): Promise<TableAssignment>;
   releaseAssignment(assignmentId: string, tenantId: string): Promise<void>;
   releaseAllForServer(tenantId: string, serverId: string): Promise<void>;
-  getActiveServerForTable(tenantId: string, tableId: string): Promise<AdminUser | null>;
   assignIfFree(tenantId: string, tableId: string, serverId: string): Promise<boolean>;
-  getActiveAssignments(
-    tenantId: string,
-    options?: { page?: number; pageSize?: number },
-  ): Promise<{ assignments: TableAssignment[]; total: number }>;
   claimOrder(orderId: string, serverId: string, tenantId: string): Promise<void>;
 }
 
@@ -89,22 +84,6 @@ export function createAssignmentService(supabase: SupabaseClient): AssignmentSer
       if (error) throw new ServiceError('Erreur lors de la liberation', 'INTERNAL');
     },
 
-    async getActiveServerForTable(tenantId: string, tableId: string): Promise<AdminUser | null> {
-      const { data, error } = await supabase
-        .from('table_assignments')
-        .select('server:admin_users(id, full_name, role)')
-        .eq('tenant_id', tenantId)
-        .eq('table_id', tableId)
-        .is('ended_at', null)
-        .order('started_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (error || !data) return null;
-      // Supabase join type gap
-      return data.server as unknown as AdminUser;
-    },
-
     /**
      * Owner decision 2026-11-14: the waiter who takes a dine-in order at the POS
      * becomes that table's server, unless the table already has one. Returns
@@ -115,8 +94,8 @@ export function createAssignmentService(supabase: SupabaseClient): AssignmentSer
      * today (the screens show the latest). Worst case of the race = that state.
      */
     async assignIfFree(tenantId: string, tableId: string, serverId: string): Promise<boolean> {
-      // Read directly: getActiveServerForTable maps an error to null ("free"),
-      // which would stack a second server on a table during a DB hiccup.
+      // A read error must not count as "free": that would stack a second
+      // server on a table during a DB hiccup.
       const { data: current, error } = await supabase
         .from('table_assignments')
         .select('id')
@@ -129,33 +108,6 @@ export function createAssignmentService(supabase: SupabaseClient): AssignmentSer
       if (current) return false;
       await service.assignServerToTable(tenantId, tableId, serverId);
       return true;
-    },
-
-    async getActiveAssignments(
-      tenantId: string,
-      options?: { page?: number; pageSize?: number },
-    ): Promise<{ assignments: TableAssignment[]; total: number }> {
-      const page = options?.page ?? 1;
-      const pageSize = options?.pageSize ?? 50;
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
-
-      const { data, error, count } = await supabase
-        .from('table_assignments')
-        .select(
-          '*, server:admin_users(id, full_name, role), table:tables(id, display_name, table_number, zone_id)',
-          { count: 'exact' },
-        )
-        .eq('tenant_id', tenantId)
-        .is('ended_at', null)
-        .order('started_at', { ascending: false })
-        .range(from, to);
-
-      if (error) throw new ServiceError('Erreur de chargement', 'INTERNAL');
-      return {
-        assignments: (data as TableAssignment[]) ?? [],
-        total: count ?? 0,
-      };
     },
 
     async claimOrder(orderId: string, serverId: string, tenantId: string): Promise<void> {
@@ -173,13 +125,21 @@ export function createAssignmentService(supabase: SupabaseClient): AssignmentSer
         .update({ server_id: serverId }, { count: 'exact' })
         .eq('id', orderId)
         .eq('tenant_id', tenantId)
+        // B9: une commande annulee ou deja reglee (payee, offerte, remboursee)
+        // ne se prend plus en charge: le rapport de performance attribue le
+        // chiffre par server_id. Meme UPDATE, donc toujours atomique.
+        .neq('status', 'cancelled')
+        .in('payment_status', ['pending', 'partial'])
         .or(`server_id.is.null,server_id.eq.${serverId}`);
 
       if (error) throw new ServiceError('Erreur lors du claim', 'INTERNAL');
       if (!count) {
-        // Race lost: another server already owns this order. CONFLICT -> HTTP 409
-        // (a retryable concurrency outcome), not VALIDATION/400 (bad input).
-        throw new ServiceError('Cette commande est deja prise en charge', 'CONFLICT');
+        // Race lost (another server owns it) or the order is closed (cancelled
+        // or settled). CONFLICT -> HTTP 409, not VALIDATION/400 (bad input).
+        throw new ServiceError(
+          'Cette commande ne peut pas etre prise en charge: un autre serveur la suit deja, ou elle est reglee ou annulee.',
+          'CONFLICT',
+        );
       }
     },
   };

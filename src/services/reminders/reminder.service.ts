@@ -64,7 +64,7 @@ export interface TickReport {
  * Ne leve jamais: une panne d'un restaurant ne bloque pas les autres.
  */
 export function createReminderService(supabase: SupabaseClient, deps: { push: ServicePush }) {
-  const { alreadySent, sendGroup } = createReminderDelivery(supabase, deps.push);
+  const { recipientsAlreadySent, sendGroup } = createReminderDelivery(supabase, deps.push);
 
   async function loadContext() {
     const { data: tenants, error } = await supabase
@@ -80,34 +80,49 @@ export function createReminderService(supabase: SupabaseClient, deps: { push: Se
     const ids = rows.map((t) => t.id);
     if (ids.length === 0) return null;
 
-    const [settingsRes, staffRes, mutesRes] = await Promise.all([
-      supabase.from('reminder_settings').select('tenant_id, config').in('tenant_id', ids),
-      supabase
-        .from('admin_users')
-        .select('id, user_id, tenant_id, role')
-        .in('tenant_id', ids)
-        .eq('is_active', true)
-        .is('deleted_at', null),
-      supabase
-        .from('reminder_preferences')
-        .select('admin_user_id, rule')
-        .in('tenant_id', ids)
-        .eq('muted', true),
+    // B88: la liste des restaurants est decoupee par lots (URL GET bornee),
+    // comme les autres listes de ce fichier: au-dela d'un certain nombre de
+    // restaurants, plus aucun rappel ne partait.
+    const [settingsRows, staffRows, muteRows] = await Promise.all([
+      inBatches(ids, async (batch) => {
+        const { data, error: e } = await supabase
+          .from('reminder_settings')
+          .select('tenant_id, config')
+          .in('tenant_id', batch);
+        if (e) throw e;
+        return data ?? [];
+      }),
+      inBatches(ids, async (batch) => {
+        const { data, error: e } = await supabase
+          .from('admin_users')
+          .select('id, user_id, tenant_id, role')
+          .in('tenant_id', batch)
+          .eq('is_active', true)
+          .is('deleted_at', null);
+        if (e) throw e;
+        return data ?? [];
+      }),
+      inBatches(ids, async (batch) => {
+        const { data, error: e } = await supabase
+          .from('reminder_preferences')
+          .select('admin_user_id, rule')
+          .in('tenant_id', batch)
+          .eq('muted', true);
+        if (e) throw e;
+        return data ?? [];
+      }),
     ]);
-    if (settingsRes.error) throw settingsRes.error;
-    if (staffRes.error) throw staffRes.error;
-    if (mutesRes.error) throw mutesRes.error;
 
     const settings = new Map<string, ReminderSettings>(
-      (settingsRes.data ?? []).map((r) => [r.tenant_id as string, parseReminderSettings(r.config)]),
+      settingsRows.map((r) => [r.tenant_id as string, parseReminderSettings(r.config)]),
     );
-    const staff: StaffMember[] = (staffRes.data ?? []).map((s) => ({
+    const staff: StaffMember[] = staffRows.map((s) => ({
       id: s.id as string,
       userId: (s.user_id as string | null) ?? null,
       tenantId: s.tenant_id as string,
       role: s.role as AdminRole,
     }));
-    const muted = new Set((mutesRes.data ?? []).map((m) => `${m.admin_user_id}:${m.rule}`));
+    const muted = new Set(muteRows.map((m) => `${m.admin_user_id}:${m.rule}`));
     return {
       tenants: new Map(rows.map((t) => [t.id, t])),
       ids,
@@ -137,28 +152,34 @@ export function createReminderService(supabase: SupabaseClient, deps: { push: Se
     const staleBefore = new Date(now.getTime() - STALE_AFTER_MIN * MINUTE).toISOString();
 
     // Trop vieux pour etre un probleme de service en cours: quitter la cloche.
-    const { data: stale, error: sErr } = await supabase
-      .from('reminders')
-      .select('id, notification_id')
-      .in('tenant_id', tenantIds)
-      .in('rule', [...SERVICE_RULES])
-      .is('resolved_at', null)
-      .not('notification_id', 'is', null)
-      .lt('created_at', staleBefore);
-    if (sErr) throw sErr;
-    if (stale?.length) {
+    const stale = await inBatches(tenantIds, async (batch) => {
+      const { data, error: sErr } = await supabase
+        .from('reminders')
+        .select('id, notification_id')
+        .in('tenant_id', batch)
+        .in('rule', [...SERVICE_RULES])
+        .is('resolved_at', null)
+        .not('notification_id', 'is', null)
+        .lt('created_at', staleBefore);
+      if (sErr) throw sErr;
+      return data ?? [];
+    });
+    if (stale.length) {
       await deleteNotifications([...new Set(stale.map((r) => r.notification_id as string))]);
     }
 
-    const { data: open, error } = await supabase
-      .from('reminders')
-      .select('id, rule, subject_key, notification_id')
-      .in('tenant_id', tenantIds)
-      .in('rule', [...SERVICE_RULES])
-      .is('resolved_at', null)
-      .gte('created_at', staleBefore);
-    if (error) throw error;
-    if (!open?.length) return 0;
+    const open = await inBatches(tenantIds, async (batch) => {
+      const { data, error } = await supabase
+        .from('reminders')
+        .select('id, rule, subject_key, notification_id')
+        .in('tenant_id', batch)
+        .in('rule', [...SERVICE_RULES])
+        .is('resolved_at', null)
+        .gte('created_at', staleBefore);
+      if (error) throw error;
+      return data ?? [];
+    });
+    if (!open.length) return 0;
 
     // Sujet = "<id commande>" ou "<id commande>@<ready_at>" (un nouveau passage a
     // "prete" est un nouveau sujet: l'ancien rappel est alors regle).
@@ -255,49 +276,54 @@ export function createReminderService(supabase: SupabaseClient, deps: { push: Se
         }
 
         const live = new Date(now.getTime() - LIVE_WINDOW_MIN * MINUTE).toISOString();
-        const [readyRes, waitingRes, assignRes] = await Promise.all([
-          supabase
-            .from('orders')
-            .select('id, tenant_id, ready_at, server_id, table_id, table_number, order_number')
-            .in('tenant_id', ctx.ids)
-            .eq('status', 'ready')
-            .gte('ready_at', live),
-          supabase
-            .from('orders')
-            .select('id, tenant_id, created_at, table_number, order_number')
-            .in('tenant_id', ctx.ids)
-            .in('status', ['pending', 'confirmed'])
-            .gte('created_at', live),
-          supabase
-            .from('table_assignments')
-            .select('table_id, server_id, started_at')
-            .in('tenant_id', ctx.ids)
-            .is('ended_at', null)
-            .order('started_at', { ascending: true }),
+        // B88: par lots de restaurants, comme le reste du fichier.
+        const [readyRows, waitingRows, assignRows] = await Promise.all([
+          inBatches(ctx.ids, async (batch) => {
+            const { data, error } = await supabase
+              .from('orders')
+              .select('id, tenant_id, ready_at, server_id, table_id, table_number, order_number')
+              .in('tenant_id', batch)
+              .eq('status', 'ready')
+              .gte('ready_at', live);
+            if (error) throw error;
+            return data ?? [];
+          }),
+          inBatches(ctx.ids, async (batch) => {
+            const { data, error } = await supabase
+              .from('orders')
+              .select('id, tenant_id, created_at, table_number, order_number')
+              .in('tenant_id', batch)
+              .in('status', ['pending', 'confirmed'])
+              .gte('created_at', live);
+            if (error) throw error;
+            return data ?? [];
+          }),
+          inBatches(ctx.ids, async (batch) => {
+            const { data, error } = await supabase
+              .from('table_assignments')
+              .select('table_id, server_id, started_at')
+              .in('tenant_id', batch)
+              .is('ended_at', null)
+              .order('started_at', { ascending: true });
+            if (error) throw error;
+            return data ?? [];
+          }),
         ]);
-        if (readyRes.error) throw readyRes.error;
-        if (waitingRes.error) throw waitingRes.error;
-        if (assignRes.error) throw assignRes.error;
 
         // Le plus recent gagne (ordre croissant: la derniere ecriture reste).
+        // Une table n'appartient qu'a un restaurant, donc a un seul lot.
         const assigned = new Map<string, string>();
-        for (const a of assignRes.data ?? [])
-          assigned.set(a.table_id as string, a.server_id as string);
+        for (const a of assignRows) assigned.set(a.table_id as string, a.server_id as string);
 
         const dues = [
           ...dueReadyNotServed(
-            (readyRes.data ?? []) as ReadyOrder[],
+            readyRows as ReadyOrder[],
             ctx.settingsOf,
             (tableId) => assigned.get(tableId) ?? null,
             ctx.staff,
             now,
           ),
-          ...dueNotStarted(
-            (waitingRes.data ?? []) as WaitingOrder[],
-            ctx.settingsOf,
-            ctx.staff,
-            now,
-          ),
+          ...dueNotStarted(waitingRows as WaitingOrder[], ctx.settingsOf, ctx.staff, now),
         ];
 
         for (const group of groupService(dues, ctx)) {
@@ -334,6 +360,18 @@ export function createReminderService(supabase: SupabaseClient, deps: { push: Se
     const locale = localeOf(tenant.default_locale);
     let sent = 0;
 
+    /** B86: destinataires qui n'ont pas encore recu ce rappel (ni coupes). */
+    const pendingRecipients = async (
+      rule: ReminderRule,
+      subject: string,
+      recipients: StaffMember[],
+    ): Promise<StaffMember[]> => {
+      const candidates = recipients.filter((r) => !ctx.muted.has(`${r.id}:${rule}`));
+      if (!candidates.length) return [];
+      const done = await recipientsAlreadySent(tenant.id, rule, subject);
+      return candidates.filter((r) => !done.has(r.id));
+    };
+
     const send = async (
       rule: ReminderRule,
       subject: string,
@@ -341,7 +379,6 @@ export function createReminderService(supabase: SupabaseClient, deps: { push: Se
       message: ReminderMessage,
     ) => {
       for (const recipient of recipients) {
-        if (ctx.muted.has(`${recipient.id}:${rule}`)) continue;
         const ok = await sendGroup(
           {
             tenant,
@@ -360,24 +397,26 @@ export function createReminderService(supabase: SupabaseClient, deps: { push: Se
     const pre = settings.rules.pre_service_stock
       ? preServiceWindow(tenant.opening_hours, tz, now)
       : null;
-    if (pre && !(await alreadySent(tenant.id, 'pre_service_stock', pre.ymd))) {
+    const preTo = pre ? await pendingRecipients('pre_service_stock', pre.ymd, managers) : [];
+    if (pre && preTo.length) {
       const facts = await loadStockFacts(supabase, tenant.id);
       if (facts.outOfStock.length || facts.low.length) {
         await send(
           'pre_service_stock',
           pre.ymd,
-          managers,
+          preTo,
           preServiceMessage(pre.openAt, facts, locale),
         );
       }
     }
 
     const week = settings.rules.weekly_coach ? weeklyCoachWindow(tz, now) : null;
-    if (week && !(await alreadySent(tenant.id, 'weekly_coach', week.ymd))) {
+    const owners = managers.filter((m) => m.role === 'owner' || m.role === 'admin');
+    const weekTo = week ? await pendingRecipients('weekly_coach', week.ymd, owners) : [];
+    if (week && weekTo.length) {
       const facts = await loadCoachFacts(supabase, tenant.id, tz, now);
       if (facts && (facts.peak || facts.dropped.length)) {
-        const owners = managers.filter((m) => m.role === 'owner' || m.role === 'admin');
-        await send('weekly_coach', week.ymd, owners, coachMessage(facts, locale));
+        await send('weekly_coach', week.ymd, weekTo, coachMessage(facts, locale));
       }
     }
     return sent;

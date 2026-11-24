@@ -315,46 +315,48 @@ describe('menu.mutations deleteMenu', () => {
 });
 
 describe('menu.mutations reorderMenus', () => {
-  it('writes the position of each menu as its rank in the list', async () => {
-    const { client, queries } = mockSupabase({
-      results: [{ error: null }, { error: null }, { error: null }],
-    });
+  // Audit B56: un seul appel atomique (`reorder_menus`), plus N ecritures
+  // paralleles dont une seule en echec laissait l'ordre a moitie applique.
+  it('ecrit tout l ordre en UN appel filtre par le restaurant', async () => {
+    const { client, rpc, from } = mockSupabase({ rpc: { data: 3, error: null } });
 
     await reorderMenus(client, 'tenant-1', ['menu-c', 'menu-a', 'menu-b']);
 
-    expect(queries).toHaveLength(3);
-    expect(queries[0]!.update).toHaveBeenCalledWith({ display_order: 0 });
-    expect(queries[1]!.update).toHaveBeenCalledWith({ display_order: 1 });
-    expect(queries[2]!.update).toHaveBeenCalledWith({ display_order: 2 });
-    expect(queries[0]!.eq).toHaveBeenCalledWith('id', 'menu-c');
-    expect(queries[2]!.eq).toHaveBeenCalledWith('id', 'menu-b');
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc).toHaveBeenCalledWith('reorder_menus', {
+      p_tenant_id: 'tenant-1',
+      p_ordered_ids: ['menu-c', 'menu-a', 'menu-b'],
+    });
+    expect(from).not.toHaveBeenCalled();
   });
 
-  it('scopes every write to the caller tenant', async () => {
-    const { client, queries } = mockSupabase({ results: [{ error: null }, { error: null }] });
-
-    await reorderMenus(client, 'tenant-1', ['menu-a', 'menu-b']);
-
-    for (const q of queries) {
-      expect(q.eq).toHaveBeenCalledWith('tenant_id', 'tenant-1');
-    }
-  });
-
-  it('reports a failure even when it is not the first write', async () => {
+  it('une carte absente (P0002) est un conflit, pas un succes', async () => {
     const { client } = mockSupabase({
-      results: [{ error: null }, { error: { message: 'row locked' } }, { error: null }],
+      rpc: { data: null, error: { message: 'reorder_rows_missing', code: 'P0002' } },
     });
 
-    await expect(
-      reorderMenus(client, 'tenant-1', ['menu-a', 'menu-b', 'menu-c']),
-    ).rejects.toMatchObject({ code: 'INTERNAL' });
+    await expect(reorderMenus(client, 'tenant-1', ['menu-a', 'menu-b'])).rejects.toMatchObject({
+      code: 'CONFLICT',
+    });
+  });
+
+  it('une autre erreur est INTERNAL, sans message Postgres brut', async () => {
+    const { client } = mockSupabase({
+      rpc: { data: null, error: { message: 'row locked', code: '55P03' } },
+    });
+
+    const err = await reorderMenus(client, 'tenant-1', ['menu-a']).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ServiceError);
+    expect((err as ServiceError).code).toBe('INTERNAL');
+    expect((err as ServiceError).message).not.toContain('row locked');
   });
 
   it('does nothing and succeeds on an empty list', async () => {
-    const { client, from } = mockSupabase();
+    const { client, from, rpc } = mockSupabase();
 
     await expect(reorderMenus(client, 'tenant-1', [])).resolves.toBeUndefined();
     expect(from).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
   });
 });
 

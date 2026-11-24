@@ -45,6 +45,7 @@ beforeEach(() => {
   updateCategory.mockResolvedValue(undefined);
 });
 
+// La carte est requise a la modification (menu_id, null = hors carte: audit B33).
 describe('nom de categorie: 100 caracteres au plus', () => {
   it('creation: un nom de 100 caracteres passe (temoin positif)', async () => {
     const { actionCreateCategory } = await import('@/app/actions/categories');
@@ -73,14 +74,18 @@ describe('nom de categorie: 100 caracteres au plus', () => {
 
   it('modification: un nom de 408 caracteres est refuse sans ecriture', async () => {
     const { actionUpdateCategory } = await import('@/app/actions/categories');
-    const r = await actionUpdateCategory(T, C, { name: 'a'.repeat(408), tenant_id: T });
+    const r = await actionUpdateCategory(T, C, {
+      name: 'a'.repeat(408),
+      tenant_id: T,
+      menu_id: null,
+    });
     expect(r.error).toBe('Maximum 100 caractères');
     expect(updateCategory).not.toHaveBeenCalled();
   });
 
   it('modification: un nom valide passe', async () => {
     const { actionUpdateCategory } = await import('@/app/actions/categories');
-    const r = await actionUpdateCategory(T, C, { name: 'Desserts', tenant_id: T });
+    const r = await actionUpdateCategory(T, C, { name: 'Desserts', tenant_id: T, menu_id: null });
     expect(r.success).toBe(true);
     expect(updateCategory).toHaveBeenCalledTimes(1);
   });
@@ -96,7 +101,7 @@ describe('nom de categorie: 100 caracteres au plus', () => {
 
   it('modification: le nom est enregistre sans les espaces autour', async () => {
     const { actionUpdateCategory } = await import('@/app/actions/categories');
-    await actionUpdateCategory(T, C, { name: '  Desserts ', tenant_id: T });
+    await actionUpdateCategory(T, C, { name: '  Desserts ', tenant_id: T, menu_id: null });
     expect(updateCategory).toHaveBeenCalledWith(C, expect.objectContaining({ name: 'Desserts' }));
   });
 });

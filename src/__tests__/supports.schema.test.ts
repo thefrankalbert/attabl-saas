@@ -64,35 +64,24 @@ describe('chevaletConfigSchema', () => {
 });
 
 describe('exportRequestSchema', () => {
-  const validRequest = {
-    config: validConfig,
-    format: 'pdf',
-    menuUrl: 'https://lejardin.attabl.com',
-    tenantSlug: 'lejardin',
-  };
-
-  it('accepts valid pdf export request', () => {
-    expect(exportRequestSchema.safeParse(validRequest).success).toBe(true);
+  it('accepts a request carrying the configuration', () => {
+    expect(exportRequestSchema.safeParse({ config: validConfig }).success).toBe(true);
   });
 
-  it('accepts valid png export request', () => {
-    const result = exportRequestSchema.safeParse({ ...validRequest, format: 'png' });
+  it('rejects a request without configuration', () => {
+    expect(exportRequestSchema.safeParse({}).success).toBe(false);
+  });
+
+  // B29: la route ne produit qu'un PDF; `format`, `menuUrl` et `tenantSlug`
+  // etaient exiges puis ignores (`format: 'png'` rendait un PDF).
+  it('ne garde que la configuration', () => {
+    const result = exportRequestSchema.safeParse({
+      config: validConfig,
+      format: 'png',
+      menuUrl: 'https://lejardin.attabl.com',
+      tenantSlug: 'lejardin',
+    });
     expect(result.success).toBe(true);
-  });
-
-  it('rejects invalid format', () => {
-    const result = exportRequestSchema.safeParse({ ...validRequest, format: 'svg' });
-    expect(result.success).toBe(false);
-  });
-
-  it('defaults format to pdf when omitted', () => {
-    const withoutFormat = {
-      config: validRequest.config,
-      menuUrl: validRequest.menuUrl,
-      tenantSlug: validRequest.tenantSlug,
-    };
-    const result = exportRequestSchema.safeParse(withoutFormat);
-    expect(result.success).toBe(true);
-    if (result.success) expect(result.data.format).toBe('pdf');
+    if (result.success) expect(Object.keys(result.data)).toEqual(['config']);
   });
 });

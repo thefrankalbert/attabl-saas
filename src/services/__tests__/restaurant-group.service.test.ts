@@ -13,13 +13,11 @@ function createMockSupabase(
   const from = vi.fn((table: string) => ({
     select: vi.fn().mockReturnValue({
       eq: vi.fn().mockReturnValue({
-        single: vi
+        maybeSingle: vi
           .fn()
           .mockResolvedValue(
-            table === 'restaurant_groups'
-              ? options.groupExists
-                ? { data: { id: 'group-123', owner_user_id: 'user-abc' }, error: null }
-                : { data: null, error: { code: 'PGRST116' } }
+            table === 'restaurant_groups' && options.groupExists
+              ? { data: { id: 'group-123', owner_user_id: 'user-abc' }, error: null }
               : { data: null, error: null },
           ),
       }),
@@ -70,10 +68,57 @@ describe('restaurant-group.service', () => {
       expect(supabase.from).toHaveBeenCalledWith('restaurant_groups');
     });
 
-    it('throws on insert error', async () => {
+    it('throws on insert error, sans renvoyer le message Postgres (B66)', async () => {
       const supabase = createMockSupabase({ groupExists: false, groupInsertError: true });
       const service = createRestaurantGroupService(supabase);
-      await expect(service.getOrCreateGroup('user-abc')).rejects.toThrow('Insert failed');
+      const err = await service.getOrCreateGroup('user-abc').catch((e: unknown) => e);
+      expect(err).toMatchObject({ code: 'INTERNAL' });
+      expect((err as ServiceError).message).not.toContain('Insert failed');
+    });
+
+    // B89: deux ajouts simultanes d'un proprietaire sans groupe.
+    let inserts = 0;
+    function raceClient(readError: unknown = null) {
+      let reads = 0;
+      inserts = 0;
+      const from = vi.fn(() => ({
+        select: () => ({
+          eq: () => ({
+            maybeSingle: async () =>
+              readError
+                ? { data: null, error: readError }
+                : reads++ === 0
+                  ? { data: null, error: null }
+                  : { data: { id: 'group-gagnant' }, error: null },
+          }),
+        }),
+        insert: () => ({
+          select: () => ({
+            single: async () => {
+              inserts++;
+              return {
+                data: null,
+                error: { code: '23505', message: 'duplicate key restaurant_groups_owner_unique' },
+              };
+            },
+          }),
+        }),
+      }));
+      return { from } as unknown as import('@supabase/supabase-js').SupabaseClient;
+    }
+
+    it('B89: le second ajout simultane reprend le groupe cree par le premier', async () => {
+      const group = await createRestaurantGroupService(raceClient()).getOrCreateGroup('user-abc');
+      expect(group).toEqual({ id: 'group-gagnant' });
+    });
+
+    it('B89: une erreur de lecture du groupe est une panne, pas "aucun groupe"', async () => {
+      await expect(
+        createRestaurantGroupService(raceClient({ code: '57014' })).getOrCreateGroup('user-abc'),
+      ).rejects.toMatchObject({ code: 'INTERNAL' });
+      // Contre-audit 1: une lecture en erreur ne vaut pas "aucun groupe", donc
+      // aucune creation n'est tentee.
+      expect(inserts).toBe(0);
     });
   });
 

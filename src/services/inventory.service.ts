@@ -20,7 +20,6 @@ import type {
   AdjustStockInput,
   RecordLossInput,
   LossByReason,
-  LedgerDriftRow,
   MovementType,
   ReasonCode,
   StockCount,
@@ -62,7 +61,6 @@ export function mapStockMovementRow(row: Record<string, unknown>): StockMovement
 }
 
 export interface InventoryService {
-  getIngredients(tenantId: string): Promise<Ingredient[]>;
   createIngredient(tenantId: string, input: CreateIngredientInput): Promise<Ingredient>;
   updateIngredient(
     ingredientId: string,
@@ -81,13 +79,7 @@ export interface InventoryService {
     filters?: { startDate?: string; endDate?: string },
   ): Promise<LossByReason[]>;
   setOpeningStock(tenantId: string, ingredientId: string, quantity: number): Promise<void>;
-  verifyLedger(tenantId: string): Promise<LedgerDriftRow[]>;
-  reconcileLedger(tenantId: string): Promise<number>;
   getStockStatus(tenantId: string): Promise<StockStatus[]>;
-  getStockMovements(
-    tenantId: string,
-    filters?: { ingredientId?: string; startDate?: string; endDate?: string },
-  ): Promise<StockMovement[]>;
   getRecipesOverview(tenantId: string): Promise<{
     menuItems: {
       id: string;
@@ -163,20 +155,6 @@ async function applyOpeningStock(
 export function createInventoryService(supabase: SupabaseClient): InventoryService {
   return {
     // --- Ingredients --------------------------------------
-
-    async getIngredients(tenantId: string): Promise<Ingredient[]> {
-      const { data, error } = await supabase
-        .from('ingredients')
-        .select(
-          'id, tenant_id, name, unit, current_stock, min_stock_alert, cost_per_unit, category, is_active, purchase_unit, units_per_purchase, created_at, updated_at',
-        )
-        .eq('tenant_id', tenantId)
-        .eq('is_active', true)
-        .order('name');
-
-      if (error) throw new ServiceError('Erreur chargement ingrédients', 'INTERNAL', error);
-      return (data as Ingredient[]) || [];
-    },
 
     async createIngredient(tenantId: string, input: CreateIngredientInput): Promise<Ingredient> {
       // The row is ALWAYS born at 0: an opening quantity goes through the
@@ -293,10 +271,14 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
 
     async getRecipesForItem(menuItemId: string, tenantId: string): Promise<Recipe[]> {
       // BUG-34: Validate menu_item_id belongs to this tenant before querying recipes
-      const { data: menuItem } = await withActiveMenuItems(
+      const { data: menuItem, error: menuItemError } = await withActiveMenuItems(
         supabase.from('menu_items').select('id').eq('id', menuItemId).eq('tenant_id', tenantId),
       ).maybeSingle();
 
+      // Audit B52: une lecture en echec n'est pas "article introuvable".
+      if (menuItemError) {
+        throw new ServiceError('Erreur chargement article', 'INTERNAL', menuItemError);
+      }
       if (!menuItem) {
         throw new ServiceError('Article non trouvé dans ce restaurant', 'NOT_FOUND');
       }
@@ -312,10 +294,14 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
     },
 
     async setRecipe(tenantId: string, menuItemId: string, lines: RecipeLineInput[]): Promise<void> {
-      const { data: menuItem } = await withActiveMenuItems(
+      const { data: menuItem, error: menuItemError } = await withActiveMenuItems(
         supabase.from('menu_items').select('id').eq('id', menuItemId).eq('tenant_id', tenantId),
       ).maybeSingle();
 
+      // Audit B52: une lecture en echec n'est pas "article introuvable".
+      if (menuItemError) {
+        throw new ServiceError('Erreur chargement article', 'INTERNAL', menuItemError);
+      }
       if (!menuItem) {
         throw new ServiceError('Article non trouvé dans ce restaurant', 'NOT_FOUND');
       }
@@ -590,33 +576,10 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
       return (data as LossByReason[]) || [];
     },
 
+    // Stock d'ouverture saisi a l'ecran: REMPLACE le stock (ecart ecrit en
+    // mouvement `opening`), via le meme chemin que la creation.
     async setOpeningStock(tenantId: string, ingredientId: string, quantity: number): Promise<void> {
       await applyOpeningStock(supabase, tenantId, ingredientId, quantity);
-    },
-
-    async verifyLedger(tenantId: string): Promise<LedgerDriftRow[]> {
-      const { data, error } = await supabase.rpc('verify_stock_ledger', {
-        p_tenant_id: tenantId,
-      });
-
-      if (error) throw new ServiceError('Erreur verification ledger', 'INTERNAL', error);
-      return (data as LedgerDriftRow[]) || [];
-    },
-
-    async reconcileLedger(tenantId: string): Promise<number> {
-      // Resolve the acting user in-service and stamp it on the reconciliation
-      // movements (anti-vol traceability), mirroring setOpeningStock.
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      const { data, error } = await supabase.rpc('reconcile_stock_ledger', {
-        p_tenant_id: tenantId,
-        p_created_by: user?.id || undefined,
-      });
-
-      if (error) throw new ServiceError('Erreur reconciliation ledger', 'INTERNAL', error);
-      return (data as number) ?? 0;
     },
 
     // --- Stock Status & Movements -------------------------
@@ -628,33 +591,6 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
 
       if (error) throw new ServiceError('Erreur statut stock', 'INTERNAL', error);
       return (data as StockStatus[]) || [];
-    },
-
-    async getStockMovements(
-      tenantId: string,
-      filters?: { ingredientId?: string; startDate?: string; endDate?: string },
-    ): Promise<StockMovement[]> {
-      let query = supabase
-        .from('stock_movements')
-        .select('*, ingredient:ingredients(name, unit), supplier:suppliers(id, name)')
-        .eq('tenant_id', tenantId)
-        .order('created_at', { ascending: false })
-        .limit(200);
-
-      if (filters?.ingredientId) {
-        query = query.eq('ingredient_id', filters.ingredientId);
-      }
-      if (filters?.startDate) {
-        query = query.gte('created_at', filters.startDate);
-      }
-      if (filters?.endDate) {
-        query = query.lte('created_at', filters.endDate);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw new ServiceError('Erreur historique mouvements', 'INTERNAL', error);
-      return (data as StockMovement[]) || [];
     },
 
     /**

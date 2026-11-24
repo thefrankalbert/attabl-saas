@@ -35,7 +35,7 @@ export function DeleteCategoryDialog({ vm }: Props) {
           <AlertDialogCancel>{tc('cancel')}</AlertDialogCancel>
           <AlertDialogAction
             onClick={confirmDeleteCategory}
-            className="bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:opacity-90"
+            className="bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:bg-[var(--destructive)] hover:opacity-90"
           >
             {tc('delete')}
           </AlertDialogAction>

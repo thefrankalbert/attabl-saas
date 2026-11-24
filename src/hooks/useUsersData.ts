@@ -118,6 +118,7 @@ export function useUsersData({
 }: UseUsersDataParams): UseUsersDataReturn {
   const t = useTranslations('users');
   const tc = useTranslations('common');
+  const te = useTranslations('errors');
   const { toast } = useToast();
 
   const [users, setUsers] = useState<AdminUser[]>(initialUsers);
@@ -188,6 +189,8 @@ export function useUsersData({
       });
 
       if (!response.ok) {
+        // Limite de debit: message traduit, pas le texte brut du serveur.
+        if (response.status === 429) throw new Error(te('rateLimited'));
         const errorData: unknown = await response.json();
         const errorMessage =
           errorData && typeof errorData === 'object' && 'error' in errorData
@@ -240,7 +243,7 @@ export function useUsersData({
       });
 
       if (!response.ok) {
-        throw new Error(tc('unknownError'));
+        throw new Error(response.status === 429 ? te('rateLimited') : tc('unknownError'));
       }
 
       // Meme regle que l'invitation: ne pas annoncer un envoi qui n'a pas eu lieu.
@@ -270,7 +273,7 @@ export function useUsersData({
       });
 
       if (!response.ok) {
-        throw new Error(tc('unknownError'));
+        throw new Error(response.status === 429 ? te('rateLimited') : tc('unknownError'));
       }
 
       toast({ title: t('invitationCancelled') });

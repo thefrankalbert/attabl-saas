@@ -7,16 +7,19 @@ import { logger } from '@/lib/logger';
 import { menuSearchLimiter, getClientIp, grouperAdresse } from '@/lib/rate-limit';
 import { TENANT_LOCK_COLUMNS } from '@/lib/billing/tenant-lock';
 import { storefrontAccess } from '@/lib/billing/storefront-access';
-import type { MenuItem } from '@/types/admin.types';
+import { menuSearchQuerySchema } from '@/lib/validations/menu-search.schema';
+import { createMenuSearchService } from '@/services/menu-search.service';
 
 const FALLBACK_ERRORS = {
   rateLimited: 'Trop de requetes. Reessayez plus tard.',
   tenantNotIdentified: 'Tenant non identifie',
   serverError: 'Erreur serveur',
+  invalidQuery: 'Recherche invalide',
 };
 
-// Lazy search corpus: full menu items (limit 150) loaded on first search open
-// instead of during the home page server render. Tenant derived from the
+// Recherche convive: `?q=<terme>` cherche dans TOUTE la carte du restaurant
+// (B4: avant, les 150 premiers plats etaient servis et filtres dans le
+// navigateur, un plat au-dela n'etait jamais trouve). Tenant derived from the
 // x-tenant-slug header injected by the middleware, never from a client param.
 export async function GET(request: Request) {
   try {
@@ -49,6 +52,13 @@ export async function GET(request: Request) {
       );
     }
 
+    const parsed = menuSearchQuerySchema.safeParse({
+      q: new URL(request.url).searchParams.get('q') ?? '',
+    });
+    if (!parsed.success) {
+      return NextResponse.json({ error: FALLBACK_ERRORS.invalidQuery }, { status: 400 });
+    }
+
     const slugDepuisEntete = readTenantSlug(headersList);
     const tenantSlug = slugDepuisEntete.slug;
     if (!tenantSlug) {
@@ -58,7 +68,7 @@ export async function GET(request: Request) {
     const supabase = await createClient();
 
     // B-2: cette route etait la QUATRIEME surface qui sert la carte d'un tenant,
-    // et la seule des quatre a ne lire que `is_active`. Elle sert jusqu'a 150
+    // et la seule des quatre a ne lire que `is_active`. Elle sert des
     // articles avec leurs prix: elle doit refuser exactement ce que refusent la
     // vitrine, la prise de commande et le tableau de bord. La condition est
     // celle de `validateTenant` (src/services/order/order-queries.ts):
@@ -93,30 +103,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: FALLBACK_ERRORS.tenantNotIdentified }, { status: 400 });
     }
 
-    const { data, error } = await supabase
-      .from('menu_items')
-      .select(
-        `
-        id, category_id, name, name_en, description, description_en,
-        price, prices, image_url, is_available, is_featured, is_vegetarian, is_spicy, allergens, calories, rating, rating_count, created_at,
-        category:categories(id, name, name_en),
-        options:item_options(id, menu_item_id, name_fr, name_en, is_default, display_order, created_at),
-        price_variants:item_price_variants(id, menu_item_id, variant_name_fr, variant_name_en, price, prices, display_order:sort_order, created_at),
-        modifiers:item_modifiers(id, menu_item_id, name, name_en, price, is_available, display_order, created_at)
-      `,
-      )
-      .eq('tenant_id', tenant.id)
-      .is('deleted_at', null)
-      .eq('is_available', true)
-      .order('name', { ascending: true })
-      .limit(150);
-
-    if (error) {
+    try {
+      const items = await createMenuSearchService(supabase).search(tenant.id, parsed.data.q);
+      return NextResponse.json({ items });
+    } catch (error) {
       logger.error('Menu search API query failed', error);
       return NextResponse.json({ error: FALLBACK_ERRORS.serverError }, { status: 500 });
     }
-
-    return NextResponse.json({ items: (data || []) as unknown as MenuItem[] });
   } catch (error) {
     logger.error('Menu search API error', error);
     return NextResponse.json({ error: FALLBACK_ERRORS.serverError }, { status: 500 });

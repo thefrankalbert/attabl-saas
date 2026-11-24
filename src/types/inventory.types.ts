@@ -103,16 +103,6 @@ export interface StockStatus {
   is_low: boolean;
 }
 
-// One drifting ingredient reported by verify_stock_ledger: the cache
-// (current_stock) no longer equals SUM of signed ledger deltas.
-export interface LedgerDriftRow {
-  ingredient_id: string;
-  name: string;
-  current_stock: number;
-  ledger_sum: number;
-  drift: number;
-}
-
 // One row of the 'sorties par employe' anti-theft report
 // (get_staff_stock_report): stock movements aggregated per operator.
 export interface StaffStockReportRow {

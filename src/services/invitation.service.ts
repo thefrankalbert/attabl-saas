@@ -36,6 +36,9 @@ interface AcceptInvitationInput {
   authenticatedUserId?: string;
 }
 
+const DUPLICATE_PENDING_MESSAGE =
+  'Une invitation est deja en attente pour cet email. Renvoyez-la ou annulez-la avant d en creer une nouvelle.';
+
 function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
 }
@@ -43,6 +46,26 @@ function normalizeEmail(value: string): string {
 // Reduced from 72h to 24h per security audit - shorter window limits exposure
 // if the token leaks via browser history, CDN logs, or Referer headers.
 const TOKEN_EXPIRY_HOURS = 24;
+
+/**
+ * Plafond de lecture de l'equipe d'un restaurant (bien au-dessus des forfaits),
+ * egal au plafond `max_rows` que le depot suppose a PostgREST (1000, voir
+ * menu-search.service.ts). La verification ne s'y fie pas: elle compare le
+ * nombre exact de lignes au nombre recu (contre-audit 4).
+ */
+export const MAX_TEAM_ROWS = 1000;
+
+/**
+ * Code metier (B54, decision du proprietaire du 2026-11-24): l'adresse a ete
+ * RETIREE de ce restaurant (ligne `admin_users` gardee avec `deleted_at`). Une
+ * invitation ne la reactive jamais: elle est refusee, a la creation comme a
+ * l'acceptation. Renvoye au client dans le champ `code` des routes.
+ */
+export const MEMBER_REMOVED = 'MEMBER_REMOVED';
+
+function memberRemovedError(message: string, cause?: unknown): ServiceError {
+  return new ServiceError(message, 'CONFLICT', { reason: MEMBER_REMOVED, cause });
+}
 
 function generateToken(): string {
   return randomBytes(32).toString('hex');
@@ -68,6 +91,55 @@ export interface InvitationService {
 }
 
 export function createInvitationService(supabase: SupabaseClient): InvitationService {
+  /**
+   * Etat de l'adresse dans CE restaurant: membre vivant (`deleted_at` nul, actif
+   * ou desactive), membre retire (`deleted_at` pose), ou inconnue.
+   */
+  async function membershipState(
+    tenantId: string,
+    email: string,
+  ): Promise<'none' | 'active' | 'removed'> {
+    // Comparaison sur l'adresse NORMALISEE des deux cotes (minuscules, sans
+    // espaces autour), en memoire: aucun motif, donc aucun joker a echapper
+    // (contre-audit 2). La colonne garde la casse saisie a l'inscription
+    // ("Jean@X.com"); la normaliser en base demanderait une migration et
+    // toucherait l'index unique (tenant_id, email). L'equipe d'un restaurant
+    // est petite: lire ses adresses est borne et sur.
+    const target = normalizeEmail(email);
+    const { data, error, count } = await supabase
+      .from('admin_users')
+      .select('id, email, deleted_at', { count: 'exact' })
+      .eq('tenant_id', tenantId)
+      .limit(MAX_TEAM_ROWS);
+    if (error) {
+      throw new ServiceError('Verification de l equipe impossible', 'INTERNAL', error);
+    }
+    // Contre-audit 3 et 4: une lecture partielle ne permet pas de conclure "non
+    // retire". On ne suppose aucun plafond: le nombre EXACT de lignes est
+    // compare au nombre recu. Ecart, nombre inconnu ou limite atteinte: refus
+    // journalise.
+    const received = (data ?? []).length;
+    if (typeof count !== 'number' || count !== received || received >= MAX_TEAM_ROWS) {
+      logger.error('Invitation: equipe lue en partie, membre retire non verifiable', {
+        tenantId,
+        total: count,
+        recues: received,
+      });
+      throw new ServiceError(
+        "Impossible de verifier l'equipe de ce restaurant. Contactez le support ATTABL.",
+        'INTERNAL',
+      );
+    }
+    const rows = (
+      (data ?? []) as Array<{ id: string; email: string | null; deleted_at?: string | null }>
+    ).filter((row) => normalizeEmail(row.email ?? '') === target);
+    if (rows.some((row) => row.deleted_at == null)) return 'active';
+    return rows.length > 0 ? 'removed' : 'none';
+  }
+
+  const REMOVED_AT_ACCEPT =
+    'Votre compte a ete retire de ce restaurant. Contactez le support ATTABL.';
+
   return {
     /**
      * Refuse d'inviter une adresse qui est DEJA membre de ce restaurant (audit
@@ -77,25 +149,24 @@ export function createInvitationService(supabase: SupabaseClient): InvitationSer
      * Ne revele rien qu'on ne sache deja: l'invitant voit la liste de SON equipe.
      * La regle anti-enumeration de createInvitation (meme reponse qu'un compte
      * existe ou non AILLEURS) est intacte, cette lecture ne porte que sur ce
-     * restaurant. Un membre retire (deleted_at) peut etre reinvite.
+     * restaurant.
+     *
+     * B54 (decision du proprietaire du 2026-11-24): un membre RETIRE
+     * (deleted_at) n'est pas reinvitable. Refus des la creation, pour que
+     * l'invitant le sache tout de suite. La lecture ne porte que sur CE
+     * restaurant: elle ne dit rien d'une adresse connue ailleurs.
      */
     async assertNotAlreadyMember(tenantId: string, email: string): Promise<void> {
-      const candidates = Array.from(new Set([normalizeEmail(email), email.trim()]));
-      const { data, error } = await supabase
-        .from('admin_users')
-        .select('id')
-        .eq('tenant_id', tenantId)
-        .in('email', candidates)
-        .is('deleted_at', null)
-        .limit(1);
-
-      if (error) {
-        throw new ServiceError('Verification de l equipe impossible', 'INTERNAL', error);
-      }
-      if (data && data.length > 0) {
+      const state = await membershipState(tenantId, email);
+      if (state === 'active') {
         throw new ServiceError(
           'Cette personne fait deja partie de votre equipe. Modifiez son role depuis la liste des membres.',
           'VALIDATION',
+        );
+      }
+      if (state === 'removed') {
+        throw memberRemovedError(
+          "Cette adresse a ete retiree de votre equipe et ne peut pas etre reinvitee. Contactez le support ATTABL si c'est une erreur.",
         );
       }
     },
@@ -120,19 +191,56 @@ export function createInvitationService(supabase: SupabaseClient): InvitationSer
       // token UNIQUE constraint does not prevent multiple pending rows for one
       // email, which clutters the pending list and confuses the invitee about
       // which link is valid. To re-send, use the resend action (fresh token).
-      const { data: existingPending } = await supabase
+      //
+      // B53: cette lecture ne fait que donner le message tot. Le verrou est
+      // l'index unique partiel (tenant_id, lower(email)) WHERE status='pending'
+      // (migration 20261124180000): deux envois simultanes passaient tous deux
+      // la lecture, et `maybeSingle` sur deux lignes rendait une erreur non lue
+      // qui laissait passer tous les doublons suivants.
+      //
+      // Une invitation `pending` dont la date est passee n'est marquee `expired`
+      // qu'a sa lecture (validateToken, liste). Sans ce menage, elle bloquait
+      // pour toujours une nouvelle invitation a la meme adresse (l'index unique
+      // ne voit que le statut). Elle passe donc d'abord a `expired`.
+      const { count: expiredCount, error: expireError } = await supabase
+        .from('invitations')
+        .update({ status: 'expired' }, { count: 'exact' })
+        .eq('tenant_id', input.tenantId)
+        .eq('email', input.email)
+        .eq('status', 'pending')
+        .lt('expires_at', new Date().toISOString());
+      if (expireError) {
+        logger.error('createInvitation: expiration des invitations perimees impossible', {
+          tenantId: input.tenantId,
+          error: expireError,
+        });
+        throw new ServiceError('Lecture des invitations impossible', 'INTERNAL', expireError);
+      }
+      if (expiredCount) {
+        logger.info('createInvitation: invitation perimee marquee expiree', {
+          tenantId: input.tenantId,
+          expiredCount,
+        });
+      }
+
+      const { data: existingPending, error: pendingError } = await supabase
         .from('invitations')
         .select('id')
         .eq('tenant_id', input.tenantId)
         .eq('email', input.email)
         .eq('status', 'pending')
+        .limit(1)
         .maybeSingle();
+      if (pendingError) {
+        logger.error('createInvitation: lecture des invitations en attente impossible', {
+          tenantId: input.tenantId,
+          error: pendingError,
+        });
+        throw new ServiceError('Lecture des invitations impossible', 'INTERNAL', pendingError);
+      }
 
       if (existingPending) {
-        throw new ServiceError(
-          'Une invitation est deja en attente pour cet email. Renvoyez-la ou annulez-la avant d en creer une nouvelle.',
-          'VALIDATION',
-        );
+        throw new ServiceError(DUPLICATE_PENDING_MESSAGE, 'VALIDATION');
       }
 
       // New user - create invitation with token
@@ -156,12 +264,17 @@ export function createInvitationService(supabase: SupabaseClient): InvitationSer
         )
         .single();
 
+      // B53: l'index unique a tranche la course, meme message que la lecture.
+      if (error?.code === '23505') {
+        throw new ServiceError(DUPLICATE_PENDING_MESSAGE, 'VALIDATION', error);
+      }
       if (error || !invitation) {
-        throw new ServiceError(
-          `Erreur creation invitation: ${error?.message || 'Donnees manquantes'}`,
-          'INTERNAL',
+        // B66: le message Postgres reste au journal, jamais dans la reponse.
+        logger.error('createInvitation: insertion impossible', {
+          tenantId: input.tenantId,
           error,
-        );
+        });
+        throw new ServiceError("Erreur lors de la creation de l'invitation", 'INTERNAL', error);
       }
 
       return invitation as Invitation;
@@ -200,6 +313,12 @@ export function createInvitationService(supabase: SupabaseClient): InvitationSer
 
     async acceptInvitation(input: AcceptInvitationInput): Promise<{ tenantSlug: string }> {
       const invitation = await this.validateToken(input.token);
+
+      // B54: retire de ce restaurant depuis l'envoi de l'invitation -> refus
+      // AVANT toute creation de compte. Rien ne reactive une ligne retiree.
+      if ((await membershipState(invitation.tenant_id, invitation.email)) === 'removed') {
+        throw memberRemovedError(REMOVED_AT_ACCEPT);
+      }
 
       let userId: string;
 
@@ -358,6 +477,15 @@ export function createInvitationService(supabase: SupabaseClient): InvitationSer
         if (msg.includes('INVITATION_NOT_FOUND')) {
           throw new ServiceError('Invitation introuvable ou deja utilisee', 'NOT_FOUND', error);
         }
+        // B54: retrait survenu entre la verification ci-dessus et l'adhesion.
+        // L'INSERT de la procedure heurte l'index unique (tenant_id, email): on
+        // relit pour dire la vraie raison au lieu d'une erreur technique.
+        if (
+          error.code === '23505' &&
+          (await membershipState(invitation.tenant_id, invitation.email)) === 'removed'
+        ) {
+          throw memberRemovedError(REMOVED_AT_ACCEPT, error);
+        }
         // SECURITE (reserve S2'): meme oracle que ci-dessus - le texte complet
         // d'une violation de contrainte Postgres (nom d'index, colonne) etait
         // renvoye au client. Generique au client, detail cote serveur.
@@ -465,7 +593,9 @@ export function createInvitationService(supabase: SupabaseClient): InvitationSer
         .range(from, to);
 
       if (error) {
-        throw new ServiceError(`Erreur chargement: ${error.message}`, 'INTERNAL', error);
+        // B66: la route GET renvoie error.message; le detail reste dans `details`
+        // (journalise par la route), jamais dans le texte.
+        throw new ServiceError('Erreur lors du chargement des invitations', 'INTERNAL', error);
       }
 
       const now = new Date();

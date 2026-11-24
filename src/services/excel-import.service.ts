@@ -13,7 +13,10 @@ import type { ImportResult, ImportRowError, ParsedRow } from './excel-import/typ
 // --- Service --------------------------------------------------
 
 export interface ExcelImportService {
-  parseExcel(buffer: ArrayBuffer): Promise<{ rows: ParsedRow[]; errors: ImportRowError[] }>;
+  parseExcel(
+    buffer: ArrayBuffer,
+    currency?: string | null,
+  ): Promise<{ rows: ParsedRow[]; errors: ImportRowError[] }>;
   groupByCategory(
     rows: ParsedRow[],
   ): Map<string, { categoryEn: string | null; items: ParsedRow[] }>;
@@ -28,6 +31,8 @@ export interface ExcelImportService {
     menuId: string,
     buffer: ArrayBuffer,
     options?: MenuBulkImportOptions,
+    /** Devise du restaurant: regle de lecture des prix en texte (B72). */
+    currency?: string | null,
   ): Promise<ImportResult>;
   generateTemplate(): Promise<Buffer>;
 }
@@ -48,8 +53,9 @@ export function createExcelImportService(supabase: SupabaseClient): ExcelImportS
      */
     async parseExcel(
       buffer: ArrayBuffer,
+      currency?: string | null,
     ): Promise<{ rows: ParsedRow[]; errors: ImportRowError[] }> {
-      return parseExcelBuffer(buffer);
+      return parseExcelBuffer(buffer, currency);
     },
 
     /**
@@ -145,10 +151,11 @@ export function createExcelImportService(supabase: SupabaseClient): ExcelImportS
       menuId: string,
       buffer: ArrayBuffer,
       options: MenuBulkImportOptions = {},
+      currency?: string | null,
     ): Promise<ImportResult> {
       logger.info('Starting Excel menu import', { tenantId, menuId });
 
-      const { rows, errors: parseErrors } = await this.parseExcel(buffer);
+      const { rows, errors: parseErrors } = await this.parseExcel(buffer, currency);
 
       if (rows.length === 0 && parseErrors.length > 0) {
         return {

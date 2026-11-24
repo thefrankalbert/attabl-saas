@@ -2,6 +2,21 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError, isTenantNameConflictError } from './errors';
 import { logger } from '@/lib/logger';
 import type { OnboardingStepData, OnboardingDraft } from './onboarding.types';
+import { onboardingStep1Schema, onboardingStep3Schema } from '@/lib/validations/onboarding.schema';
+import type { z } from 'zod';
+
+/**
+ * B10/B59: une etape n'ecrit dans `tenants` que des valeurs validees par son
+ * schema (couleur hexa, logo de l'application, longueurs bornees). Une valeur
+ * illisible est refusee, jamais enregistree.
+ */
+function validateStep<T>(schema: z.ZodType<T>, data: OnboardingStepData): T {
+  const parsed = schema.safeParse(data);
+  if (!parsed.success) {
+    throw new ServiceError(parsed.error.issues[0]?.message ?? 'Donnees invalides', 'VALIDATION');
+  }
+  return parsed.data;
+}
 
 /**
  * Saves progress for a specific onboarding step.
@@ -18,22 +33,24 @@ export async function saveOnboardingStep(
   const tenantUpdate: Record<string, unknown> = {};
 
   if (step === 1) {
-    if (data.tenantName) {
-      tenantUpdate.name = data.tenantName;
+    const valid = validateStep(onboardingStep1Schema, data);
+    if (valid.tenantName) {
+      tenantUpdate.name = valid.tenantName;
     }
-    tenantUpdate.establishment_type = data.establishmentType;
-    tenantUpdate.address = data.address;
-    tenantUpdate.city = data.city;
-    tenantUpdate.country = data.country;
-    tenantUpdate.phone = data.phone;
-    tenantUpdate.table_count = data.tableCount;
+    tenantUpdate.establishment_type = valid.establishmentType;
+    tenantUpdate.address = valid.address;
+    tenantUpdate.city = valid.city;
+    tenantUpdate.country = valid.country;
+    tenantUpdate.phone = valid.phone;
+    tenantUpdate.table_count = valid.tableCount;
   }
   // Step 2 (tables) is stored in draft, not tenant fields
   else if (step === 3) {
-    tenantUpdate.logo_url = data.logoUrl;
-    tenantUpdate.primary_color = data.primaryColor;
-    tenantUpdate.secondary_color = data.secondaryColor;
-    tenantUpdate.description = data.description;
+    const valid = validateStep(onboardingStep3Schema, data);
+    tenantUpdate.logo_url = valid.logoUrl;
+    tenantUpdate.primary_color = valid.primaryColor;
+    tenantUpdate.secondary_color = valid.secondaryColor;
+    tenantUpdate.description = valid.description;
   }
   // Step 4 (menu) is stored in draft
   // Step 5 uses completeOnboarding()

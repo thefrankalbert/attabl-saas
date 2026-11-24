@@ -15,11 +15,17 @@ export function escapeHtml(str: string): string {
     .replace(/'/g, '&#039;');
 }
 
+/**
+ * B43: seule porte d'encodage d'un lien (appelee par `cta`). `URL.href`
+ * encode ce qui doit l'etre (espaces, guillemets, chevrons) sans toucher a un
+ * `%XX` deja present: `encodeURI` le transformait en `%25XX`, et un lien passe
+ * deux fois (modele puis `cta`) arrivait casse.
+ */
 export function sanitizeUrl(url: string): string {
   try {
     const parsed = new URL(url);
     if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
-      return encodeURI(url);
+      return parsed.href;
     }
     return '';
   } catch {
@@ -51,10 +57,7 @@ export function card(content: string): string {
 }
 
 export function cta(url: string, label: string): string {
-  const safe = sanitizeUrl(url);
+  // Echappement HTML de l'attribut (un `&` du lien devient `&amp;`).
+  const safe = escapeHtml(sanitizeUrl(url));
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="padding:24px 0 0;"><a href="${safe}" style="display:inline-block;background:#111827;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px;">${escapeHtml(label)}</a></td></tr></table>`;
-}
-
-export function formatCurrency(amount: number, currency: string): string {
-  return `${amount.toFixed(2)} ${escapeHtml(currency)}`;
 }

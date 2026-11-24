@@ -167,7 +167,8 @@ export async function POST(request: Request) {
         );
       }
 
-      const body: unknown = await request.json();
+      // B3: un corps illisible est une requete invalide (400), pas une panne (500).
+      const body: unknown = await request.json().catch(() => null);
       const parsed = createInvitationSchema.safeParse(body);
       if (!parsed.success) {
         return NextResponse.json(
@@ -363,14 +364,16 @@ export async function POST(request: Request) {
       );
     } catch (error) {
       if (error instanceof ServiceError) {
-        if (error.details) {
+        // B54: refus metier (membre retire): code dedie, pas une panne a journaliser.
+        const reason = (error.details as { reason?: string } | undefined)?.reason;
+        if (error.details && !reason) {
           logger.error('Invitations POST ServiceError details', {
             code: error.code,
             details: error.details,
           });
         }
         return NextResponse.json(
-          { error: error.message },
+          { error: error.message, ...(reason ? { code: reason } : {}) },
           { status: serviceErrorToStatus(error.code) },
         );
       }

@@ -255,6 +255,8 @@ describe('classement de toutes les routes API', () => {
     'restaurants/create',
     // Etat personnel de l'appelant (appareil push).
     'push-subscriptions',
+    // Lecture seule de l'etat d'abonnement de l'appareil (B8).
+    'push-subscriptions/status',
     // Invalide un cache, n'ecrit aucune donnee.
     'revalidate-menu',
     // Facturation: necessaire pour payer et rouvrir.
@@ -279,6 +281,8 @@ describe('classement de toutes les routes API', () => {
     'cron/reconcile-payments',
     // Ne lit que les restaurants actifs (is_active, suspended_at), n'ecrit que ses rappels.
     'cron/reminders',
+    // Ne lit que les essais actifs non suspendus; n'ecrit que le creneau de relance.
+    'cron/trial-idle-emails',
     'dev/simulate-subscription',
     // Publiques / authentification / convive.
     'auth/[...supabase]',

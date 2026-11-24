@@ -176,16 +176,21 @@ function creerSimulation(options: Options = {}) {
       if (table === 'admin_users') {
         return {
           select: () => ({
-            eq: () => ({
-              // `.limit(1)` et plus `.maybeSingle()`: admin_users n'est unique
-              // que par (tenant_id, email), donc un employe de deux restaurants
-              // a deux lignes et `.maybeSingle()` echouait en PGRST116
-              // (reserve S1' du contre-audit LOT 4).
-              limit: async () => ({
-                data: options.membreExistant ? [options.membreExistant] : [],
-                error: null,
-              }),
-            }),
+            eq: (col: string) =>
+              // B54: lecture de l'etat de l'adresse dans CE restaurant (membre
+              // retire ?). Aucun membre retire dans ces scenarios.
+              col === 'tenant_id'
+                ? { limit: async () => ({ data: [], error: null, count: 0 }) }
+                : {
+                    // `.limit(1)` et plus `.maybeSingle()`: admin_users n'est unique
+                    // que par (tenant_id, email), donc un employe de deux restaurants
+                    // a deux lignes et `.maybeSingle()` echouait en PGRST116
+                    // (reserve S1' du contre-audit LOT 4).
+                    limit: async () => ({
+                      data: options.membreExistant ? [options.membreExistant] : [],
+                      error: null,
+                    }),
+                  },
           }),
         };
       }
@@ -514,6 +519,15 @@ describe('getPendingInvitations', () => {
 
     expect(journal.filtresListing).toContainEqual({ col: 'tenant_id', val: 'tenant-du-resto' });
     expect(journal.filtresListing).toContainEqual({ col: 'status', val: 'pending' });
+  });
+
+  it('B66: une erreur de lecture ne renvoie pas le message Postgres', async () => {
+    const { service } = creerSimulation({
+      erreurListing: { message: 'relation "invitations_x" permission denied' },
+    });
+    const err = await service.getPendingInvitations('tenant-du-resto').catch((e: unknown) => e);
+    expect(err).toMatchObject({ code: 'INTERNAL' });
+    expect((err as Error).message).not.toContain('invitations_x');
   });
 
   it('pagine par 25 par defaut', async () => {

@@ -50,7 +50,7 @@ if (!isConfigured) {
 
 // --- Rate limit result type ---
 
-export interface RateLimitResult {
+interface RateLimitResult {
   success: boolean;
   limit: number;
   remaining: number;

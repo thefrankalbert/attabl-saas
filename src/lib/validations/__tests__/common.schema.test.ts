@@ -28,15 +28,15 @@ describe('parseRouteUuid', () => {
   });
 });
 
+// Les regles de la politique Auth (12 caracteres, minuscule, majuscule, chiffre,
+// symbole) refusent aussi les suites de chiffres et les mots de passe a moins de
+// 4 caracteres distincts: les temoins positifs respectent ces regles.
 describe('passwordSchema - mots de passe trop simples', () => {
   it.each(['1234567890123', '9876543210987', 'aaaaaaa1', 'abababa1'])('refuse %s', (v) => {
     expect(passwordSchema.safeParse(v).success).toBe(false);
   });
 
-  it.each(['Soleil-Ouaga-2026', 'maquis!42', '20261124', 'riz gras 7'])(
-    'temoin: accepte %s',
-    (v) => {
-      expect(passwordSchema.safeParse(v).success).toBe(true);
-    },
-  );
+  it.each(['Soleil-Ouaga-2026', 'Maquis!42-Ouaga', 'Riz-Gras-2026!'])('temoin: accepte %s', (v) => {
+    expect(passwordSchema.safeParse(v).success).toBe(true);
+  });
 });

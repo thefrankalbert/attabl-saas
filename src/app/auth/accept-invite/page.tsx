@@ -5,19 +5,22 @@ import { Loader2, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { CenteredSkeleton } from '@/components/shared/CenteredSkeleton';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AuthFrame } from '@/components/auth/AuthFrame';
+import { useTranslations } from 'next-intl';
+import { passwordSchema } from '@/lib/validations/common.schema';
+import { PasswordRulesList, usePasswordIssueText } from '@/components/auth/PasswordRules';
 
 // --- Accept Invite Form ---
 function AcceptInviteForm() {
-  const t = useTranslations('auth.acceptInvite');
-  const tc = useTranslations('common');
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
+  const t = useTranslations('auth.invite');
+  const tForm = useTranslations('auth.form');
+  const passwordIssueText = usePasswordIssueText();
 
   const [loading, setLoading] = useState(false);
   const [joining, setJoining] = useState(false);
@@ -119,8 +122,8 @@ function AcceptInviteForm() {
       <div className="w-full">
         <div className="text-center">
           <CheckCircle2 className="mx-auto mb-4 h-12 w-12 text-[var(--ok-fg)]" />
-          <h1 className="auth-serif auth-title mb-2">{t('accepted')}</h1>
-          <p className="text-sm text-[var(--secondary)]">{t('redirecting')}</p>
+          <h1 className="auth-serif auth-title mb-2">{t('successTitle')}</h1>
+          <p className="text-sm text-[var(--secondary)]">{t('successRedirect')}</p>
           <Loader2 className="mx-auto mt-4 h-5 w-5 animate-spin text-[var(--muted)]" />
         </div>
       </div>
@@ -143,7 +146,7 @@ function AcceptInviteForm() {
       const data: { success?: boolean; tenantSlug?: string; error?: string } = await res.json();
 
       if (!res.ok) {
-        setError(data.error || t('errorAccept'));
+        setError(data.error || t('acceptError'));
         setNeedsLogin(res.status === 401);
         return;
       }
@@ -157,7 +160,7 @@ function AcceptInviteForm() {
         window.location.href = `/sites/${data.tenantSlug}/admin`;
       }, 2000);
     } catch {
-      setError(t('errorServer'));
+      setError(t('serverError'));
     } finally {
       setJoining(false);
     }
@@ -172,8 +175,12 @@ function AcceptInviteForm() {
       return;
     }
 
-    if (password.length < 8) {
-      setError(t('passwordTooShort'));
+    // Memes regles que le serveur et que la politique Auth (12 caracteres,
+    // minuscule, majuscule, chiffre, symbole): le message nomme TOUT ce qui manque.
+    const passwordCheck = passwordSchema.safeParse(password);
+    if (!passwordCheck.success) {
+      const message = passwordCheck.error.issues[0]?.message;
+      setError(passwordIssueText(message) ?? t('acceptError'));
       return;
     }
 
@@ -188,7 +195,7 @@ function AcceptInviteForm() {
       const data: { success?: boolean; tenantSlug?: string; error?: string } = await res.json();
 
       if (!res.ok) {
-        setError(data.error || t('errorAccept'));
+        setError(data.error || t('acceptError'));
         return;
       }
 
@@ -201,7 +208,7 @@ function AcceptInviteForm() {
         window.location.href = `/sites/${data.tenantSlug}/admin`;
       }, 2000);
     } catch {
-      setError(t('errorServer'));
+      setError(t('serverError'));
     } finally {
       setLoading(false);
     }
@@ -232,11 +239,11 @@ function AcceptInviteForm() {
                 {t('joining')}
               </>
             ) : (
-              t('joinExisting')
+              t('joinWithAccount')
             )}
           </Button>
           {needsLogin && (
-            <p className="text-center text-xs text-[var(--muted)]">{t('needsLoginHint')}</p>
+            <p className="text-center text-xs text-[var(--muted)]">{t('loginHint')}</p>
           )}
         </div>
 
@@ -244,7 +251,7 @@ function AcceptInviteForm() {
         <form method="post" onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="fullName" className="text-[13.5px] font-medium text-[var(--fg)]">
-              {t('fullName')}
+              {t('fullNameLabel')}
             </Label>
             <Input
               id="fullName"
@@ -261,18 +268,18 @@ function AcceptInviteForm() {
 
           <div className="space-y-1.5">
             <Label htmlFor="password" className="text-[13.5px] font-medium text-[var(--fg)]">
-              {t('password')}
+              {t('passwordLabel')}
             </Label>
             <div className="relative">
               <Input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
-                placeholder={t('passwordPlaceholder')}
+                aria-describedby="password-rules"
+                placeholder={tForm('passwordPlaceholderSignup')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={8}
                 maxLength={100}
                 className="auth-input placeholder:text-[var(--muted)] focus-visible:border-[var(--fg)] focus-visible:ring-[3px] focus-visible:ring-[var(--ring)] focus-visible:ring-offset-0 pr-12"
               />
@@ -280,29 +287,32 @@ function AcceptInviteForm() {
                 type="button"
                 variant="ghost"
                 size="icon"
-                aria-label={showPassword ? tc('aria.hidePassword') : tc('aria.showPassword')}
+                aria-label={showPassword ? tForm('hidePassword') : tForm('showPassword')}
+                aria-pressed={showPassword}
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-[var(--muted)] hover:bg-transparent hover:text-[var(--fg)]"
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
             </div>
+            <div id="password-rules">
+              <PasswordRulesList password={password} />
+            </div>
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="confirmPassword" className="text-[13.5px] font-medium text-[var(--fg)]">
-              {t('confirmPassword')}
+              {t('confirmLabel')}
             </Label>
             <div className="relative">
               <Input
                 id="confirmPassword"
                 type={showConfirmPassword ? 'text' : 'password'}
                 autoComplete="new-password"
-                placeholder={t('confirmPasswordPlaceholder')}
+                placeholder={t('confirmPlaceholder')}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                minLength={8}
                 maxLength={100}
                 className="auth-input placeholder:text-[var(--muted)] focus-visible:border-[var(--fg)] focus-visible:ring-[3px] focus-visible:ring-[var(--ring)] focus-visible:ring-offset-0 pr-12"
               />
@@ -310,7 +320,8 @@ function AcceptInviteForm() {
                 type="button"
                 variant="ghost"
                 size="icon"
-                aria-label={showConfirmPassword ? tc('aria.hidePassword') : tc('aria.showPassword')}
+                aria-label={showConfirmPassword ? tForm('hidePassword') : tForm('showPassword')}
+                aria-pressed={showConfirmPassword}
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-[var(--muted)] hover:bg-transparent hover:text-[var(--fg)]"
               >
@@ -332,10 +343,10 @@ function AcceptInviteForm() {
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {t('accepting')}
+                {t('submitting')}
               </>
             ) : (
-              t('accept')
+              t('submit')
             )}
           </Button>
         </form>
@@ -352,9 +363,9 @@ function AcceptInviteForm() {
 
         {/* Login link */}
         <p className="text-center text-sm text-[var(--secondary)]">
-          {t('haveAccount')}{' '}
+          {t('hasAccount')}{' '}
           <Link href="/login" className="auth-link">
-            {t('signIn')}
+            {t('login')}
           </Link>
         </p>
       </div>

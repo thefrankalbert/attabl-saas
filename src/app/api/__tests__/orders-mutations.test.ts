@@ -281,6 +281,31 @@ describe('POST /api/orders/mutations (idempotency)', () => {
     expect(mockDeleteEq).toHaveBeenCalled();
   });
 
+  // B7: une ServiceError INTERNAL (ecriture du registre, UPDATE de paiement)
+  // porte un message libre. Classee 422, l'outbox abandonnait l'encaissement
+  // hors ligne au lieu de le rejouer.
+  it('B7: pay en ServiceError INTERNAL repond 500 (rejoue), cle liberee', async () => {
+    mockActionMarkPaid.mockResolvedValue({
+      error: 'Failed to record payment ledger row',
+      code: 'INTERNAL',
+    });
+    const { POST } = await import('@/app/api/orders/mutations/route');
+    const res = await POST(
+      post({ type: 'pay', client_request_id: rid, orderId: oid, method: 'cash' }),
+    );
+    expect(res.status).toBe(500);
+    expect(mockDeleteEq).toHaveBeenCalled();
+  });
+
+  it('B7 temoin: un refus metier avec code (CONFLICT, VALIDATION) reste 422', async () => {
+    mockActionMarkPaid.mockResolvedValue({ error: 'Commande annulee', code: 'CONFLICT' });
+    const { POST } = await import('@/app/api/orders/mutations/route');
+    const res = await POST(
+      post({ type: 'pay', client_request_id: rid, orderId: oid, method: 'cash' }),
+    );
+    expect(res.status).toBe(422);
+  });
+
   // OFF-05. L'encaissement est le seul type qui ecrive dans le grand livre
   // payments: un rejeu non deduplique y creerait une deuxieme ligne, donc un
   // ecart de caisse. Ces trois tests couvrent le chemin de l'argent.

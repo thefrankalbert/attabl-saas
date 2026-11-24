@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getTranslations } from 'next-intl/server';
 import { exportRequestSchema } from '@/lib/validations/supports.schema';
 import { supportsExportLimiter, getClientIp } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
@@ -78,16 +79,28 @@ export async function POST(request: Request) {
   }
 
   // 2. Validate input (before auth to fail fast on bad payloads)
+  // Contre-audit 3: un message fixe et traduit; le detail Zod (en anglais,
+  // structure interne) reste au journal.
+  const te = await getTranslations('errors');
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    return NextResponse.json(
+      { error: te('invalidRequestBody'), code: 'INVALID_JSON' },
+      { status: 400 },
+    );
   }
 
   const parsed = exportRequestSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
+    logger.warn('Supports export: configuration refusee', {
+      issues: parsed.error.issues.map((i) => ({ path: i.path.join('.'), code: i.code })),
+    });
+    return NextResponse.json(
+      { error: te('chevaletConfigInvalid'), code: 'INVALID_CONFIG' },
+      { status: 400 },
+    );
   }
 
   const { config } = parsed.data;

@@ -482,7 +482,8 @@ describe('processTransaction: rejets avant la base (temoins negatifs)', () => {
     });
   });
 
-  it('restaurant supprime: rejete', async () => {
+  it('restaurant supprime: rejete, avec le journal de remboursement (B49)', async () => {
+    vi.mocked(logger.error).mockClear();
     const { service, client, rpc } = setup({
       tenants: [tenant({ deleted_at: iso(-DAY) })],
       payments: [payment(REF)],
@@ -493,6 +494,10 @@ describe('processTransaction: rejets avant la base (temoins negatifs)', () => {
       reason: 'TENANT_NOT_FOUND',
     });
     expect(rpc).not.toHaveBeenCalled();
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining('remboursement a faire'),
+      expect.objectContaining({ flwTransactionId: 7001, reason: 'TENANT_NOT_FOUND' }),
+    );
   });
 });
 
@@ -561,6 +566,8 @@ describe('processTransaction: appel de la fonction SQL atomique', () => {
     ['rejected_expired', 'EXPIRED_UNDERPAID'],
     ['rejected_conflict', 'STRIPE_CONFLICT'],
     ['rejected_blocked', 'TENANT_BLOCKED'],
+    // B49: restaurant supprime entre la lecture et la fonction SQL.
+    ['tenant_not_found', 'TENANT_NOT_FOUND'],
     // Course (B148): la ligne lue `pending` a ete reglee entre-temps par une
     // AUTRE transaction; la fonction SQL ne repond plus `duplicate`.
     ['already_settled_by_other_transaction', 'ALREADY_SETTLED_BY_OTHER_TRANSACTION'],
@@ -680,15 +687,28 @@ describe('reconcilePending (rattrapage)', () => {
     expect(failed.rpc).not.toHaveBeenCalled();
   });
 
-  it('ne regarde que les tentatives pending des 7 derniers jours', async () => {
+  it('ne regarde que les tentatives pending des 30 derniers jours', async () => {
     const { service, client } = setup({
       payments: [
-        payment(REF, { created_at: iso(-8 * DAY) }),
+        payment(REF, { created_at: iso(-31 * DAY) }),
         payment(REF2, { status: 'successful' }),
       ],
     });
     expect(await service.reconcilePending()).toEqual({ checked: 0, applied: 0, errors: 0 });
     expect(client.verifyByReference).not.toHaveBeenCalled();
+  });
+
+  // B47: le rattrapage etait borne a 7 jours, comme la reutilisation des liens.
+  // Un lien redonne au jour 6 et paye au jour 8, webhook perdu: argent pris,
+  // abonnement jamais prolonge. La fenetre de rattrapage depasse celle de
+  // reutilisation.
+  it('B47: rattrape un paiement fait sur un lien de plus de 7 jours', async () => {
+    const { service, client, rpc } = setup({
+      payments: [payment(REF, { created_at: iso(-8 * DAY) })],
+    });
+    vi.mocked(client.verifyByReference).mockResolvedValue(verified({ tx_ref: REF }));
+    expect(await service.reconcilePending()).toEqual({ checked: 1, applied: 1, errors: 0 });
+    expect(rpc).toHaveBeenCalledTimes(1);
   });
 
   it('idempotent: un second passage ne reapplique pas (la ligne n est plus pending)', async () => {
