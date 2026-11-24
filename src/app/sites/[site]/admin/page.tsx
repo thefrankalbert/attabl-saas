@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getTenant } from '@/lib/cache';
 import { getTenantDayStart, resolveTenantTimezone } from '@/lib/timezones';
 import { headers } from 'next/headers';
-import { getAdminPermission } from '@/lib/auth/require-admin-permission';
+import { getAdminPermission, requireAdminMember } from '@/lib/auth/require-admin-permission';
 import DashboardClient from '@/components/admin/DashboardClient';
 import type { Order, DashboardStats } from '@/types/admin.types';
 import type {
@@ -101,6 +101,7 @@ function initialsFor(name: string): string {
 
 export default async function AdminDashboard({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
+  await requireAdminMember(site);
   const tTitle = await getTranslations('sidebar');
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;

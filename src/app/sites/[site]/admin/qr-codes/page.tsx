@@ -4,7 +4,7 @@ import { headers } from 'next/headers';
 import { QRCodePage } from './QRCodePage';
 import { getTenantUrl } from '@/lib/constants';
 import TenantNotFound from '@/components/admin/TenantNotFound';
-import { redirectToLogin, redirectToUnauthorized } from '@/lib/auth/redirect-to-main';
+import { requireAdminMember } from '@/lib/auth/require-admin-permission';
 import { adminPageMetadata } from '@/lib/admin-page-metadata';
 
 export async function generateMetadata() {
@@ -15,6 +15,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function QRCodesPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
+  await requireAdminMember(site);
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
@@ -26,23 +27,6 @@ export default async function QRCodesPage({ params }: { params: Promise<{ site: 
   }
 
   const supabase = await createClient();
-
-  // Auth + tenant membership guard (defense-in-depth alongside the admin layout).
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    redirectToLogin();
-  }
-  const { data: adminUser } = await supabase
-    .from('admin_users')
-    .select('role')
-    .eq('user_id', user.id)
-    .eq('tenant_id', tenant.id)
-    .maybeSingle();
-  if (!adminUser) {
-    redirectToUnauthorized();
-  }
 
   // Fetch tables, zones, menus, and saved QR designs in parallel
   const [{ data: zones }, { data: tables }, { data: menus }, { data: designs }] = await Promise.all(

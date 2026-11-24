@@ -64,6 +64,7 @@
     "loadMore": "Load more",
     "error": "Error",
     "clear": "Clear",
+    "clearFilters": "Clear filters",
     "actions": "Actions",
     "saveChanges": "Save changes",
     "deleteConfirm": "Are you sure you want to delete?",
@@ -5144,7 +5145,8 @@
     "addNew": "Add a modifier",
     "namePlaceholder": "Name",
     "nameEnPlaceholder": "Name (translation)",
-    "pricePlaceholder": "Price"
+    "pricePlaceholder": "Price",
+    "priceNegative": "The price cannot be negative."
   },
   "allergens": {
     "title": "Allergens",

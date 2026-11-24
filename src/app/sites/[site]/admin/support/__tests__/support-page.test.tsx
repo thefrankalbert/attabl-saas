@@ -16,6 +16,7 @@ vi.mock('next-intl/server', async () => {
       createTranslator({ locale: 'fr-FR', messages, namespace: namespace as 'adminSupport' }),
   };
 });
+vi.mock('@/lib/auth/require-admin-permission', () => ({ requireAdminMember: vi.fn() }));
 vi.mock('@/lib/cache', () => ({ getTenant: async () => ({ name: "L'Epicurien" }) }));
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({}) }));
 vi.mock('@/services/platform-settings.service', () => ({

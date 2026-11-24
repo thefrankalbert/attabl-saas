@@ -3,6 +3,7 @@ import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import MenusClient from '@/components/admin/MenusClient';
 import { redirectToLogin } from '@/lib/auth/redirect-to-main';
+import { requireAdminMember } from '@/lib/auth/require-admin-permission';
 import { adminPageMetadata } from '@/lib/admin-page-metadata';
 
 export async function generateMetadata() {
@@ -17,6 +18,7 @@ interface MenusPageProps {
 
 export default async function MenusPage({ params }: MenusPageProps) {
   const { site } = await params;
+  await requireAdminMember(site);
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 

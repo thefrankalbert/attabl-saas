@@ -11,6 +11,7 @@ import {
   type ServerListPagination,
 } from '@/lib/pagination';
 import type { Category, MenuItem } from '@/types/admin.types';
+import { requireAdminMember } from '@/lib/auth/require-admin-permission';
 import { adminPageMetadata } from '@/lib/admin-page-metadata';
 
 export async function generateMetadata() {
@@ -29,6 +30,7 @@ interface MenuDetailPageProps {
 export default async function MenuDetailPage({ params, searchParams }: MenuDetailPageProps) {
   const { site, menuId } = await params;
   const sp = await searchParams;
+  await requireAdminMember(site);
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
