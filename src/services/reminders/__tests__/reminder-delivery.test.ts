@@ -17,6 +17,7 @@ let calls: Call[];
 let recentRows: unknown[];
 let claimedRows: { id: string; subject_key: string }[];
 let notifError: unknown;
+let deleteError: unknown;
 
 /** Fausse base: enregistre chaque appel, rend des reponses scriptees. */
 function fakeDb(): SupabaseClient {
@@ -28,6 +29,8 @@ function fakeDb(): SupabaseClient {
         if (table === 'reminders' && call.op === 'select') return { data: recentRows, error: null };
         if (table === 'reminders' && call.op === 'upsert')
           return { data: claimedRows, error: null };
+        if (table === 'reminders' && call.op === 'delete')
+          return { data: null, error: deleteError };
         if (table === 'notifications' && call.op === 'insert')
           return notifError
             ? { data: null, error: notifError }
@@ -85,6 +88,7 @@ describe('createReminderDelivery.sendGroup', () => {
     ];
     push.envoyerAuxAppareilsDuTenant.mockReset();
     notifError = null;
+    deleteError = null;
   });
 
   it('envoie un seul message groupe: cloche + push a cette personne seulement', async () => {
@@ -157,14 +161,14 @@ describe('createReminderDelivery.sendGroup', () => {
     ]);
   });
 
-  it('alreadySent filtre par restaurant, regle et sujet', async () => {
-    recentRows = [{ id: 'x' }];
-    const sent = await createReminderDelivery(fakeDb(), push).alreadySent(
+  it('B86: recipientsAlreadySent rend les destinataires deja servis, filtre par restaurant, regle et sujet', async () => {
+    recentRows = [{ recipient_id: 'owner1' }];
+    const done = await createReminderDelivery(fakeDb(), push).recipientsAlreadySent(
       'tenant-a',
       'weekly_coach',
       '2026-11-16',
     );
-    expect(sent).toBe(true);
+    expect([...done]).toEqual(['owner1']);
     expect(calls[0].filters).toEqual([
       ['eq', 'tenant_id', 'tenant-a'],
       ['eq', 'rule', 'weekly_coach'],
@@ -186,5 +190,20 @@ describe('createReminderDelivery.sendGroup', () => {
     const released = calls.find((c) => c.table === 'reminders' && c.op === 'delete');
     expect(released?.filters).toEqual([['in', 'id', ['r1', 'r2']]]);
     expect(push.envoyerAuxAppareilsDuTenant).not.toHaveBeenCalled();
+  });
+
+  it('B86: une liberation de reservation ratee est journalisee en erreur', async () => {
+    const { logger } = await import('@/lib/logger');
+    vi.mocked(logger.error).mockClear();
+    notifError = { message: 'boom' };
+    deleteError = { code: '57014' };
+    const ok = await createReminderDelivery(fakeDb(), push).sendGroup(group(), NOW);
+
+    expect(ok).toBe(false);
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining('claim release failed'),
+      { code: '57014' },
+      expect.objectContaining({ tenantId: 'tenant-a' }),
+    );
   });
 });

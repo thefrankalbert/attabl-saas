@@ -21,33 +21,20 @@ interface StockAlertRow {
 /**
  * E-mails des membres du restaurant. Une erreur de lecture est journalisee et
  * vaut "aucun destinataire": elle ne doit pas faire taire les autres canaux (B57).
+ *
+ * B58: seulement les membres ACTIFS et non supprimes (un membre banni ou retire
+ * recevait encore les ruptures de stock), en une seule lecture.
  */
 async function fetchAdminEmails(
   supabase: ReturnType<typeof createAdminClient>,
   tenantId: string,
 ): Promise<string[]> {
-  const { data: adminUsers, error: adminUsersError } = await supabase
-    .from('admin_users')
-    .select('user_id')
-    .eq('tenant_id', tenantId);
-
-  if (adminUsersError) {
-    logger.error('checkAndNotifyLowStock: failed to fetch admin users', {
-      tenantId,
-      error: adminUsersError,
-    });
-    return [];
-  }
-  if (!adminUsers || adminUsers.length === 0) return [];
-
-  const userIds = adminUsers.map((au) => au.user_id);
-
-  // Fetch emails directly from admin_users table (avoids auth API pagination issues)
   const { data: emailData, error: emailError } = await supabase
     .from('admin_users')
     .select('email')
     .eq('tenant_id', tenantId)
-    .in('user_id', userIds)
+    .eq('is_active', true)
+    .is('deleted_at', null)
     .not('email', 'is', null);
 
   if (emailError) {
@@ -58,7 +45,7 @@ async function fetchAdminEmails(
     return [];
   }
 
-  return (emailData || []).map((u) => u.email).filter(Boolean) as string[];
+  return [...new Set((emailData || []).map((u) => u.email).filter(Boolean) as string[])];
 }
 
 /**

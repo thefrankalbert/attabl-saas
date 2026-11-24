@@ -36,6 +36,9 @@ interface AcceptInvitationInput {
   authenticatedUserId?: string;
 }
 
+const DUPLICATE_PENDING_MESSAGE =
+  'Une invitation est deja en attente pour cet email. Renvoyez-la ou annulez-la avant d en creer une nouvelle.';
+
 function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
 }
@@ -188,19 +191,56 @@ export function createInvitationService(supabase: SupabaseClient): InvitationSer
       // token UNIQUE constraint does not prevent multiple pending rows for one
       // email, which clutters the pending list and confuses the invitee about
       // which link is valid. To re-send, use the resend action (fresh token).
-      const { data: existingPending } = await supabase
+      //
+      // B53: cette lecture ne fait que donner le message tot. Le verrou est
+      // l'index unique partiel (tenant_id, lower(email)) WHERE status='pending'
+      // (migration 20261124180000): deux envois simultanes passaient tous deux
+      // la lecture, et `maybeSingle` sur deux lignes rendait une erreur non lue
+      // qui laissait passer tous les doublons suivants.
+      //
+      // Une invitation `pending` dont la date est passee n'est marquee `expired`
+      // qu'a sa lecture (validateToken, liste). Sans ce menage, elle bloquait
+      // pour toujours une nouvelle invitation a la meme adresse (l'index unique
+      // ne voit que le statut). Elle passe donc d'abord a `expired`.
+      const { count: expiredCount, error: expireError } = await supabase
+        .from('invitations')
+        .update({ status: 'expired' }, { count: 'exact' })
+        .eq('tenant_id', input.tenantId)
+        .eq('email', input.email)
+        .eq('status', 'pending')
+        .lt('expires_at', new Date().toISOString());
+      if (expireError) {
+        logger.error('createInvitation: expiration des invitations perimees impossible', {
+          tenantId: input.tenantId,
+          error: expireError,
+        });
+        throw new ServiceError('Lecture des invitations impossible', 'INTERNAL', expireError);
+      }
+      if (expiredCount) {
+        logger.info('createInvitation: invitation perimee marquee expiree', {
+          tenantId: input.tenantId,
+          expiredCount,
+        });
+      }
+
+      const { data: existingPending, error: pendingError } = await supabase
         .from('invitations')
         .select('id')
         .eq('tenant_id', input.tenantId)
         .eq('email', input.email)
         .eq('status', 'pending')
+        .limit(1)
         .maybeSingle();
+      if (pendingError) {
+        logger.error('createInvitation: lecture des invitations en attente impossible', {
+          tenantId: input.tenantId,
+          error: pendingError,
+        });
+        throw new ServiceError('Lecture des invitations impossible', 'INTERNAL', pendingError);
+      }
 
       if (existingPending) {
-        throw new ServiceError(
-          'Une invitation est deja en attente pour cet email. Renvoyez-la ou annulez-la avant d en creer une nouvelle.',
-          'VALIDATION',
-        );
+        throw new ServiceError(DUPLICATE_PENDING_MESSAGE, 'VALIDATION');
       }
 
       // New user - create invitation with token
@@ -224,12 +264,17 @@ export function createInvitationService(supabase: SupabaseClient): InvitationSer
         )
         .single();
 
+      // B53: l'index unique a tranche la course, meme message que la lecture.
+      if (error?.code === '23505') {
+        throw new ServiceError(DUPLICATE_PENDING_MESSAGE, 'VALIDATION', error);
+      }
       if (error || !invitation) {
-        throw new ServiceError(
-          `Erreur creation invitation: ${error?.message || 'Donnees manquantes'}`,
-          'INTERNAL',
+        // B66: le message Postgres reste au journal, jamais dans la reponse.
+        logger.error('createInvitation: insertion impossible', {
+          tenantId: input.tenantId,
           error,
-        );
+        });
+        throw new ServiceError("Erreur lors de la creation de l'invitation", 'INTERNAL', error);
       }
 
       return invitation as Invitation;
@@ -548,7 +593,9 @@ export function createInvitationService(supabase: SupabaseClient): InvitationSer
         .range(from, to);
 
       if (error) {
-        throw new ServiceError(`Erreur chargement: ${error.message}`, 'INTERNAL', error);
+        // B66: la route GET renvoie error.message; le detail reste dans `details`
+        // (journalise par la route), jamais dans le texte.
+        throw new ServiceError('Erreur lors du chargement des invitations', 'INTERNAL', error);
       }
 
       const now = new Date();

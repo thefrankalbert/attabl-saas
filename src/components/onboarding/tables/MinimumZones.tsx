@@ -4,16 +4,28 @@ import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Plus, X } from 'lucide-react';
-import { derivePrefix, type ZoneData } from './types';
+import type { ZoneIssue } from '@/lib/validations/onboarding.schema';
+import type { ZoneData } from './types';
 
 interface MinimumZonesProps {
   zones: ZoneData[];
+  /** Prefixes reellement envoyes en mode rapide (tous automatiques), pour l'apercu. */
+  previewPrefixes: string[];
+  /** Doublons et prefixes invalides, signales sous le champ de la zone. */
+  issues: ZoneIssue[];
   updateZone: (index: number, field: keyof ZoneData, value: string | number) => void;
   addZone: () => void;
   removeZone: (index: number) => void;
 }
 
-export function MinimumZones({ zones, updateZone, addZone, removeZone }: MinimumZonesProps) {
+export function MinimumZones({
+  zones,
+  previewPrefixes,
+  issues,
+  updateZone,
+  addZone,
+  removeZone,
+}: MinimumZonesProps) {
   const t = useTranslations('onboarding');
 
   return (
@@ -23,16 +35,32 @@ export function MinimumZones({ zones, updateZone, addZone, removeZone }: Minimum
         {zones.map((zone, index) => (
           <div
             key={index}
-            className="flex items-center gap-3 rounded-xl border border-app-border bg-app-elevated p-3 shadow-sm"
+            className="flex items-start gap-3 rounded-xl border border-app-border bg-app-elevated p-3 shadow-sm"
           >
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <Input
                 type="text"
                 placeholder={t('zoneNamePlaceholder')}
                 value={zone.name}
                 onChange={(e) => updateZone(index, 'name', e.target.value)}
+                aria-invalid={issues.some((i) => i.index === index) || undefined}
+                aria-describedby={
+                  issues.some((i) => i.index === index) ? `zone-${index}-issue` : undefined
+                }
                 className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-base md:text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
               />
+              {issues
+                .filter((i) => i.index === index)
+                .slice(0, 1)
+                .map((issue) => (
+                  <p
+                    key={issue.code}
+                    id={`zone-${index}-issue`}
+                    className="mt-1 text-xs text-status-error"
+                  >
+                    {t(`zoneFieldIssue.${issue.code}`)}
+                  </p>
+                ))}
             </div>
             <div className="w-28">
               <Input
@@ -78,12 +106,12 @@ export function MinimumZones({ zones, updateZone, addZone, removeZone }: Minimum
         {/* Preview */}
         {zones.some((z) => z.name && z.tableCount > 0) && (
           <div className="mt-6 rounded-xl border border-app-border bg-app-elevated p-4 shadow-sm">
-            <p className="mb-3 text-xs font-semibold text-app-text-muted">{t('tipPrefix')}</p>
+            <p className="mb-3 text-xs font-semibold text-app-text-secondary">{t('tipPrefix')}</p>
             <div className="flex flex-wrap gap-2">
               {zones
-                .filter((z) => z.name)
-                .map((zone) => {
-                  const prefix = zone.prefix || derivePrefix(zone.name);
+                .map((zone, index) => ({ zone, prefix: previewPrefixes[index] ?? zone.prefix }))
+                .filter(({ zone }) => zone.name)
+                .map(({ zone, prefix }) => {
                   const count = Math.min(zone.tableCount, 6);
                   return Array.from({ length: count }, (_, i) => (
                     <span
@@ -95,7 +123,7 @@ export function MinimumZones({ zones, updateZone, addZone, removeZone }: Minimum
                   ));
                 })}
               {zones.some((z) => z.tableCount > 6) && (
-                <span className="inline-flex items-center px-2.5 py-1 text-xs text-app-text-muted">
+                <span className="inline-flex items-center px-2.5 py-1 text-xs text-app-text-secondary">
                   ...
                 </span>
               )}

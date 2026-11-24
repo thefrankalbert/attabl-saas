@@ -1637,7 +1637,7 @@
       "emailPlaceholder": "you@example.com",
       "passwordLabel": "Password",
       "passwordPlaceholderLogin": "••••••••",
-      "passwordPlaceholderSignup": "Minimum 8 characters",
+      "passwordPlaceholderSignup": "Minimum 12 characters",
       "forgotPassword": "Forgot?",
       "showPassword": "Show password",
       "hidePassword": "Hide password",
@@ -1655,9 +1655,6 @@
       "resendSending": "Sending...",
       "restaurantLabel": "Your restaurant name",
       "restaurantPlaceholder": "The Garden",
-      "strengthWeak": "Weak",
-      "strengthMedium": "Medium",
-      "strengthStrong": "Strong",
       "trialNote": "14 days free - no commitment",
       "accountDeletedSuccess": "Done: your account is deleted. Thank you for working with ATTABL."
     },
@@ -1729,12 +1726,64 @@
       "accountEmailPlaceholder": "you@restaurant.com",
       "accountEmailHint": "Type the address of the account you are resetting. If this link did not come from you, close this page.",
       "newPasswordLabel": "New password",
-      "newPasswordPlaceholder": "Minimum 8 characters",
+      "newPasswordPlaceholder": "Minimum 12 characters",
       "confirmPasswordLabel": "Confirm password",
       "confirmPasswordPlaceholder": "Re-enter the password",
-      "strengthLength": "At least 8 characters",
       "strengthMatch": "Passwords match",
       "submit": "Update password"
+    },
+    "passwordRules": {
+      "listLabel": "Password rules",
+      "ruleMet": " (met)",
+      "ruleMissing": " (missing)",
+      "rule": {
+        "length": "12 characters",
+        "lower": "a lowercase letter",
+        "upper": "an uppercase letter",
+        "digit": "a digit",
+        "symbol": "a symbol (! ? # @)"
+      },
+      "missing": "Still missing: {rules}.",
+      "tooLong": "The password is too long: 72 characters at most (fewer with accents or emoji).",
+      "tooCommon": "This password is too common. Choose another one.",
+      "allMet": "Strong password: every rule is met.",
+      "missingShort": "Missing: {rules}",
+      "progress": " ({met, plural, one {# rule met} other {# rules met}} out of {total})",
+      "ruleShort": {
+        "length": "12 characters",
+        "lower": "lowercase",
+        "upper": "uppercase",
+        "digit": "digit",
+        "symbol": "symbol (! ? # @)"
+      },
+      "tooLongShort": "Too long: 72 characters at most"
+    },
+    "invite": {
+      "srTitle": "Invitation",
+      "invalidLink": "Invalid invitation link. Check the link in your email.",
+      "expiredLink": "This invitation link has expired. Ask the administrator to send you a new invitation.",
+      "backToLogin": "Back to sign in",
+      "successTitle": "Invitation accepted!",
+      "successRedirect": "Redirecting to the dashboard...",
+      "acceptError": "The invitation could not be accepted.",
+      "serverError": "Cannot reach the server. Try again.",
+      "passwordMismatch": "The passwords do not match.",
+      "title": "You have been invited!",
+      "subtitle": "Join the team on ATTABL by creating your account.",
+      "joining": "Joining...",
+      "joinWithAccount": "I already have an ATTABL account: join the team",
+      "loginHint": "Sign in with the address that received this invitation, then reopen the link from your email.",
+      "fullNameLabel": "Full name",
+      "fullNamePlaceholder": "Awa Traore",
+      "passwordLabel": "Password",
+      "confirmLabel": "Confirm password",
+      "confirmPlaceholder": "Re-enter your password",
+      "submitting": "Accepting...",
+      "submit": "Accept the invitation",
+      "or": "or",
+      "hasAccount": "Already have an account?",
+      "login": "Sign in",
+      "helpText": "If you already have an ATTABL account, sign in to accept the invitation automatically."
     }
   },
   "admin": {
@@ -1812,7 +1861,8 @@
           "freeze-expired-trials": "Freeze expired trials (nightly)",
           "reconcile-payments": "Payment reconciliation (nightly)",
           "flutterwave-renewals": "Flutterwave renewals (nightly)",
-          "flutterwave-reconcile": "Flutterwave reconciliation (every 6 h)"
+          "flutterwave-reconcile": "Flutterwave reconciliation (every 6 h)",
+          "trial-idle-emails": "Idle trial follow-up (every morning)"
         },
         "running": "Running normally",
         "silent": "Not running anymore: check it",
@@ -4926,6 +4976,7 @@
     "zoneName": "Zone name",
     "zoneNamePlaceholder": "E.g.: Terrace, Dining room",
     "zonePrefix": "Prefix",
+    "zoneDefaultName": "Room {number}",
     "zoneTableCount": "Number of tables",
     "zoneCapacity": "Capacity per table",
     "capacityPlaces": "seats",
@@ -5039,7 +5090,6 @@
     "downloadPNG": "Download PNG",
     "logoFileTooLarge": "File is too large (max 15 MB)",
     "uploadError": "Error uploading image",
-    "validationFailed": "Some fields are invalid",
     "articlePhoto": "Photo",
     "phaseIdentity": "Identity",
     "phaseMenu": "Menu",
@@ -5057,7 +5107,24 @@
     "cropUploading": "Uploading...",
     "previewHighlights": "Not to miss",
     "previewViewMenu": "View full menu",
-    "previewCart": "Your cart"
+    "previewCart": "Your cart",
+    "zoneLabel": "Zone {number}",
+    "zoneLabelNamed": "Zone {number} ({name})",
+    "zoneIssue": {
+      "ZONE_PREFIX_INVALID": "{zone} has an invalid prefix: 1 to 5 uppercase letters or digits. Fix it in the tables step.",
+      "ZONE_PREFIX_DUPLICATE": "{zone} uses the prefix {prefix}, already taken by another zone. Change it in the tables step.",
+      "ZONE_NAME_DUPLICATE": "{zone} has the same name as another zone. Rename it in the tables step."
+    },
+    "zoneFieldIssue": {
+      "ZONE_PREFIX_INVALID": "1 to 5 uppercase letters or digits.",
+      "ZONE_PREFIX_DUPLICATE": "Another zone already uses this prefix.",
+      "ZONE_NAME_DUPLICATE": "Another zone already has this name."
+    },
+    "checkTablesToFix": "Tables: one zone to fix",
+    "launchTitleBlocked": "One more thing to fix",
+    "launchSubtitleBlocked": "Two table zones share a name or a prefix. Fix them in the tables step, then launch.",
+    "openMenuUrl": "Open the menu in a new tab",
+    "home": "Home"
   },
   "auditLog": {
     "title": "Audit Log",
@@ -5345,7 +5412,8 @@
     "signupConfirmation": "A confirmation email has been sent. Please check your inbox.",
     "restaurantNameTaken": "This name is already used by another account. Please choose a different name.",
     "captchaFailed": "Bot verification failed. Reload the page and try again.",
-    "invalidDataFallback": "Invalid data"
+    "invalidDataFallback": "Invalid data",
+    "chevaletConfigInvalid": "The table tent settings are invalid. Reload the page and try again."
   },
   "segment": {
     "food": {

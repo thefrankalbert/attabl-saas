@@ -50,6 +50,9 @@ describe('GET /auth/callback (code)', () => {
     expect(to.origin).toBe('https://attabl.com');
     expect(to.pathname).toBe('/login');
     expect(to.searchParams.get('error')).toBe('oauth_failed');
+    // B66: le message brut de GoTrue ne part pas dans l'URL.
+    expect(to.search).not.toContain('invalid');
+    expect(to.searchParams.get('reason')).toBeNull();
     expect(createAdminClient).not.toHaveBeenCalled();
     expect(completeOAuthSignup).not.toHaveBeenCalled();
   });
@@ -74,7 +77,7 @@ describe('GET /auth/callback (code)', () => {
 
     const res = await GET(
       new Request(
-        `https://attabl.com/auth/callback?code=ok&plan=enterprise&user_id=u-autre&${EVIL}`,
+        `https://attabl.com/auth/callback?code=ok&plan=business&restaurant_name=Pirate&user_id=u-autre&${EVIL}`,
       ),
     );
     const to = new URL(res.headers.get('location') ?? '');
@@ -83,6 +86,10 @@ describe('GET /auth/callback (code)', () => {
     expect(to.pathname).toBe('/onboarding');
     expect(completeOAuthSignup).toHaveBeenCalledWith(
       expect.objectContaining({ userId: 'u-session', email: 'a@b.c', plan: 'starter' }),
+    );
+    // B18: `plan` et `restaurant_name` de l'URL ne sont plus lus.
+    expect(completeOAuthSignup).toHaveBeenCalledWith(
+      expect.objectContaining({ restaurantName: 'Mon Établissement' }),
     );
   });
 

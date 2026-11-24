@@ -135,6 +135,68 @@ describe('SignupService', () => {
       });
     });
 
+    it('contre-audit 4: tout autre refus de GoTrue devient un refus neutre, sans texte brut', async () => {
+      const cas = [
+        [
+          {
+            code: 'validation_failed',
+            status: 400,
+            message: 'Password cannot be longer than 72 characters',
+          },
+          'PASSWORD_REJECTED_BY_AUTH',
+        ],
+        [
+          { code: 'validation_failed', status: 400, message: 'Unable to validate email address' },
+          'SIGNUP_REJECTED_BY_AUTH',
+        ],
+        [
+          { code: 'unexpected_failure', status: 500, message: 'HIBP check failed' },
+          'SIGNUP_REJECTED_BY_AUTH',
+        ],
+      ] as const;
+      for (const [error, expected] of cas) {
+        const supabase = createMockSupabase();
+        vi.mocked(supabase.auth.admin.createUser).mockResolvedValue({
+          data: { user: null },
+          error,
+        } as never);
+        const err = await createSignupService(supabase)
+          .completeEmailSignup({
+            restaurantName: 'Test',
+            email: 'test@example.com',
+            password: 'password123',
+          })
+          .catch((e: unknown) => e);
+
+        expect(err).toMatchObject({ code: 'CONFLICT', message: expected });
+        expect(supabase._mockRpc).not.toHaveBeenCalled();
+      }
+    });
+
+    it('contre-audit 2: weak_password (422 chez GoTrue) devient un refus neutre, distinct du doublon', async () => {
+      const supabase = createMockSupabase();
+      vi.mocked(supabase.auth.admin.createUser).mockResolvedValue({
+        data: { user: null },
+        error: {
+          code: 'weak_password',
+          status: 422,
+          message: 'Password is known to be weak and easy to guess',
+        },
+      } as never);
+      const err = await createSignupService(supabase)
+        .completeEmailSignup({
+          restaurantName: 'T',
+          email: 'test@example.com',
+          password: 'password123',
+        })
+        .catch((e: unknown) => e);
+
+      // CONFLICT comme le doublon (la route repond alors pareil), mais code a
+      // part pour envoyer le bon courriel; aucun texte GoTrue, rien de cree.
+      expect(err).toMatchObject({ code: 'CONFLICT', message: 'PASSWORD_REJECTED_BY_AUTH' });
+      expect(supabase._mockRpc).not.toHaveBeenCalled();
+    });
+
     it('should rollback auth user when tenant provision RPC fails', async () => {
       const supabase = createMockSupabase();
       supabase._mockRpc.mockResolvedValue({ data: null, error: { message: 'RPC failed' } });
@@ -251,5 +313,41 @@ describe('SignupService', () => {
         }),
       ).rejects.toThrow(ServiceError);
     });
+  });
+});
+
+// B66: messages fixes pour le rattachement du proprietaire et la salle par defaut.
+describe('SignupService: messages Postgres retenus au journal (B66)', () => {
+  it('createAdminUser: le message renvoye ne contient pas le texte Postgres', async () => {
+    const supabase = createMockSupabase({ adminInsertError: true });
+    const err = await createSignupService(supabase)
+      .createAdminUser({ tenantId: 't-1', userId: 'u-1', email: 'a@b.c', fullName: 'A' })
+      .catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ServiceError);
+    expect((err as ServiceError).code).toBe('INTERNAL');
+    expect((err as ServiceError).message).not.toContain('Admin insert failed');
+  });
+
+  it('createDefaultVenue: le message renvoye ne contient pas le texte Postgres', async () => {
+    const supabase = createMockSupabase();
+    vi.mocked(supabase.from).mockImplementation(
+      () =>
+        ({
+          insert: vi.fn().mockResolvedValue({ error: { message: 'venues_slug_key violated' } }),
+        }) as never,
+    );
+    const err = await createSignupService(supabase)
+      .createDefaultVenue('t-1')
+      .catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ServiceError);
+    expect((err as ServiceError).message).not.toContain('venues_slug_key');
+  });
+
+  it('temoin: sans erreur, les deux ecritures reussissent', async () => {
+    const service = createSignupService(createMockSupabase());
+    await expect(
+      service.createAdminUser({ tenantId: 't-1', userId: 'u-1', email: 'a@b.c', fullName: 'A' }),
+    ).resolves.toBeUndefined();
+    await expect(service.createDefaultVenue('t-1')).resolves.toBeUndefined();
   });
 });

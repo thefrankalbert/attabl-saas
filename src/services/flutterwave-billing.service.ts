@@ -196,6 +196,24 @@ export function createFlutterwaveBillingService(
    * un webhook rejoue ou concurrent de la page de retour ne prolonge qu'UNE
    * fois, et une panne ne laisse jamais un paiement a moitie applique.
    */
+  /** L'argent est PRIS et rien n'est applique: journal de remboursement a faire a la main. */
+  function logRefundDue(
+    payment: PaymentRow,
+    tx: VerifiedTransaction,
+    reason: PaymentRejection,
+    extra: Record<string, unknown> = {},
+  ) {
+    logger.error('Flutterwave: paiement encaisse mais NON applique, remboursement a faire', {
+      tenantId: payment.tenant_id,
+      paymentId: payment.id,
+      ...extra,
+      flwTransactionId: tx.id,
+      amount: tx.amount,
+      currency: tx.currency,
+      reason,
+    });
+  }
+
   async function applyVerified(
     tx: VerifiedTransaction,
     expectedTenantId?: string,
@@ -233,15 +251,9 @@ export function createFlutterwaveBillingService(
       // argent est pris et rien ne s'applique, comme les autres rejets.
       const recorded = payment.flw_transaction_id;
       if (recorded != null && Number(recorded) !== tx.id) {
-        logger.error('Flutterwave: paiement encaisse mais NON applique, remboursement a faire', {
-          tenantId: payment.tenant_id,
-          paymentId: payment.id,
+        logRefundDue(payment, tx, 'ALREADY_SETTLED_BY_OTHER_TRANSACTION', {
           txRef: payment.tx_ref,
           recordedFlwTransactionId: Number(recorded),
-          flwTransactionId: tx.id,
-          amount: tx.amount,
-          currency: tx.currency,
-          reason: 'ALREADY_SETTLED_BY_OTHER_TRANSACTION',
         });
         return { kind: 'rejected', reason: 'ALREADY_SETTLED_BY_OTHER_TRANSACTION' };
       }
@@ -249,7 +261,11 @@ export function createFlutterwaveBillingService(
     }
 
     const tenant = await loadTenant(payment.tenant_id);
-    if (!tenant || tenant.deleted_at) return { kind: 'rejected', reason: 'TENANT_NOT_FOUND' };
+    if (!tenant || tenant.deleted_at) {
+      // B49: le client a paye sur un lien encore ouvert d'un restaurant supprime.
+      logRefundDue(payment, tx, 'TENANT_NOT_FOUND');
+      return { kind: 'rejected', reason: 'TENANT_NOT_FOUND' };
+    }
 
     // Une panne Stripe leve: le webhook repondra 500 et Flutterwave relancera.
     const stripeLive = await stripeIsLive(tenant);
@@ -293,17 +309,8 @@ export function createFlutterwaveBillingService(
     if (!reason) {
       throw new ServiceError('Reponse inattendue de l application du paiement', 'INTERNAL');
     }
-    if (outcome !== 'tenant_not_found') {
-      // L'argent est PRIS et rien n'est applique: a rembourser a la main.
-      logger.error('Flutterwave: paiement encaisse mais NON applique, remboursement a faire', {
-        tenantId: payment.tenant_id,
-        paymentId: payment.id,
-        flwTransactionId: tx.id,
-        amount: tx.amount,
-        currency: tx.currency,
-        reason,
-      });
-    }
+    // Toute issue de rejet, restaurant introuvable compris (B49), laisse l'argent pris.
+    logRefundDue(payment, tx, reason);
     return { kind: 'rejected', reason };
   }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ import { Loader2, Eye, EyeOff, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation';
 import { logger } from '@/lib/logger';
 import { resetPasswordSchema, type ResetPasswordInput } from '@/lib/validations/auth.schema';
+import { PasswordRulesList, usePasswordIssueText } from '@/components/auth/PasswordRules';
 
 const inputClass =
   'auth-input placeholder:text-[var(--muted)] focus-visible:border-[var(--fg)] focus-visible:ring-[3px] focus-visible:ring-[var(--ring)] focus-visible:ring-offset-0';
@@ -61,10 +62,22 @@ function ResetPasswordContent() {
   // If the URL already contains ?error=invalid_token the token is known-invalid - skip checking.
   const [checking, setChecking] = useState(searchParams.get('error') !== 'invalid_token');
 
+  const passwordIssueText = usePasswordIssueText();
+  // Le schema rend des codes pour le mot de passe (common.schema.ts): traduits
+  // ici, pour que le message sous le champ soit dans la langue de l'interface.
+  const resolver: Resolver<ResetPasswordInput> = async (values, context, options) => {
+    const result = await zodResolver(resetPasswordSchema)(values, context, options);
+    const passwordError = result.errors.password;
+    const translated = passwordIssueText(passwordError?.message);
+    if (passwordError && translated) passwordError.message = translated;
+    return result;
+  };
   const form = useForm<ResetPasswordInput>({
-    resolver: zodResolver(resetPasswordSchema),
+    resolver,
     defaultValues: { accountEmail: '', password: '', confirmPassword: '' },
   });
+  const passwordValue = useWatch({ control: form.control, name: 'password' }) ?? '';
+  const confirmValue = useWatch({ control: form.control, name: 'confirmPassword' }) ?? '';
 
   // Detect recovery session via two mechanisms:
   // 1. Primary: PASSWORD_RECOVERY event from onAuthStateChange (client-side token in URL hash)
@@ -280,28 +293,18 @@ function ResetPasswordContent() {
                     )}
                   />
 
-                  {/* Password strength hints - read directly from form values to avoid form.watch() */}
-                  <div className="flex gap-2 text-xs">
-                    <span
-                      className={
-                        (form.getValues('password') ?? '').length >= 8
+                  {/* Les cinq regles, cochees au fil de la saisie, puis la confirmation. */}
+                  <div className="space-y-1">
+                    <PasswordRulesList password={passwordValue} />
+                    <p
+                      className={`text-[11.5px] ${
+                        passwordValue === confirmValue && confirmValue.length > 0
                           ? 'text-[var(--ok-fg)]'
                           : 'text-[var(--muted)]'
-                      }
-                    >
-                      {t('strengthLength')}
-                    </span>
-                    <span className="text-[var(--border)]">|</span>
-                    <span
-                      className={
-                        form.getValues('password') === form.getValues('confirmPassword') &&
-                        (form.getValues('confirmPassword') ?? '').length > 0
-                          ? 'text-[var(--ok-fg)]'
-                          : 'text-[var(--muted)]'
-                      }
+                      }`}
                     >
                       {t('strengthMatch')}
-                    </span>
+                    </p>
                   </div>
 
                   <Button

@@ -21,12 +21,62 @@ vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
+// B152: la purge legale partage ce passage quotidien; son appel est verifie.
+const { mockPurge, mockCreateRetention } = vi.hoisted(() => {
+  const mockPurge = vi.fn();
+  return { mockPurge, mockCreateRetention: vi.fn(() => ({ executer: mockPurge })) };
+});
+vi.mock('@/services/retention.service', () => ({
+  createRetentionService: mockCreateRetention,
+}));
+
 describe('GET /api/cron/freeze-expired-trials', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
     vi.stubEnv('CRON_SECRET', 'test-cron-secret');
     mockSelect.mockResolvedValue({ data: [{ id: 'a' }, { id: 'b' }], error: null });
+    mockPurge.mockResolvedValue({ purged: 0 });
+  });
+
+  it('B152: appelle la purge legale une fois, avec le client service_role, et rend son bilan', async () => {
+    const { GET } = await import('@/app/api/cron/freeze-expired-trials/route');
+    const response = await GET(createRequest('Bearer test-cron-secret'));
+    const json = (await response.json()) as { purge: unknown };
+
+    expect(mockCreateRetention).toHaveBeenCalledWith(builder);
+    expect(mockPurge).toHaveBeenCalledTimes(1);
+    expect(json.purge).toEqual({ purged: 0 });
+  });
+
+  it('B152: 25 impayes candidats = plafond atteint, signale dans le journal', async () => {
+    const { logger } = await import('@/lib/logger');
+    mockSelect.mockResolvedValue({
+      data: Array.from({ length: 25 }, (_, i) => ({ id: `t${i}` })),
+      error: null,
+    });
+    const { GET } = await import('@/app/api/cron/freeze-expired-trials/route');
+    await GET(createRequest('Bearer test-cron-secret'));
+
+    expect(builder.limit).toHaveBeenCalledWith(25);
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Plafond de gels'),
+      expect.objectContaining({ cap: 25 }),
+    );
+  });
+
+  it('B152 temoin: sous le plafond, rien n est signale; sans autorisation, pas de purge', async () => {
+    const { logger } = await import('@/lib/logger');
+    const { GET } = await import('@/app/api/cron/freeze-expired-trials/route');
+    await GET(createRequest('Bearer test-cron-secret'));
+    expect(logger.warn).not.toHaveBeenCalledWith(
+      expect.stringContaining('Plafond de gels'),
+      expect.anything(),
+    );
+
+    mockPurge.mockClear();
+    await GET(createRequest());
+    expect(mockPurge).not.toHaveBeenCalled();
   });
 
   function createRequest(auth?: string): Request {

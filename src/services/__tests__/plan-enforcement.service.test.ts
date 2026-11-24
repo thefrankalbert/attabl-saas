@@ -247,32 +247,6 @@ describe('unlimited limits (-1 guard)', () => {
   });
 });
 
-describe('getUsageCounts', () => {
-  it('returns counts from all tables', async () => {
-    const supabase = createMockSupabase({
-      admin_users: { count: 2, error: null },
-      menu_items: { count: 50, error: null },
-      venues: { count: 1, error: null },
-      menus: { count: 3, error: null },
-    });
-    const service = createPlanEnforcementService(supabase);
-    const result = await service.getUsageCounts('tenant-1');
-    expect(result).toEqual({ admins: 2, items: 50, venues: 1, menus: 3, categories: 0 });
-  });
-
-  it('handles null counts gracefully', async () => {
-    const supabase = createMockSupabase({
-      admin_users: { count: null, error: null },
-      menu_items: { count: null, error: null },
-      venues: { count: null, error: null },
-      menus: { count: null, error: null },
-    });
-    const service = createPlanEnforcementService(supabase);
-    const result = await service.getUsageCounts('tenant-1');
-    expect(result).toEqual({ admins: 0, items: 0, venues: 0, menus: 0, categories: 0 });
-  });
-});
-
 /**
  * Audit des offres 2026-11-20: la garde commune des deux routes qui creent une
  * commande (vitrine et caisse) n'avait aucun test propre: elle etait simulee

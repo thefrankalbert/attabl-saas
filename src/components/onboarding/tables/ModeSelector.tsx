@@ -61,7 +61,8 @@ export function ModeSelector({ mode, onModeChange }: ModeSelectorProps) {
                   {t(modeLabelKeys[id])}
                   {isActive && <Check className="h-4 w-4 shrink-0 text-app-text" />}
                 </span>
-                <span className="mt-0.5 block text-xs leading-relaxed text-app-text-muted">
+                {/* Contraste AA en clair et en sombre (text-app-text-muted: 2,15 a 3,15). */}
+                <span className="mt-0.5 block text-xs leading-relaxed text-app-text-secondary">
                   {t(modeDescKeys[id])}
                 </span>
               </span>

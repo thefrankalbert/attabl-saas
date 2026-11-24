@@ -482,7 +482,8 @@ describe('processTransaction: rejets avant la base (temoins negatifs)', () => {
     });
   });
 
-  it('restaurant supprime: rejete', async () => {
+  it('restaurant supprime: rejete, avec le journal de remboursement (B49)', async () => {
+    vi.mocked(logger.error).mockClear();
     const { service, client, rpc } = setup({
       tenants: [tenant({ deleted_at: iso(-DAY) })],
       payments: [payment(REF)],
@@ -493,6 +494,10 @@ describe('processTransaction: rejets avant la base (temoins negatifs)', () => {
       reason: 'TENANT_NOT_FOUND',
     });
     expect(rpc).not.toHaveBeenCalled();
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining('remboursement a faire'),
+      expect.objectContaining({ flwTransactionId: 7001, reason: 'TENANT_NOT_FOUND' }),
+    );
   });
 });
 
@@ -561,6 +566,8 @@ describe('processTransaction: appel de la fonction SQL atomique', () => {
     ['rejected_expired', 'EXPIRED_UNDERPAID'],
     ['rejected_conflict', 'STRIPE_CONFLICT'],
     ['rejected_blocked', 'TENANT_BLOCKED'],
+    // B49: restaurant supprime entre la lecture et la fonction SQL.
+    ['tenant_not_found', 'TENANT_NOT_FOUND'],
     // Course (B148): la ligne lue `pending` a ete reglee entre-temps par une
     // AUTRE transaction; la fonction SQL ne repond plus `duplicate`.
     ['already_settled_by_other_transaction', 'ALREADY_SETTLED_BY_OTHER_TRANSACTION'],

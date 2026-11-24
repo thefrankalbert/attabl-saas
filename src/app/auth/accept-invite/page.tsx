@@ -10,11 +10,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AuthFrame } from '@/components/auth/AuthFrame';
+import { useTranslations } from 'next-intl';
+import { passwordSchema } from '@/lib/validations/common.schema';
+import { PasswordRulesList, usePasswordIssueText } from '@/components/auth/PasswordRules';
 
 // --- Accept Invite Form ---
 function AcceptInviteForm() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
+  const t = useTranslations('auth.invite');
+  const tForm = useTranslations('auth.form');
+  const passwordIssueText = usePasswordIssueText();
 
   const [loading, setLoading] = useState(false);
   const [joining, setJoining] = useState(false);
@@ -58,19 +64,17 @@ function AcceptInviteForm() {
   if (!token || tokenInvalid) {
     return (
       <div className="w-full">
-        <h1 className="sr-only">Invitation</h1>
+        <h1 className="sr-only">{t('srTitle')}</h1>
         <div>
           <Alert
             variant="destructive"
             className="rounded-lg border-[var(--err-border)] bg-[var(--err-bg)] text-[var(--err-fg)]"
           >
-            <AlertDescription className="text-sm">
-              Lien d&apos;invitation invalide. V&#233;rifiez le lien dans votre email.
-            </AlertDescription>
+            <AlertDescription className="text-sm">{t('invalidLink')}</AlertDescription>
           </Alert>
           <p className="mt-6 text-center text-sm text-[var(--secondary)]">
             <Link href="/login" className="auth-link">
-              Retour &#224; la connexion
+              {t('backToLogin')}
             </Link>
           </p>
         </div>
@@ -82,20 +86,17 @@ function AcceptInviteForm() {
   if (tokenExpired) {
     return (
       <div className="w-full">
-        <h1 className="sr-only">Invitation</h1>
+        <h1 className="sr-only">{t('srTitle')}</h1>
         <div>
           <Alert
             variant="destructive"
             className="rounded-lg border-[var(--err-border)] bg-[var(--err-bg)] text-[var(--err-fg)]"
           >
-            <AlertDescription className="text-sm">
-              Ce lien d&apos;invitation a expir&#233;. Demandez &#224; l&apos;administrateur de vous
-              renvoyer une invitation.
-            </AlertDescription>
+            <AlertDescription className="text-sm">{t('expiredLink')}</AlertDescription>
           </Alert>
           <p className="mt-6 text-center text-sm text-[var(--secondary)]">
             <Link href="/login" className="auth-link">
-              Retour &#224; la connexion
+              {t('backToLogin')}
             </Link>
           </p>
         </div>
@@ -109,8 +110,8 @@ function AcceptInviteForm() {
       <div className="w-full">
         <div className="text-center">
           <CheckCircle2 className="mx-auto mb-4 h-12 w-12 text-[var(--ok-fg)]" />
-          <h1 className="auth-serif auth-title mb-2">Invitation acceptee !</h1>
-          <p className="text-sm text-[var(--secondary)]">Redirection vers le tableau de bord...</p>
+          <h1 className="auth-serif auth-title mb-2">{t('successTitle')}</h1>
+          <p className="text-sm text-[var(--secondary)]">{t('successRedirect')}</p>
           <Loader2 className="mx-auto mt-4 h-5 w-5 animate-spin text-[var(--muted)]" />
         </div>
       </div>
@@ -133,7 +134,7 @@ function AcceptInviteForm() {
       const data: { success?: boolean; tenantSlug?: string; error?: string } = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Erreur lors de l'acceptation");
+        setError(data.error || t('acceptError'));
         setNeedsLogin(res.status === 401);
         return;
       }
@@ -147,7 +148,7 @@ function AcceptInviteForm() {
         window.location.href = `/sites/${data.tenantSlug}/admin`;
       }, 2000);
     } catch {
-      setError('Erreur de connexion au serveur');
+      setError(t('serverError'));
     } finally {
       setJoining(false);
     }
@@ -158,12 +159,16 @@ function AcceptInviteForm() {
     setError(null);
 
     if (password !== confirmPassword) {
-      setError('Les mots de passe ne correspondent pas');
+      setError(t('passwordMismatch'));
       return;
     }
 
-    if (password.length < 8) {
-      setError('Le mot de passe doit contenir au moins 8 caracteres');
+    // Memes regles que le serveur et que la politique Auth (12 caracteres,
+    // minuscule, majuscule, chiffre, symbole): le message nomme TOUT ce qui manque.
+    const passwordCheck = passwordSchema.safeParse(password);
+    if (!passwordCheck.success) {
+      const message = passwordCheck.error.issues[0]?.message;
+      setError(passwordIssueText(message) ?? t('acceptError'));
       return;
     }
 
@@ -178,7 +183,7 @@ function AcceptInviteForm() {
       const data: { success?: boolean; tenantSlug?: string; error?: string } = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Erreur lors de l'acceptation");
+        setError(data.error || t('acceptError'));
         return;
       }
 
@@ -191,7 +196,7 @@ function AcceptInviteForm() {
         window.location.href = `/sites/${data.tenantSlug}/admin`;
       }, 2000);
     } catch {
-      setError('Erreur de connexion au serveur');
+      setError(t('serverError'));
     } finally {
       setLoading(false);
     }
@@ -202,10 +207,8 @@ function AcceptInviteForm() {
       <div>
         {/* Header */}
         <div className="mb-6">
-          <h1 className="auth-serif auth-title mb-2">Vous avez &#233;t&#233; invit&#233; !</h1>
-          <p className="text-[15px] text-[var(--secondary)]">
-            Rejoignez l&apos;equipe sur ATTABL en cr&#233;ant votre compte.
-          </p>
+          <h1 className="auth-serif auth-title mb-2">{t('title')}</h1>
+          <p className="text-[15px] text-[var(--secondary)]">{t('subtitle')}</p>
         </div>
 
         {/* Compte existant: aucun mot de passe a saisir, la session suffit. Le
@@ -221,17 +224,14 @@ function AcceptInviteForm() {
             {joining ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Adh&#233;sion en cours...
+                {t('joining')}
               </>
             ) : (
-              <>J&apos;ai d&#233;j&#224; un compte ATTABL - rejoindre l&apos;equipe</>
+              t('joinWithAccount')
             )}
           </Button>
           {needsLogin && (
-            <p className="text-center text-xs text-[var(--muted)]">
-              Connectez-vous avec l&apos;adresse qui a recu cette invitation, puis rouvrez le lien
-              de votre email.
-            </p>
+            <p className="text-center text-xs text-[var(--muted)]">{t('loginHint')}</p>
           )}
         </div>
 
@@ -239,12 +239,12 @@ function AcceptInviteForm() {
         <form method="post" onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="fullName" className="text-[13.5px] font-medium text-[var(--fg)]">
-              Nom complet
+              {t('fullNameLabel')}
             </Label>
             <Input
               id="fullName"
               type="text"
-              placeholder="Jean Dupont"
+              placeholder={t('fullNamePlaceholder')}
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               required
@@ -256,17 +256,18 @@ function AcceptInviteForm() {
 
           <div className="space-y-1.5">
             <Label htmlFor="password" className="text-[13.5px] font-medium text-[var(--fg)]">
-              Mot de passe
+              {t('passwordLabel')}
             </Label>
             <div className="relative">
               <Input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Minimum 8 caracteres"
+                autoComplete="new-password"
+                aria-describedby="password-rules"
+                placeholder={tForm('passwordPlaceholderSignup')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={8}
                 maxLength={100}
                 className="auth-input placeholder:text-[var(--muted)] focus-visible:border-[var(--fg)] focus-visible:ring-[3px] focus-visible:ring-[var(--ring)] focus-visible:ring-offset-0 pr-12"
               />
@@ -274,28 +275,32 @@ function AcceptInviteForm() {
                 type="button"
                 variant="ghost"
                 size="icon"
-                aria-label="Hide password"
+                aria-label={showPassword ? tForm('hidePassword') : tForm('showPassword')}
+                aria-pressed={showPassword}
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-[var(--muted)] hover:bg-transparent hover:text-[var(--fg)]"
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
             </div>
+            <div id="password-rules">
+              <PasswordRulesList password={password} />
+            </div>
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="confirmPassword" className="text-[13.5px] font-medium text-[var(--fg)]">
-              Confirmer le mot de passe
+              {t('confirmLabel')}
             </Label>
             <div className="relative">
               <Input
                 id="confirmPassword"
                 type={showConfirmPassword ? 'text' : 'password'}
-                placeholder="Retapez votre mot de passe"
+                autoComplete="new-password"
+                placeholder={t('confirmPlaceholder')}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                minLength={8}
                 maxLength={100}
                 className="auth-input placeholder:text-[var(--muted)] focus-visible:border-[var(--fg)] focus-visible:ring-[3px] focus-visible:ring-[var(--ring)] focus-visible:ring-offset-0 pr-12"
               />
@@ -303,7 +308,8 @@ function AcceptInviteForm() {
                 type="button"
                 variant="ghost"
                 size="icon"
-                aria-label="Hide password"
+                aria-label={showConfirmPassword ? tForm('hidePassword') : tForm('showPassword')}
+                aria-pressed={showConfirmPassword}
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-[var(--muted)] hover:bg-transparent hover:text-[var(--fg)]"
               >
@@ -325,10 +331,10 @@ function AcceptInviteForm() {
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Acceptation en cours...
+                {t('submitting')}
               </>
             ) : (
-              "Accepter l'invitation"
+              t('submit')
             )}
           </Button>
         </form>
@@ -339,23 +345,22 @@ function AcceptInviteForm() {
             <div className="w-full border-t border-[var(--border)]" />
           </div>
           <div className="relative flex justify-center text-[13px]">
-            <span className="bg-[var(--card)] px-3 text-[var(--muted)]">ou</span>
+            <span className="bg-[var(--card)] px-3 text-[var(--muted)]">{t('or')}</span>
           </div>
         </div>
 
         {/* Login link */}
         <p className="text-center text-sm text-[var(--secondary)]">
-          Vous avez d&#233;j&#224; un compte ?{' '}
+          {t('hasAccount')}{' '}
           <Link href="/login" className="auth-link">
-            Se connecter
+            {t('login')}
           </Link>
         </p>
       </div>
 
       {/* Help text below card */}
       <p className="mx-auto mt-6 max-w-sm text-center text-xs leading-relaxed text-[var(--muted)]">
-        Si vous avez d&#233;j&#224; un compte ATTABL, connectez-vous pour accepter automatiquement
-        l&apos;invitation.
+        {t('helpText')}
       </p>
     </div>
   );

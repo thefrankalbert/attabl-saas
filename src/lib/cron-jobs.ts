@@ -9,6 +9,7 @@ export const CRON_JOBS = {
   'reconcile-payments': '0 3 * * *',
   'flutterwave-renewals': '0 2 * * *',
   'flutterwave-reconcile': '0 */6 * * *',
+  'trial-idle-emails': '0 9 * * *',
 } as const;
 
 export type CronJob = keyof typeof CRON_JOBS;

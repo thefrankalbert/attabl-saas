@@ -3,6 +3,7 @@ import {
   onboardingSaveSchema,
   onboardingCompleteSchema,
   readOnboardingSiteParam,
+  ONBOARDING_DRAFT_MAX_CHARS,
 } from '../onboarding.schema';
 
 describe('onboardingSaveSchema', () => {
@@ -46,6 +47,14 @@ describe('onboardingSaveSchema', () => {
     expect(result.success).toBe(false);
   });
 
+  it('B59: refuse un brouillon trop volumineux', () => {
+    const result = onboardingSaveSchema.safeParse({
+      step: 4,
+      data: { menuOption: 'x'.repeat(ONBOARDING_DRAFT_MAX_CHARS) },
+    });
+    expect(result.success).toBe(false);
+  });
+
   it('should accept empty data object', () => {
     const result = onboardingSaveSchema.safeParse({
       step: 2,
@@ -78,7 +87,7 @@ describe('onboardingCompleteSchema', () => {
         country: 'Tchad',
         phone: '+23512345678',
         tableCount: 10,
-        logoUrl: 'https://example.com/logo.png',
+        logoUrl: 'https://abc.supabase.co/storage/v1/object/public/logos/t1/logo.png',
         primaryColor: '#CCFF00',
         secondaryColor: '#000000',
         description: 'Un restaurant test',
@@ -146,11 +155,32 @@ describe('onboardingCompleteSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should accept any string for logoUrl (URLs validated at storage level)', () => {
-    const result = onboardingCompleteSchema.safeParse({
-      data: { logoUrl: 'not-a-url' },
+  it('B26: refuse un logo qui n est pas une image de l application', () => {
+    for (const logoUrl of ['not-a-url', 'https://evil.example/logo.png', 'javascript:alert(1)']) {
+      const result = onboardingCompleteSchema.safeParse({ data: { logoUrl } });
+      expect(result.success).toBe(false);
+    }
+  });
+
+  it('B61: refuse un prix au-dela de la colonne numeric(10,2)', () => {
+    const ok = onboardingCompleteSchema.safeParse({
+      data: { menuItems: [{ name: 'Plat', price: 99_999_999 }] },
     });
-    expect(result.success).toBe(true);
+    const ko = onboardingCompleteSchema.safeParse({
+      data: { menuItems: [{ name: 'Plat', price: 100_000_000 }] },
+    });
+    expect(ok.success).toBe(true);
+    expect(ko.success).toBe(false);
+  });
+
+  it('B28: refuse un prefixe de zone vide, avec espace ou en minuscules', () => {
+    const zone = (prefix: string) => ({
+      data: { tableZones: [{ name: 'Salle', prefix, tableCount: 5 }] },
+    });
+    expect(onboardingCompleteSchema.safeParse(zone('SAL')).success).toBe(true);
+    for (const prefix of ['', ' ', 'S L', 'sal']) {
+      expect(onboardingCompleteSchema.safeParse(zone(prefix)).success).toBe(false);
+    }
   });
 
   it('should reject missing data wrapper', () => {

@@ -46,14 +46,6 @@ interface AuditInput {
   metadata?: Record<string, unknown> | null;
 }
 
-interface TrashTenant {
-  id: string;
-  name: string;
-  slug: string;
-  deleted_at: string | null;
-  deleted_by: string | null;
-}
-
 export interface PlatformAdminService {
   suspendTenant(tenantId: string, actor: PlatformActor, reason?: string): Promise<void>;
   unsuspendTenant(tenantId: string, actor: PlatformActor): Promise<void>;
@@ -70,7 +62,6 @@ export interface PlatformAdminService {
   softDeleteAdminUser(adminUserId: string, actor: PlatformActor, reason?: string): Promise<void>;
   restoreAdminUser(adminUserId: string, actor: PlatformActor): Promise<void>;
   recordImpersonation(tenantId: string, actor: PlatformActor): Promise<void>;
-  listDeletedTenants(): Promise<TrashTenant[]>;
 }
 
 export function createPlatformAdminService(admin: SupabaseClient): PlatformAdminService {
@@ -183,6 +174,16 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
     return data;
   }
 
+  /**
+   * B78: PostgREST ne leve rien quand un UPDATE ne touche aucune ligne (restaurant
+   * supprime entre-temps, compte retire...). Sans ce controle, le geste etait
+   * annonce reussi ET journalise dans l'audit alors qu'il n'avait pas eu lieu.
+   * Appele AVANT l'audit et la coupure des sessions.
+   */
+  function assertLigneTouchee(count: number | null, message: string): void {
+    if (!count) throw new ServiceError(message, 'CONFLICT');
+  }
+
   // A-04: retirer l'acces d'un membre coupe aussi sa session (meilleur effort,
   // journalise par le service; ne defait jamais le retrait deja ecrit).
   async function revokeSessions(target: { tenant_id: string; user_id: string | null }) {
@@ -196,17 +197,21 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
   return {
     async suspendTenant(tenantId, actor, reason) {
       const label = await getTenantLabel(tenantId);
-      const { error } = await admin
+      const { error, count } = await admin
         .from('tenants')
-        .update({
-          is_active: false,
-          suspended_at: new Date().toISOString(),
-          suspended_by: actor.userId,
-          suspend_reason: reason ?? null,
-        })
+        .update(
+          {
+            is_active: false,
+            suspended_at: new Date().toISOString(),
+            suspended_by: actor.userId,
+            suspend_reason: reason ?? null,
+          },
+          { count: 'exact' },
+        )
         .eq('id', tenantId)
         .is('deleted_at', null);
       if (error) throw new ServiceError('Echec de la suspension', 'INTERNAL', error);
+      assertLigneTouchee(count, 'Ce restaurant est supprime: il ne peut pas etre suspendu.');
       await audit(actor, {
         action: 'suspend_tenant',
         targetType: 'tenant',
@@ -219,9 +224,9 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
 
     async setCustomDomain(tenantId, actor, domain) {
       const label = await getTenantLabel(tenantId);
-      const { error } = await admin
+      const { error, count } = await admin
         .from('tenants')
-        .update({ custom_domain: domain })
+        .update({ custom_domain: domain }, { count: 'exact' })
         .eq('id', tenantId)
         .is('deleted_at', null);
       if (error) {
@@ -234,6 +239,7 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
         }
         throw new ServiceError("Echec de l'enregistrement du domaine", 'INTERNAL', error);
       }
+      assertLigneTouchee(count, 'Ce restaurant est supprime: son domaine ne peut pas changer.');
       await audit(actor, {
         action: 'set_custom_domain',
         targetType: 'tenant',
@@ -247,17 +253,24 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
     async unsuspendTenant(tenantId, actor) {
       const label = await getTenantLabel(tenantId);
       assertAbonnementUtilisable(label, 'reactiver ce restaurant');
-      const { error } = await admin
+      const { error, count } = await admin
         .from('tenants')
-        .update({
-          is_active: true,
-          suspended_at: null,
-          suspended_by: null,
-          suspend_reason: null,
-        })
+        .update(
+          {
+            is_active: true,
+            suspended_at: null,
+            suspended_by: null,
+            suspend_reason: null,
+          },
+          { count: 'exact' },
+        )
         .eq('id', tenantId)
         .is('deleted_at', null);
       if (error) throw new ServiceError('Echec de la reactivation', 'INTERNAL', error);
+      assertLigneTouchee(
+        count,
+        'Ce restaurant est supprime: restaurez-le au lieu de le reactiver.',
+      );
       await audit(actor, {
         action: 'unsuspend_tenant',
         targetType: 'tenant',
@@ -269,16 +282,20 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
 
     async softDeleteTenant(tenantId, actor, reason) {
       const label = await getTenantLabel(tenantId);
-      const { error } = await admin
+      const { error, count } = await admin
         .from('tenants')
-        .update({
-          deleted_at: new Date().toISOString(),
-          deleted_by: actor.userId,
-          is_active: false,
-        })
+        .update(
+          {
+            deleted_at: new Date().toISOString(),
+            deleted_by: actor.userId,
+            is_active: false,
+          },
+          { count: 'exact' },
+        )
         .eq('id', tenantId)
         .is('deleted_at', null);
       if (error) throw new ServiceError('Echec de la suppression', 'INTERNAL', error);
+      assertLigneTouchee(count, 'Ce restaurant est deja supprime.');
       await audit(actor, {
         action: 'soft_delete_tenant',
         targetType: 'tenant',
@@ -348,17 +365,21 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
 
     async banAdminUser(adminUserId, actor, reason) {
       const target = await getAdminUserLabel(adminUserId);
-      const { error } = await admin
+      const { error, count } = await admin
         .from('admin_users')
-        .update({
-          is_active: false,
-          banned_at: new Date().toISOString(),
-          banned_by: actor.userId,
-          ban_reason: reason ?? null,
-        })
+        .update(
+          {
+            is_active: false,
+            banned_at: new Date().toISOString(),
+            banned_by: actor.userId,
+            ban_reason: reason ?? null,
+          },
+          { count: 'exact' },
+        )
         .eq('id', adminUserId)
         .is('deleted_at', null);
       if (error) throw new ServiceError('Echec du bannissement', 'INTERNAL', error);
+      assertLigneTouchee(count, 'Ce compte est supprime: il ne peut pas etre bloque.');
       await revokeSessions(target);
       await audit(actor, {
         action: 'ban_user',
@@ -391,12 +412,10 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
         .is('deleted_at', null)
         .not('banned_at', 'is', null);
       if (error) throw new ServiceError('Echec du debannissement', 'INTERNAL', error);
-      if (count === 0) {
-        throw new ServiceError(
-          "Ce compte n'est pas bloque par la plateforme. S'il est desactive, c'est son restaurant qui peut le reactiver.",
-          'CONFLICT',
-        );
-      }
+      assertLigneTouchee(
+        count,
+        "Ce compte n'est pas bloque par la plateforme. S'il est desactive, c'est son restaurant qui peut le reactiver.",
+      );
       await audit(actor, {
         action: 'unban_user',
         targetType: 'admin_user',
@@ -408,16 +427,20 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
 
     async softDeleteAdminUser(adminUserId, actor, reason) {
       const target = await getAdminUserLabel(adminUserId);
-      const { error } = await admin
+      const { error, count } = await admin
         .from('admin_users')
-        .update({
-          deleted_at: new Date().toISOString(),
-          deleted_by: actor.userId,
-          is_active: false,
-        })
+        .update(
+          {
+            deleted_at: new Date().toISOString(),
+            deleted_by: actor.userId,
+            is_active: false,
+          },
+          { count: 'exact' },
+        )
         .eq('id', adminUserId)
         .is('deleted_at', null);
       if (error) throw new ServiceError('Echec de la suppression du compte', 'INTERNAL', error);
+      assertLigneTouchee(count, 'Ce compte est deja supprime.');
       await revokeSessions(target);
       await audit(actor, {
         action: 'soft_delete_user',
@@ -435,18 +458,22 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
       // deleted_* alone but leaving banned_* would resurrect a member who is
       // active (dashboard access granted) yet still labelled "banned" in the
       // console - a contradictory state. Clear the ban metadata too.
-      const { error } = await admin
+      const { error, count } = await admin
         .from('admin_users')
-        .update({
-          deleted_at: null,
-          deleted_by: null,
-          banned_at: null,
-          banned_by: null,
-          ban_reason: null,
-          is_active: true,
-        })
+        .update(
+          {
+            deleted_at: null,
+            deleted_by: null,
+            banned_at: null,
+            banned_by: null,
+            ban_reason: null,
+            is_active: true,
+          },
+          { count: 'exact' },
+        )
         .eq('id', adminUserId);
       if (error) throw new ServiceError('Echec de la restauration du compte', 'INTERNAL', error);
+      assertLigneTouchee(count, 'Ce compte est introuvable.');
       await audit(actor, {
         action: 'restore_user',
         targetType: 'admin_user',
@@ -465,17 +492,6 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
         targetLabel: `${label.name} (${label.slug})`,
         tenantId,
       });
-    },
-
-    async listDeletedTenants() {
-      const { data, error } = await admin
-        .from('tenants')
-        .select('id, name, slug, deleted_at, deleted_by')
-        .not('deleted_at', 'is', null)
-        .order('deleted_at', { ascending: false });
-      if (error)
-        throw new ServiceError('Erreur lors du chargement de la corbeille', 'INTERNAL', error);
-      return (data as TrashTenant[]) ?? [];
     },
   };
 }

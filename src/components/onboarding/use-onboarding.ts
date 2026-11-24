@@ -15,6 +15,7 @@ import { SCREEN_TO_API_STEP, oldStepToPhaseScreen, type ScreenKey } from './onbo
 import type { PhaseDefinition } from './onboarding-steps';
 import type { OnboardingData } from './types';
 import { stepBlockingError } from './utils/step-validation';
+import { describeLaunchIssues, type LaunchIssue } from './launch-issues';
 
 export function useOnboarding() {
   const t = useTranslations('onboarding');
@@ -497,13 +498,15 @@ export function useOnboarding() {
 
       const result = (await res.json().catch(() => ({}))) as {
         error?: string;
-        details?: string[];
+        details?: LaunchIssue[];
         slug?: string;
       };
 
       if (!res.ok) {
         if (result.details && Array.isArray(result.details)) {
-          throw new Error(`${t('validationFailed')}: ${result.details.join(', ')}`);
+          // Une phrase par refus, la zone nommee par son numero affiche.
+          const lines = describeLaunchIssues(result.details, data.tableZones ?? [], t);
+          throw new Error(lines.join(' '));
         }
         if (result.error === 'RESTAURANT_NAME_TAKEN') {
           throw new Error(t('nameTaken'));

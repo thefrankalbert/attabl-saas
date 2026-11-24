@@ -10,8 +10,6 @@ import type {
   OnboardingStepData,
 } from './onboarding.types';
 
-export type { OnboardingService } from './onboarding.types';
-
 /**
  * Onboarding service - handles the multi-step onboarding flow.
  *

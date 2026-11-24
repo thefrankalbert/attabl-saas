@@ -45,7 +45,10 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
   const initial = (tenantName || 'M').charAt(0).toUpperCase();
 
   return (
-    <div className="relative flex items-center justify-center">
+    // Apercu purement decoratif de la vitrine (aucun element interactif): masque
+    // aux lecteurs d'ecran. Ses gris de maquette (#B0B0B0 sur #F6F6F6, 2:1)
+    // imitent la vitrine et ne portent aucune information (contre-audit 5).
+    <div className="relative flex items-center justify-center" aria-hidden="true">
       {/* -- Phone shell ------------------------------- */}
       <div
         style={{

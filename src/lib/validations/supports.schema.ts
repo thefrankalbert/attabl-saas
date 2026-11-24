@@ -51,9 +51,9 @@ export const chevaletConfigSchema = z.object({
   verso: z.enum(['none', 'logo', 'mirror']),
 });
 
+// B29: la route ne produit qu'un PDF et lit le restaurant de la session. Les
+// anciens champs `format`, `menuUrl` et `tenantSlug` etaient exiges puis
+// ignores (`format: 'png'` rendait un PDF): retires.
 export const exportRequestSchema = z.object({
   config: chevaletConfigSchema,
-  format: z.enum(['pdf', 'png']).default('pdf'),
-  menuUrl: z.string().url(),
-  tenantSlug: z.string().min(1).max(100),
 });

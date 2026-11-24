@@ -67,7 +67,7 @@ function validBody() {
   return {
     restaurantName: 'Le Petit Bistrot',
     email: 'owner@bistrot.com',
-    password: 'securePass123',
+    password: 'securePass-123!',
     [HONEYPOT_FIELD]: '',
   };
 }
@@ -218,6 +218,13 @@ describe('POST /api/signup', () => {
   });
 
   // 4b. Other conflicts still map to their HTTP status
+  it('contre-audit 3: un message CONFLICT nomme toString n est pas un refus neutre', async () => {
+    mockCompleteEmailSignup.mockRejectedValueOnce(new ServiceError('toString', 'CONFLICT'));
+    const res = await POST(makeRequest(validBody()));
+    expect(res.status).toBe(409);
+    expect(mockAccountExistsEmail).not.toHaveBeenCalled();
+  });
+
   it('still maps RESTAURANT_NAME_TAKEN to 409', async () => {
     mockCompleteEmailSignup.mockRejectedValueOnce(
       new ServiceError('RESTAURANT_NAME_TAKEN', 'CONFLICT'),
@@ -266,7 +273,8 @@ describe('POST /api/signup', () => {
 
     expect(res.status).toBe(400);
     const json = (await res.json()) as { error: string };
-    expect(json.error).toMatch(/mot de passe/i);
+    // Un code (toutes les regles manquantes), traduit par l'ecran d'inscription.
+    expect(json.error).toBe('PASSWORD_RULES:length,upper,digit,symbol');
   });
 
   // 8. Invalid email rejected

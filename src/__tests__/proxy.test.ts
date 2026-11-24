@@ -234,6 +234,19 @@ describe('proxy - subdomain extraction', () => {
     expect(injectedTenantSlug(res)).toBe('monresto');
   });
 
+  it('B19: sur un domaine personnalise, le manifest et start_url ne sont pas prefixes deux fois', async () => {
+    getCachedTenantByDomainMock.mockResolvedValue('theblutable');
+    const manifest = await proxy(
+      makeRequest('theblutable.com', '/sites/theblutable/manifest.webmanifest'),
+    );
+    expect(rewriteTarget(manifest)).toBe('/sites/theblutable/manifest.webmanifest');
+    const start = await proxy(makeRequest('theblutable.com', '/sites/theblutable/welcome'));
+    expect(rewriteTarget(start)).toBe('/sites/theblutable/welcome');
+    // Le chemin d'un AUTRE restaurant reste confine sous celui du domaine.
+    const other = await proxy(makeRequest('theblutable.com', '/sites/autre/welcome'));
+    expect(rewriteTarget(other)).toBe('/sites/theblutable/sites/autre/welcome');
+  });
+
   it('un domaine a trois parties non enregistre ne sert le restaurant de personne', async () => {
     const res = await proxy(makeRequest('menu.inconnu.com', '/carte'));
     expect(rewriteTarget(res)).toBeNull();
