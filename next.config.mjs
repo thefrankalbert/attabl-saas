@@ -144,6 +144,8 @@ export default withSentryConfig(analyze(withNextIntl(nextConfig)), {
 
   // Hides source maps from generated client bundles
   hideSourceMaps: true,
+  sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
+  release: { create: Boolean(process.env.SENTRY_AUTH_TOKEN) },
 
   // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
   // This can increase your server load as well as your hosting bill.
