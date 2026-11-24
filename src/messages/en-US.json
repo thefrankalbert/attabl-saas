@@ -2772,7 +2772,8 @@
     "signOutCancel": "Cancel",
     "signOutBlocked": "Some orders are still waiting to be sent. Restore the internet connection, then try again.",
     "signOutError": "Sign-out failed. Try again.",
-    "resetAction": "Erase"
+    "resetAction": "Erase",
+    "signOutTooMany": "Too many attempts. Try again in a minute."
   },
   "espaces": {
     "title": "Dining spaces",

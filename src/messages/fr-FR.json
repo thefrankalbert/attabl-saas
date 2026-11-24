@@ -2772,7 +2772,8 @@
     "signOutCancel": "Annuler",
     "signOutBlocked": "Des commandes attendent encore d'être envoyées. Rétablissez la connexion internet, puis réessayez.",
     "signOutError": "La déconnexion a échoué. Réessayez.",
-    "resetAction": "Effacer"
+    "resetAction": "Effacer",
+    "signOutTooMany": "Trop de tentatives. Réessayez dans une minute."
   },
   "espaces": {
     "title": "Espaces de restauration",

@@ -69,7 +69,18 @@ export default function SecurityAccountSection() {
       }
       // /api/auth/signout appelle signOut() dont la portee par defaut est
       // "global": toutes les sessions du compte sont revoquees.
-      await fetch('/api/auth/signout', { method: 'POST' });
+      const res = await fetch('/api/auth/signout', { method: 'POST' });
+      // Succes = la route a revoque les sessions et redirige vers /login (fetch
+      // suit la redirection). Un 429 ou un echec de revocation n'est PAS une
+      // deconnexion: on le dit et on reste ici, plutot que de faire croire que
+      // les autres appareils sont fermes.
+      if (!res.ok) {
+        toast({
+          title: res.status === 429 ? t('signOutTooMany') : t('signOutError'),
+          variant: 'destructive',
+        });
+        return;
+      }
       // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- rechargement complet voulu a la deconnexion, comme le menu du compte (2026-11-24)
       window.location.assign('/login');
     } catch (err) {

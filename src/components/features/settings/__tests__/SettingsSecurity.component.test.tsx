@@ -122,6 +122,24 @@ describe('page Securite', () => {
     expect(toast).toHaveBeenCalledWith(expect.objectContaining({ variant: 'destructive' }));
   });
 
+  it('se deconnecter partout ne redirige pas si le serveur refuse (429)', async () => {
+    prepareLogout.mockResolvedValue({ blocked: false, pending: 0, lost: 0 });
+    fetchMock.mockResolvedValue({ ok: false, status: 429 });
+    const assign = vi.fn();
+    vi.stubGlobal('location', { ...window.location, assign });
+    renderPage(null);
+    fireEvent.click(screen.getByRole('button', { name: 'Se déconnecter partout' }));
+    const dialogButtons = await screen.findAllByRole('button', { name: 'Se déconnecter partout' });
+    fireEvent.click(dialogButtons[dialogButtons.length - 1]);
+    await waitFor(() =>
+      expect(toast).toHaveBeenCalledWith({
+        title: 'Trop de tentatives. Réessayez dans une minute.',
+        variant: 'destructive',
+      }),
+    );
+    expect(assign).not.toHaveBeenCalled();
+  });
+
   it('se deconnecter partout appelle la deconnexion quand la file est vide', async () => {
     prepareLogout.mockResolvedValue({ blocked: false, pending: 0, lost: 0 });
     fetchMock.mockResolvedValue({ ok: true, status: 200 });
