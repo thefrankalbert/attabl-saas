@@ -69,7 +69,7 @@
     "@react-pdf/renderer": "^4.9.0",
     "@sentry/nextjs": "^10.78.0",
     "@serwist/next": "^9.5.13",
-    "@stripe/react-stripe-js": "^6.2.0",
+    "@stripe/react-stripe-js": "^6.8.2",
     "@stripe/stripe-js": "^9.3.1",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.119.0",
