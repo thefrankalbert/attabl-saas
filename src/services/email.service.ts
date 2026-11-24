@@ -39,6 +39,9 @@ import type {
   TeamInvitationEmailData,
   LowStockAlertEmailData,
   RenewalReminderEmailData,
+  MarketingEmailData,
+  TrialEndgameEmailData,
+  UnsubscribeLinks,
 } from './email.types';
 
 export type { EmailService } from './email.types';
@@ -82,6 +85,7 @@ export function createEmailService(): EmailService {
     subject: string,
     html: string,
     text: string,
+    unsubscribe?: UnsubscribeLinks,
   ): Promise<EmailResult> {
     if (!resend) {
       // Do NOT report success here: a missing API key means no email was sent.
@@ -99,6 +103,14 @@ export function createEmailService(): EmailService {
           subject,
           html,
           text,
+          // RFC 8058: les messageries proposent alors leur bouton "Se
+          // desabonner", qui envoie un POST a cette adresse.
+          ...(unsubscribe && {
+            headers: {
+              'List-Unsubscribe': `<${unsubscribe.oneClickUrl}>`,
+              'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+            },
+          }),
         }),
       );
 
@@ -178,28 +190,19 @@ export function createEmailService(): EmailService {
       return send(to, subject, html, text);
     },
 
-    async sendFirstOrderTriggerEmail(
-      to: string,
-      data: { restaurantName: string; dashboardUrl: string },
-    ): Promise<EmailResult> {
+    async sendFirstOrderTriggerEmail(to: string, data: MarketingEmailData): Promise<EmailResult> {
       const { subject, html, text } = buildFirstOrderTriggerEmail(data);
-      return send(to, subject, html, text);
+      return send(to, subject, html, text, data.unsubscribe);
     },
 
-    async sendTenthOrderTriggerEmail(
-      to: string,
-      data: { restaurantName: string; dashboardUrl: string },
-    ): Promise<EmailResult> {
+    async sendTenthOrderTriggerEmail(to: string, data: MarketingEmailData): Promise<EmailResult> {
       const { subject, html, text } = buildTenthOrderTriggerEmail(data);
-      return send(to, subject, html, text);
+      return send(to, subject, html, text, data.unsubscribe);
     },
 
-    async sendTrialIdleEmail(
-      to: string,
-      data: { restaurantName: string; dashboardUrl: string },
-    ): Promise<EmailResult> {
+    async sendTrialIdleEmail(to: string, data: MarketingEmailData): Promise<EmailResult> {
       const { subject, html, text } = buildTrialIdleEmail(data);
-      return send(to, subject, html, text);
+      return send(to, subject, html, text, data.unsubscribe);
     },
 
     async sendRenewalReminderEmail(
@@ -210,12 +213,9 @@ export function createEmailService(): EmailService {
       return send(to, subject, html, text);
     },
 
-    async sendTrialEndgameEmail(
-      to: string,
-      data: { restaurantName: string; dashboardUrl: string; ordersCount: number; daysLeft: number },
-    ): Promise<EmailResult> {
+    async sendTrialEndgameEmail(to: string, data: TrialEndgameEmailData): Promise<EmailResult> {
       const { subject, html, text } = buildTrialEndgameEmail(data);
-      return send(to, subject, html, text);
+      return send(to, subject, html, text, data.unsubscribe);
     },
   };
 }

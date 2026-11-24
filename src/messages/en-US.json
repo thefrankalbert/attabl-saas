@@ -5578,7 +5578,8 @@
       "reset": "A fresh password, and back to work.",
       "invite": "Your team is waiting on the floor.",
       "unauthorized": "Every venue has its own keys.",
-      "emailChange": "An up-to-date address, and on we go."
+      "emailChange": "An up-to-date address, and on we go.",
+      "unsubscribe": "Your inbox, your rules."
     }
   },
   "accountDeletion": {
@@ -5608,5 +5609,22 @@
     "error_failed": "That didn't work. Try again in a moment.",
     "staff_confirmWord": "DELETE",
     "error_ownerMustClose": "You own an open restaurant. Close it first from My account, in that restaurant."
+  },
+  "unsubscribe": {
+    "metaTitle": "Unsubscribe - ATTABL",
+    "title": "Fewer emails?",
+    "subtitle": "One click, and ATTABL stops its tips and trial reminders. Emails your account needs keep coming: password, payment, stock alerts.",
+    "confirm": "Unsubscribe me",
+    "doneTitle": "Done.",
+    "doneBody": "You will no longer get our reminders at this address. Changed your mind?",
+    "resubscribe": "Subscribe me again",
+    "resubscribedTitle": "You are subscribed again.",
+    "resubscribedBody": "Our tips will be back in your inbox.",
+    "unsubscribeAgain": "Unsubscribe me again",
+    "invalidTitle": "This link does not work.",
+    "invalidBody": "It is incomplete or damaged. Open it from the email you received, or write to us at support@attabl.com.",
+    "error": "That did not work. Try again in a moment.",
+    "rateLimited": "Too many tries. Wait a minute, then try again.",
+    "backHome": "Back to home"
   }
 }

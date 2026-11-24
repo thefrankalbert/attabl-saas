@@ -88,7 +88,10 @@ export function AuthPhotoPanel({ scene: sceneProp }: { scene: AuthScene }) {
       aria-label={t('photoLabel')}
       className="relative order-1 h-[38svh] min-h-[240px] overflow-hidden lg:absolute lg:inset-0 lg:h-auto lg:min-h-0"
     >
-      <div aria-hidden="true">
+      {/* Parent POSITIONNE des images `fill` (Next/Image l'exige, sinon avertissement
+          en console). `absolute inset-0` couvre exactement l'aside, qui etait deja
+          le bloc de reference des images: le rendu ne change pas. */}
+      <div className="absolute inset-0" aria-hidden="true">
         {photos.map((src, i) =>
           i === 0 || (isSlideshow && hydrated && i <= slide.reach + 1) ? (
             <Image

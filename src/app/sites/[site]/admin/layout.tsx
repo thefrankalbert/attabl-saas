@@ -32,7 +32,7 @@ import type { AdminRole } from '@/types/admin.types';
 import type { SubscriptionStatus } from '@/types/billing';
 import type { PermissionCode, RolePermissions } from '@/types/permission.types';
 import { getEffectivePermissions } from '@/lib/permissions';
-import { determineTrialEventKey, sendTrialEmailForKey } from '@/services/trigger-emails.service';
+import { claimAndSendTrialEmail, determineTrialEventKey } from '@/services/trigger-emails.service';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -175,22 +175,16 @@ export default async function AdminLayout({
         });
 
         if (eventKey) {
-          // Atomic claim server-side: merges into the LIVE activation_events row
-          // (jsonb || ) and sets the slot once, so a concurrent writer's key is
-          // never clobbered by a stale read-merge-write snapshot.
-          const { data: claimed } = await adminClient.rpc('claim_activation_event', {
-            p_tenant_id: tenant.id,
-            p_event_key: eventKey,
+          // Desabonnement verifie, PUIS creneau reserve atomiquement (fusion
+          // dans la ligne VIVANTE activation_events), PUIS envoi.
+          await claimAndSendTrialEmail(adminClient, eventKey, {
+            tenantId: tenant.id,
+            adminEmail: ownerEmail,
+            restaurantName: tenant.name,
+            dashboardUrl,
+            trialEndsAt: tenant.trial_ends_at,
+            ordersCount,
           });
-          if (claimed) {
-            await sendTrialEmailForKey(eventKey, {
-              adminEmail: ownerEmail,
-              restaurantName: tenant.name,
-              dashboardUrl,
-              trialEndsAt: tenant.trial_ends_at,
-              ordersCount,
-            });
-          }
         }
       }
     } catch (err) {

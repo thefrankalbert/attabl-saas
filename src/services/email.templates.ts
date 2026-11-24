@@ -4,7 +4,15 @@
  * Pure builders that turn typed email data into { subject, html, text }.
  */
 
-import { escapeHtml, FOOTER, wrap, card, cta } from './email.render';
+import {
+  escapeHtml,
+  FOOTER,
+  wrap,
+  card,
+  cta,
+  unsubscribeFooter,
+  unsubscribeFooterText,
+} from './email.render';
 import type {
   WelcomeEmailData,
   WelcomeOnboardingEmailData,
@@ -17,6 +25,8 @@ import type {
   TeamInvitationEmailData,
   LowStockAlertEmailData,
   RenewalReminderEmailData,
+  MarketingEmailData,
+  TrialEndgameEmailData,
 } from './email.types';
 
 export interface EmailContent {
@@ -38,7 +48,7 @@ export function buildWelcomeEmail(data: WelcomeEmailData): EmailContent {
           <p style="margin:0;font-size:15px;line-height:1.6;color:#4b5563;">Merci d'avoir créé votre compte ATTABL. Confirmez votre adresse pour activer votre compte et ouvrir votre tableau de bord.</p>
           ${cta(data.confirmationUrl, 'Confirmer mon adresse')}
           <p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:#6b7280;">Ce lien est valable 1 heure. Si vous n'avez pas créé de compte ATTABL, ignorez cet e-mail : rien ne sera activé.</p>
-          <p style="margin:16px 0 0;padding-top:16px;border-top:1px solid #f3f4f6;font-size:12px;line-height:1.6;color:#9ca3af;word-break:break-all;">Le bouton ne fonctionne pas ? Copiez ce lien dans votre navigateur :<br />${rawUrl}</p>`,
+          <p style="margin:16px 0 0;padding-top:16px;border-top:1px solid #f3f4f6;font-size:12px;line-height:1.6;color:#6b7280;word-break:break-all;">Le bouton ne fonctionne pas ? Copiez ce lien dans votre navigateur :<br />${rawUrl}</p>`,
     ),
   );
 
@@ -116,8 +126,8 @@ export function buildPasswordResetEmail(data: PasswordResetEmailData): EmailCont
       `<p style="margin:0 0 8px;font-size:20px;font-weight:600;color:#111827;">Reinitialiser votre mot de passe</p>
           <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;">Vous avez demande a reinitialiser votre mot de passe. Cliquez ci-dessous pour en choisir un nouveau.</p>
           ${cta(data.resetUrl, 'Choisir un nouveau mot de passe')}
-          <p style="margin:16px 0 0;font-size:12px;color:#9ca3af;">Ce lien expire dans 1 heure. Si vous n'avez pas fait cette demande, ignorez cet email.</p>
-          <p style="margin:12px 0 0;font-size:11px;color:#9ca3af;word-break:break-all;">Lien : ${rawUrl}</p>`,
+          <p style="margin:16px 0 0;font-size:12px;color:#6b7280;">Ce lien expire dans 1 heure. Si vous n'avez pas fait cette demande, ignorez cet email.</p>
+          <p style="margin:12px 0 0;font-size:11px;color:#6b7280;word-break:break-all;">Lien : ${rawUrl}</p>`,
     ),
   );
 
@@ -135,8 +145,8 @@ export function buildEmailChangeEmail(data: EmailChangeEmailData): EmailContent 
       `<p style="margin:0 0 8px;font-size:20px;font-weight:600;color:#111827;">Confirmez votre nouvelle adresse</p>
           <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;">Un administrateur de votre restaurant a demande que cette adresse devienne celle de votre compte ATTABL. Elle ne change qu'apres votre confirmation.</p>
           ${cta(data.confirmUrl, 'Confirmer cette adresse')}
-          <p style="margin:16px 0 0;font-size:12px;color:#9ca3af;">Ce lien expire dans 24 heures. Si vous n'attendiez pas ce message, ignorez-le: rien ne change.</p>
-          <p style="margin:12px 0 0;font-size:11px;color:#9ca3af;word-break:break-all;">Lien : ${rawUrl}</p>`,
+          <p style="margin:16px 0 0;font-size:12px;color:#6b7280;">Ce lien expire dans 24 heures. Si vous n'attendiez pas ce message, ignorez-le: rien ne change.</p>
+          <p style="margin:12px 0 0;font-size:11px;color:#6b7280;word-break:break-all;">Lien : ${rawUrl}</p>`,
     ),
   );
 
@@ -155,8 +165,8 @@ export function buildEmailChangeApprovalEmail(data: EmailChangeApprovalEmailData
       `<p style="margin:0 0 8px;font-size:20px;font-weight:600;color:#111827;">Changement d'adresse demande</p>
           <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;">Un administrateur de votre restaurant demande que l'adresse de votre compte ATTABL devienne <strong style="color:#111827;">${safeNew}</strong>. Rien ne change sans votre accord.</p>
           ${cta(data.approveUrl, 'Autoriser ce changement')}
-          <p style="margin:16px 0 0;font-size:12px;color:#9ca3af;">Ce lien expire dans 24 heures. Si vous n'etes pas a l'origine de cette demande, ignorez ce message et contactez votre responsable: rien ne change.</p>
-          <p style="margin:12px 0 0;font-size:11px;color:#9ca3af;word-break:break-all;">Lien : ${rawUrl}</p>`,
+          <p style="margin:16px 0 0;font-size:12px;color:#6b7280;">Ce lien expire dans 24 heures. Si vous n'etes pas a l'origine de cette demande, ignorez ce message et contactez votre responsable: rien ne change.</p>
+          <p style="margin:12px 0 0;font-size:11px;color:#6b7280;word-break:break-all;">Lien : ${rawUrl}</p>`,
     ),
   );
 
@@ -174,8 +184,8 @@ export function buildAccountExistsEmail(data: AccountExistsEmailData): EmailCont
       `<p style="margin:0 0 8px;font-size:20px;font-weight:600;color:#111827;">Vous avez deja un compte</p>
           <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;">Quelqu'un a essaye de creer un compte ATTABL avec votre adresse. Elle en a deja un: connectez-vous.</p>
           ${cta(data.loginUrl, 'Me connecter')}
-          <p style="margin:16px 0 0;font-size:12px;color:#9ca3af;">Mot de passe oublie ? Reinitialisez-le ici : ${safeForgot}</p>
-          <p style="margin:12px 0 0;font-size:12px;color:#9ca3af;">Si ce n'etait pas vous, ignorez ce message.</p>`,
+          <p style="margin:16px 0 0;font-size:12px;color:#6b7280;">Mot de passe oublie ? Reinitialisez-le ici : ${safeForgot}</p>
+          <p style="margin:12px 0 0;font-size:12px;color:#6b7280;">Si ce n'etait pas vous, ignorez ce message.</p>`,
     ),
   );
 
@@ -199,7 +209,7 @@ export function buildSignupPasswordRejectedEmail(
           <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#4b5563;">Quelqu'un a essaye de creer un compte ATTABL avec votre adresse. Le mot de passe choisi a ete refuse : il est trop simple, trop long (plus de 72 caracteres), ou il circule deja dans des fuites de donnees connues.</p>
           <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;">Aucun compte n'a ete cree. Recommencez avec un mot de passe d'au moins 12 caracteres, avec une majuscule, une minuscule, un chiffre et un symbole.</p>
           ${cta(data.signupUrl, 'Recommencer mon inscription')}
-          <p style="margin:16px 0 0;font-size:12px;color:#9ca3af;">Si ce n'etait pas vous, ignorez ce message : rien n'a change.</p>`,
+          <p style="margin:16px 0 0;font-size:12px;color:#6b7280;">Si ce n'etait pas vous, ignorez ce message : rien n'a change.</p>`,
     ),
   );
 
@@ -220,7 +230,7 @@ export function buildSignupFailedEmail(data: SignupFailedEmailData): EmailConten
       `<p style="margin:0 0 8px;font-size:20px;font-weight:600;color:#111827;">Votre inscription n'a pas abouti</p>
           <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;">Quelqu'un a essaye de creer un compte ATTABL avec votre adresse, mais nous n'avons pas pu aller au bout. Votre compte n'a pas pu etre finalise. Recommencez dans quelques minutes.</p>
           ${cta(data.signupUrl, 'Recommencer mon inscription')}
-          <p style="margin:16px 0 0;font-size:12px;color:#9ca3af;">Si ce n'etait pas vous, ignorez ce message : rien n'a change.</p>`,
+          <p style="margin:16px 0 0;font-size:12px;color:#6b7280;">Si ce n'etait pas vous, ignorez ce message : rien n'a change.</p>`,
     ),
   );
 
@@ -247,7 +257,7 @@ export function buildTeamInvitationEmail(data: TeamInvitationEmailData): EmailCo
       `<p style="margin:0 0 8px;font-size:20px;font-weight:600;color:#111827;">Vous avez ete invite</p>
           <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;"><strong style="color:#111827;">${safeName}</strong> vous invite a rejoindre son equipe en tant que <strong style="color:#111827;">${safeRole}</strong>.</p>
           ${cta(data.inviteUrl, "Accepter l'invitation")}
-          <p style="margin:16px 0 0;font-size:12px;color:#9ca3af;">Cette invitation est valide pendant 24 heures.</p>`,
+          <p style="margin:16px 0 0;font-size:12px;color:#6b7280;">Cette invitation est valide pendant 24 heures.</p>`,
     ),
   );
 
@@ -272,7 +282,7 @@ export function buildLowStockAlertEmail(data: LowStockAlertEmailData): EmailCont
   const html = wrap(
     `${count} produit(s) sous le seuil de stock.`,
     card(
-      `<p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;">${safeName}</p>
+      `<p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#6b7280;">${safeName}</p>
         <p style="margin:0 0 16px;font-size:20px;font-weight:600;color:#111827;">Alerte stock</p>
         <p style="margin:0 0 20px;font-size:15px;color:#4b5563;">${count} produit(s) necessitent votre attention.</p>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e5e7eb;border-radius:6px;">
@@ -289,43 +299,37 @@ export function buildLowStockAlertEmail(data: LowStockAlertEmailData): EmailCont
   return { subject: `Alerte stock : ${count} produit(s) - ${data.restaurantName}`, html, text };
 }
 
-export function buildFirstOrderTriggerEmail(data: {
-  restaurantName: string;
-  dashboardUrl: string;
-}): EmailContent {
+export function buildFirstOrderTriggerEmail(data: MarketingEmailData): EmailContent {
   const safeName = escapeHtml(data.restaurantName);
   const html = wrap(
     'Bravo pour votre premiere commande ! Decouvrez 3 fonctionnalites Pro.',
     card(
-      `<p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;">${safeName}</p>
+      `<p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#6b7280;">${safeName}</p>
           <p style="margin:0 0 16px;font-size:20px;font-weight:600;color:#111827;">Bravo ! Premiere commande recue.</p>
           <p style="margin:0 0 16px;font-size:15px;color:#4b5563;">Votre menu digital fonctionne. Voici 3 fonctionnalites Pro qui changeront votre quotidien :</p>
           <p style="margin:0 0 8px;font-size:14px;color:#111827;"><strong>1. Ecran cuisine (KDS)</strong> - Les commandes arrivent directement a la cuisine. Fini les tickets papier.</p>
           <p style="margin:0 0 8px;font-size:14px;color:#111827;"><strong>2. Suivi des stocks</strong> - Vos ingredients se destockent automatiquement apres chaque commande.</p>
           <p style="margin:0 0 20px;font-size:14px;color:#111827;"><strong>3. Stats avancees</strong> - Voyez quels plats se vendent, a quelle heure, pour combien.</p>
           ${cta(data.dashboardUrl, 'Voir mon tableau de bord')}`,
-    ),
+    ) + unsubscribeFooter(data.unsubscribe.pageUrl),
   );
-  const text = `Bravo ${data.restaurantName} !\n\nPremiere commande recue. Voici 3 fonctionnalites Pro pour aller plus loin :\n1. Ecran cuisine (KDS)\n2. Suivi des stocks automatique\n3. Stats avancees\n\n${data.dashboardUrl}\n\n${FOOTER}`;
+  const text = `Bravo ${data.restaurantName} !\n\nPremiere commande recue. Voici 3 fonctionnalites Pro pour aller plus loin :\n1. Ecran cuisine (KDS)\n2. Suivi des stocks automatique\n3. Stats avancees\n\n${data.dashboardUrl}\n\n${unsubscribeFooterText(data.unsubscribe.pageUrl)}\n${FOOTER}`;
   return { subject: `Bravo ${data.restaurantName} - Premiere commande !`, html, text };
 }
 
-export function buildTenthOrderTriggerEmail(data: {
-  restaurantName: string;
-  dashboardUrl: string;
-}): EmailContent {
+export function buildTenthOrderTriggerEmail(data: MarketingEmailData): EmailContent {
   const safeName = escapeHtml(data.restaurantName);
   const html = wrap(
     '10 commandes ! Le KDS vous ferait gagner 30 secondes par commande.',
     card(
-      `<p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;">${safeName}</p>
+      `<p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#6b7280;">${safeName}</p>
           <p style="margin:0 0 16px;font-size:20px;font-weight:600;color:#111827;">10 commandes. Vous avez la cadence.</p>
           <p style="margin:0 0 16px;font-size:15px;color:#4b5563;">A ce rythme, le KDS (ecran cuisine) vous ferait gagner 30 secondes par commande. Sur 10 commandes par jour, c'est 5 minutes recuperees. Par jour. Tous les jours.</p>
           <p style="margin:0 0 20px;font-size:15px;color:#4b5563;">Les commandes arrivent directement sur l'ecran cuisine. Vos cuisiniers ne lisent plus les tickets papier. Moins d'erreurs, service plus rapide.</p>
           ${cta(data.dashboardUrl, 'Decouvrir le KDS')}`,
-    ),
+    ) + unsubscribeFooter(data.unsubscribe.pageUrl),
   );
-  const text = `${data.restaurantName} - 10 commandes !\n\nLe KDS vous ferait gagner 30 secondes par commande. Decouvrez-le : ${data.dashboardUrl}\n\n${FOOTER}`;
+  const text = `${data.restaurantName} - 10 commandes !\n\nLe KDS vous ferait gagner 30 secondes par commande. Decouvrez-le : ${data.dashboardUrl}\n\n${unsubscribeFooterText(data.unsubscribe.pageUrl)}\n${FOOTER}`;
   return {
     subject: `${data.restaurantName} - Le KDS peut vous faire gagner 30s/commande`,
     html,
@@ -333,31 +337,23 @@ export function buildTenthOrderTriggerEmail(data: {
   };
 }
 
-export function buildTrialIdleEmail(data: {
-  restaurantName: string;
-  dashboardUrl: string;
-}): EmailContent {
+export function buildTrialIdleEmail(data: MarketingEmailData): EmailContent {
   const safeName = escapeHtml(data.restaurantName);
   const html = wrap(
     'Votre essai gratuit est actif. On est la si vous avez besoin.',
     card(
-      `<p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;">${safeName}</p>
+      `<p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#6b7280;">${safeName}</p>
           <p style="margin:0 0 16px;font-size:20px;font-weight:600;color:#111827;">On est la si vous avez besoin.</p>
           <p style="margin:0 0 16px;font-size:15px;color:#4b5563;">Votre essai gratuit est actif. Si quelque chose bloque - la configuration, les menus, les QR codes - repondez directement a cet email. On repond vite.</p>
           <p style="margin:0 0 20px;font-size:15px;color:#4b5563;">Sinon, votre tableau de bord vous attend.</p>
           ${cta(data.dashboardUrl, 'Reprendre ou poser une question')}`,
-    ),
+    ) + unsubscribeFooter(data.unsubscribe.pageUrl),
   );
-  const text = `${data.restaurantName} - On est la si vous avez besoin.\n\nVotre essai est actif. Une question ? Repondez directement a cet email.\n\n${data.dashboardUrl}\n\n${FOOTER}`;
+  const text = `${data.restaurantName} - On est la si vous avez besoin.\n\nVotre essai est actif. Une question ? Repondez directement a cet email.\n\n${data.dashboardUrl}\n\n${unsubscribeFooterText(data.unsubscribe.pageUrl)}\n${FOOTER}`;
   return { subject: `${data.restaurantName} - On peut vous aider ?`, html, text };
 }
 
-export function buildTrialEndgameEmail(data: {
-  restaurantName: string;
-  dashboardUrl: string;
-  ordersCount: number;
-  daysLeft: number;
-}): EmailContent {
+export function buildTrialEndgameEmail(data: TrialEndgameEmailData): EmailContent {
   const safeName = escapeHtml(data.restaurantName);
   const hasOrders = data.ordersCount >= 5;
   const subject = hasOrders
@@ -369,13 +365,13 @@ export function buildTrialEndgameEmail(data: {
   const html = wrap(
     `Il reste ${data.daysLeft} jour(s) sur votre essai gratuit.`,
     card(
-      `<p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;">${safeName}</p>
+      `<p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#6b7280;">${safeName}</p>
           <p style="margin:0 0 16px;font-size:20px;font-weight:600;color:#111827;">Il reste ${data.daysLeft} jour(s).</p>
           ${body}
           ${cta(data.dashboardUrl, 'Activer mon abonnement')}`,
-    ),
+    ) + unsubscribeFooter(data.unsubscribe.pageUrl),
   );
-  const text = `${data.restaurantName} - Il reste ${data.daysLeft} jour(s) sur votre essai.\n\n${data.dashboardUrl}\n\n${FOOTER}`;
+  const text = `${data.restaurantName} - Il reste ${data.daysLeft} jour(s) sur votre essai.\n\n${data.dashboardUrl}\n\n${unsubscribeFooterText(data.unsubscribe.pageUrl)}\n${FOOTER}`;
   return { subject, html, text };
 }
 
@@ -396,7 +392,7 @@ export function buildRenewalReminderEmail(data: RenewalReminderEmailData): Email
   const html = wrap(
     `Payez ${amount} en 2 minutes pour garder votre menu et vos commandes.`,
     card(
-      `<p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;">${safeName}</p>
+      `<p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#6b7280;">${safeName}</p>
           <p style="margin:0 0 16px;font-size:20px;font-weight:600;color:#111827;">${escapeHtml(title)}</p>
           <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#4b5563;">Votre plan ${safePlan} court jusqu'au ${escapeHtml(data.periodEndLabel)}. Pour continuer sans coupure, payez ${escapeHtml(amount)} par Orange Money, MTN MoMo, Moov ou carte.</p>
           <p style="margin:0;font-size:15px;line-height:1.6;color:#4b5563;">Le paiement prend 2 minutes. Vous validez sur votre telephone.</p>
