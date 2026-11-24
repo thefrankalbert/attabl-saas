@@ -33,15 +33,22 @@ export function withActiveMenuItems<T extends MenuItemsFilterQuery>(query: T): T
 /**
  * Updates a menu_item scoped by id + tenant_id.
  * Retries without deleted_at filter/payload when the soft-delete column is missing.
+ * `count` is the number of rows touched: 0 means the item no longer exists
+ * (deleted meanwhile, or another tenant's) - an UPDATE matching nothing
+ * returns NO error, so callers must read it (audit B56).
  */
 export async function updateMenuItemScoped(
   supabase: SupabaseClient,
   itemId: string,
   tenantId: string,
   payload: Record<string, unknown>,
-): Promise<{ error: unknown | null }> {
+): Promise<{ error: unknown | null; count: number | null }> {
   const attempt = async (filterActive: boolean, body: Record<string, unknown>) => {
-    let query = supabase.from('menu_items').update(body).eq('id', itemId).eq('tenant_id', tenantId);
+    let query = supabase
+      .from('menu_items')
+      .update(body, { count: 'exact' })
+      .eq('id', itemId)
+      .eq('tenant_id', tenantId);
 
     if (filterActive) {
       query = withActiveMenuItems(query);
@@ -59,7 +66,7 @@ export async function updateMenuItemScoped(
     }
   }
 
-  return { error: result.error };
+  return { error: result.error, count: result.count ?? null };
 }
 
 /**
@@ -69,7 +76,7 @@ export async function deleteMenuItemScoped(
   supabase: SupabaseClient,
   itemId: string,
   tenantId: string,
-): Promise<{ error: unknown | null }> {
+): Promise<{ error: unknown | null; count: number | null }> {
   return updateMenuItemScoped(supabase, itemId, tenantId, {
     deleted_at: new Date().toISOString(),
     is_available: false,

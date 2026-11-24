@@ -18,18 +18,6 @@ function makeInsertMock(result: { data: unknown; error: unknown }) {
   return { from: fromMock as unknown as SupabaseClient['from'], insertMock, selectMock };
 }
 
-function makeChainMock(result: { error: unknown }) {
-  const isMock = vi.fn().mockResolvedValue(result);
-  const eqMock2 = vi.fn().mockReturnValue({ is: isMock });
-  const eqMock1 = vi.fn().mockReturnValue({ eq: eqMock2 });
-  const opMock = vi.fn().mockReturnValue({ eq: eqMock1 });
-  const fromMock = vi.fn().mockReturnValue({
-    update: opMock,
-    delete: vi.fn().mockReturnValue({ eq: eqMock1 }),
-  });
-  return { from: fromMock as unknown as SupabaseClient['from'] };
-}
-
 describe('createMenuItemService.createMenuItem', () => {
   it('inserts payload merged with tenantId and returns created item id', async () => {
     const { from, insertMock } = makeInsertMock({ data: { id: 'item-abc' }, error: null });
@@ -83,23 +71,114 @@ describe('createMenuItemService.createMenuItem', () => {
   });
 });
 
+/**
+ * Chainable builder: every call is recorded; awaiting it (or maybeSingle)
+ * resolves the next queued result for that operation (read = select, write =
+ * update).
+ */
+function makeUpdateMock(results: {
+  read?: { data: unknown; error: unknown };
+  write: { error: unknown; count?: number | null };
+}) {
+  const calls: Array<[string, ...unknown[]]> = [];
+  const from = vi.fn(() => {
+    let op: 'read' | 'write' = 'read';
+    const b: Record<string, unknown> = {};
+    for (const m of ['select', 'update', 'eq', 'is']) {
+      b[m] = vi.fn((...args: unknown[]) => {
+        calls.push([m, ...args]);
+        if (m === 'update') op = 'write';
+        return b;
+      });
+    }
+    b.maybeSingle = vi.fn(async () => results.read);
+    b.then = (ok: (v: unknown) => unknown) =>
+      Promise.resolve(op === 'write' ? results.write : results.read).then(ok);
+    return b;
+  });
+  return { client: { from } as unknown as SupabaseClient, calls, from };
+}
+
 describe('createMenuItemService.updateMenuItem', () => {
-  it('filters by both itemId and tenantId on update', async () => {
-    const { from } = makeChainMock({ error: null });
-    const service = createMenuItemService({ from } as unknown as SupabaseClient);
+  it('filters by both itemId and tenantId and asks Postgres to count the rows', async () => {
+    const { client, calls } = makeUpdateMock({ write: { error: null, count: 1 } });
+    const service = createMenuItemService(client);
 
-    await service.updateMenuItem('item-1', 'tenant-1', { name: 'Updated' });
+    await service.updateMenuItem('item-1', 'tenant-1', { price: 1500 });
 
-    expect(from).toHaveBeenCalledWith('menu_items');
+    expect(calls).toContainEqual(['update', { price: 1500 }, { count: 'exact' }]);
+    expect(calls).toContainEqual(['eq', 'id', 'item-1']);
+    expect(calls).toContainEqual(['eq', 'tenant_id', 'tenant-1']);
+  });
+
+  it('B56: un plat supprime entre-temps (0 ligne) est introuvable, pas "enregistre"', async () => {
+    const { client } = makeUpdateMock({ write: { error: null, count: 0 } });
+    const service = createMenuItemService(client);
+
+    await expect(
+      service.updateMenuItem('item-1', 'tenant-1', { price: 1500 }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+
+  it('B33: un renommage controle le doublon dans la categorie, sans compter le plat', async () => {
+    const { assertNameAvailable } = await import('../duplicate-name');
+    vi.mocked(assertNameAvailable).mockClear();
+    const { client } = makeUpdateMock({ write: { error: null, count: 1 } });
+    const service = createMenuItemService(client);
+
+    await service.updateMenuItem('item-1', 'tenant-1', { name: 'Poulet', category_id: 'cat-1' });
+
+    expect(assertNameAvailable).toHaveBeenCalledWith(
+      client,
+      expect.objectContaining({
+        table: 'menu_items',
+        tenantId: 'tenant-1',
+        name: 'Poulet',
+        scope: { column: 'category_id', value: 'cat-1' },
+        excludeId: 'item-1',
+        excludeSoftDeleted: true,
+      }),
+    );
+  });
+
+  it('B33: sans categorie envoyee, compare dans la categorie actuelle du plat', async () => {
+    const { assertNameAvailable } = await import('../duplicate-name');
+    vi.mocked(assertNameAvailable).mockClear();
+    const { client, calls } = makeUpdateMock({
+      read: { data: { category_id: 'cat-9' }, error: null },
+      write: { error: null, count: 1 },
+    });
+    const service = createMenuItemService(client);
+
+    await service.updateMenuItem('item-1', 'tenant-1', { name: 'Poulet' });
+
+    expect(calls).toContainEqual(['select', 'category_id']);
+    expect(assertNameAvailable).toHaveBeenCalledWith(
+      client,
+      expect.objectContaining({ scope: { column: 'category_id', value: 'cat-9' } }),
+    );
+  });
+
+  it('B33: renommer un plat d un autre restaurant ou supprime: introuvable, rien ecrit', async () => {
+    const { client, calls } = makeUpdateMock({
+      read: { data: null, error: null },
+      write: { error: null, count: 1 },
+    });
+    const service = createMenuItemService(client);
+
+    await expect(
+      service.updateMenuItem('item-1', 'tenant-1', { name: 'Poulet' }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    expect(calls.some(([m]) => m === 'update')).toBe(false);
   });
 
   it('throws ServiceError on DB error', async () => {
-    const { from } = makeChainMock({ error: { message: 'fail' } });
-    const service = createMenuItemService({ from } as unknown as SupabaseClient);
+    const { client } = makeUpdateMock({ write: { error: { message: 'fail' } } });
+    const service = createMenuItemService(client);
 
-    await expect(
-      service.updateMenuItem('item-1', 'tenant-1', { name: 'X' }),
-    ).rejects.toBeInstanceOf(ServiceError);
+    await expect(service.updateMenuItem('item-1', 'tenant-1', { price: 10 })).rejects.toMatchObject(
+      { code: 'INTERNAL' },
+    );
   });
 });
 
@@ -120,6 +199,7 @@ describe('createMenuItemService.deleteMenuItem', () => {
         deleted_at: expect.any(String),
         is_available: false,
       }),
+      { count: 'exact' },
     );
     expect(isMock).toHaveBeenCalledWith('deleted_at', null);
   });

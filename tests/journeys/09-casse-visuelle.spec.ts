@@ -292,6 +292,76 @@ test.describe('09 - Aucun ecran casse', () => {
     }
   });
 
+  // Audit B129: a 1024x768, l'enveloppe de la fiche gardait une hauteur bornee
+  // (overflow-hidden): la colonne d'actions etait coupee et main#main-content
+  // n'avait plus rien a faire defiler. `controleAtteignable` ne l'a pas vu: son
+  // scrollIntoView fait defiler n'importe quel ancetre. Ici on fait defiler la
+  // page comme l'utilisateur (main#main-content seul), sans scrollIntoView.
+  test('fiche commande a 1024x768: un seul defilement, la colonne d actions atteignable en bas', async ({
+    browser,
+  }) => {
+    test.setTimeout(120_000);
+    await avec(contexteConnecte(browser, 1024), async (ctx) => {
+      const page = await ctx.newPage();
+      await page.goto(`${ADMIN}/orders/${orderId}`, { waitUntil: 'domcontentloaded' });
+      await page.getByTestId('order-actions-panel').waitFor({ timeout: 60_000 });
+      await attendreChargement(page);
+
+      // Dans la zone de contenu, un seul element defile: main#main-content.
+      // La liste du menu lateral, hors de main, a le droit de defiler: on ne
+      // compte que main et ses descendants (aucun conteneur de la fiche ne
+      // defile seul).
+      const defilants = await page.evaluate(() =>
+        [...document.querySelectorAll<HTMLElement>('body *')]
+          .filter((el) => el.id === 'main-content' || el.closest('#main-content') !== null)
+          .filter((el) => {
+            const oy = getComputedStyle(el).overflowY;
+            return (oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1;
+          })
+          .map((el) => (el.id ? `#${el.id}` : el.tagName.toLowerCase())),
+      );
+      expect
+        .soft(defilants, '1024x768: conteneurs qui defilent dans main')
+        .toEqual(['#main-content']);
+
+      // Le dernier bouton de la colonne d'actions (l'annulation quand elle est
+      // permise) doit pouvoir entrer ENTIEREMENT dans la zone visible de main
+      // (sous l'en-tete), en faisant defiler main par crans comme l'utilisateur.
+      // Pas de saut tout en bas: avec une commande longue, le bas de la page
+      // depasse la colonne et le bouton remonterait sous l'en-tete.
+      const panneau = page.getByTestId('order-actions-panel');
+      const annuler = panneau.getByRole('button', { name: /Annuler la commande/ });
+      const cible =
+        (await annuler.count()) > 0 ? annuler.first() : panneau.getByRole('button').last();
+      const resultat = await cible.evaluate((el) => {
+        const main = document.getElementById('main-content');
+        if (!main) return { visible: false, raison: 'main#main-content absent' };
+        main.scrollTop = 0;
+        const cran = Math.max(40, Math.floor(main.clientHeight / 3));
+        for (let i = 0; i <= 60; i++) {
+          const zone = main.getBoundingClientRect();
+          const r = el.getBoundingClientRect();
+          if (r.top >= zone.top - 1 && r.bottom <= zone.bottom + 1) {
+            return { visible: true, raison: '' };
+          }
+          const avant = main.scrollTop;
+          main.scrollTop = avant + cran;
+          if (main.scrollTop === avant) {
+            return {
+              visible: false,
+              raison: `fin du defilement: bouton ${Math.round(r.top)}-${Math.round(r.bottom)}, zone ${Math.round(zone.top)}-${Math.round(zone.bottom)}`,
+            };
+          }
+        }
+        return { visible: false, raison: 'borne de 60 crans atteinte' };
+      });
+      expect
+        .soft(resultat.raison, '1024x768: dernier bouton entierement visible dans main')
+        .toBe('');
+      expect.soft(resultat.visible).toBe(true);
+    });
+  });
+
   test('inventaire sur tablette: des cartes et aucun tableau (jusqu a 1280)', async ({
     browser,
   }) => {

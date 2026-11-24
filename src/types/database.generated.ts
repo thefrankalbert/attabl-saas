@@ -3768,7 +3768,7 @@ export type Database = {
         Returns: boolean;
       };
       import_recipes_tx: {
-        Args: { p_rows: Json; p_tenant_id: string };
+        Args: { p_removals?: Json; p_rows: Json; p_tenant_id: string };
         Returns: Json;
       };
       increment_login_count: {
@@ -3866,6 +3866,14 @@ export type Database = {
       };
       regenerate_auto_suggestions: {
         Args: { p_rows: Json; p_tenant_id: string };
+        Returns: number;
+      };
+      reorder_categories: {
+        Args: { p_tenant_id: string; p_updates: Json };
+        Returns: number;
+      };
+      reorder_menus: {
+        Args: { p_ordered_ids: string[]; p_tenant_id: string };
         Returns: number;
       };
       reminder_coach_items: {
