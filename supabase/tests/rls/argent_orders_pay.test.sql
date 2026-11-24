@@ -534,9 +534,14 @@ select is(
 );
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"f3333333-3333-3333-3333-333333333333"}';
-select lives_ok(
+-- Depuis 20261124151000 (B67 en base), le coupon est rendu par le serveur
+-- applicatif (service_role) apres une annulation reelle, jamais par la
+-- session de l'employe: meme le caissier ne l'appelle plus en direct.
+select throws_ok(
   $$select public.unclaim_coupon_usage('f6600000-0000-4000-8000-000000000001')$$,
-  'caissier: libere le coupon (annulation d une commande)'
+  '42501',
+  null,
+  'caissier: ne rend plus d utilisation par appel direct (rendu cote serveur)'
 );
 reset role;
 

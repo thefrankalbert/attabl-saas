@@ -626,7 +626,7 @@
         },
         "resend": {
           "name": "Resend",
-          "role": "Envoi des e-mails (bienvenue, invitation, mot de passe oublié, confirmation)",
+          "role": "Envoi des e-mails (bienvenue, invitation, mot de passe oublié, confirmation) et réception du courrier envoyé aux adresses @attabl.com",
           "country": "États-Unis"
         },
         "sentry": {
@@ -653,11 +653,6 @@
           "name": "Services de notification des navigateurs (Google, Apple, Mozilla, Microsoft)",
           "role": "Acheminer une notification push vers votre appareil si vous l'activez",
           "country": "États-Unis et réseau mondial"
-        },
-        "improvmx": {
-          "name": "ImprovMX",
-          "role": "Réception du courrier envoyé aux adresses @attabl.com",
-          "country": "Selon le prestataire"
         }
       },
       "section5Title": "5. Les lois qui s'appliquent",
@@ -2497,7 +2492,7 @@
     "movementPhysicalCount": "Inventaire physique",
     "declareLoss": "Déclarer une perte",
     "lossQty": "Quantité perdue",
-    "exceedsStockWarning": "Cette quantité dépasse le stock actuel ({stock} {unit}). Le stock sera ramené à 0.",
+    "exceedsStockWarning": "Cette quantité dépasse le stock actuel ({stock} {unit}). Le stock passera sous zéro.",
     "lossReason": "Motif de la perte",
     "lossNotes": "Notes (facultatif)",
     "lossRecorded": "Perte enregistrée",

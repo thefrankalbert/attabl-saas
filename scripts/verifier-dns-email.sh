@@ -2,7 +2,7 @@
 # Verifie que les enregistrements DNS dont depend l'e-mail d'ATTABL sont en
 # place. Lance chaque semaine par .github/workflows/email-dns.yml.
 #
-# - attabl.com MX            -> ImprovMX (reception: contact@, dmarc@...)
+# - attabl.com MX            -> Resend (reception: support@, partenaires@...)
 # - _dmarc.attabl.com        -> DMARC en quarantine ou reject (anti-usurpation)
 # - send.attabl.com SPF      -> include:amazonses.com (chemin de retour Resend)
 # - resend._domainkey        -> cle DKIM publiee (signature des e-mails envoyes)
@@ -24,7 +24,7 @@ controle() {
   fi
 }
 
-controle "MX attabl.com -> ImprovMX" "$(q attabl.com MX)" 'mx[12]\.improvmx\.com\.?$'
+controle "MX attabl.com -> Resend" "$(q attabl.com MX)" '^[0-9]+ receive\.forge\.rmta\.net\.?$'
 controle "DMARC quarantine ou reject" "$(q _dmarc.attabl.com TXT)" '^"v=DMARC1;.*p=(quarantine|reject)'
 controle "SPF send.attabl.com (Resend)" "$(q send.attabl.com TXT)" '^"v=spf1 .*include:amazonses\.com'
 controle "DKIM resend._domainkey publie" "$(q resend._domainkey.attabl.com TXT)" '^"p=[A-Za-z0-9+/]{100,}'

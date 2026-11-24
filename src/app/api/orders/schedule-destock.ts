@@ -11,7 +11,6 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import * as Sentry from '@sentry/nextjs';
 import { logger } from '@/lib/logger';
 import { createInventoryService } from '@/services/inventory.service';
-import { ServiceError } from '@/services/errors';
 
 // Non-blocking: an order is never refused because the stock engine stumbled.
 // `createdBy` is the acting operator for the anti-theft trail - NULL on the anon
@@ -41,15 +40,7 @@ export function scheduleDestock(
       // physical count, with no way to tell which order caused it.
       try {
         const { notifyDestockFailed } = await import('@/services/notification.service');
-        await notifyDestockFailed({
-          tenantId,
-          orderId,
-          // Read from the typed error, NOT from its message: destockOrder maps
-          // the RPC's INSUFFICIENT_STOCK to a CONFLICT ServiceError whose
-          // message is localized French, so matching on the text silently
-          // never matched and the shortage wording was dead code.
-          outOfStock: err instanceof ServiceError && err.code === 'CONFLICT',
-        });
+        await notifyDestockFailed({ tenantId, orderId });
       } catch (notifyErr) {
         // Already the error path: never let it become an unhandled rejection.
         logger.error('Auto-destock: warning the restaurant failed', { orderId, notifyErr });

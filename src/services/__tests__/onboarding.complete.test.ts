@@ -236,6 +236,23 @@ describe('ordre: le drapeau "fini" est ecrit en dernier', () => {
   });
 });
 
+describe('drapeau final et nom deja pris (B124)', () => {
+  it('remonte un conflit de nom detecte au passage en etabli', async () => {
+    // Le declencheur juge aussi le passage onboarding_completed = true: un autre
+    // compte a pu terminer avant avec le meme nom.
+    tenantNonLance();
+    resultats['tenants.update'] = [
+      { data: [{ id: 't1' }], error: null }, // verrou
+      { error: null }, // champs
+      { error: { code: '23505', message: 'tenant_name_cross_group_conflict' } }, // drapeau final
+    ];
+
+    await expect(completeOnboarding(fakeSupabase(), 't1', donnees())).rejects.toThrow(
+      'RESTAURANT_NAME_TAKEN',
+    );
+  });
+});
+
 describe('mise a jour du tenant', () => {
   it('remonte un conflit de nom en erreur dediee', async () => {
     // Le restaurateur doit lire "ce nom est deja pris", pas "erreur interne".

@@ -1104,6 +1104,7 @@ export type Database = {
           is_featured: boolean;
           is_spicy: boolean;
           is_vegetarian: boolean;
+          masque_par_stock: boolean;
           name: string;
           name_en: string | null;
           options_title_en: string | null;
@@ -1135,6 +1136,7 @@ export type Database = {
           is_featured?: boolean;
           is_spicy?: boolean;
           is_vegetarian?: boolean;
+          masque_par_stock?: boolean;
           name: string;
           name_en?: string | null;
           options_title_en?: string | null;
@@ -1166,6 +1168,7 @@ export type Database = {
           is_featured?: boolean;
           is_spicy?: boolean;
           is_vegetarian?: boolean;
+          masque_par_stock?: boolean;
           name?: string;
           name_en?: string | null;
           options_title_en?: string | null;
@@ -1624,6 +1627,7 @@ export type Database = {
           comped_by: string | null;
           completed_at: string | null;
           coupon_id: string | null;
+          coupon_rendu_at: string | null;
           created_at: string;
           customer_name: string | null;
           customer_phone: string | null;
@@ -1671,6 +1675,7 @@ export type Database = {
           comped_by?: string | null;
           completed_at?: string | null;
           coupon_id?: string | null;
+          coupon_rendu_at?: string | null;
           created_at?: string;
           customer_name?: string | null;
           customer_phone?: string | null;
@@ -1718,6 +1723,7 @@ export type Database = {
           comped_by?: string | null;
           completed_at?: string | null;
           coupon_id?: string | null;
+          coupon_rendu_at?: string | null;
           created_at?: string;
           customer_name?: string | null;
           customer_phone?: string | null;
@@ -3290,6 +3296,10 @@ export type Database = {
         Args: { p_tenant_id: string };
         Returns: undefined;
       };
+      assert_inventory_view: {
+        Args: { p_tenant_id: string };
+        Returns: undefined;
+      };
       assert_tenant_business_reports: {
         Args: { p_tenant_id: string };
         Returns: undefined;
@@ -3439,14 +3449,6 @@ export type Database = {
         Args: { p_cart_ids: string[]; p_limit?: number; p_tenant_id: string };
         Returns: {
           menu_item_id: string;
-        }[];
-      };
-      get_daily_comps: {
-        Args: { p_end_date: string; p_start_date: string; p_tenant_id: string };
-        Returns: {
-          comp_count: number;
-          comp_total: number;
-          day: string;
         }[];
       };
       get_daily_revenue: {
@@ -3899,6 +3901,10 @@ export type Database = {
         }[];
       };
       request_account_deletion: { Args: never; Returns: string };
+      rendre_coupon_commande: {
+        Args: { p_order_id: string; p_tenant_id: string };
+        Returns: boolean;
+      };
       reset_tenant_data: {
         Args: { p_reset_type: string; p_tenant_id: string };
         Returns: Json;

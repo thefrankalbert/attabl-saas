@@ -1,7 +1,8 @@
 /**
  * Integration tests for the structured-loss RPCs against a REAL local Postgres.
  *
- * The unit suite mocks supabase.rpc, so the load-bearing SQL - clamp-at-0,
+ * The unit suite mocks supabase.rpc, so the load-bearing SQL - declared loss
+ * recorded in full (stock may go below zero, audit B142),
  * reconcilable 'loss' movement carrying reason_code, auto-unavailable flip, the
  * reason_code CHECK, and tenant scoping - is never executed. These tests close
  * that gap by calling record_loss_tx / get_losses_by_reason for real.
@@ -166,7 +167,7 @@ describe('record_loss_tx / get_losses_by_reason (real Postgres)', () => {
     expect(await movementSum(ing)).toBeCloseTo(await getStock(ing), 3);
   });
 
-  it('clamps at 0 when the loss exceeds stock and records the ACTUAL applied delta', async () => {
+  it('records the declared loss in full when it exceeds stock (stock goes below zero)', async () => {
     const ing = await seedIngredient({});
     await db.rpc('set_opening_stock', {
       p_tenant_id: tenantId,
@@ -181,12 +182,14 @@ describe('record_loss_tx / get_losses_by_reason (real Postgres)', () => {
       p_reason_code: 'spillage',
     });
     expect(error).toBeNull();
-    expect(Number(after)).toBeCloseTo(0, 3);
-    expect(await getStock(ing)).toBeCloseTo(0, 3);
+    // B142 (revue lot B2b-1): the declared loss is recorded in full and the
+    // stock goes below zero, like a sale does since 20261112150000.
+    expect(Number(after)).toBeCloseTo(-5, 3);
+    expect(await getStock(ing)).toBeCloseTo(-5, 3);
 
     const loss = await lastLossMovement(ing);
-    expect(loss?.quantity).toBeCloseTo(-4, 3); // applied delta, not -9
-    expect(await movementSum(ing)).toBeCloseTo(0, 3); // never negative
+    expect(loss?.quantity).toBeCloseTo(-9, 3); // the declared quantity
+    expect(await movementSum(ing)).toBeCloseTo(-5, 3); // ledger matches the stock
   });
 
   it('auto-disables dependent menu items when the ingredient hits 0', async () => {

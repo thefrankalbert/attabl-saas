@@ -626,7 +626,7 @@
         },
         "resend": {
           "name": "Resend",
-          "role": "Sending emails (welcome, invitation, forgotten password, confirmation)",
+          "role": "Sending emails (welcome, invitation, forgotten password, confirmation) and receiving mail sent to @attabl.com addresses",
           "country": "United States"
         },
         "sentry": {
@@ -653,11 +653,6 @@
           "name": "Browser notification services (Google, Apple, Mozilla, Microsoft)",
           "role": "Delivering a push notification to your device if you turn it on",
           "country": "United States and global network"
-        },
-        "improvmx": {
-          "name": "ImprovMX",
-          "role": "Receiving mail sent to @attabl.com addresses",
-          "country": "Depends on the provider"
         }
       },
       "section5Title": "5. Applicable laws",
@@ -2497,7 +2492,7 @@
     "movementPhysicalCount": "Physical inventory",
     "declareLoss": "Declare a loss",
     "lossQty": "Lost quantity",
-    "exceedsStockWarning": "This quantity is higher than the current stock ({stock} {unit}). Stock will be set to 0.",
+    "exceedsStockWarning": "This quantity is higher than the current stock ({stock} {unit}). Stock will go below zero.",
     "lossReason": "Loss reason",
     "lossNotes": "Notes (optional)",
     "lossRecorded": "Loss recorded",
