@@ -150,6 +150,27 @@ describe('POST /api/signup', () => {
     expect(JSON.stringify(existingJson)).not.toMatch(/already|deja|EMAIL_ALREADY_REGISTERED/i);
   });
 
+  // Fournisseur d'e-mails en panne: la reponse reste identique dans les deux
+  // cas. `emailDelivered` etait code en dur a `true` pour un compte existant.
+  it('reste identique a une inscription reussie quand aucun e-mail ne part', async () => {
+    mockCompleteEmailSignup.mockResolvedValueOnce({
+      slug: 'le-petit-bistrot',
+      tenantId: 'tenant-uuid-123',
+      emailDelivered: false,
+    });
+    const created = await POST(makeRequest(validBody()));
+    const createdJson = (await created.json()) as Record<string, unknown>;
+
+    mockAccountExistsEmail.mockResolvedValueOnce(false);
+    mockCompleteEmailSignup.mockRejectedValueOnce(
+      new ServiceError('EMAIL_ALREADY_REGISTERED', 'CONFLICT'),
+    );
+    const existing = await POST(makeRequest(validBody()));
+
+    expect(createdJson.emailDelivered).toBe(false);
+    expect(await existing.json()).toEqual(createdJson);
+  });
+
   // A-08 (contre-audit H1): le refus "nom pris" ne depend pas de l'adresse.
   it('answers a taken restaurant name identically for a new and an existing email (A-08)', async () => {
     mockNameTaken.mockResolvedValue(true);

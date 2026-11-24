@@ -1,7 +1,13 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { loadSessionMemberships } from '@/lib/auth/session-destination';
 import { onboardingGateDestination } from '@/lib/auth/post-login-destination';
+
+export const metadata: Metadata = {
+  title: 'Créer votre établissement - ATTABL',
+  robots: { index: false, follow: false },
+};
 
 /**
  * The onboarding is shown ONCE per establishment.

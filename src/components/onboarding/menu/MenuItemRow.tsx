@@ -89,6 +89,7 @@ export function MenuItemRow({
       </div>
       <Input
         placeholder={t('articleNamePlaceholder')}
+        maxLength={200}
         value={item.name}
         onChange={(e) => updateArticle(categoryId, item.id, 'name', e.target.value)}
         className="h-10 flex-1 rounded-lg border-app-border bg-app-elevated px-3.5 text-base md:text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"

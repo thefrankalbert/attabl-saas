@@ -121,7 +121,12 @@ export async function POST(request: Request) {
       // affirmation sur l'ordre interne de Supabase que ce depot ne peut pas
       // verifier, et qui offrait des essais gratuits si elle etait fausse.
       if (authCode === 'email_not_confirmed') {
-        return NextResponse.json({ error: t('emailNotConfirmed'), email }, { status: 403 });
+        // `code` est stable et lu par le formulaire pour proposer "Renvoyer":
+        // il comparait `error`, qui porte la phrase traduite, donc jamais.
+        return NextResponse.json(
+          { error: t('emailNotConfirmed'), code: 'email_not_confirmed', email },
+          { status: 403 },
+        );
       }
 
       if (authCode === 'invalid_credentials') {

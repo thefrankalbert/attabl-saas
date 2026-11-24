@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Plus, X } from 'lucide-react';
-import { capacityOptions, type ZoneData } from './types';
+import { capacityOptions, MAX_TABLES_PER_ZONE, type ZoneData } from './types';
 
 interface CompleteZonesProps {
   zones: ZoneData[];
@@ -59,10 +59,14 @@ export function CompleteZones({ zones, updateZone, addZone, removeZone }: Comple
             <div className="p-4">
               <div className="mb-3 grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="mb-2 block text-xs font-medium text-app-text-secondary">
+                  <Label
+                    htmlFor={`zone-name-${index}`}
+                    className="mb-2 block text-xs font-medium text-app-text-secondary"
+                  >
                     {t('zoneName')}
                   </Label>
                   <Input
+                    id={`zone-name-${index}`}
                     type="text"
                     placeholder={t('zoneNamePlaceholder')}
                     value={zone.name}
@@ -71,10 +75,14 @@ export function CompleteZones({ zones, updateZone, addZone, removeZone }: Comple
                   />
                 </div>
                 <div>
-                  <Label className="mb-2 block text-xs font-medium text-app-text-secondary">
+                  <Label
+                    htmlFor={`zone-prefix-${index}`}
+                    className="mb-2 block text-xs font-medium text-app-text-secondary"
+                  >
                     {t('zonePrefix')}
                   </Label>
                   <Input
+                    id={`zone-prefix-${index}`}
                     type="text"
                     placeholder="TER"
                     maxLength={5}
@@ -87,13 +95,17 @@ export function CompleteZones({ zones, updateZone, addZone, removeZone }: Comple
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="mb-2 block text-xs font-medium text-app-text-secondary">
+                  <Label
+                    htmlFor={`zone-table-count-${index}`}
+                    className="mb-2 block text-xs font-medium text-app-text-secondary"
+                  >
                     {t('zoneTableCount')}
                   </Label>
                   <Input
+                    id={`zone-table-count-${index}`}
                     type="number"
                     min="1"
-                    max="100"
+                    max={MAX_TABLES_PER_ZONE}
                     value={zone.tableCount}
                     onChange={(e) => updateZone(index, 'tableCount', e.target.value)}
                     className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-base md:text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"

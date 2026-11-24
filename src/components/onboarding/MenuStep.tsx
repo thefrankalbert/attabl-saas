@@ -4,6 +4,16 @@ import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { ChevronDown, ChevronRight, Plus, X, UtensilsCrossed } from 'lucide-react';
 import type { OnboardingData } from '@/app/onboarding/page';
 import { compressImage } from '@/lib/image-compress';
@@ -25,6 +35,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
   const tc = useTranslations('common');
   const family = getSegmentFamily(data.establishmentType);
   const [uploadingItemId, setUploadingItemId] = useState<string | null>(null);
+  const [categoryPendingDelete, setCategoryPendingDelete] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>(() =>
     buildCategoriesFromData(data.menuItems),
   );
@@ -116,6 +127,16 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
     ];
     setCategories(updated);
     syncToParent(updated);
+  };
+
+  const requestDeleteCategory = (categoryId: string) => {
+    const category = categories.find((c) => c.id === categoryId);
+    const hasDishes = category?.items.some((item) => item.name.trim() || item.price.trim());
+    if (hasDishes) {
+      setCategoryPendingDelete(categoryId);
+      return;
+    }
+    deleteCategory(categoryId);
   };
 
   const deleteCategory = (categoryId: string) => {
@@ -298,6 +319,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                         <Input
                           placeholder={t('categoryNamePlaceholder')}
                           value={category.name}
+                          maxLength={100}
                           onChange={(e) => updateCategoryName(category.id, e.target.value)}
                           className="h-10 flex-1 rounded-lg border-app-border bg-app-bg px-3.5 text-base md:text-sm font-semibold shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
                         />
@@ -310,7 +332,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          onClick={() => deleteCategory(category.id)}
+                          onClick={() => requestDeleteCategory(category.id)}
                           className="h-8 w-8 rounded-lg p-2 text-app-text-muted transition-colors hover:bg-status-error-bg hover:text-status-error"
                           aria-label={t('deleteCategory')}
                         >
@@ -374,6 +396,32 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
           </div>
         </div>
       </div>
+
+      <AlertDialog
+        open={categoryPendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setCategoryPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('deleteCategoryConfirmTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('deleteCategoryConfirmDescription')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tc('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (categoryPendingDelete) deleteCategory(categoryPendingDelete);
+                setCategoryPendingDelete(null);
+              }}
+              className="bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:opacity-90"
+            >
+              {t('deleteCategory')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -228,8 +228,8 @@ function ResetPasswordContent() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className={labelClass}>{t('newPasswordLabel')}</FormLabel>
-                        <FormControl>
-                          <div className="relative">
+                        <div className="relative">
+                          <FormControl>
                             <Input
                               type={showPassword ? 'text' : 'password'}
                               autoComplete="new-password"
@@ -237,25 +237,25 @@ function ResetPasswordContent() {
                               className={`${inputClass} pr-10`}
                               {...field}
                             />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              aria-label={
-                                showPassword ? tForm('hidePassword') : tForm('showPassword')
-                              }
-                              aria-pressed={showPassword}
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-[var(--muted)] hover:bg-transparent hover:text-[var(--fg)]"
-                            >
-                              {showPassword ? (
-                                <EyeOff className="h-4 w-4" />
-                              ) : (
-                                <Eye className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </div>
-                        </FormControl>
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label={
+                              showPassword ? tForm('hidePassword') : tForm('showPassword')
+                            }
+                            aria-pressed={showPassword}
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-[var(--muted)] hover:bg-transparent hover:text-[var(--fg)]"
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}

@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import type { OnboardingData } from '@/app/onboarding/page';
-import { derivePrefix, type ConfigMode, type ZoneData } from './tables/types';
+import { derivePrefix, MAX_TABLES_PER_ZONE, type ConfigMode, type ZoneData } from './tables/types';
 import { ModeSelector } from './tables/ModeSelector';
 import { SkipState } from './tables/SkipState';
 import { MinimumZones } from './tables/MinimumZones';
@@ -50,7 +50,10 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
     } else if (field === 'prefix') {
       updated[index] = { ...updated[index], prefix: (value as string).toUpperCase() };
     } else if (field === 'tableCount') {
-      updated[index] = { ...updated[index], tableCount: Math.max(1, Number(value)) };
+      updated[index] = {
+        ...updated[index],
+        tableCount: Math.min(MAX_TABLES_PER_ZONE, Math.max(1, Number(value))),
+      };
     } else if (field === 'defaultCapacity') {
       updated[index] = { ...updated[index], defaultCapacity: Number(value) };
     }

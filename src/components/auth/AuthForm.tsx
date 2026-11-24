@@ -220,12 +220,14 @@ function AuthForm({ mode }: AuthFormProps) {
               id="email"
               type="email"
               name="email"
-              autoComplete={isLogin ? 'email' : 'off'}
+              autoComplete="email"
               placeholder={tForm('emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               aria-required="true"
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? 'auth-form-error' : undefined}
               className={inputClass}
             />
           </div>
@@ -247,6 +249,8 @@ function AuthForm({ mode }: AuthFormProps) {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 aria-required="true"
+                aria-invalid={error ? true : undefined}
+                aria-describedby={error ? 'auth-form-error' : undefined}
                 minLength={isLogin ? undefined : 8}
                 className={`${inputClass} pr-10`}
               />
@@ -300,6 +304,7 @@ function AuthForm({ mode }: AuthFormProps) {
 
           {error && (
             <Alert
+              id="auth-form-error"
               variant="destructive"
               className="rounded-lg border-[var(--err-border)] bg-[var(--err-bg)] text-[var(--err-fg)] [&>svg]:text-[var(--err-fg)]"
             >

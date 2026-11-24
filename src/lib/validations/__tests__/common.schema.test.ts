@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseRouteUuid, routeUuidSchema } from '../common.schema';
+import { parseRouteUuid, passwordSchema, routeUuidSchema } from '../common.schema';
 
 describe('routeUuidSchema', () => {
   it('accepts valid UUID', () => {
@@ -26,4 +26,17 @@ describe('parseRouteUuid', () => {
       expect(result.error).toContain('invalide');
     }
   });
+});
+
+describe('passwordSchema - mots de passe trop simples', () => {
+  it.each(['1234567890123', '9876543210987', 'aaaaaaa1', 'abababa1'])('refuse %s', (v) => {
+    expect(passwordSchema.safeParse(v).success).toBe(false);
+  });
+
+  it.each(['Soleil-Ouaga-2026', 'maquis!42', '20261124', 'riz gras 7'])(
+    'temoin: accepte %s',
+    (v) => {
+      expect(passwordSchema.safeParse(v).success).toBe(true);
+    },
+  );
 });

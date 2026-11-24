@@ -290,6 +290,9 @@ describe('POST /api/login - ce qui borne les essais', () => {
     const res = await POST(requete());
 
     expect(res.status).toBe(403);
+    // Le formulaire lit `code` (stable) pour proposer "Renvoyer", jamais la
+    // phrase traduite de `error`.
+    expect(((await res.json()) as { code?: string }).code).toBe('email_not_confirmed');
   });
 
   /**

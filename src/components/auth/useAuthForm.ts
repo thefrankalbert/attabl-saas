@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { logger } from '@/lib/logger';
 import { HONEYPOT_FIELD } from '@/lib/honeypot';
 import { prepareLogoutInBrowser } from '@/lib/offline/browser-logout-cleanup';
+import { resolvePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 
 type AuthMode = 'login' | 'signup';
 
@@ -139,17 +140,25 @@ export function useAuthForm(mode: AuthMode) {
           }),
         });
 
-        const data = (await response.json()) as { error?: string; redirect?: string };
+        const data = (await response.json()) as {
+          error?: string;
+          code?: string;
+          redirect?: string;
+        };
 
         if (!response.ok) {
-          if (data.error === 'email_not_confirmed') {
+          if (data.code === 'email_not_confirmed') {
             throw new Error('Email not confirmed');
           }
           throw new Error(data.error || tErr('loginGeneric'));
         }
 
-        // Redirect based on server response
-        window.location.href = data.redirect || '/admin/tenants';
+        // Destination du serveur, ou la page demandee avant la connexion
+        // (`?redirect=`) si elle est interne et coherente avec ce compte.
+        window.location.href = resolvePostLoginRedirect(
+          data.redirect || '/admin/tenants',
+          searchParams.get('redirect'),
+        );
       }
     } catch (err) {
       logger.error('Auth form submit failed', err);

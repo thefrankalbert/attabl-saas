@@ -14,6 +14,7 @@ import { isReservedSiteSlug } from '@/lib/tenant-slugs';
 import { SCREEN_TO_API_STEP, oldStepToPhaseScreen, type ScreenKey } from './onboarding-steps';
 import type { PhaseDefinition } from './onboarding-steps';
 import type { OnboardingData } from './types';
+import { launchFixKey } from './utils/launch-errors';
 import { stepBlockingError } from './utils/step-validation';
 
 export function useOnboarding() {
@@ -503,7 +504,7 @@ export function useOnboarding() {
 
       if (!res.ok) {
         if (result.details && Array.isArray(result.details)) {
-          throw new Error(`${t('validationFailed')}: ${result.details.join(', ')}`);
+          throw new Error(t(launchFixKey(result.details)));
         }
         if (result.error === 'RESTAURANT_NAME_TAKEN') {
           throw new Error(t('nameTaken'));

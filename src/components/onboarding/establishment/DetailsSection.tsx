@@ -48,6 +48,7 @@ export function DetailsSection({
             <Input
               id="address"
               type="text"
+              autoComplete="street-address"
               placeholder={t('addressPlaceholder')}
               value={data.address}
               onChange={(e) => updateData({ address: e.target.value })}
@@ -66,6 +67,7 @@ export function DetailsSection({
               <Input
                 id="city"
                 type="text"
+                autoComplete="address-level2"
                 placeholder={t('cityPlaceholder')}
                 value={data.city}
                 onChange={(e) => updateData({ city: e.target.value })}
@@ -82,6 +84,7 @@ export function DetailsSection({
               <Input
                 id="country"
                 type="text"
+                autoComplete="country-name"
                 placeholder={t('countryLabel')}
                 value={data.country}
                 onChange={(e) => updateData({ country: e.target.value })}
@@ -101,9 +104,12 @@ export function DetailsSection({
             <Input
               id="phone"
               type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              maxLength={20}
               placeholder={t('phonePlaceholder')}
               value={data.phone}
-              onChange={(e) => updateData({ phone: e.target.value })}
+              onChange={(e) => updateData({ phone: e.target.value.replace(/[^0-9+()\-.\s]/g, '') })}
               className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-base md:text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
             />
           </div>

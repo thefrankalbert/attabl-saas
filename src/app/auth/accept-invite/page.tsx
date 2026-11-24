@@ -26,6 +26,8 @@ function AcceptInviteForm() {
   const [success, setSuccess] = useState(false);
   const [tokenExpired, setTokenExpired] = useState(false);
   const [tokenInvalid, setTokenInvalid] = useState(false);
+  // Le formulaire n'apparait qu'une fois le jeton verifie par le serveur.
+  const [validating, setValidating] = useState(Boolean(token));
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -56,10 +58,16 @@ function AcceptInviteForm() {
         }
       } catch {
         // Network error - let the actual submit handle it
+      } finally {
+        setValidating(false);
       }
     }
     validateToken();
   }, [token]);
+
+  if (token && validating) {
+    return <CenteredSkeleton />;
+  }
 
   // No token in URL, or a token the server does not recognise
   if (!token || tokenInvalid) {

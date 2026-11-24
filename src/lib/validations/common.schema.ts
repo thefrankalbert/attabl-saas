@@ -43,6 +43,16 @@ const COMMON_PASSWORDS = new Set([
   'restaurant1',
 ]);
 
+/** Suite de chiffres qui se suivent (1234567890123, 987654321): devinable. */
+function isDigitRun(value: string): boolean {
+  if (!/^[0-9]+$/.test(value)) return false;
+  const steps = new Set<number>();
+  for (let i = 1; i < value.length; i += 1) {
+    steps.add((Number(value[i]) - Number(value[i - 1]) + 10) % 10);
+  }
+  return steps.size === 1 && (steps.has(1) || steps.has(9));
+}
+
 export const passwordSchema = z
   .string()
   .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
@@ -54,6 +64,10 @@ export const passwordSchema = z
   .refine(
     (v) => !COMMON_PASSWORDS.has(v.toLowerCase()),
     'Ce mot de passe est trop connu, choisissez-en un autre',
+  )
+  .refine(
+    (v) => new Set(v.toLowerCase()).size >= 4 && !isDigitRun(v),
+    'Ce mot de passe est trop simple, choisissez-en un autre',
   );
 
 export const routeUuidSchema = z.string().uuid('Identifiant invalide');

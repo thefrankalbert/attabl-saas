@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Plus, X } from 'lucide-react';
-import { derivePrefix, type ZoneData } from './types';
+import { derivePrefix, MAX_TABLES_PER_ZONE, type ZoneData } from './types';
 
 interface MinimumZonesProps {
   zones: ZoneData[];
@@ -29,6 +29,7 @@ export function MinimumZones({ zones, updateZone, addZone, removeZone }: Minimum
               <Input
                 type="text"
                 placeholder={t('zoneNamePlaceholder')}
+                aria-label={t('zoneName')}
                 value={zone.name}
                 onChange={(e) => updateZone(index, 'name', e.target.value)}
                 className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-base md:text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
@@ -38,8 +39,9 @@ export function MinimumZones({ zones, updateZone, addZone, removeZone }: Minimum
               <Input
                 type="number"
                 min="1"
-                max="100"
+                max={MAX_TABLES_PER_ZONE}
                 placeholder={t('zoneTableCount')}
+                aria-label={t('zoneTableCount')}
                 value={zone.tableCount}
                 onChange={(e) => updateZone(index, 'tableCount', e.target.value)}
                 className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-center text-base md:text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"

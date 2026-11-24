@@ -81,7 +81,15 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
       return;
     }
     const objectUrl = URL.createObjectURL(file);
-    setCropSrc(objectUrl);
+    // Un fichier qui n'est pas une image lisible (ex: .txt renomme en .png)
+    // ouvrait un cadrage noir dont "Appliquer" ne faisait rien.
+    const probe = new Image();
+    probe.addEventListener('load', () => setCropSrc(objectUrl));
+    probe.addEventListener('error', () => {
+      URL.revokeObjectURL(objectUrl);
+      toast({ title: t('logoNotImage'), variant: 'destructive' });
+    });
+    probe.src = objectUrl;
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
