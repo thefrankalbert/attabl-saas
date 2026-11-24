@@ -173,6 +173,15 @@ jobs:
           # Sentry
           NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          # Pas de SENTRY_AUTH_TOKEN en CI, volontairement: un build de PR ne doit
+          # ni envoyer de source maps ni creer de release Sentry pour du code non
+          # fusionne. next.config.mjs coupe alors l'envoi et la creation de release
+          # quand le jeton manque. Mais le plugin Sentry (10.78) recalcule quand meme
+          # un nom de release depuis git et ecrit "No auth token provided. Will not
+          # create release" AVANT de lire `create: false`. Un nom vide est le seul
+          # cas qu'il saute sans rien ecrire. Aucun effet ailleurs: rien d'autre ne
+          # lit cette variable, et Vercel (qui a le jeton) n'est pas concerne.
+          SENTRY_RELEASE: ''
           # Upstash Redis (rate limiting)
           UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
           UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
@@ -235,6 +244,13 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          # Valeur FACTICE, volontairement. src/lib/env.ts exige cette variable au
+          # demarrage et, sans elle, `pnpm dev` ecrivait a chaque run "[env] WARNING:
+          # Invalid or missing required environment variables". Les specs smoke
+          # (home + segments) ne touchent jamais Supabase: la vraie cle service_role
+          # n'a rien a faire ici, ce job tournant sur chaque PR. Si une spec venait a
+          # utiliser le client admin, elle echouerait en clair (cle refusee).
+          SUPABASE_SERVICE_ROLE_KEY: e2e-smoke-cle-factice-jamais-utilisee
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
           NEXT_PUBLIC_APP_DOMAIN: ${{ secrets.NEXT_PUBLIC_APP_DOMAIN }}
 
