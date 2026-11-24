@@ -1,0 +1,138 @@
+# Sauvegarde nocturne de la base de production, puis restauration de CETTE
+# sauvegarde dans une base jetable pour prouver qu'elle est utilisable.
+#
+# Pourquoi en plus des sauvegardes Supabase: elles vivent chez le meme
+# fournisseur que la base. Celle-ci part ailleurs (GitHub), et surtout elle est
+# RESTAUREE chaque nuit: une sauvegarde jamais restauree ne prouve rien.
+#
+# 1. sauvegarde: pg_dump 17 (meme version majeure que le serveur), connexion TLS
+#    verifiee avec le certificat racine Supabase (public, dans supabase/certs/).
+#    Le fichier est chiffre (AES-256, cle derivee PBKDF2) avant de quitter la
+#    machine: le depot est public, une sauvegarde en clair serait lisible.
+#    Rien d'autre ne sort en clair: ni donnees, ni comptages (le resume d'un
+#    run est public lui aussi).
+# 2. restauration: la sauvegarde est dechiffree et chargee dans l'image Postgres
+#    de Supabase (meme version 17.6). Le nombre de rangees de chaque table est
+#    lu dans le fichier lui-meme, puis recompte dans la base restauree: il doit
+#    etre IDENTIQUE partout. La moindre rangee manquante fait echouer le run.
+#
+# Secrets requis (Settings > Secrets and variables > Actions):
+#   BACKUP_DB_URL       chaine de connexion Postgres de la production (pooler, port 5432)
+#   BACKUP_PASSPHRASE   phrase de chiffrement; le proprietaire la garde aussi
+#                       dans son gestionnaire de mots de passe pour restaurer a la main
+#
+# Restauration a la main (exemple):
+#   gh run download <run-id> -n sauvegarde-prod
+#   openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -in prod.dump.enc -out prod.dump
+#   pg_restore --no-owner --no-privileges -d "<base cible>" prod.dump
+
+name: Sauvegarde et restauration
+
+on:
+  schedule:
+    - cron: '30 1 * * *'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/sauvegarde.yml'
+      - 'scripts/sauvegarde/**'
+
+concurrency:
+  group: sauvegarde
+  cancel-in-progress: false
+
+# Least privilege: the token can only read the code. A job that needs more
+# asks for it in its own `permissions:` block.
+permissions:
+  contents: read
+
+env:
+  PG_IMAGE: postgres:17.6-alpine@sha256:ef257d85f76e48da1c64832459b59fcaba1a4dac97bf5d7450c77753542eee94
+
+jobs:
+  sauvegarde:
+    name: Sauvegarde chiffree
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      pret: ${{ steps.secrets.outputs.pret }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Verifier les secrets
+        id: secrets
+        env:
+          EVENT: ${{ github.event_name }}
+          BACKUP_DB_URL: ${{ secrets.BACKUP_DB_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -n "$BACKUP_DB_URL" ] && [ -n "$BACKUP_PASSPHRASE" ]; then
+            echo "pret=oui" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "pret=non" >> "$GITHUB_OUTPUT"
+          echo "### Sauvegarde impossible: secret BACKUP_DB_URL ou BACKUP_PASSPHRASE manquant (voir l'en-tete de sauvegarde.yml)" >> "$GITHUB_STEP_SUMMARY"
+          # Sur une PR, on previent sans bloquer. La nuit, une sauvegarde qui
+          # ne se fait pas est une panne: le run echoue.
+          if [ "$EVENT" = pull_request ]; then
+            echo "::warning::secrets de sauvegarde absents, sauvegarde non testee sur cette PR"
+            exit 0
+          fi
+          echo "::error::secrets de sauvegarde absents"
+          exit 1
+      - name: Sauvegarder et compter
+        if: steps.secrets.outputs.pret == 'oui'
+        env:
+          BACKUP_DB_URL: ${{ secrets.BACKUP_DB_URL }}
+        run: bash scripts/sauvegarde/sauvegarder.sh
+      - name: Chiffrer
+        if: steps.secrets.outputs.pret == 'oui'
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          openssl enc -aes-256-cbc -pbkdf2 -iter 600000 -salt \
+            -in out/prod.dump -out out/prod.dump.enc -pass env:BACKUP_PASSPHRASE
+          rm out/prod.dump
+          sha256sum out/prod.dump.enc > out/prod.dump.enc.sha256
+          echo "### Sauvegarde du $(date -u +%Y-%m-%d) : $(du -h out/prod.dump.enc | cut -f1) chiffres" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: steps.secrets.outputs.pret == 'oui'
+        with:
+          name: sauvegarde-prod
+          path: out/
+          retention-days: 35
+          if-no-files-found: error
+
+  restauration:
+    name: Restauration verifiee
+    needs: sauvegarde
+    if: needs.sauvegarde.outputs.pret == 'oui'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      cible:
+        image: supabase/postgres:17.6.1.178@sha256:c282d393ae56fd165b7ada2ddbac55e582a601b86f3840aa2bbc112e43d3a570
+        env:
+          POSTGRES_PASSWORD: restauration-jetable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -h localhost"
+          --health-interval 5s --health-timeout 5s --health-retries 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: sauvegarde-prod
+          path: out
+      - name: Dechiffrer
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          sha256sum -c out/prod.dump.enc.sha256
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 \
+            -in out/prod.dump.enc -out out/prod.dump -pass env:BACKUP_PASSPHRASE
+      - name: Restaurer et comparer les comptages
+        env:
+          TARGET_URL: postgresql://supabase_admin:restauration-jetable@localhost:5432/postgres
+        run: bash scripts/sauvegarde/restaurer-et-verifier.sh

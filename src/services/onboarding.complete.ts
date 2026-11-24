@@ -225,6 +225,12 @@ async function runLaunch(
     .update({ onboarding_completed: true, onboarding_completed_at: now })
     .eq('id', tenantId);
   if (completeError) {
+    // The name check also runs when the restaurant becomes established
+    // (migration 20261124151200): another account may have finished first
+    // with the same name.
+    if (isTenantNameConflictError(completeError)) {
+      throw new ServiceError('RESTAURANT_NAME_TAKEN', 'CONFLICT', completeError);
+    }
     logger.error('Failed to mark onboarding completed', completeError, { tenantId });
     throw new ServiceError('Failed to complete onboarding', 'INTERNAL', completeError);
   }

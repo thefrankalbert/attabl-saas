@@ -285,58 +285,83 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
      * Idempotent: re-cancelling an already-cancelled order is a no-op. A PAID
      * order cannot be plain-cancelled here - that requires a refund (Phase 4) so
      * the financial record is preserved; we throw CONFLICT instead of silently
-     * reversing money. restock/unclaim are themselves idempotent, so a partial
-     * failure can be safely retried.
+     * reversing money.
+     *
+     * Exactly once (audit B67, B68): the cancellation is ONE guarded UPDATE
+     * (not paid - a NULL payment status counts as pending -, not already
+     * cancelled). Postgres re-checks those filters on the locked row, so of two
+     * concurrent cancellations, or a cancellation racing an encashment, only
+     * one write lands, and an order cannot end up paid AND cancelled (the
+     * database refuses it too, migration 20261124150000).
+     *
+     * Returns true only to the call whose UPDATE touched the row: the caller
+     * restocks only then (audit B123). The coupon is NOT released here: the
+     * caller asks the database to release it from the ORDER
+     * (`rendre_coupon_commande`, service role, migration 20261124151500), which
+     * checks the order is cancelled, the coupon belongs to the same restaurant
+     * and was not given back yet.
      */
-    async cancelOrder(orderId: string, tenantId: string): Promise<void> {
-      const { data: order, error: fetchError } = await supabase
-        .from('orders')
-        .select('id, status, payment_status, coupon_id')
-        .eq('id', orderId)
-        .eq('tenant_id', tenantId)
-        .maybeSingle();
-
-      if (fetchError) {
-        throw new ServiceError('Erreur lors du chargement de la commande', 'INTERNAL', fetchError);
-      }
-      if (!order) {
-        throw new ServiceError('Commande introuvable', 'NOT_FOUND');
-      }
-      if (order.status === 'cancelled') {
-        return; // already cancelled - no-op
-      }
-      if (order.payment_status === 'paid') {
-        throw new ServiceError(
-          'Une commande payee ne peut pas etre annulee - utiliser un remboursement',
-          'CONFLICT',
-        );
-      }
-
-      // Release the coupon (idempotent). NOTE: ingredient restock is handled by the
-      // caller via the canonical service_role restock_order path (main's
-      // stock-integrity feature) - restock_order is service_role-only, so it cannot
-      // be called from this authenticated service client. See actionUpdateOrderStatus.
-      if (order.coupon_id) {
-        const { error: unclaimError } = await supabase.rpc('unclaim_coupon_usage', {
-          p_coupon_id: order.coupon_id,
-        });
-        if (unclaimError) {
-          throw new ServiceError(
-            'Erreur lors de la liberation du coupon',
-            'INTERNAL',
-            unclaimError,
-          );
-        }
-      }
-
-      const { error: updateError } = await supabase
+    async cancelOrder(orderId: string, tenantId: string): Promise<boolean> {
+      const { data: cancelled, error: updateError } = await supabase
         .from('orders')
         .update({ status: 'cancelled' })
         .eq('id', orderId)
-        .eq('tenant_id', tenantId);
+        .eq('tenant_id', tenantId)
+        .neq('status', 'cancelled')
+        // `neq` alone would skip a NULL payment status (NULL <> 'paid' is not
+        // true), which the application treats as pending.
+        .or('payment_status.is.null,payment_status.neq.paid')
+        .select('id');
       if (updateError) {
+        // 42501: a guard trigger refused (no orders.pay, or an offered /
+        // refunded order without the money authority).
+        if ((updateError as { code?: string }).code === '42501') {
+          throw new ServiceError(
+            'Vous n avez pas la permission d annuler cette commande',
+            'UNAUTHORIZED',
+            updateError,
+          );
+        }
         throw new ServiceError("Erreur lors de l'annulation", 'INTERNAL', updateError);
       }
+
+      const row = (cancelled ?? [])[0] as { id: string } | undefined;
+      if (!row) {
+        // Nothing touched: say why. Already cancelled is the idempotent no-op,
+        // paid needs a refund, and a row the policy hides (no orders.manage)
+        // is a refusal - RLS raises no error, it only hides.
+        const { data: order, error: fetchError } = await supabase
+          .from('orders')
+          .select('status, payment_status')
+          .eq('id', orderId)
+          .eq('tenant_id', tenantId)
+          .maybeSingle();
+        if (fetchError) {
+          throw new ServiceError(
+            'Erreur lors du chargement de la commande',
+            'INTERNAL',
+            fetchError,
+          );
+        }
+        if (!order) {
+          throw new ServiceError('Commande introuvable', 'NOT_FOUND');
+        }
+        if (order.status === 'cancelled') {
+          return false; // already cancelled - no-op
+        }
+        if (order.payment_status === 'paid') {
+          throw new ServiceError(
+            'Une commande payee ne peut pas etre annulee - utiliser un remboursement',
+            'CONFLICT',
+          );
+        }
+        throw new ServiceError(
+          'Vous n avez pas la permission de modifier cette commande',
+          'UNAUTHORIZED',
+        );
+      }
+
+      return true;
     },
 
     /**

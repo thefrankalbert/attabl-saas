@@ -33,6 +33,30 @@ export type Database = {
   };
   public: {
     Tables: {
+      account_deletion_requests: {
+        Row: {
+          email: string;
+          processed_at: string | null;
+          requested_at: string;
+          restaurants: string;
+          user_id: string;
+        };
+        Insert: {
+          email: string;
+          processed_at?: string | null;
+          requested_at?: string;
+          restaurants?: string;
+          user_id: string;
+        };
+        Update: {
+          email?: string;
+          processed_at?: string | null;
+          requested_at?: string;
+          restaurants?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       admin_users: {
         Row: {
           ban_reason: string | null;
@@ -522,6 +546,30 @@ export type Database = {
           },
         ];
       };
+      cron_heartbeats: {
+        Row: {
+          job: string;
+          last_duration_ms: number;
+          last_run_at: string;
+          last_status: string;
+          schedule: string;
+        };
+        Insert: {
+          job: string;
+          last_duration_ms: number;
+          last_run_at: string;
+          last_status: string;
+          schedule: string;
+        };
+        Update: {
+          job?: string;
+          last_duration_ms?: number;
+          last_run_at?: string;
+          last_status?: string;
+          schedule?: string;
+        };
+        Relationships: [];
+      };
       dish_photo_drafts: {
         Row: {
           attached_menu_item_id: string | null;
@@ -572,6 +620,74 @@ export type Database = {
           },
           {
             foreignKeyName: 'dish_photo_drafts_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      flutterwave_payments: {
+        Row: {
+          amount: number;
+          anchor_day: number | null;
+          billing_interval: string;
+          created_at: string;
+          currency: string;
+          flw_transaction_id: number | null;
+          id: string;
+          last_checked_at: string | null;
+          payment_link: string | null;
+          period_end: string | null;
+          period_start: string | null;
+          plan: string;
+          reminder_d1_at: string | null;
+          reminder_d7_at: string | null;
+          status: string;
+          tenant_id: string;
+          tx_ref: string;
+        };
+        Insert: {
+          amount: number;
+          anchor_day?: number | null;
+          billing_interval: string;
+          created_at?: string;
+          currency: string;
+          flw_transaction_id?: number | null;
+          id?: string;
+          last_checked_at?: string | null;
+          payment_link?: string | null;
+          period_end?: string | null;
+          period_start?: string | null;
+          plan: string;
+          reminder_d1_at?: string | null;
+          reminder_d7_at?: string | null;
+          status?: string;
+          tenant_id: string;
+          tx_ref: string;
+        };
+        Update: {
+          amount?: number;
+          anchor_day?: number | null;
+          billing_interval?: string;
+          created_at?: string;
+          currency?: string;
+          flw_transaction_id?: number | null;
+          id?: string;
+          last_checked_at?: string | null;
+          payment_link?: string | null;
+          period_end?: string | null;
+          period_start?: string | null;
+          plan?: string;
+          reminder_d1_at?: string | null;
+          reminder_d7_at?: string | null;
+          status?: string;
+          tenant_id?: string;
+          tx_ref?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'flutterwave_payments_tenant_id_fkey';
             columns: ['tenant_id'];
             isOneToOne: false;
             referencedRelation: 'tenants';
@@ -988,6 +1104,7 @@ export type Database = {
           is_featured: boolean;
           is_spicy: boolean;
           is_vegetarian: boolean;
+          masque_par_stock: boolean;
           name: string;
           name_en: string | null;
           options_title_en: string | null;
@@ -1019,6 +1136,7 @@ export type Database = {
           is_featured?: boolean;
           is_spicy?: boolean;
           is_vegetarian?: boolean;
+          masque_par_stock?: boolean;
           name: string;
           name_en?: string | null;
           options_title_en?: string | null;
@@ -1050,6 +1168,7 @@ export type Database = {
           is_featured?: boolean;
           is_spicy?: boolean;
           is_vegetarian?: boolean;
+          masque_par_stock?: boolean;
           name?: string;
           name_en?: string | null;
           options_title_en?: string | null;
@@ -1171,6 +1290,42 @@ export type Database = {
           id?: string;
         };
         Relationships: [];
+      };
+      notification_reads: {
+        Row: {
+          notification_id: string;
+          read_at: string;
+          tenant_id: string;
+          user_id: string;
+        };
+        Insert: {
+          notification_id: string;
+          read_at?: string;
+          tenant_id: string;
+          user_id?: string;
+        };
+        Update: {
+          notification_id?: string;
+          read_at?: string;
+          tenant_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notification_reads_notification_id_fkey';
+            columns: ['notification_id'];
+            isOneToOne: false;
+            referencedRelation: 'notifications';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notification_reads_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       notifications: {
         Row: {
@@ -1435,6 +1590,32 @@ export type Database = {
           },
         ];
       };
+      order_number_counters: {
+        Row: {
+          dernier: number;
+          jour: string;
+          tenant_id: string;
+        };
+        Insert: {
+          dernier?: number;
+          jour: string;
+          tenant_id: string;
+        };
+        Update: {
+          dernier?: number;
+          jour?: string;
+          tenant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'order_number_counters_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       orders: {
         Row: {
           assigned_to: string | null;
@@ -1446,6 +1627,7 @@ export type Database = {
           comped_by: string | null;
           completed_at: string | null;
           coupon_id: string | null;
+          coupon_rendu_at: string | null;
           created_at: string;
           customer_name: string | null;
           customer_phone: string | null;
@@ -1464,6 +1646,7 @@ export type Database = {
           payment_method: string | null;
           payment_status: string | null;
           preparation_zone: string;
+          ready_at: string | null;
           room_number: string | null;
           served_at: string | null;
           server_id: string | null;
@@ -1492,6 +1675,7 @@ export type Database = {
           comped_by?: string | null;
           completed_at?: string | null;
           coupon_id?: string | null;
+          coupon_rendu_at?: string | null;
           created_at?: string;
           customer_name?: string | null;
           customer_phone?: string | null;
@@ -1510,6 +1694,7 @@ export type Database = {
           payment_method?: string | null;
           payment_status?: string | null;
           preparation_zone?: string;
+          ready_at?: string | null;
           room_number?: string | null;
           served_at?: string | null;
           server_id?: string | null;
@@ -1538,6 +1723,7 @@ export type Database = {
           comped_by?: string | null;
           completed_at?: string | null;
           coupon_id?: string | null;
+          coupon_rendu_at?: string | null;
           created_at?: string;
           customer_name?: string | null;
           customer_phone?: string | null;
@@ -1556,6 +1742,7 @@ export type Database = {
           payment_method?: string | null;
           payment_status?: string | null;
           preparation_zone?: string;
+          ready_at?: string | null;
           room_number?: string | null;
           served_at?: string | null;
           server_id?: string | null;
@@ -1646,6 +1833,30 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      owner_trial_ledger: {
+        Row: {
+          confirmed_at: string | null;
+          email_key: string;
+          first_trial_at: string;
+          first_user_id: string | null;
+          trial_ends_at: string;
+        };
+        Insert: {
+          confirmed_at?: string | null;
+          email_key: string;
+          first_trial_at?: string;
+          first_user_id?: string | null;
+          trial_ends_at: string;
+        };
+        Update: {
+          confirmed_at?: string | null;
+          email_key?: string;
+          first_trial_at?: string;
+          first_user_id?: string | null;
+          trial_ends_at?: string;
+        };
+        Relationships: [];
       };
       payments: {
         Row: {
@@ -1754,6 +1965,27 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      platform_settings: {
+        Row: {
+          key: string;
+          updated_at: string;
+          updated_by: string | null;
+          value: Json;
+        };
+        Insert: {
+          key: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          value: Json;
+        };
+        Update: {
+          key?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          value?: Json;
+        };
+        Relationships: [];
       };
       push_subscriptions: {
         Row: {
@@ -1879,6 +2111,139 @@ export type Database = {
           },
           {
             foreignKeyName: 'recipes_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      reminder_preferences: {
+        Row: {
+          admin_user_id: string;
+          muted: boolean;
+          rule: string;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          admin_user_id: string;
+          muted?: boolean;
+          rule: string;
+          tenant_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          admin_user_id?: string;
+          muted?: boolean;
+          rule?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'reminder_preferences_admin_user_id_fkey';
+            columns: ['admin_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'admin_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'reminder_preferences_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      reminder_settings: {
+        Row: {
+          config: Json;
+          tenant_id: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          config?: Json;
+          tenant_id: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          config?: Json;
+          tenant_id?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'reminder_settings_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: true;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'reminder_settings_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'admin_users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      reminders: {
+        Row: {
+          created_at: string;
+          id: string;
+          level: number;
+          notification_id: string | null;
+          recipient_id: string;
+          resolved_at: string | null;
+          rule: string;
+          subject_key: string;
+          tenant_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          level?: number;
+          notification_id?: string | null;
+          recipient_id: string;
+          resolved_at?: string | null;
+          rule: string;
+          subject_key: string;
+          tenant_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          level?: number;
+          notification_id?: string | null;
+          recipient_id?: string;
+          resolved_at?: string | null;
+          rule?: string;
+          subject_key?: string;
+          tenant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'reminders_notification_id_fkey';
+            columns: ['notification_id'];
+            isOneToOne: false;
+            referencedRelation: 'notifications';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'reminders_recipient_id_fkey';
+            columns: ['recipient_id'];
+            isOneToOne: false;
+            referencedRelation: 'admin_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'reminders_tenant_id_fkey';
             columns: ['tenant_id'];
             isOneToOne: false;
             referencedRelation: 'tenants';
@@ -2446,6 +2811,29 @@ export type Database = {
           },
         ];
       };
+      tenant_tables_initialisees: {
+        Row: {
+          initialisees_at: string;
+          tenant_id: string;
+        };
+        Insert: {
+          initialisees_at?: string;
+          tenant_id: string;
+        };
+        Update: {
+          initialisees_at?: string;
+          tenant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tenant_tables_initialisees_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: true;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       tenants: {
         Row: {
           activation_events: Json;
@@ -2892,10 +3280,51 @@ export type Database = {
         };
         Returns: number;
       };
+      anonymize_closed_tenants: { Args: { p_cutoff: string }; Returns: number };
+      apply_flutterwave_payment: {
+        Args: {
+          p_current_price: number;
+          p_flw_transaction_id: number;
+          p_now?: string;
+          p_paid_amount: number;
+          p_payment_id: string;
+          p_stripe_live: boolean;
+        };
+        Returns: Json;
+      };
+      assert_inventory_edit: {
+        Args: { p_tenant_id: string };
+        Returns: undefined;
+      };
+      assert_inventory_view: {
+        Args: { p_tenant_id: string };
+        Returns: undefined;
+      };
+      assert_tenant_business_reports: {
+        Args: { p_tenant_id: string };
+        Returns: undefined;
+      };
       assert_tenant_member: {
         Args: { p_tenant_id: string };
         Returns: undefined;
       };
+      assert_tenant_reports: {
+        Args: { p_tenant_id: string };
+        Returns: undefined;
+      };
+      assert_tenant_reports_ventes: {
+        Args: { p_tenant_id: string };
+        Returns: undefined;
+      };
+      assert_tenant_reports_view: {
+        Args: { p_tenant_id: string };
+        Returns: undefined;
+      };
+      assert_valid_timezone: {
+        Args: { p_timezone: string };
+        Returns: undefined;
+      };
+      audit_personal_keys: { Args: never; Returns: string[] };
       cancel_stock_count: {
         Args: { p_count_id: string; p_tenant_id: string };
         Returns: undefined;
@@ -2913,6 +3342,12 @@ export type Database = {
           p_tenant_id: string;
         };
         Returns: string;
+      };
+      closed_tenant_auth_users: {
+        Args: { p_cutoff: string };
+        Returns: {
+          auth_user_id: string;
+        }[];
       };
       commit_stock_count: {
         Args: {
@@ -2948,17 +3383,49 @@ export type Database = {
         };
         Returns: Json;
       };
+      decide_owner_trial: {
+        Args: { p_user_id: string };
+        Returns: {
+          mode: string;
+          trial_ends: string;
+        }[];
+      };
       delete_admin_user_atomic: {
         Args: { p_admin_user_id: string; p_user_id: string };
         Returns: boolean;
       };
+      delete_my_account: { Args: never; Returns: string };
       destock_order: {
         Args: { p_created_by?: string; p_order_id: string; p_tenant_id: string };
         Returns: number;
       };
+      encaisser_commande: {
+        Args: {
+          p_method: string;
+          p_order_id: string;
+          p_tenant_id: string;
+          p_tip_ajout?: number;
+        };
+        Returns: Json;
+      };
       expire_stale_payment_sessions: {
         Args: { p_max_age_minutes?: number };
         Returns: number;
+      };
+      flutterwave_freeze_overdue: {
+        Args: { p_grace: string; p_limit: number; p_now: string };
+        Returns: number;
+      };
+      flutterwave_renewals_due: {
+        Args: { p_limit: number; p_now: string };
+        Returns: {
+          billing_interval: string;
+          payment_id: string;
+          period_end: string;
+          plan: string;
+          reminder: string;
+          tenant_id: string;
+        }[];
       };
       generate_menu_slug: {
         Args: { p_name: string; p_tenant_id: string };
@@ -2971,18 +3438,17 @@ export type Database = {
           revenue: number;
         }[];
       };
+      get_category_breakdown_brut: {
+        Args: { p_end_date: string; p_start_date: string; p_tenant_id: string };
+        Returns: {
+          category: string;
+          revenue: number;
+        }[];
+      };
       get_co_ordered_items: {
         Args: { p_cart_ids: string[]; p_limit?: number; p_tenant_id: string };
         Returns: {
           menu_item_id: string;
-        }[];
-      };
-      get_daily_comps: {
-        Args: { p_end_date: string; p_start_date: string; p_tenant_id: string };
-        Returns: {
-          comp_count: number;
-          comp_total: number;
-          day: string;
         }[];
       };
       get_daily_revenue: {
@@ -2996,6 +3462,31 @@ export type Database = {
           day: string;
           order_count: number;
           revenue: number;
+        }[];
+      };
+      get_daily_revenue_brut: {
+        Args: {
+          p_end_date: string;
+          p_start_date: string;
+          p_tenant_id: string;
+          p_timezone?: string;
+        };
+        Returns: {
+          day: string;
+          order_count: number;
+          revenue: number;
+        }[];
+      };
+      get_dish_margins: {
+        Args: { p_end_date: string; p_start_date: string; p_tenant_id: string };
+        Returns: {
+          cost_complete: boolean;
+          has_recipe: boolean;
+          item_id: string;
+          item_name: string;
+          quantity_sold: number;
+          revenue: number;
+          unit_cost: number;
         }[];
       };
       get_house_account_balances: {
@@ -3031,27 +3522,69 @@ export type Database = {
           total_tips: number;
         }[];
       };
+      get_order_summary_brut: {
+        Args: { p_end_date: string; p_start_date: string; p_tenant_id: string };
+        Returns: {
+          avg_basket: number;
+          total_discounts: number;
+          total_orders: number;
+          total_revenue: number;
+          total_service_charge: number;
+          total_tax: number;
+          total_tips: number;
+        }[];
+      };
       get_orders_for_tracking: {
         Args: { p_order_ids: string[]; p_tenant_id: string };
         Returns: Json;
       };
-      get_owner_dashboard: {
-        Args: { p_user_id: string };
+      get_payment_method_report: {
+        Args: { p_end_date: string; p_start_date: string; p_tenant_id: string };
         Returns: {
-          orders_month: number;
-          orders_today: number;
-          revenue_month: number;
-          revenue_today: number;
-          tenant_id: string;
-          tenant_is_active: boolean;
-          tenant_logo_url: string;
-          tenant_name: string;
-          tenant_plan: string;
-          tenant_slug: string;
-          tenant_status: string;
+          collected: number;
+          method: string;
+          net: number;
+          payment_count: number;
+          refunded: number;
+        }[];
+      };
+      get_period_comparison: {
+        Args: { p_mode: string; p_tenant_id: string; p_timezone: string };
+        Returns: {
+          avg_basket: number;
+          end_at: string;
+          order_count: number;
+          period: string;
+          revenue: number;
+          start_at: string;
+          tips: number;
+        }[];
+      };
+      get_sales_heatmap: {
+        Args: {
+          p_end_date: string;
+          p_start_date: string;
+          p_tenant_id: string;
+          p_timezone: string;
+        };
+        Returns: {
+          day_of_week: number;
+          hour_of_day: number;
+          order_count: number;
+          revenue: number;
         }[];
       };
       get_server_performance: {
+        Args: { p_end_date: string; p_start_date: string; p_tenant_id: string };
+        Returns: {
+          orders: number;
+          revenue: number;
+          server_id: string;
+          server_name: string;
+          tips: number;
+        }[];
+      };
+      get_server_performance_brut: {
         Args: { p_end_date: string; p_start_date: string; p_tenant_id: string };
         Returns: {
           orders: number;
@@ -3074,6 +3607,32 @@ export type Database = {
           out_qty: number;
         }[];
       };
+      get_staff_stock_report_brut: {
+        Args: { p_end: string; p_start: string; p_tenant_id: string };
+        Returns: {
+          adjustment_out_qty: number;
+          author_id: string;
+          author_name: string;
+          in_qty: number;
+          manual_remove_qty: number;
+          movements_count: number;
+          order_destock_qty: number;
+          out_qty: number;
+        }[];
+      };
+      get_stock_losses_report: {
+        Args: { p_end_date: string; p_start_date: string; p_tenant_id: string };
+        Returns: {
+          cost_complete: boolean;
+          cost_value: number;
+          ingredient_id: string;
+          ingredient_name: string;
+          main_reason: string;
+          movement_count: number;
+          quantity: number;
+          unit: string;
+        }[];
+      };
       get_stock_movements_page: {
         Args: { p_limit?: number; p_offset?: number; p_tenant_id: string };
         Returns: {
@@ -3086,6 +3645,7 @@ export type Database = {
           ingredient_unit: string;
           movement_type: string;
           notes: string;
+          order_number: string;
           quantity: number;
           reason_code: string;
           reference_id: string;
@@ -3153,6 +3713,57 @@ export type Database = {
           revenue: number;
         }[];
       };
+      get_top_items_brut: {
+        Args: {
+          p_end_date: string;
+          p_limit?: number;
+          p_start_date: string;
+          p_tenant_id: string;
+        };
+        Returns: {
+          item_id: string;
+          item_name: string;
+          quantity_sold: number;
+          revenue: number;
+        }[];
+      };
+      get_venue_report: {
+        Args: { p_end_date: string; p_start_date: string; p_tenant_id: string };
+        Returns: {
+          avg_basket: number;
+          order_count: number;
+          revenue: number;
+          venue_id: string;
+          venue_name: string;
+        }[];
+      };
+      get_venue_top_items: {
+        Args: {
+          p_end_date: string;
+          p_limit?: number;
+          p_start_date: string;
+          p_tenant_id: string;
+        };
+        Returns: {
+          item_id: string;
+          item_name: string;
+          quantity_sold: number;
+          revenue: number;
+          venue_id: string;
+        }[];
+      };
+      has_tenant_floor_permission: {
+        Args: { p_tenant: string };
+        Returns: boolean;
+      };
+      has_tenant_money_permission: {
+        Args: { p_tenant: string };
+        Returns: boolean;
+      };
+      has_tenant_write_permission: {
+        Args: { p_perm: string; p_tenant: string };
+        Returns: boolean;
+      };
       import_recipes_tx: {
         Args: { p_rows: Json; p_tenant_id: string };
         Returns: Json;
@@ -3168,6 +3779,11 @@ export type Database = {
       is_super_admin: { Args: never; Returns: boolean };
       is_table_occupied: {
         Args: { p_table_number: string; p_tenant_id: string };
+        Returns: boolean;
+      };
+      is_tenant_name_taken: { Args: { p_name: string }; Returns: boolean };
+      mon_restaurant_a_le_stock: {
+        Args: { p_tenant_id: string };
         Returns: boolean;
       };
       next_order_number: { Args: { p_tenant_id: string }; Returns: string };
@@ -3204,6 +3820,13 @@ export type Database = {
         };
         Returns: Json;
       };
+      purge_audit_logs: {
+        Args: { p_cutoff: string };
+        Returns: {
+          deleted_count: number;
+          pseudonymized_count: number;
+        }[];
+      };
       reassign_order_table: {
         Args: {
           p_new_table_number: string;
@@ -3238,6 +3861,50 @@ export type Database = {
         };
         Returns: string;
       };
+      reminder_coach_items: {
+        Args: {
+          p_since: string;
+          p_split: string;
+          p_tenant_id: string;
+          p_until: string;
+        };
+        Returns: {
+          before_qty: number;
+          last_week_qty: number;
+          name: string;
+        }[];
+      };
+      reminder_coach_slots: {
+        Args: {
+          p_since: string;
+          p_tenant_id: string;
+          p_tz: string;
+          p_until: string;
+        };
+        Returns: {
+          dow: number;
+          hour: number;
+          orders: number;
+        }[];
+      };
+      reminder_rule_stats: {
+        Args: { p_resolved_within_min: number; p_since: string };
+        Returns: {
+          escalated: number;
+          median_minutes: number;
+          notifications: number;
+          opened: number;
+          resolved_within: number;
+          restaurants: number;
+          rule: string;
+          sent: number;
+        }[];
+      };
+      request_account_deletion: { Args: never; Returns: string };
+      rendre_coupon_commande: {
+        Args: { p_order_id: string; p_tenant_id: string };
+        Returns: boolean;
+      };
       reset_tenant_data: {
         Args: { p_reset_type: string; p_tenant_id: string };
         Returns: Json;
@@ -3246,6 +3913,7 @@ export type Database = {
         Args: { p_created_by?: string; p_order_id: string; p_tenant_id: string };
         Returns: number;
       };
+      revoke_user_sessions: { Args: { p_user_id: string }; Returns: number };
       save_stock_count_lines: {
         Args: { p_count_id: string; p_lines: Json; p_tenant_id: string };
         Returns: undefined;
@@ -3263,15 +3931,16 @@ export type Database = {
         Args: { p_lines: Json; p_menu_item_id: string; p_tenant_id: string };
         Returns: undefined;
       };
-      encaisser_commande: {
+      sync_menu_availability: {
         Args: {
-          p_method: string;
-          p_order_id: string;
+          p_ingredient_id: string;
+          p_stock_after: number;
+          p_stock_before: number;
           p_tenant_id: string;
-          p_tip_ajout?: number;
         };
-        Returns: Json;
+        Returns: undefined;
       };
+      tenant_effective_plan: { Args: { p_tenant_id: string }; Returns: string };
       unclaim_coupon_usage: {
         Args: { p_coupon_id: string };
         Returns: undefined;

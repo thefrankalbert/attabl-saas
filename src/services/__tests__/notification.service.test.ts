@@ -370,31 +370,24 @@ describe('notifyDestockFailed', () => {
     const { notifyDestockFailed } = await import('../notification.service');
     wire({ orderNumber: 'CMD-7' });
 
-    await notifyDestockFailed({ tenantId: 'tenant-1', orderId: 'order-1', outOfStock: true });
+    await notifyDestockFailed({ tenantId: 'tenant-1', orderId: 'order-1' });
 
     expect(insertSpy).toHaveBeenCalledTimes(1);
     const row = insertSpy.mock.calls[0][0] as Record<string, unknown>;
     expect(row.tenant_id).toBe('tenant-1');
     expect(row.title).toContain('CMD-7');
-    expect(row.body).toContain('insuffisant');
-    expect(row.link).toBe('/inventory');
-  });
-
-  it('says it plainly when the cause is not a stock shortage', async () => {
-    const { notifyDestockFailed } = await import('../notification.service');
-    wire({});
-
-    await notifyDestockFailed({ tenantId: 'tenant-1', orderId: 'order-2', outOfStock: false });
-
-    const row = insertSpy.mock.calls[0][0] as Record<string, unknown>;
+    // No more "shortage" wording (audit B146): destock_order no longer
+    // refuses a short ingredient, so a failure is never a shortage.
+    expect(row.body).toContain('Verifiez le stock a la main');
     expect(row.body).not.toContain('insuffisant');
+    expect(row.link).toBe('/inventory');
   });
 
   it('stays silent when the same warning was already raised recently', async () => {
     const { notifyDestockFailed } = await import('../notification.service');
     wire({ recent: [{ id: 'notif-existing' }] });
 
-    await notifyDestockFailed({ tenantId: 'tenant-1', orderId: 'order-3', outOfStock: true });
+    await notifyDestockFailed({ tenantId: 'tenant-1', orderId: 'order-3' });
 
     expect(insertSpy).not.toHaveBeenCalled();
   });
@@ -408,7 +401,7 @@ describe('notifyDestockFailed', () => {
       recent: [{ id: 'notif-acked', read: false, notification_reads: [{ user_id: 'u-1' }] }],
     });
 
-    await notifyDestockFailed({ tenantId: 'tenant-1', orderId: 'order-5', outOfStock: true });
+    await notifyDestockFailed({ tenantId: 'tenant-1', orderId: 'order-5' });
 
     expect(insertSpy).toHaveBeenCalledTimes(1);
   });
@@ -417,7 +410,7 @@ describe('notifyDestockFailed', () => {
     const { notifyDestockFailed } = await import('../notification.service');
     wire({ recent: [{ id: 'notif-legacy', read: true, notification_reads: [] }] });
 
-    await notifyDestockFailed({ tenantId: 'tenant-1', orderId: 'order-6', outOfStock: true });
+    await notifyDestockFailed({ tenantId: 'tenant-1', orderId: 'order-6' });
 
     expect(insertSpy).toHaveBeenCalledTimes(1);
   });
@@ -429,7 +422,7 @@ describe('notifyDestockFailed', () => {
     });
 
     await expect(
-      notifyDestockFailed({ tenantId: 'tenant-1', orderId: 'order-4', outOfStock: false }),
+      notifyDestockFailed({ tenantId: 'tenant-1', orderId: 'order-4' }),
     ).resolves.toBeUndefined();
   });
 });

@@ -15,6 +15,34 @@ import { createTableConfigGuards } from './table-config.guards';
 import { sortByTableNumber } from '@/lib/utils/table-order';
 
 /**
+ * A generated table number may equal the NAME of another table (refused by the
+ * database since migration 20261124150400, marker
+ * `table_number_is_other_table_display_name: <number>`): say which table to
+ * rename instead of "this number already exists". Any other error keeps the
+ * usual unique-conflict handling.
+ */
+function tableInsertError(
+  error: { code?: string; message?: string } | null | undefined,
+  fallbackMessage: string,
+): ServiceError {
+  const marker = 'table_number_is_other_table_display_name:';
+  const message = error?.message ?? '';
+  if (error?.code === '23505' && message.includes(marker)) {
+    const name = message.slice(message.indexOf(marker) + marker.length).trim();
+    return new ServiceError(
+      `Une autre table s'appelle déjà "${name}". Renommez-la, puis ajoutez vos tables.`,
+      'CONFLICT',
+      error,
+    );
+  }
+  return uniqueConflictOr(
+    error,
+    'Ce numéro de table existe déjà dans le restaurant.',
+    fallbackMessage,
+  );
+}
+
+/**
  * Service for managing restaurant zones and table configurations.
  * Handles bulk creation from onboarding, default configurations,
  * and incremental table additions with auto-numbering.
@@ -178,9 +206,8 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
             tenantId,
           });
         }
-        throw uniqueConflictOr(
+        throw tableInsertError(
           tablesError,
-          'Ce numéro de table existe déjà dans le restaurant.',
           `Erreur creation tables: ${tablesError?.message || 'Donnees manquantes'}`,
         );
       }
@@ -272,9 +299,8 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
         .select();
 
       if (tablesError || !tables) {
-        throw uniqueConflictOr(
+        throw tableInsertError(
           tablesError,
-          'Ce numéro de table existe déjà dans le restaurant.',
           `Erreur ajout tables: ${tablesError?.message || 'Donnees manquantes'}`,
         );
       }
@@ -392,11 +418,7 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
         .insert(tables.map((t) => ({ ...t, tenant_id: tenantId })));
 
       if (error) {
-        throw uniqueConflictOr(
-          error,
-          'Ce numéro de table existe déjà dans le restaurant.',
-          `Erreur creation tables: ${error.message}`,
-        );
+        throw tableInsertError(error, `Erreur creation tables: ${error.message}`);
       }
     },
 
@@ -448,7 +470,13 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
         .eq('id', tableId);
 
       if (error) {
-        throw new ServiceError(`Erreur mise a jour nom table: ${error.message}`, 'INTERNAL', error);
+        // 23505: the name is another table's number (migration
+        // 20261124150400): the QR of that table would land on this one.
+        throw uniqueConflictOr(
+          error,
+          "Ce nom est deja le numero d'une autre table du restaurant.",
+          `Erreur mise a jour nom table: ${error.message}`,
+        );
       }
     },
 
