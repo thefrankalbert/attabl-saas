@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getUsdXafRate } from '@/lib/exchange-rate';
+import { exchangeRateLimiter, getClientIp } from '@/lib/rate-limit';
 
 // Le navigateur du visiteur n'appelle plus le service de taux de change: son adresse
 // IP ne part donc plus chez un tiers. Le serveur interroge le service au plus une
@@ -7,7 +8,12 @@ import { getUsdXafRate } from '@/lib/exchange-rate';
 // getUsdXafRate), et le reseau de diffusion garde la reponse une heure.
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { success } = await exchangeRateLimiter.check(getClientIp(request));
+  if (!success) {
+    return NextResponse.json({ error: 'Trop de requetes' }, { status: 429 });
+  }
+
   const rate = await getUsdXafRate();
   return NextResponse.json(
     { rate },

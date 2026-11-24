@@ -103,11 +103,11 @@ describe('proxy: les cookies de session gardent leurs options (B63)', () => {
 });
 
 /**
- * Contre-audit D2: le test de bout en bout ci-dessus ne passe que par 3 des 12
- * sorties du proxy. Cette garde structurelle couvre les 12: chaque recopie des
+ * Contre-audit D2: le test de bout en bout ci-dessus ne passe que par 3 des 13
+ * sorties du proxy. Cette garde structurelle couvre les 13: chaque recopie des
  * cookies de session doit passer l'objet cookie COMPLET (options comprises).
  */
-describe('proxy: les 12 recopies de cookies passent l objet complet (garde D2)', () => {
+describe('proxy: les 13 recopies de cookies passent l objet complet (garde D2)', () => {
   it('chaque forEach sur les cookies de session recopie `cookie` entier', async () => {
     const { readFileSync } = await import('node:fs');
     const { join } = await import('node:path');
@@ -117,7 +117,7 @@ describe('proxy: les 12 recopies de cookies passent l objet complet (garde D2)',
       .filter(({ l }) => l.includes('sessionResponse.cookies.getAll().forEach('))
       .map(({ i }) => lignes[i + 1].trim());
 
-    expect(recopies).toHaveLength(12);
+    expect(recopies).toHaveLength(13);
     for (const corps of recopies) {
       expect(corps).toMatch(/^\w+\.cookies\.set\(cookie\);$/);
     }

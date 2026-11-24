@@ -24,3 +24,20 @@ export async function isAdminRouteDenied(
   const { allowed } = await resolveAdminPermission(supabase, userId, tenantId, permission);
   return !allowed;
 }
+
+/**
+ * Returns true if the authenticated user is NOT a living member of the tenant
+ * (nor a platform super-admin). Used by the middleware for the admin routes
+ * that need no specific permission: they are open to every member, but to
+ * members only. Same resolution as `requireAdminMember` (page guard).
+ *
+ * Fails CLOSED: any resolution error denies access.
+ */
+export async function isAdminMemberDenied(
+  supabase: SupabaseClient,
+  userId: string,
+  tenantId: string,
+): Promise<boolean> {
+  const { role } = await resolveAdminPermission(supabase, userId, tenantId, 'menu.view');
+  return !role;
+}

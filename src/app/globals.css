@@ -217,7 +217,7 @@
 
   --app-text: #f5f5f4;
   --app-text-secondary: #a8a29e;
-  --app-text-muted: #6b6560;
+  --app-text-muted: #8a847f; /* 4.6:1 au moins sur les fonds sombres (etait 3.4) */
 
   --app-accent: #006aff;
   --app-accent-hover: #0055cc;
@@ -241,6 +241,13 @@
   --app-status-error-bg: rgba(220, 38, 38, 0.15);
   --app-status-info-bg: rgba(37, 99, 235, 0.15);
 
+  /* Texte de statut en theme sombre: le vert fonce du theme clair tombait a
+     2:1 sur le fond pale sombre (badge de succes). Clair sur sombre ici. */
+  --color-status-success: #34d399; /* 7.5:1 au moins */
+  --color-status-warning: #fbbf24; /* 8.3:1 au moins */
+  --color-status-error: #f87171; /* 5.5:1 au moins */
+  --color-status-info: #60a5fa; /* 5.9:1 au moins */
+
   /* shadcn/ui compat vars */
   --background: var(--app-bg);
   --foreground: var(--app-text);
@@ -263,7 +270,7 @@
 
   --app-text: #1c1917;
   --app-text-secondary: #57534e;
-  --app-text-muted: #a8a29e;
+  --app-text-muted: #6f6a66; /* 4.6:1 au moins sur les fonds clairs (etait 2.5) */
 
   --app-accent: #006aff;
   --app-accent-hover: #0055cc;
@@ -286,6 +293,13 @@
   --app-status-warning-bg: #fffbeb;
   --app-status-error-bg: #fef2f2;
   --app-status-info-bg: #eff6ff;
+
+  /* Texte de statut: encre foncee sur fond pale. A redeclarer dans chaque
+     perimetre clair, car le theme sombre par defaut (:root) les eclaircit. */
+  --color-status-success: #065f46;
+  --color-status-warning: #92400e;
+  --color-status-error: #b91c1c;
+  --color-status-info: #1d4ed8;
 }
 
 /* ===== ADMIN DASHBOARD REFONTE - shadcn neutral oklch palette =====
@@ -385,6 +399,12 @@
   --color-status-warning-bg: var(--app-status-warning-bg);
   --color-status-error-bg: var(--app-status-error-bg);
   --color-status-info-bg: var(--app-status-info-bg);
+  /* Texte de statut: encre foncee sur fond pale. A redeclarer dans chaque
+     perimetre clair, car le theme sombre par defaut (:root) les eclaircit. */
+  --color-status-success: #065f46;
+  --color-status-warning: #92400e;
+  --color-status-error: #b91c1c;
+  --color-status-info: #1d4ed8;
 }
 .admin-shell.dark,
 :root:has(.admin-shell.dark) {
@@ -469,7 +489,7 @@
 
     --app-text: #1c1917;
     --app-text-secondary: #57534e;
-    --app-text-muted: #a8a29e;
+    --app-text-muted: #6f6a66;
 
     --app-accent: #006aff;
     --app-accent-hover: #0055cc;
@@ -497,6 +517,13 @@
     --border: var(--app-border);
     --input: var(--app-border);
     --ring: var(--app-accent);
+
+    /* Texte de statut: encre foncee sur fond pale. A redeclarer dans chaque
+       perimetre clair, car le theme sombre par defaut (:root) les eclaircit. */
+    --color-status-success: #065f46;
+    --color-status-warning: #92400e;
+    --color-status-error: #b91c1c;
+    --color-status-info: #1d4ed8;
   }
 }
 
@@ -575,6 +602,12 @@
     -apple-system,
     BlinkMacSystemFont,
     sans-serif;
+  /* Texte de statut: encre foncee sur fond pale. A redeclarer dans chaque
+     perimetre clair, car le theme sombre par defaut (:root) les eclaircit. */
+  --color-status-success: #065f46 !important;
+  --color-status-warning: #92400e !important;
+  --color-status-error: #b91c1c !important;
+  --color-status-info: #1d4ed8 !important;
 }
 
 /* Neutralize any system dark preference inside the tenant client scope */
