@@ -84,7 +84,13 @@ export function MfaSettingsSection() {
           <p className="text-sm text-[var(--muted-foreground)]">{t('statusOff')}</p>
           <MfaEnrollPanel
             startLabel={t('enable')}
-            onEnrolled={refresh}
+            onEnrolled={() => {
+              // Le serveur vient de verifier le code: le facteur est actif. On
+              // l'affiche tout de suite, la relecture confirme ensuite (sur un
+              // reseau lent, l'ancien etat "pas encore activee" restait visible).
+              queryClient.setQueryData(STATUS_KEY, true);
+              void refresh();
+            }}
             onCancel={() => undefined}
             textClassName="text-[var(--muted-foreground)]"
           />
