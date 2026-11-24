@@ -2,7 +2,8 @@
  * Integration tests for physical stock count (phase 4) against a real local
  * Postgres. Verifies migration 20260703000000: open_stock_count snapshots
  * theoretical stock, save_stock_count_lines records counts, commit_stock_count
- * applies the LIVE delta as physical_count ledger movements (reconcilable) and
+ * applies the displayed variance (counted - snapshot) to the LIVE stock as
+ * physical_count ledger movements (reconcilable, 20261124170200) and
  * flips menu availability, cancel_stock_count releases a session, plus the
  * one-open-per-tenant guard and tenant isolation. Driven by `pnpm test:db`.
  */
@@ -264,20 +265,30 @@ describe('commit_stock_count', () => {
     expect(count?.status).toBe('committed');
   });
 
-  it('computes the delta against LIVE stock, not the open-time snapshot', async () => {
+  it('applies the displayed variance (counted - open-time snapshot) to LIVE stock', async () => {
+    // Migration 20261124170200 (verif-prod constat 6): movements booked while
+    // the count is open (sales, receptions, losses) are kept, and the booked
+    // physical_count movement is the variance the count sheet displays.
     await releaseOpen();
     const ing = await seedIngredient(10);
     const { data: countId } = await db.rpc('open_stock_count', { p_tenant_id: tenantId });
-    // Stock moves after the snapshot (theoretical was 10).
-    await db.from('ingredients').update({ current_stock: 8 }).eq('id', ing);
+    // A ledger movement after the snapshot (theoretical was 10): 2 sold.
+    await db.rpc('adjust_ingredient_stock_tx', {
+      p_tenant_id: tenantId,
+      p_ingredient_id: ing,
+      p_delta: -2,
+      p_movement_type: 'manual_remove',
+    });
+    expect(await currentStock(ing)).toBe(8);
     await db.rpc('save_stock_count_lines', {
       p_tenant_id: tenantId,
       p_count_id: countId,
-      p_lines: [{ ingredient_id: ing, counted_qty: 7 }],
+      p_lines: [{ ingredient_id: ing, counted_qty: 9 }],
     });
     await db.rpc('commit_stock_count', { p_tenant_id: tenantId, p_count_id: countId });
+    // Variance = counted(9) - snapshot(10) = -1, applied to LIVE(8) = 7.
+    // The old rule (stock := counted) gave 9 and booked +1, erasing the sale.
     expect(await currentStock(ing)).toBe(7);
-    // Delta = counted(7) - LIVE(8) = -1, not counted - snapshot(10) = -3.
     const pc = (await movementsFor(ing)).filter((m) => m.movement_type === 'physical_count');
     expect(Number(pc[0].quantity)).toBe(-1);
   });
