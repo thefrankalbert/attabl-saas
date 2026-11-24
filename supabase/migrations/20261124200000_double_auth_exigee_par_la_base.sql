@@ -38,7 +38,8 @@
 -- n'existait pas): en pratique l'effet est nul jusqu'au premier enrolement.
 -- PREALABLE: TOTP active dans Supabase Auth.
 --
--- RETOUR ARRIERE: rejouer les definitions des quatre fonctions depuis
+-- RETOUR ARRIERE: rejouer les definitions des quatre fonctions et la politique
+-- "Block super_admin escalation by non-super-admins" depuis
 -- supabase/schema.sql (sans `public.mfa_satisfait()`), supprimer la politique
 -- "Membres: leurs restaurants avant double authentification",
 -- puis `DROP FUNCTION public.mfa_satisfait();`.
@@ -155,6 +156,29 @@ AS $function$
       AND deleted_at IS NULL
   );
 $function$;
+
+-- Sa propre ligne de membre reste lisible AVANT le code, meme pour un super
+-- administrateur. La politique restrictive ci-dessous cachait les lignes de
+-- super administrateur a quiconque n'etait pas `is_super_admin()`; comme
+-- is_super_admin() exige maintenant le code, le super administrateur ne voyait
+-- plus SA PROPRE ligne en aal1: la connexion l'envoyait vers l'onboarding et la
+-- console repondait "introuvable" au lieu de demander le code (constat du test
+-- d'interface du 2026-11-24). Seule la clause USING (lecture) gagne
+-- `user_id = auth.uid()`; WITH CHECK est INCHANGE: personne ne peut se donner
+-- le statut de super administrateur sur sa propre ligne.
+DROP POLICY IF EXISTS "Block super_admin escalation by non-super-admins" ON public.admin_users;
+CREATE POLICY "Block super_admin escalation by non-super-admins"
+  ON public.admin_users
+  AS RESTRICTIVE
+  USING (
+    ((COALESCE(is_super_admin, false) = false) AND (role IS DISTINCT FROM 'super_admin'::text))
+    OR public.is_super_admin()
+    OR (user_id = (SELECT auth.uid()))
+  )
+  WITH CHECK (
+    ((COALESCE(is_super_admin, false) = false) AND (role IS DISTINCT FROM 'super_admin'::text))
+    OR public.is_super_admin()
+  );
 
 -- Lecture de ses propres restaurants AVANT la double authentification (voir
 -- l'en-tete): seulement les restaurants dont on est membre vivant.

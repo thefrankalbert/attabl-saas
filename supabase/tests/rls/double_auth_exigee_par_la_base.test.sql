@@ -12,7 +12,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(16);
+select plan(18);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -75,8 +75,15 @@ select is((select count(*) from public.suppliers)::int, 1, 'sans facteur: il lit
 -- 4. Super administrateur AVEC facteur.
 set local "request.jwt.claims" = '{"sub":"f6000000-0000-4000-8000-0000000000a3","role":"authenticated","aal":"aal1"}';
 select is(public.is_super_admin(), false, 'super administrateur + aal1: pas de droits de plateforme');
+select is((select count(*) from public.admin_users where user_id = 'f6000000-0000-4000-8000-0000000000a3')::int, 1,
+  'super administrateur + aal1: sa propre ligne reste lisible (routage vers le code, pas vers l onboarding)');
 set local "request.jwt.claims" = '{"sub":"f6000000-0000-4000-8000-0000000000a3","role":"authenticated","aal":"aal2"}';
 select is(public.is_super_admin(), true, 'super administrateur + aal2: droits de plateforme (temoin)');
+
+-- Temoin: un membre ordinaire ne voit toujours pas la ligne d'un super administrateur.
+set local "request.jwt.claims" = '{"sub":"f6000000-0000-4000-8000-0000000000a2","role":"authenticated","aal":"aal1"}';
+select is((select count(*) from public.admin_users where user_id = 'f6000000-0000-4000-8000-0000000000a3')::int, 0,
+  'membre ordinaire: la ligne du super administrateur reste cachee');
 
 -- 5. Un facteur NON verifie (enrolement abandonne) ne bloque rien.
 reset role;
