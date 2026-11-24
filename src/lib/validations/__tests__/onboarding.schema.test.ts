@@ -99,6 +99,17 @@ describe('onboardingCompleteSchema', () => {
     expect(result.success).toBe(true);
   });
 
+  it('B27: stores a 3-digit hex color as #RRGGBB', () => {
+    const result = onboardingCompleteSchema.safeParse({
+      data: { primaryColor: '#c0f', secondaryColor: '#000' },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.data.primaryColor).toBe('#CC00FF');
+      expect(result.data.data.secondaryColor).toBe('#000000');
+    }
+  });
+
   it('should reject invalid hex color', () => {
     const result = onboardingCompleteSchema.safeParse({
       data: { primaryColor: 'not-a-color' },

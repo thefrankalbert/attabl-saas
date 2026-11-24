@@ -114,7 +114,10 @@ export function PlatformConsole({
 
   function userStatusBadge(u: PlatformUserRow) {
     if (u.deleted_at) return <Badge variant="destructive">{t('userDeleted')}</Badge>;
-    if (u.banned_at || !u.is_active) return <Badge variant="warning">{t('userBanned')}</Badge>;
+    // B77: deux etats distincts. Bloque par la plateforme (banned_at) se debloque
+    // ici; desactive par son restaurant ne se reactive que par le restaurant.
+    if (u.banned_at) return <Badge variant="warning">{t('userBanned')}</Badge>;
+    if (!u.is_active) return <Badge variant="warning">{t('userDeactivated')}</Badge>;
     return <Badge variant="success">{t('userActive')}</Badge>;
   }
 
@@ -306,7 +309,7 @@ export function PlatformConsole({
                                     <span className="text-xs text-app-text-muted">{u.role}</span>
                                   </div>
                                   <div className="flex flex-wrap gap-2">
-                                    {u.banned_at || !u.is_active ? (
+                                    {u.banned_at ? (
                                       !u.deleted_at && (
                                         <Button
                                           variant="outline"

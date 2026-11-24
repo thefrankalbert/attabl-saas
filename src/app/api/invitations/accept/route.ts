@@ -134,14 +134,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, tenantSlug });
   } catch (error) {
     if (error instanceof ServiceError) {
-      if (error.details) {
+      // B54: refus metier (membre retire): code dedie, pas une panne a journaliser.
+      const reason = (error.details as { reason?: string } | undefined)?.reason;
+      if (error.details && !reason) {
         logger.error('Invitation accept ServiceError details', {
           code: error.code,
           details: error.details,
         });
       }
       return NextResponse.json(
-        { error: error.message },
+        { error: error.message, ...(reason ? { code: reason } : {}) },
         { status: serviceErrorToStatus(error.code) },
       );
     }

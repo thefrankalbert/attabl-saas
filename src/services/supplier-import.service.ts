@@ -41,6 +41,23 @@ const SUPPLIER_ALIASES: Record<string, string[]> = {
 
 // --- Row validation schema --------------------------------
 
+const ACTIVE_WORDS = ['actif', 'active'];
+const INACTIVE_WORDS = ['inactif', 'inactive'];
+
+/**
+ * Statut d'un fournisseur: actif / inactif / active / inactive, ou les valeurs
+ * oui/non de `parseBooleanCell`. `undefined` = valeur non reconnue (B100).
+ */
+function parseSupplierActive(value: unknown): boolean | undefined {
+  const word = String(value).trim().toLowerCase();
+  if (ACTIVE_WORDS.includes(word)) return true;
+  if (INACTIVE_WORDS.includes(word)) return false;
+  // Deux defauts opposes: une valeur reconnue rend la meme reponse aux deux.
+  const asTrue = parseBooleanCell(value, true);
+  const asFalse = parseBooleanCell(value, false);
+  return asTrue === asFalse ? asTrue : undefined;
+}
+
 const supplierRowSchema = z.object({
   name: z
     .string({ error: 'Le nom du fournisseur est requis' })
@@ -122,6 +139,24 @@ export function createSupplierImportService(supabase: SupabaseClient): SupplierI
           rawRow[fieldName] = cells[colIndex] ?? null;
         }
 
+        // B100: un statut non reconnu ("en pause") est une erreur de ligne. Avant,
+        // la valeur par defaut `true` s'appliquait: "Inactif" creait ou remettait
+        // le fournisseur actif, sans un mot.
+        const rawActive =
+          mappedFields.has('is_active') &&
+          rawRow.is_active != null &&
+          String(rawRow.is_active).trim() !== ''
+            ? rawRow.is_active
+            : null;
+        const isActive = rawActive === null ? null : parseSupplierActive(rawActive);
+        if (isActive === undefined) {
+          errors.push({
+            row: rowNumber,
+            message: `Statut non reconnu : ${String(rawActive).trim()} (attendu : actif ou inactif)`,
+          });
+          continue;
+        }
+
         const rowToValidate = {
           name: rawRow.name != null ? String(rawRow.name).trim() : '',
           contact_name: cellToTrimmedStringOrNull(rawRow.contact_name),
@@ -129,11 +164,7 @@ export function createSupplierImportService(supabase: SupabaseClient): SupplierI
           email: cellToTrimmedStringOrNull(rawRow.email),
           address: cellToTrimmedStringOrNull(rawRow.address),
           notes: cellToTrimmedStringOrNull(rawRow.notes),
-          is_active: mappedFields.has('is_active')
-            ? rawRow.is_active == null || String(rawRow.is_active).trim() === ''
-              ? null
-              : parseBooleanCell(rawRow.is_active, true)
-            : null,
+          is_active: isActive,
         };
 
         const result = supplierRowSchema.safeParse(rowToValidate);

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { expandShortHex } from '@/lib/utils/hex-color';
 import { isRenderableImageUrl } from './image-url.schema';
 import { QR_MESSAGE_MAX_LENGTH } from '@/types/qr-design.types';
 import { coerceTemplateId } from '@/lib/qr/onboarding-qr-config';
@@ -78,13 +79,16 @@ export const onboardingCompleteSchema = z.object({
     tableConfigMode: z.enum(['complete', 'minimum', 'skip']).optional(),
     tableZones: z.array(tableZoneSchema).max(20).optional(),
     logoUrl: z.string().optional(),
+    // B27: enregistrees en #RRGGBB, seul format que lit la vitrine.
     primaryColor: z
       .string()
       .regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/)
+      .transform(expandShortHex)
       .optional(),
     secondaryColor: z
       .string()
       .regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/)
+      .transform(expandShortHex)
       .optional(),
     description: z.string().max(500).optional(),
     // Seules les devises que la couche monetaire sait traiter (lib/constants

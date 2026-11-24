@@ -28,9 +28,16 @@ interface CouponsClientProps {
   tenantId: string;
   initialCoupons: Coupon[];
   currency: CurrencyCode;
+  /** Fuseau IANA du restaurant (B35): dates des coupons lues dans CE fuseau. */
+  timeZone: string;
 }
 
-export default function CouponsClient({ tenantId, initialCoupons, currency }: CouponsClientProps) {
+export default function CouponsClient({
+  tenantId,
+  initialCoupons,
+  currency,
+  timeZone,
+}: CouponsClientProps) {
   const [coupons, setCoupons] = useState<Coupon[]>(initialCoupons);
   const [showForm, setShowForm] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
@@ -215,12 +222,14 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                   <div className="mt-3 pt-3 border-t border-app-border flex flex-wrap gap-3 text-xs text-app-text-secondary">
                     {coupon.valid_from && (
                       <span>
-                        {t('startLabel')} {new Date(coupon.valid_from).toLocaleDateString(locale)}
+                        {t('startLabel')}{' '}
+                        {new Date(coupon.valid_from).toLocaleDateString(locale, { timeZone })}
                       </span>
                     )}
                     {coupon.valid_until && (
                       <span>
-                        {t('endLabel')} {new Date(coupon.valid_until).toLocaleDateString(locale)}
+                        {t('endLabel')}{' '}
+                        {new Date(coupon.valid_until).toLocaleDateString(locale, { timeZone })}
                       </span>
                     )}
                     {coupon.min_order_amount ? (
@@ -264,6 +273,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
         key={editingCoupon?.id ?? 'new'}
         tenantId={tenantId}
         currency={currency}
+        timeZone={timeZone}
         isOpen={showForm}
         onClose={() => {
           setShowForm(false);

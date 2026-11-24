@@ -17,6 +17,7 @@ import { DatePickerField } from '@/components/ui/date-picker-field';
 import AdminModal from '@/components/admin/AdminModal';
 import type { Coupon, CurrencyCode } from '@/types/admin.types';
 import { actionCreateCoupon, actionUpdateCoupon } from '@/app/actions/coupons';
+import { isoToZonedDay } from '@/lib/timezones';
 
 interface CouponFormProps {
   tenantId: string;
@@ -24,6 +25,8 @@ interface CouponFormProps {
   onClose: () => void;
   onSuccess: () => void;
   currency: CurrencyCode;
+  /** Fuseau IANA du restaurant (B35): les bornes se lisent dans CE fuseau. */
+  timeZone: string;
   initialData?: Coupon | null;
 }
 
@@ -34,6 +37,7 @@ export default function CouponForm({
   onSuccess,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   currency,
+  timeZone,
   initialData,
 }: CouponFormProps) {
   const t = useTranslations('coupons');
@@ -49,11 +53,14 @@ export default function CouponForm({
   const [maxDiscount, setMaxDiscount] = useState<number | ''>(
     initialData?.max_discount_amount ?? '',
   );
+  // B35: les bornes sont enregistrees au debut et a la fin du jour du
+  // RESTAURANT; elles se relisent dans son fuseau, jamais dans celui de
+  // l'appareil (sinon ouvrir puis sauvegarder deplacait le coupon d'un jour).
   const [validFrom, setValidFrom] = useState(
-    initialData?.valid_from ? new Date(initialData.valid_from).toISOString().split('T')[0] : '',
+    initialData?.valid_from ? isoToZonedDay(initialData.valid_from, timeZone) : '',
   );
   const [validUntil, setValidUntil] = useState(
-    initialData?.valid_until ? new Date(initialData.valid_until).toISOString().split('T')[0] : '',
+    initialData?.valid_until ? isoToZonedDay(initialData.valid_until, timeZone) : '',
   );
   const [maxUses, setMaxUses] = useState<number | ''>(initialData?.max_uses ?? '');
   const [submitting, setSubmitting] = useState(false);

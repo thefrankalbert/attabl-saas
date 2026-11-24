@@ -20,6 +20,10 @@ interface Props {
   searchResults: ClientMenuItem[];
   searchFull: MenuItem[];
   searchLoading: boolean;
+  /** La recherche a echoue (429, 500, reseau): ce n'est pas "aucun resultat". */
+  searchError: boolean;
+  /** Une seule lettre: pas de requete, on demande d'en taper une autre. */
+  searchTooShort: boolean;
   fullById: Map<string, MenuItem>;
   openDetail: (id: string) => void;
   pushRecent: (term: string) => void;
@@ -36,6 +40,8 @@ export function HomeSearchOverlay({
   searchResults,
   searchFull,
   searchLoading,
+  searchError,
+  searchTooShort,
   fullById,
   openDetail,
   pushRecent,
@@ -44,6 +50,14 @@ export function HomeSearchOverlay({
 }: Props) {
   const t = useTranslations('homeHeader');
   const tt = useTranslations('tenant');
+  // Bloc "rien a montrer": echec de la recherche, terme trop court, ou vraie
+  // absence de resultat. Trois messages differents dans le meme emplacement.
+  const emptyTitle = searchError
+    ? t('searchUnavailable')
+    : searchTooShort
+      ? t('searchTypeMore')
+      : t('searchNoResults');
+  const emptyHint = searchError ? t('searchRetryHint') : searchTooShort ? '' : t('searchNoneHint');
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white">
@@ -189,11 +203,11 @@ export function HomeSearchOverlay({
               <Search className="h-7 w-7 text-[var(--color-ink-soft)]" strokeWidth={1.6} />
             </div>
             <div className="text-[16px] font-semibold tracking-[-0.3px] text-[var(--color-ink)]">
-              {t('searchNoResults')}
+              {emptyTitle}
             </div>
-            <div className="mt-1.5 text-[13px] text-[var(--color-ink-muted)]">
-              {t('searchNoneHint')}
-            </div>
+            {emptyHint && (
+              <div className="mt-1.5 text-[13px] text-[var(--color-ink-muted)]">{emptyHint}</div>
+            )}
           </div>
         )}
       </div>

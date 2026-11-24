@@ -1033,6 +1033,7 @@ export type Database = {
           id: string;
           is_active: boolean;
           menu_item_id: string;
+          source: string;
           suggested_item_id: string;
           suggestion_type: string;
           tenant_id: string;
@@ -1044,6 +1045,7 @@ export type Database = {
           id?: string;
           is_active?: boolean;
           menu_item_id: string;
+          source?: string;
           suggested_item_id: string;
           suggestion_type?: string;
           tenant_id: string;
@@ -1055,6 +1057,7 @@ export type Database = {
           id?: string;
           is_active?: boolean;
           menu_item_id?: string;
+          source?: string;
           suggested_item_id?: string;
           suggestion_type?: string;
           tenant_id?: string;
@@ -3860,6 +3863,10 @@ export type Database = {
           p_tenant_id: string;
         };
         Returns: string;
+      };
+      regenerate_auto_suggestions: {
+        Args: { p_rows: Json; p_tenant_id: string };
+        Returns: number;
       };
       reminder_coach_items: {
         Args: {

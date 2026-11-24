@@ -1,12 +1,18 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { CheckCircle2, Trash2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { formatPrice, type PdfExtractedItem } from './menu-import-pdf.types';
+import {
+  formatPrice,
+  type PdfExtractedItem,
+  type PdfNotImportedItem,
+} from './menu-import-pdf.types';
 
 interface MenuImportPDFPreviewStepProps {
   extractedItems: PdfExtractedItem[];
+  /** B72: plats au prix refuse, qui ne seront PAS importes. */
+  notImported: PdfNotImportedItem[];
   removeItem: (index: number) => void;
   handleImport: () => void;
   handleBackToUpload: () => void;
@@ -14,6 +20,7 @@ interface MenuImportPDFPreviewStepProps {
 
 export function MenuImportPDFPreviewStep({
   extractedItems,
+  notImported,
   removeItem,
   handleImport,
   handleBackToUpload,
@@ -71,6 +78,26 @@ export function MenuImportPDFPreviewStep({
 
       {extractedItems.length === 0 && (
         <p className="text-sm text-app-text-secondary text-center py-4">{t('pdfNoData')}</p>
+      )}
+
+      {/* B72: plats au prix refuse, jamais importes (ils seraient en vente a 0). */}
+      {notImported.length > 0 && (
+        <div className="rounded-xl border border-app-border bg-status-warning-bg px-4 py-3">
+          <p className="flex items-center gap-2 text-sm font-medium text-status-warning">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            {t('pdfNotImportedTitle', { count: notImported.length })}
+          </p>
+          <p className="mt-1 text-xs text-app-text-secondary">{t('pdfNotImportedHelp')}</p>
+          <ul className="mt-2 space-y-1">
+            {notImported.map((item, index) => (
+              <li key={`${item.name}-${index}`} className="text-xs text-app-text break-words">
+                <span className="font-medium">{item.name}</span>
+                {' : '}
+                {t(`pdfNotImportedReason.${item.reason}`, { price: item.price || '-' })}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {/* Action buttons */}

@@ -680,15 +680,28 @@ describe('reconcilePending (rattrapage)', () => {
     expect(failed.rpc).not.toHaveBeenCalled();
   });
 
-  it('ne regarde que les tentatives pending des 7 derniers jours', async () => {
+  it('ne regarde que les tentatives pending des 30 derniers jours', async () => {
     const { service, client } = setup({
       payments: [
-        payment(REF, { created_at: iso(-8 * DAY) }),
+        payment(REF, { created_at: iso(-31 * DAY) }),
         payment(REF2, { status: 'successful' }),
       ],
     });
     expect(await service.reconcilePending()).toEqual({ checked: 0, applied: 0, errors: 0 });
     expect(client.verifyByReference).not.toHaveBeenCalled();
+  });
+
+  // B47: le rattrapage etait borne a 7 jours, comme la reutilisation des liens.
+  // Un lien redonne au jour 6 et paye au jour 8, webhook perdu: argent pris,
+  // abonnement jamais prolonge. La fenetre de rattrapage depasse celle de
+  // reutilisation.
+  it('B47: rattrape un paiement fait sur un lien de plus de 7 jours', async () => {
+    const { service, client, rpc } = setup({
+      payments: [payment(REF, { created_at: iso(-8 * DAY) })],
+    });
+    vi.mocked(client.verifyByReference).mockResolvedValue(verified({ tx_ref: REF }));
+    expect(await service.reconcilePending()).toEqual({ checked: 1, applied: 1, errors: 0 });
+    expect(rpc).toHaveBeenCalledTimes(1);
   });
 
   it('idempotent: un second passage ne reapplique pas (la ligne n est plus pending)', async () => {

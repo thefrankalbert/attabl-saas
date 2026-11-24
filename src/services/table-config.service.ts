@@ -14,6 +14,10 @@ import {
 import { createTableConfigGuards } from './table-config.guards';
 import { sortByTableNumber } from '@/lib/utils/table-order';
 
+/** Zone creee quand le restaurateur ne decrit pas sa salle (onboarding "skip"). */
+const DEFAULT_ZONE_NAME = 'Salle principale';
+const DEFAULT_ZONE_PREFIX = 'TAB';
+
 /**
  * A generated table number may equal the NAME of another table (refused by the
  * database since migration 20261124150400, marker
@@ -232,9 +236,41 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
       venueId: string,
       tableCount: number,
     ): Promise<ZoneWithTables> {
+      // B105: le nom et le prefixe par defaut etaient poses sans regarder
+      // l'existant. Une zone "Salle principale" ou un prefixe "TAB" deja crees
+      // faisaient echouer l'onboarding (23505) a chaque essai, sans issue.
+      const { data: existing, error: existingError } = await supabase
+        .from('zones')
+        .select('id, name, prefix, venue_id')
+        .eq('tenant_id', tenantId);
+      if (existingError) {
+        throw new ServiceError('Lecture des zones impossible', 'INTERNAL', existingError);
+      }
+      const zones = (existing ?? []) as Array<ZoneRow & { venue_id: string | null }>;
+
+      // La zone par defaut existe deja dans cet etablissement: on y ajoute les tables.
+      const sameName = zones.find(
+        (z) =>
+          z.venue_id === venueId && z.name.trim().toLowerCase() === DEFAULT_ZONE_NAME.toLowerCase(),
+      );
+      if (sameName) {
+        const tables = await this.addTablesToZone(
+          tenantId,
+          sameName.id,
+          sameName.prefix,
+          tableCount,
+        );
+        return { zone: sameName, tables };
+      }
+
+      // Sinon un prefixe libre: TAB, puis TAB2, TAB3...
+      const takenPrefixes = new Set(zones.map((z) => String(z.prefix).toUpperCase()));
+      let prefix = DEFAULT_ZONE_PREFIX;
+      for (let n = 2; takenPrefixes.has(prefix); n += 1) prefix = `${DEFAULT_ZONE_PREFIX}${n}`;
+
       const defaultZone: ZoneInput = {
-        name: 'Salle principale',
-        prefix: 'TAB',
+        name: DEFAULT_ZONE_NAME,
+        prefix,
         tableCount,
         defaultCapacity: DEFAULT_CAPACITY,
       };

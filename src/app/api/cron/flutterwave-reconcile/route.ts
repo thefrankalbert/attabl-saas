@@ -7,7 +7,7 @@ import { runFlutterwaveReconcile } from '@/lib/billing/flutterwave/wiring';
 
 /**
  * Rattrapage des paiements Flutterwave: relit, par reference, les tentatives
- * `pending` des 7 derniers jours et applique celles qui sont payees. Couvre un
+ * `pending` des 30 derniers jours et applique celles qui sont payees. Couvre un
  * webhook perdu et un client qui n'est pas revenu sur le site.
  *
  * Meme controle d'acces que les autres taches: Bearer CRON_SECRET. Idempotent:

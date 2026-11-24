@@ -12,6 +12,11 @@ import { assertTenantServing } from '@/lib/billing/assert-tenant-serving';
 import type { Tenant } from '@/types/admin.types';
 import type { PdfExtractedItem } from '@/services/pdf-import.service';
 import { z } from 'zod';
+import {
+  MENU_PRICE_MAX,
+  MENU_PRICE_REJECTION_LABEL,
+  readMenuPrice,
+} from '@/lib/utils/parse-price-text';
 
 // Bornes alignees sur l'extraction (pdf-import.service.ts) et le formulaire de
 // plat (audit B6): ce chemin recoit la liste renvoyee par le navigateur, qui
@@ -20,11 +25,35 @@ import { z } from 'zod';
 const pdfItemSchema = z.object({
   category: z.string().trim().min(1).max(100),
   name: z.string().trim().min(1).max(200),
-  price: z.number().finite().min(0).max(99_999_999),
+  // B72 (contre-audit 2): un plat a 0 serait en vente gratuitement. La liste
+  // vient du navigateur: un prix nul ou negatif est refuse ici aussi.
+  price: z
+    .number()
+    .finite()
+    .positive('Un plat sans prix ne peut pas etre importe : ajoutez-le a la main avec son prix.')
+    .max(MENU_PRICE_MAX, 'Prix trop eleve (99 999 999 au plus).'),
   description: z.string().max(1000).nullish(),
 });
 
 const pdfItemsSchema = z.array(pdfItemSchema).min(1).max(500);
+
+/**
+ * Contre-audit 3: la liste vient du navigateur. Chaque prix est rejoue avec la
+ * regle de la devise du restaurant de la SESSION (entier strictement positif
+ * en francs CFA, dans la borne). Renvoie le message du premier prix refuse.
+ */
+function invalidPriceMessage(
+  items: Array<{ name: string; price: number }>,
+  currency: string | null | undefined,
+): string | null {
+  for (const item of items) {
+    const reading = readMenuPrice(item.price, currency);
+    if (!reading.ok) {
+      return `${item.name} : ${MENU_PRICE_REJECTION_LABEL[reading.reason]} (${item.price}). Corrigez le prix avant d importer.`;
+    }
+  }
+  return null;
+}
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
@@ -73,7 +102,7 @@ export async function POST(request: Request) {
     const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
       .select(
-        'id, name, slug, subscription_plan, subscription_status, trial_ends_at, is_active, created_at',
+        'id, name, slug, currency, subscription_plan, subscription_status, trial_ends_at, is_active, created_at',
       )
       .eq('id', tenantId)
       .single();
@@ -128,13 +157,17 @@ export async function POST(request: Request) {
       }
 
       const buffer = await file.arrayBuffer();
-      const result = await importService.extractFromPdf(Buffer.from(buffer));
+      const result = await importService.extractFromPdf(Buffer.from(buffer), tenant.currency);
 
       return NextResponse.json({
         success: true,
         items: result.items,
         pageCount: result.pageCount,
         textLength: result.textLength,
+        // B71: carte lue en partie seulement, l'ecran le signale.
+        truncated: result.truncated,
+        // B72: plats non importes (prix refuse): l'ecran les nomme.
+        notImported: result.notImported,
       });
     }
 
@@ -165,10 +198,45 @@ export async function POST(request: Request) {
       }
 
       const buffer = await file.arrayBuffer();
-      const extraction = await importService.extractFromPdf(Buffer.from(buffer));
+      const extraction = await importService.extractFromPdf(Buffer.from(buffer), tenant.currency);
 
       if (extraction.items.length === 0) {
         return NextResponse.json({ error: 'Aucune donnee extraite du PDF.' }, { status: 400 });
+      }
+      // B72: sans apercu, des plats manqueraient a la carte sans que personne
+      // le sache. On refuse tout et on dit lesquels.
+      if (extraction.notImported.length > 0) {
+        const noms = extraction.notImported
+          .slice(0, 5)
+          .map((r) => `${r.name} (${r.price} : ${MENU_PRICE_REJECTION_LABEL[r.reason]})`)
+          .join(', ');
+        return NextResponse.json(
+          {
+            error: `Rien n a ete importe. Ces plats ont un prix que nous ne pouvons pas lire : ${noms}. Corrigez le PDF, ou passez par l apercu et ajoutez-les ensuite a la main.`,
+          },
+          { status: 400 },
+        );
+      }
+      // B71: sans apercu, une carte lue en partie serait importee comme complete.
+      if (extraction.truncated) {
+        return NextResponse.json(
+          {
+            error:
+              'Ce PDF est trop long pour etre importe en une fois. Coupez-le en plusieurs fichiers, ou passez par l apercu.',
+          },
+          { status: 400 },
+        );
+      }
+
+      // B72: meme porte que l'etape "import" avec apercu (prix > 0, bornes),
+      // pour qu'aucun plat a 0 n'atteigne l'insertion par ce chemin non plus.
+      const directItems = pdfItemsSchema.safeParse(extraction.items);
+      if (!directItems.success) {
+        const priceIssue = directItems.error.issues.find((issue) => issue.path.at(-1) === 'price');
+        return NextResponse.json(
+          { error: priceIssue?.message ?? 'Donnees invalides' },
+          { status: 400 },
+        );
       }
 
       // Check plan limits before importing items
@@ -197,13 +265,19 @@ export async function POST(request: Request) {
 
     const parsed = pdfItemsSchema.safeParse(rawItems);
     if (!parsed.success) {
+      // B72: un prix refuse a son propre message (que faire), pas "invalide".
+      const priceIssue = parsed.error.issues.find((issue) => issue.path.at(-1) === 'price');
       return NextResponse.json(
-        { error: 'Données invalides', details: parsed.error.flatten() },
+        { error: priceIssue?.message ?? 'Donnees invalides', details: parsed.error.flatten() },
         { status: 400 },
       );
     }
 
     const items = parsed.data as PdfExtractedItem[];
+    const priceError = invalidPriceMessage(items, tenant.currency);
+    if (priceError) {
+      return NextResponse.json({ error: priceError }, { status: 400 });
+    }
 
     // Check plan limits before importing items
     await enforcement.canAddItems(tenant as Tenant, items.length);

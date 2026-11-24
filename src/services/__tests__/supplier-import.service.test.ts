@@ -52,6 +52,41 @@ function makeSupabase(opts: MockOpts = {}) {
   return { supabase: { from } as unknown as SupabaseClient, inserts, updates };
 }
 
+// B100 (revue ligne par ligne, lot B2b-2): "Inactif" / "Inactive" n'etait pas
+// reconnu, la valeur par defaut `true` s'appliquait: le fournisseur etait cree
+// ou REMIS actif sans erreur.
+describe('supplier-import.service parseExcel - statut actif (B100)', () => {
+  it('reconnait actif, inactif, active, inactive (toute casse)', async () => {
+    const { supabase } = makeSupabase();
+    const { rows, errors } = await createSupplierImportService(supabase).parseExcel(
+      await buildXlsx([
+        ['Nom', 'Statut'],
+        ['A', 'Inactif'],
+        ['B', 'inactive'],
+        ['C', 'Actif'],
+        ['D', 'ACTIVE'],
+        ['E', 'oui'],
+      ]),
+    );
+    expect(errors).toEqual([]);
+    expect(rows.map((r) => r.is_active)).toEqual([false, false, true, true, true]);
+  });
+
+  it('une valeur non reconnue est une erreur de ligne, pas un fournisseur actif', async () => {
+    const { supabase } = makeSupabase();
+    const { rows, errors } = await createSupplierImportService(supabase).parseExcel(
+      await buildXlsx([
+        ['Nom', 'Statut'],
+        ['A', 'en pause'],
+        ['B', 'non'],
+      ]),
+    );
+    expect(rows.map((r) => r.name)).toEqual(['B']);
+    expect(errors).toHaveLength(1);
+    expect(errors[0].row).toBe(2);
+  });
+});
+
 describe('supplier-import.service parseExcel', () => {
   it('maps tolerant FR/EN headers and parses rows', async () => {
     const { supabase } = makeSupabase();

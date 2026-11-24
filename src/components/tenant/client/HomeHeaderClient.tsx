@@ -52,6 +52,8 @@ export function HomeHeaderClient({
     setDetailItem,
     searchFull,
     searchLoading,
+    searchError,
+    searchTooShort,
     isQROpen,
     setIsQROpen,
     isSearchOpen,
@@ -142,6 +144,8 @@ export function HomeHeaderClient({
           searchResults={searchResults}
           searchFull={searchFull}
           searchLoading={searchLoading}
+          searchError={searchError}
+          searchTooShort={searchTooShort}
           fullById={fullById}
           openDetail={openDetail}
           pushRecent={pushRecent}

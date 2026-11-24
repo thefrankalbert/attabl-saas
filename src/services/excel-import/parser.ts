@@ -2,7 +2,8 @@ import { ServiceError } from '../errors';
 import { findHeaderRow, mapHeaders, readFirstSheetRows } from '@/lib/excel-parse';
 import { COLUMN_ALIASES } from './columns';
 import { excelRowSchema } from './row-schema';
-import { parseBooleanCell, parseNumericCell } from './cells';
+import { parseBooleanCell } from './cells';
+import { MENU_PRICE_REJECTION_LABEL, readMenuPrice } from '@/lib/utils/parse-price-text';
 import type { ParsedRow, ImportRowError } from './types';
 
 // --- Excel Parsing --------------------------------------------
@@ -13,6 +14,7 @@ import type { ParsedRow, ImportRowError } from './types';
  */
 export async function parseExcelBuffer(
   buffer: ArrayBuffer,
+  currency?: string | null,
 ): Promise<{ rows: ParsedRow[]; errors: ImportRowError[] }> {
   // Lecture partagee avec l'import de fiches techniques: une seule
   // implementation, donc un seul endroit ou la lecture de fichiers uploades peut
@@ -65,6 +67,21 @@ export async function parseExcelBuffer(
       rawRow[fieldName] = cells[colIndex] ?? null;
     }
 
+    // B72 (contre-audit 2): MEME lecture du prix que l'import PDF, par devise.
+    // Une cellule numerique reste un nombre (seulement bornee); une cellule
+    // texte passe par la regle ("1.50" en FCFA est refuse, "1500 / 2500"
+    // aussi). Un prix refuse, nul, negatif ou trop eleve: le plat n'est pas
+    // importe, la ligne est signalee.
+    const priceReading = readMenuPrice(rawRow.price, currency);
+    if (!priceReading.ok) {
+      const lu = rawRow.price == null ? '' : String(rawRow.price).trim();
+      errors.push({
+        row: rowNumber,
+        message: `Plat non importe : ${MENU_PRICE_REJECTION_LABEL[priceReading.reason]}${lu ? ` ("${lu}")` : ''}. Corrigez le prix dans le fichier.`,
+      });
+      continue;
+    }
+
     // Coerce types before validation
     const rowToValidate = {
       category: rawRow.category != null ? String(rawRow.category).trim() : '',
@@ -74,18 +91,12 @@ export async function parseExcelBuffer(
       description: rawRow.description != null ? String(rawRow.description).trim() || null : null,
       descriptionEn:
         rawRow.descriptionEn != null ? String(rawRow.descriptionEn).trim() || null : null,
-      price: parseNumericCell(rawRow.price),
+      price: priceReading.price,
       // Case vide = null: a la creation le plat prend la valeur par defaut, a la
       // mise a jour d'un plat existant on garde sa valeur actuelle.
       isAvailable: isBlankCell(rawRow.available) ? null : parseBooleanCell(rawRow.available, true),
       isFeatured: isBlankCell(rawRow.featured) ? null : parseBooleanCell(rawRow.featured, false),
     };
-
-    // Handle null price before Zod (Zod expects number, not null)
-    if (rowToValidate.price === null) {
-      errors.push({ row: rowNumber, message: 'Prix manquant ou illisible' });
-      continue;
-    }
 
     const result = excelRowSchema.safeParse(rowToValidate);
 

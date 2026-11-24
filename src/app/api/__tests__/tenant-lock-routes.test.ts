@@ -255,6 +255,8 @@ describe('classement de toutes les routes API', () => {
     'restaurants/create',
     // Etat personnel de l'appelant (appareil push).
     'push-subscriptions',
+    // Lecture seule de l'etat d'abonnement de l'appareil (B8).
+    'push-subscriptions/status',
     // Invalide un cache, n'ecrit aucune donnee.
     'revalidate-menu',
     // Facturation: necessaire pour payer et rouvrir.

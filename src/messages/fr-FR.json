@@ -626,7 +626,7 @@
         },
         "resend": {
           "name": "Resend",
-          "role": "Envoi des e-mails (bienvenue, invitation, mot de passe oublié, confirmation)",
+          "role": "Envoi des e-mails (bienvenue, invitation, mot de passe oublié, confirmation) et réception du courrier envoyé aux adresses @attabl.com",
           "country": "États-Unis"
         },
         "sentry": {
@@ -653,11 +653,6 @@
           "name": "Services de notification des navigateurs (Google, Apple, Mozilla, Microsoft)",
           "role": "Acheminer une notification push vers votre appareil si vous l'activez",
           "country": "États-Unis et réseau mondial"
-        },
-        "improvmx": {
-          "name": "ImprovMX",
-          "role": "Réception du courrier envoyé aux adresses @attabl.com",
-          "country": "Selon le prestataire"
         }
       },
       "section5Title": "5. Les lois qui s'appliquent",
@@ -1787,6 +1782,7 @@
       "noUsers": "Aucun compte",
       "userActive": "Actif",
       "userBanned": "Bloqué",
+      "userDeactivated": "Désactivé par le restaurant",
       "userDeleted": "Supprimé",
       "banUser": "Bloquer",
       "unbanUser": "Débloquer",
@@ -3937,6 +3933,15 @@
     "pdfExtracted": "{count} plat(s) extrait(s) du PDF",
     "pdfNoData": "Aucune donnée n'a pu être extraite de ce PDF",
     "pdfExtractionError": "Erreur lors de l'extraction du PDF",
+    "pdfTruncatedWarning": "Ce PDF est long : seule la première partie de la carte a été lue. Vérifiez la liste, puis importez le reste dans un second fichier.",
+    "pdfNotImportedTitle": "{count} plat(s) ne seront pas importés",
+    "pdfNotImportedHelp": "Nous n'avons pas pu lire leur prix. Ajoutez-les à la main après l'import, ou corrigez le prix dans le PDF et recommencez.",
+    "pdfNotImportedReason": {
+      "illisible": "prix illisible ({price})",
+      "decimale": "centimes impossibles en francs CFA ({price})",
+      "negatif_ou_nul": "prix nul ou négatif ({price})",
+      "trop_eleve": "prix trop élevé ({price})"
+    },
     "modifiersTitle": "Modificateurs",
     "manageModifiers": "Gérer les modificateurs",
     "editItem": "Modifier",
@@ -5215,7 +5220,10 @@
     "searchPopular": "Populaires",
     "searchResultsCount": "{count} résultat(s) pour \"{query}\"",
     "searchNoResults": "Aucun résultat",
-    "searchNoneHint": "Essayez un autre mot."
+    "searchNoneHint": "Essayez un autre mot.",
+    "searchUnavailable": "Recherche indisponible pour le moment",
+    "searchRetryHint": "Vérifiez la connexion et réessayez dans un instant.",
+    "searchTypeMore": "Tapez au moins 2 lettres."
   },
   "bottomNav": {
     "navLabel": "Navigation principale",

@@ -97,10 +97,12 @@ describe('parseExcelBuffer - separateur de milliers (defaut corrige)', () => {
     expect(rows[0].price).toBe(1500);
   });
 
-  it('lit le format europeen 1.500,75', async () => {
+  // B72 (contre-audit 2): les decimales ne se lisent que pour une devise qui en
+  // a. En francs CFA, "1.500,75" est refuse (voir excel-import-prix.test.ts).
+  it('lit le format europeen 1.500,75 (devise a decimales)', async () => {
     feuille([['Plats', 'Poulet DG', '', '1.500,75', 'Oui', 'Non']]);
 
-    const { rows } = await parseExcelBuffer(tampon);
+    const { rows } = await parseExcelBuffer(tampon, 'EUR');
 
     expect(rows[0].price).toBe(1500.75);
   });
@@ -109,7 +111,7 @@ describe('parseExcelBuffer - separateur de milliers (defaut corrige)', () => {
     // Le correctif ne doit pas casser le cas d'origine.
     feuille([['Boissons', 'Cafe', '', '12,50', 'Oui', 'Non']]);
 
-    const { rows } = await parseExcelBuffer(tampon);
+    const { rows } = await parseExcelBuffer(tampon, 'EUR');
 
     expect(rows[0].price).toBe(12.5);
   });
@@ -130,7 +132,7 @@ describe('parseExcelBuffer - separateur de milliers (defaut corrige)', () => {
     const { rows, errors } = await parseExcelBuffer(tampon);
 
     expect(rows).toHaveLength(0);
-    expect(errors[0].message).toMatch(/superieur a zero/i);
+    expect(errors[0].message).toMatch(/nul ou negatif/i);
   });
 });
 
@@ -169,7 +171,7 @@ describe('parseExcelBuffer - ligne par ligne', () => {
     const { rows, errors } = await parseExcelBuffer(tampon);
 
     expect(rows).toHaveLength(0);
-    expect(errors[0].message).toMatch(/prix manquant ou illisible/i);
+    expect(errors[0].message).toMatch(/plat non importe : prix illisible/i);
   });
 
   it('saute les lignes entierement vides sans les compter en erreur', async () => {

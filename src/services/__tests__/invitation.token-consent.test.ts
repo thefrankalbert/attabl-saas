@@ -132,6 +132,11 @@ function creerSimulation(options: Options = {}) {
         return {
           select: () => ({
             eq: (_col: string, val: string) => {
+              // B54: lecture de l'etat de l'adresse dans CE restaurant
+              // (membre retire ?). Aucun membre retire dans ces scenarios.
+              if (_col === 'tenant_id') {
+                return { limit: async () => ({ data: [], error: null, count: 0 }) };
+              }
               journal.recherchesEmail.push(val);
               const lignes = lignesPour(val);
               return {

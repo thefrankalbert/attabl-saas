@@ -626,7 +626,7 @@
         },
         "resend": {
           "name": "Resend",
-          "role": "Sending emails (welcome, invitation, forgotten password, confirmation)",
+          "role": "Sending emails (welcome, invitation, forgotten password, confirmation) and receiving mail sent to @attabl.com addresses",
           "country": "United States"
         },
         "sentry": {
@@ -653,11 +653,6 @@
           "name": "Browser notification services (Google, Apple, Mozilla, Microsoft)",
           "role": "Delivering a push notification to your device if you turn it on",
           "country": "United States and global network"
-        },
-        "improvmx": {
-          "name": "ImprovMX",
-          "role": "Receiving mail sent to @attabl.com addresses",
-          "country": "Depends on the provider"
         }
       },
       "section5Title": "5. Applicable laws",
@@ -1787,6 +1782,7 @@
       "noUsers": "No account",
       "userActive": "Active",
       "userBanned": "Blocked",
+      "userDeactivated": "Deactivated by the restaurant",
       "userDeleted": "Deleted",
       "banUser": "Block",
       "unbanUser": "Unblock",
@@ -3937,6 +3933,15 @@
     "pdfExtracted": "{count} item(s) extracted from PDF",
     "pdfNoData": "No data could be extracted from this PDF",
     "pdfExtractionError": "Error extracting from PDF",
+    "pdfTruncatedWarning": "This PDF is long: only the first part of the menu was read. Check the list, then import the rest in a second file.",
+    "pdfNotImportedTitle": "{count} dish(es) will not be imported",
+    "pdfNotImportedHelp": "We could not read their price. Add them by hand after the import, or fix the price in the PDF and try again.",
+    "pdfNotImportedReason": {
+      "illisible": "unreadable price ({price})",
+      "decimale": "CFA francs have no cents ({price})",
+      "negatif_ou_nul": "price is zero or negative ({price})",
+      "trop_eleve": "price too high ({price})"
+    },
     "modifiersTitle": "Modifiers",
     "manageModifiers": "Manage modifiers",
     "editItem": "Edit",
@@ -5215,7 +5220,10 @@
     "searchPopular": "Popular",
     "searchResultsCount": "{count} result(s) for \"{query}\"",
     "searchNoResults": "No results",
-    "searchNoneHint": "Try another word."
+    "searchNoneHint": "Try another word.",
+    "searchUnavailable": "Search is unavailable right now",
+    "searchRetryHint": "Check your connection and try again in a moment.",
+    "searchTypeMore": "Type at least 2 letters."
   },
   "bottomNav": {
     "navLabel": "Main navigation",

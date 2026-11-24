@@ -354,9 +354,12 @@ select lives_ok(
   $$insert into public.push_subscriptions (tenant_id, user_id, endpoint, p256dh, auth)
     values ('b2a00000-0000-4000-8000-000000000002', 'b2a00000-0000-4000-8000-000000000108',
             'https://fcm.googleapis.com/b2a/meme-appareil', 'p2', 'a2')
-    on conflict (user_id, endpoint) do update
-      set tenant_id = excluded.tenant_id, p256dh = excluded.p256dh, auth = excluded.auth$$,
-  'B139: le membre desactive dans T1 se reabonne a T2 depuis le meme appareil (avant: 42501)');
+    on conflict (tenant_id, user_id, endpoint) do update
+      set p256dh = excluded.p256dh, auth = excluded.auth$$,
+  -- Lot B2b-2 (B8, contre-audit 1): avec l'unicite (tenant_id, user_id, endpoint),
+  -- c'est une simple INSERTION dans T2, sans conflit avec sa ligne de T1. Ce
+  -- test ne prouve donc plus la politique USING de B139 (l'assertion 46 le fait).
+  'B139/B8: le membre desactive dans T1 s abonne a T2 depuis le meme appareil (insertion dans T2, sans toucher sa ligne de T1)');
 delete from public.push_subscriptions where endpoint = 'https://fcm.googleapis.com/b2a/vieux';
 select throws_ok(
   $$insert into public.push_subscriptions (tenant_id, user_id, endpoint, p256dh, auth)
@@ -371,9 +374,13 @@ select throws_ok(
   'B139 temoin: il ne re-pointe pas sa ligne vers un restaurant ou il est desactive');
 reset role;
 
-select is((select tenant_id from public.push_subscriptions where endpoint = 'https://fcm.googleapis.com/b2a/meme-appareil'),
-  'b2a00000-0000-4000-8000-000000000002'::uuid,
-  'B139: la ligne de l appareil pointe maintenant vers T2');
+-- Lot B2b-2 (B8): unicite (tenant_id, user_id, endpoint). Le reabonnement a T2
+-- ajoute la ligne de T2; celle de T1 reste (inerte: l'envoi ne contacte que
+-- les membres vivants du restaurant).
+select is((select count(*)::int from public.push_subscriptions
+            where endpoint = 'https://fcm.googleapis.com/b2a/meme-appareil'
+              and tenant_id = 'b2a00000-0000-4000-8000-000000000002'), 1,
+  'B139: l appareil est abonne a T2');
 select is((select count(*)::int from public.push_subscriptions where endpoint = 'https://fcm.googleapis.com/b2a/vieux'), 0,
   'B139: il supprime son ancienne ligne de T1 (avant: zero ligne supprimee)');
 

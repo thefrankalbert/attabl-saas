@@ -81,7 +81,24 @@ export function usePushSubscription({ enabled = true }: UsePushSubscriptionOptio
         const subscription = await registration.pushManager.getSubscription();
         if (cancelled) return;
         setIsSupported(true);
-        setIsSubscribed(!!subscription);
+        // B8: l'abonnement du navigateur sert a TOUS les restaurants ouverts sur
+        // cet appareil. "Abonne" se lit donc au serveur, pour le restaurant
+        // courant; sans abonnement navigateur, la reponse est forcement non.
+        let subscribedHere = false;
+        if (subscription) {
+          // Endpoint dans le CORPS, jamais dans l'URL (identifiant d'appareil).
+          const res = await fetch('/api/push-subscriptions/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ endpoint: subscription.endpoint }),
+          });
+          if (res.ok) {
+            const json = (await res.json()) as { subscribed?: boolean };
+            subscribedHere = json.subscribed === true;
+          }
+        }
+        if (cancelled) return;
+        setIsSubscribed(subscribedHere);
       } catch (err) {
         logger.warn('Push notifications unavailable', {
           error: err instanceof Error ? err.message : String(err),
@@ -145,14 +162,13 @@ export function usePushSubscription({ enabled = true }: UsePushSubscriptionOptio
       const subscription = await registration.pushManager.getSubscription();
 
       if (subscription) {
-        const endpoint = subscription.endpoint;
-        await subscription.unsubscribe();
-
-        // Remove from server
+        // B8: seule la ligne du restaurant courant est supprimee. L'abonnement
+        // du navigateur est garde: le couper ferait taire les autres
+        // restaurants de cet appareil. Sans ligne serveur, rien n'arrive ici.
         await fetch('/api/push-subscriptions', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ endpoint }),
+          body: JSON.stringify({ endpoint: subscription.endpoint }),
         });
       }
 

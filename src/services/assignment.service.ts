@@ -173,13 +173,21 @@ export function createAssignmentService(supabase: SupabaseClient): AssignmentSer
         .update({ server_id: serverId }, { count: 'exact' })
         .eq('id', orderId)
         .eq('tenant_id', tenantId)
+        // B9: une commande annulee ou deja reglee (payee, offerte, remboursee)
+        // ne se prend plus en charge: le rapport de performance attribue le
+        // chiffre par server_id. Meme UPDATE, donc toujours atomique.
+        .neq('status', 'cancelled')
+        .in('payment_status', ['pending', 'partial'])
         .or(`server_id.is.null,server_id.eq.${serverId}`);
 
       if (error) throw new ServiceError('Erreur lors du claim', 'INTERNAL');
       if (!count) {
-        // Race lost: another server already owns this order. CONFLICT -> HTTP 409
-        // (a retryable concurrency outcome), not VALIDATION/400 (bad input).
-        throw new ServiceError('Cette commande est deja prise en charge', 'CONFLICT');
+        // Race lost (another server owns it) or the order is closed (cancelled
+        // or settled). CONFLICT -> HTTP 409, not VALIDATION/400 (bad input).
+        throw new ServiceError(
+          'Cette commande ne peut pas etre prise en charge: un autre serveur la suit deja, ou elle est reglee ou annulee.',
+          'CONFLICT',
+        );
       }
     },
   };

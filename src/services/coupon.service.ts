@@ -5,6 +5,7 @@ import type { CurrencyCode } from '@/lib/constants';
 import { roundForCurrency } from '@/lib/utils/money';
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
+import { zonedCouponValidity } from './coupon-validity';
 
 export interface CouponValidationResult {
   valid: boolean;
@@ -242,6 +243,12 @@ export function createCouponService(supabase: SupabaseClient): CouponService {
         max_uses?: number | null;
       },
     ): Promise<Coupon> {
+      const validity = await zonedCouponValidity(
+        supabase,
+        tenantId,
+        data.valid_from,
+        data.valid_until,
+      );
       const { data: coupon, error } = await supabase
         .from('coupons')
         .insert({
@@ -251,8 +258,8 @@ export function createCouponService(supabase: SupabaseClient): CouponService {
           discount_value: data.discount_value,
           min_order_amount: data.min_order_amount || 0,
           max_discount_amount: data.max_discount_amount || null,
-          valid_from: data.valid_from || new Date().toISOString(),
-          valid_until: data.valid_until || null,
+          valid_from: validity.from || new Date().toISOString(),
+          valid_until: validity.until || null,
           max_uses: data.max_uses || null,
           is_active: true,
           current_uses: 0,
@@ -289,6 +296,12 @@ export function createCouponService(supabase: SupabaseClient): CouponService {
         max_uses?: number | null;
       },
     ): Promise<void> {
+      const validity = await zonedCouponValidity(
+        supabase,
+        tenantId,
+        data.valid_from,
+        data.valid_until,
+      );
       const { error } = await supabase
         .from('coupons')
         .update({
@@ -297,8 +310,8 @@ export function createCouponService(supabase: SupabaseClient): CouponService {
           discount_value: data.discount_value,
           min_order_amount: data.min_order_amount ?? null,
           max_discount_amount: data.max_discount_amount ?? null,
-          valid_from: data.valid_from ?? null,
-          valid_until: data.valid_until ?? null,
+          valid_from: validity.from ?? null,
+          valid_until: validity.until ?? null,
           max_uses: data.max_uses ?? null,
         })
         .eq('id', couponId)

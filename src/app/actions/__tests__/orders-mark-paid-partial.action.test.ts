@@ -128,6 +128,14 @@ describe('actionMarkOrderPaid: commande partiellement payee', () => {
     expect(res.error).toBe('Montant superieur au solde du');
   });
 
+  it('B7: une panne interne du registre remonte son code INTERNAL (la file hors ligne rejoue)', async () => {
+    orderRow.value = { payment_status: 'partial' };
+    mockGetSummary.mockResolvedValue({ due: 10000, net: 4000, paymentStatus: 'partial' });
+    mockRecordTender.mockRejectedValue(new ServiceError('Failed to record tender', 'INTERNAL'));
+    const res = await actionMarkOrderPaid(TENANT, ORDER, 'cash');
+    expect(res).toEqual({ error: 'Failed to record tender', code: 'INTERNAL' });
+  });
+
   it('partial avec pourboire: refuse avec un message, rien n est encaisse', async () => {
     orderRow.value = { payment_status: 'partial' };
     mockGetSummary.mockResolvedValue({ due: 10000, net: 4000, paymentStatus: 'partial' });

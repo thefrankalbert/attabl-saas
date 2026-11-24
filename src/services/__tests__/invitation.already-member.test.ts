@@ -5,16 +5,16 @@ import { createInvitationService } from '../invitation.service';
  * Audit du 2026-11-10 (C-072): inviter une adresse deja membre du restaurant
  * etait accepte, et l'invitation portait un autre role que celui du membre.
  */
-function client(rows: Array<{ id: string }>, error: unknown = null) {
+function client(rows: Array<{ id: string; email?: string }>, error: unknown = null) {
   const filtres: Array<[string, unknown]> = [];
   const chain: Record<string, unknown> = {};
-  for (const op of ['select', 'eq', 'in', 'is']) {
+  for (const op of ['select', 'eq', 'in', 'is', 'ilike']) {
     chain[op] = vi.fn((col: string, val: unknown) => {
       if (op !== 'select') filtres.push([`${op}:${col}`, val]);
       return chain;
     });
   }
-  chain.limit = vi.fn(async () => ({ data: rows, error }));
+  chain.limit = vi.fn(async () => ({ data: rows, error, count: rows.length }));
   const from = vi.fn(() => chain);
   return {
     supabase: { from } as unknown as Parameters<typeof createInvitationService>[0],
@@ -25,7 +25,7 @@ function client(rows: Array<{ id: string }>, error: unknown = null) {
 
 describe('assertNotAlreadyMember', () => {
   it('refuse une adresse deja membre de ce restaurant', async () => {
-    const { supabase } = client([{ id: 'membre-1' }]);
+    const { supabase } = client([{ id: 'membre-1', email: 'awa@resto.com' }]);
 
     await expect(
       createInvitationService(supabase).assertNotAlreadyMember('tenant-1', 'Awa@Resto.com'),
@@ -41,16 +41,18 @@ describe('assertNotAlreadyMember', () => {
     ).resolves.toBeUndefined();
   });
 
-  it('ne cherche que dans CE restaurant, parmi les membres non retires, sans tenir compte de la casse', async () => {
+  // B54: la lecture porte aussi sur les membres retires (deleted_at), pour
+  // refuser leur reinvitation; le classement vivant / retire se fait ensuite.
+  it('ne cherche que dans CE restaurant, sans tenir compte de la casse', async () => {
     const { supabase, filtres, from } = client([]);
 
     await createInvitationService(supabase).assertNotAlreadyMember('tenant-1', ' Awa@Resto.com ');
 
     expect(from).toHaveBeenCalledWith('admin_users');
     expect(filtres).toContainEqual(['eq:tenant_id', 'tenant-1']);
-    expect(filtres).toContainEqual(['is:deleted_at', null]);
-    const emails = filtres.find(([k]) => k === 'in:email')?.[1] as string[];
-    expect(emails).toContain('awa@resto.com');
+    // Contre-audit 2: plus de motif (`ilike`); l'equipe du restaurant est lue
+    // et l'adresse comparee normalisee des deux cotes, en memoire.
+    expect(filtres.some(([k]) => k.startsWith('ilike:'))).toBe(false);
   });
 
   it('refuse (fail-closed) quand la lecture de l equipe echoue', async () => {

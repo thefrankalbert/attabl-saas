@@ -20,6 +20,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
     file,
     isDragOver,
     extractedItems,
+    notImported,
     importResult,
     fileInputRef,
     handleFileSelect,
@@ -59,6 +60,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
       {step === 'preview' && (
         <MenuImportPDFPreviewStep
           extractedItems={extractedItems}
+          notImported={notImported}
           removeItem={removeItem}
           handleImport={handleImport}
           handleBackToUpload={handleBackToUpload}

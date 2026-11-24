@@ -372,17 +372,31 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
 
     async unbanAdminUser(adminUserId, actor) {
       const target = await getAdminUserLabel(adminUserId);
-      const { error } = await admin
+      // B77: seul un blocage PLATEFORME (banned_at) se leve ici. Un membre que
+      // son restaurant a desactive (is_active = false, sans banned_at) reste
+      // desactive: c'est au restaurant de le reactiver. `count` dit si une
+      // ligne a ete touchee (PostgREST ne leve rien sur zero ligne).
+      const { error, count } = await admin
         .from('admin_users')
-        .update({
-          is_active: true,
-          banned_at: null,
-          banned_by: null,
-          ban_reason: null,
-        })
+        .update(
+          {
+            is_active: true,
+            banned_at: null,
+            banned_by: null,
+            ban_reason: null,
+          },
+          { count: 'exact' },
+        )
         .eq('id', adminUserId)
-        .is('deleted_at', null);
+        .is('deleted_at', null)
+        .not('banned_at', 'is', null);
       if (error) throw new ServiceError('Echec du debannissement', 'INTERNAL', error);
+      if (count === 0) {
+        throw new ServiceError(
+          "Ce compte n'est pas bloque par la plateforme. S'il est desactive, c'est son restaurant qui peut le reactiver.",
+          'CONFLICT',
+        );
+      }
       await audit(actor, {
         action: 'unban_user',
         targetType: 'admin_user',

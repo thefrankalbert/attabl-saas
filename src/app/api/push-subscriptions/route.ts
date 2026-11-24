@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/server';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 import { logger } from '@/lib/logger';
 import { subscribeSchema } from '@/lib/validations/push-subscription.schema';
@@ -8,6 +7,26 @@ import { pushSubscriptionLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 
 const deleteSchema = z.object({ endpoint: z.string().url() });
+
+/**
+ * B8: un meme telephone peut etre abonne aux alertes de PLUSIEURS restaurants
+ * (un proprietaire de deux etablissements). L'unicite porte sur
+ * (tenant_id, user_id, endpoint) depuis la migration 20261124160000; chaque
+ * methode ne touche que la ligne du restaurant de la session.
+ */
+async function resolveTenantContext() {
+  try {
+    return { ok: true as const, ctx: await getAuthenticatedUserWithTenant() };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return {
+        ok: false as const,
+        response: NextResponse.json({ error: error.message }, { status: error.status }),
+      };
+    }
+    throw error;
+  }
+}
 
 /**
  * POST /api/push-subscriptions - Subscribe to push notifications
@@ -53,7 +72,7 @@ export async function POST(request: NextRequest) {
 
     const { endpoint, p256dh, auth } = parsed.data;
 
-    // Upsert subscription (unique on user_id + endpoint)
+    // Upsert subscription (unique on tenant_id + user_id + endpoint, B8)
     const { error } = await supabase.from('push_subscriptions').upsert(
       {
         tenant_id: tenantId,
@@ -63,7 +82,7 @@ export async function POST(request: NextRequest) {
         auth,
         last_used_at: new Date().toISOString(),
       },
-      { onConflict: 'user_id,endpoint' },
+      { onConflict: 'tenant_id,user_id,endpoint' },
     );
 
     if (error) throw error;
@@ -93,14 +112,9 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await resolveTenantContext();
+    if (!auth.ok) return auth.response;
+    const { tenantId, user, supabase } = auth.ctx;
 
     const body = await request.json();
     const parsed = deleteSchema.safeParse(body);
@@ -111,9 +125,13 @@ export async function DELETE(request: NextRequest) {
 
     const { endpoint } = parsed.data;
 
+    // Seule la ligne du restaurant courant: se desabonner de B ne coupe pas A.
+    // Le navigateur garde son abonnement (voir usePushSubscription): sans ligne
+    // serveur pour ce restaurant, rien ne lui est envoye.
     await supabase
       .from('push_subscriptions')
       .delete()
+      .eq('tenant_id', tenantId)
       .eq('user_id', user.id)
       .eq('endpoint', endpoint);
 
