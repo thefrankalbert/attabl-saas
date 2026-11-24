@@ -21,10 +21,11 @@ cas() { # libelle attendu(0|1) dmarc mx
   if PATH="$t:$PATH" bash scripts/verifier-dns-email.sh >/dev/null; then r=0; else r=1; fi
   if [ "$r" = "$2" ]; then echo "ok - $1"; else echo "not ok - $1"; echec=1; fi
 }
-BON_MX=$'10 mx1.improvmx.com.\n20 mx2.improvmx.com.'
+BON_MX='9 receive.forge.rmta.net.'
 cas "configuration reelle -> accepte" 0 '"v=DMARC1; p=quarantine; rua=mailto:dmarc@attabl.com"' "$BON_MX"
 cas "DMARC p=none -> refuse" 1 '"v=DMARC1; p=none"' "$BON_MX"
 cas "DMARC absent -> refuse" 1 '' "$BON_MX"
 cas "MX absent -> refuse" 1 '"v=DMARC1; p=reject"' ''
 cas "MX vers un autre service -> refuse" 1 '"v=DMARC1; p=reject"' '10 mx.autre.com.'
+cas "ancien MX ImprovMX -> refuse" 1 '"v=DMARC1; p=reject"' $'10 mx1.improvmx.com.\n20 mx2.improvmx.com.'
 exit "$echec"

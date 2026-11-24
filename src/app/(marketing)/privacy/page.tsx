@@ -13,7 +13,6 @@ const PROCESSOR_IDS = [
   'cloudflare',
   'stripe',
   'push',
-  'improvmx',
 ] as const;
 
 const COOKIE_KEYS = [
