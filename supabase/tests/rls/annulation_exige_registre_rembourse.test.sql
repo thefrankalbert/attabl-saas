@@ -1,5 +1,5 @@
 -- Une commande dont l'argent est au registre ne s'annule pas par l'API directe
--- (migration 20261124160000, constats X2, X3, N3). Les refus de commande `paid`
+-- (migration 20261124210000, constats X2, X3, N3). Les refus de commande `paid`
 -- viennent aussi de 20261124150000 (declencheur BEFORE, deja en production);
 -- les cas `partial` (X2, partiellement remboursee) ne sont refuses QUE par
 -- celui-ci: ce sont eux qui prouvent qu'il reste necessaire.

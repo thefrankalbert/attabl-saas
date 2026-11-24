@@ -1,4 +1,4 @@
--- Double authentification exigee par la base (20261124200000).
+-- Double authentification exigee par la base (20261124210700).
 --
 -- Un compte qui a un facteur TOTP verifie et un jeton aal1 (mot de passe
 -- seul) n'a plus aucun droit de restaurant ni de plateforme par PostgREST:

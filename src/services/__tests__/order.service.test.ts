@@ -1425,7 +1425,7 @@ describe('OrderService', () => {
       });
     });
 
-    // Money still in the ledger: the database guard (migration 20261124160000)
+    // Money still in the ledger: the database guard (migration 20261124210000)
     // refuses with a HINT; the service turns it into a clear refusal instead
     // of the generic permission message, without reading the ledger itself.
     it('maps the deposit refusal (money authority needed) to the translatable reason', async () => {

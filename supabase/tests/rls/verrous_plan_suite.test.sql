@@ -149,7 +149,7 @@ select lives_ok($$
 $$, 'Starter: une fonction SQL (proprietaire) peut toujours ecrire le stock');
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"c3000000-0000-4000-8000-0000000000a1"}';
--- Une colonne autre que current_stock: depuis 20261124170000, current_stock
+-- Une colonne autre que current_stock: depuis 20261124210100, current_stock
 -- est refuse a tout client (42501, registre_stock_garde_ingredients.test.sql);
 -- ici on mesure le refus de PLAN, qui vaut pour toute modification.
 select throws_ok($$

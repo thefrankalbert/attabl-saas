@@ -63,7 +63,7 @@ insert into public.suppliers (id, tenant_id, name)
 values ('c6666666-6666-6666-6666-666666666666', 'c3333333-3333-3333-3333-333333333333',
         'Fournisseur temoin');
 
--- Depuis 20261124170100 le waiter ne LIT plus les fournisseurs (inventory.view
+-- Depuis 20261124210200 le waiter ne LIT plus les fournisseurs (inventory.view
 -- exige, comme la page). L etat apres sa tentative est donc lu par le
 -- proprietaire de la base: sinon "0 ligne lue" passerait pour "ligne intacte".
 create function public.test_lot3_fournisseur() returns table (nom text, n int)

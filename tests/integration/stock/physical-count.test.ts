@@ -3,7 +3,7 @@
  * Postgres. Verifies migration 20260703000000: open_stock_count snapshots
  * theoretical stock, save_stock_count_lines records counts, commit_stock_count
  * applies the displayed variance (counted - snapshot) to the LIVE stock as
- * physical_count ledger movements (reconcilable, 20261124170200) and
+ * physical_count ledger movements (reconcilable, 20261124210300) and
  * flips menu availability, cancel_stock_count releases a session, plus the
  * one-open-per-tenant guard and tenant isolation. Driven by `pnpm test:db`.
  */
@@ -266,7 +266,7 @@ describe('commit_stock_count', () => {
   });
 
   it('applies the displayed variance (counted - open-time snapshot) to LIVE stock', async () => {
-    // Migration 20261124170200 (verif-prod constat 6): movements booked while
+    // Migration 20261124210300 (verif-prod constat 6): movements booked while
     // the count is open (sales, receptions, losses) are kept, and the booked
     // physical_count movement is the variance the count sheet displays.
     await releaseOpen();

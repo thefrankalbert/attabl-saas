@@ -16,8 +16,8 @@
 --    par unite de STOCK d'une reception, garde pour l'historique. NULL pour
 --    tout autre mouvement et pour une reception sans prix. Lecture: la table
 --    a un SELECT de table pour authenticated (lignes bornees par la RLS de
---    20261124170100), la colonne est donc lisible comme les autres; aucune
---    ecriture directe n'existe plus (20261124170000).
+--    20261124210200), la colonne est donc lisible comme les autres; aucune
+--    ecriture directe n'existe plus (20261124210100).
 -- 2. `adjust_ingredient_stock_tx` recoit un 8e parametre `p_unit_cost`
 --    (DEFAULT NULL), en unite de stock. Regle, dans la MEME transaction que
 --    la mise a jour du stock et l'insertion du mouvement, sous le verrou de
@@ -39,7 +39,7 @@
 --    Le reste du corps est celui de 20261124150200 (stock exact, y compris
 --    sous zero: -2 + 4 = 2), avec la garde `assert_inventory_edit`, l'auteur
 --    force et `sync_menu_availability`. SECURITY DEFINER, proprietaire
---    postgres: la garde du registre (20261124170000) le laisse ecrire
+--    postgres: la garde du registre (20261124210100) le laisse ecrire
 --    `current_stock`, comme avant.
 -- 3. L'ancienne surcharge a 7 parametres est SUPPRIMEE. Garder les deux
 --    rendrait ambigu tout appel a 7 arguments nommes (PostgREST ne saurait pas

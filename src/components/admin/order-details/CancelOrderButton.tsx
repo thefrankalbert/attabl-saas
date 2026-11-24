@@ -62,7 +62,7 @@ export function CancelOrderButton({
   // impossible" apres avoir confirme). Le bouton suit la regle reelle.
   if ((paymentStatus === 'refunded' || paymentStatus === 'comp') && !canManageMoney) return null;
   // Acompte au registre (partial): la base ne laisse annuler qu'a l'autorite sur
-  // l'argent (migration 20261124160000); cancelOrder traduit ce refus.
+  // l'argent (migration 20261124210000); cancelOrder traduit ce refus.
   if (paymentStatus === 'partial' && !canManageMoney) return null;
 
   const handleConfirm = async () => {

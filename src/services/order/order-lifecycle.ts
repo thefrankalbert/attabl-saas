@@ -36,7 +36,7 @@ export const CANCEL_NEEDS_MONEY_AUTHORITY = 'cancel_needs_money_authority';
 
 /**
  * HINT posed by the database guard `exiger_registre_rembourse_pour_annuler`
- * (migration 20261124160000) when it refuses a cancellation: change both
+ * (migration 20261124210000) when it refuses a cancellation: change both
  * together.
  */
 const CANCEL_HINT_NEEDS_REFUND = 'orders_annulation_exige_remboursement';
@@ -316,7 +316,7 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
      * checks the order is cancelled, the coupon belongs to the same restaurant
      * and was not given back yet.
      *
-     * Money still in the ledger (migration 20261124160000): the database, not
+     * Money still in the ledger (migration 20261124210000): the database, not
      * this service, judges an order whose ledger `payments` holds money (net of
      * refunds). Net covering the amount due: refund first, for every role. Net
      * positive below the due (a deposit): only the money authority (owner,

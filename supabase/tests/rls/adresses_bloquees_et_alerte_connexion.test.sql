@@ -1,6 +1,6 @@
 -- Audits R8 (C4) et Q19 (C12): deux tables de la plateforme, fermees a l'API.
 --
--- CE QUE CE TEST VERROUILLE (migrations 20261124180000 et 20261124180100):
+-- CE QUE CE TEST VERROUILLE (migrations 20261124210400 et 20261124210500):
 --   1. `adresses_email_bloquees`: RLS active, aucune politique, aucun privilege
 --      pour anon ni authenticated; une lecture par un compte est refusee.
 --   2. `alertes_nouvelle_connexion`: idem.

@@ -23,7 +23,7 @@
 --                 = counted_qty + (stock courant - theoretical_qty)
 -- `stock courant - theoretical_qty` est exactement la somme des mouvements
 -- depuis l'ouverture, puisque `current_stock` ne bouge que par le registre
--- (20261124170000). Le mouvement `physical_count` porte l'ecart affiche, le
+-- (20261124210100). Le mouvement `physical_count` porte l'ecart affiche, le
 -- nombre de lignes rendu est celui du dialogue ("N produit(s) avec ecart"),
 -- et l'invariant stock = somme des mouvements tient.
 -- Pourquoi cette regle et pas l'ancienne: la feuille presente la quantite a

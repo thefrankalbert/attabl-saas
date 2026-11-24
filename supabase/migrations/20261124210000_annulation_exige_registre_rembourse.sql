@@ -3,7 +3,7 @@
 -- directe (constats X2, X3 et N3, audit de mise en production du 2026-11-23).
 -- ============================================================================
 --
--- VERSION. Ecrite d'abord sous 20261124120000, renommee 20261124160000 pour
+-- VERSION. Ecrite d'abord sous 20261124120000, renommee 20261124210000 pour
 -- s'appliquer APRES 20261124150000 (lot B2b-1, deja en production), dont elle
 -- complete la regle sans rien redefinir. Elle n'a jamais ete appliquee sous
 -- l'ancienne version.

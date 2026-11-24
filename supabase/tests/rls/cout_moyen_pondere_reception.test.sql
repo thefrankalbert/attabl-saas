@@ -1,5 +1,5 @@
 -- Module de stock, verification de mise en production du 2026-11-24
--- (rapport ui-stock.md, soupcon a / constat 4). Migration 20261124190000.
+-- (rapport ui-stock.md, soupcon a / constat 4). Migration 20261124210600.
 --
 -- Une reception (`manual_add`) saisie avec un prix d'achat recalcule le cout
 -- unitaire du produit (cout moyen pondere); sans prix, le cout ne bouge pas.

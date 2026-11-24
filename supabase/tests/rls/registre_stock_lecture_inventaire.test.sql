@@ -1,16 +1,16 @@
 -- Module de stock, verification de mise en production du 2026-11-24
 -- (rapport ui-stock.md, constats 2, 5 et 6).
 --
--- A (20261124170000): `ingredients.current_stock` ne change que par les
+-- A (20261124210100): `ingredients.current_stock` ne change que par les
 --   fonctions du registre, et `stock_movements` ne recoit d'INSERT que par
 --   elles. Gerant et proprietaire sont refuses en ecriture directe; les
 --   fonctions (reception, perte, vente, inventaire) passent toujours.
--- B (20261124170100): la lecture directe de `ingredients`, `stock_movements`,
+-- B (20261124210200): la lecture directe de `ingredients`, `stock_movements`,
 --   `suppliers`, `recipes`, `stock_counts` et `stock_count_lines` exige
 --   `inventory.view` (ou `inventory.edit`), comme les pages: serveur et
 --   caissier lisent 0 ligne, chef, gerant et proprietaire lisent tout, un
 --   serveur a qui le proprietaire a delegue `inventory.view` lit.
--- C (20261124170200): valider un inventaire applique l'ecart affiche
+-- C (20261124210300): valider un inventaire applique l'ecart affiche
 --   (compte - theorique fige) au stock courant. Scenario chiffre: stock 10,
 --   ouverture, vente de 2 plats (stock 8), comptage saisi a 9, validation:
 --   ecart -1, mouvement -1, stock final 7 (l'ancienne regle donnait 9 et +1).

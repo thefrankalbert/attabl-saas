@@ -42,7 +42,7 @@
 --    est supprimee. UPDATE et DELETE n'avaient deja aucune politique (refus
 --    par la RLS); TRUNCATE n'est pas expose par PostgREST mais contourne la
 --    RLS: le registre est en ajout seul, par les fonctions uniquement. La
---    lecture (SELECT) est traitee par la migration suivante (20261124170100).
+--    lecture (SELECT) est traitee par la migration suivante (20261124210200).
 --
 -- INVENTAIRE DU CODE APPLICATIF (src/, lu le 2026-11-24). Aucun chemin
 -- n'ecrit `current_stock` ni n'insere un mouvement avec le client
