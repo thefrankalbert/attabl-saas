@@ -23,6 +23,7 @@ interface TableState {
  */
 function makeAdmin(tables: Record<string, TableState>) {
   const updates: Array<{ table: string; payload: Record<string, unknown> }> = [];
+  const updateFilters: Array<[string, ...unknown[]]> = [];
   const inserts: Array<{ table: string; payload: Record<string, unknown> }> = [];
 
   const from = vi.fn((table: string) => {
@@ -42,7 +43,12 @@ function makeAdmin(tables: Record<string, TableState>) {
       updates.push({ table, payload });
       // Terminal a n'importe quel maillon (eq / is / or): chaine ET thenable.
       const term: Record<string, unknown> = {};
-      for (const m of ['eq', 'is', 'or']) term[m] = vi.fn(() => term);
+      for (const m of ['eq', 'is', 'or', 'not']) {
+        term[m] = vi.fn((...args: unknown[]) => {
+          updateFilters.push([m, ...args]);
+          return term;
+        });
+      }
       term.then = (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) =>
         Promise.resolve({ error: state.mutError ?? null, count: state.count ?? 1 }).then(res, rej);
       return term;
@@ -54,7 +60,7 @@ function makeAdmin(tables: Record<string, TableState>) {
     return chain;
   });
 
-  return { client: { from } as unknown as SupabaseClient, updates, inserts };
+  return { client: { from } as unknown as SupabaseClient, updates, inserts, updateFilters };
 }
 
 const actor = { userId: 'super-1', email: 'boss@attabl.com' };
@@ -389,6 +395,30 @@ describe('createPlatformAdminService', () => {
     mockRevoke.mockClear();
     await svc().unbanAdminUser('u-1', actor);
     expect(mockRevoke).not.toHaveBeenCalled();
+  });
+
+  // B77: unbanAdminUser reactivait un membre que son RESTAURANT avait seulement
+  // desactive (is_active = false sans banned_at): la console l'affichait
+  // "Bloque" avec "Debloquer", et l'ex-employe retrouvait l'acces.
+  it('B77: unban ne touche qu un compte bloque par la plateforme (banned_at non nul)', async () => {
+    const { client, updateFilters } = makeAdmin({
+      admin_users: { row: { email: 'staff@resto.com', tenant_id: 't-1', role: 'waiter' } },
+    });
+    await createPlatformAdminService(client).unbanAdminUser('u-1', actor);
+    expect(updateFilters).toContainEqual(['not', 'banned_at', 'is', null]);
+  });
+
+  it('B77: compte desactive par son restaurant (rien a debloquer) -> CONFLICT, aucun audit', async () => {
+    const { client, inserts } = makeAdmin({
+      admin_users: {
+        row: { email: 'staff@resto.com', tenant_id: 't-1', role: 'waiter' },
+        count: 0,
+      },
+    });
+    await expect(
+      createPlatformAdminService(client).unbanAdminUser('u-1', actor),
+    ).rejects.toMatchObject({ code: 'CONFLICT' });
+    expect(inserts.find((i) => i.table === 'platform_audit_log')).toBeUndefined();
   });
 
   it('restoreAdminUser clears BOTH delete and ban metadata (no contradictory state)', async () => {

@@ -9,6 +9,16 @@ export interface PdfExtractedItem {
   price: number;
 }
 
+/**
+ * B72: plat NON importe parce que son prix est refuse (miroir de
+ * `PdfNotImportedItem` du service). Affiche a l'apercu.
+ */
+export interface PdfNotImportedItem {
+  name: string;
+  price: string;
+  reason: 'illisible' | 'decimale' | 'negatif_ou_nul' | 'trop_eleve';
+}
+
 export interface ImportResult {
   categoriesCreated: number;
   categoriesExisting: number;

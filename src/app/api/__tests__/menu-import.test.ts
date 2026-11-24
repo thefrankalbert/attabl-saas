@@ -92,6 +92,7 @@ function createMockSupabase(menuResult: { data: unknown }) {
             id: 'tenant-1',
             name: 'Test',
             slug: 'test',
+            currency: 'XOF',
             subscription_plan: 'pro',
             subscription_status: 'active',
             trial_ends_at: null,
@@ -171,8 +172,13 @@ describe('POST /api/menu-import', () => {
     expect(json.success).toBe(true);
     expect(menusEq).toHaveBeenCalledWith('tenant_id', 'tenant-1');
     // Le reste du forfait est transmis: seuls les NOUVEAUX plats sont limites.
-    expect(mockImportFromExcel).toHaveBeenCalledWith('tenant-1', 'menu-1', expect.anything(), {
-      maxNewItems: 12,
-    });
+    // B72: la devise du restaurant est transmise (lecture des prix en texte).
+    expect(mockImportFromExcel).toHaveBeenCalledWith(
+      'tenant-1',
+      'menu-1',
+      expect.anything(),
+      { maxNewItems: 12 },
+      'XOF',
+    );
   });
 });

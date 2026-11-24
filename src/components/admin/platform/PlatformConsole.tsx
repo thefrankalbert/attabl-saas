@@ -114,12 +114,19 @@ export function PlatformConsole({
 
   function userStatusBadge(u: PlatformUserRow) {
     if (u.deleted_at) return <Badge variant="destructive">{t('userDeleted')}</Badge>;
-    if (u.banned_at || !u.is_active) return <Badge variant="warning">{t('userBanned')}</Badge>;
+    // B77: deux etats distincts. Bloque par la plateforme (banned_at) se debloque
+    // ici; desactive par son restaurant ne se reactive que par le restaurant.
+    if (u.banned_at) return <Badge variant="warning">{t('userBanned')}</Badge>;
+    if (!u.is_active) return <Badge variant="warning">{t('userDeactivated')}</Badge>;
     return <Badge variant="success">{t('userActive')}</Badge>;
   }
 
+  // La console vit hors du shell admin: le theme sombre vient de `.dark` sur
+  // <html> (next-themes), qui ne redefinit que les FONDS de statut. Les couleurs
+  // de TEXTE de statut restaient celles du theme clair (2 a 2,4:1 sur fond
+  // sombre). On reprend ici, en sombre seulement, les valeurs du shell admin.
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-app-bg text-app-text">
+    <div className="flex h-dvh flex-col overflow-hidden bg-app-bg text-app-text dark:[--color-status-success:oklch(0.7_0.15_150)] dark:[--color-status-warning:#fbbf24] dark:[--color-status-error:#f87171] dark:[--color-status-info:#60a5fa]">
       <header className="flex flex-col gap-3 border-b border-app-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div className="flex flex-col gap-0.5">
           <h1 className="text-lg font-semibold sm:text-xl">{t('title')}</h1>
@@ -306,7 +313,7 @@ export function PlatformConsole({
                                     <span className="text-xs text-app-text-muted">{u.role}</span>
                                   </div>
                                   <div className="flex flex-wrap gap-2">
-                                    {u.banned_at || !u.is_active ? (
+                                    {u.banned_at ? (
                                       !u.deleted_at && (
                                         <Button
                                           variant="outline"

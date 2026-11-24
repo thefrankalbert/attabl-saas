@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 
 import { contrastRatio, hexToRgb, suggestCompliantShade } from '@/lib/utils/wcag';
+import { expandShortHex } from '@/lib/utils/hex-color';
 
 /** ATTABL brand lime: the storefront CTA color of a tenant with no color of its own. */
 export const STOREFRONT_DEFAULT_PRIMARY = '#CCFF00';
@@ -11,9 +12,13 @@ const WHITE = '#FFFFFF';
 const BLACK = '#000000';
 const INK = '#1A1A1A';
 
-/** The tenant primary color when it is a valid #RRGGBB, else the ATTABL lime. */
+/**
+ * The tenant primary color when it is a valid #RRGGBB (or #RGB, read as its
+ * long form: B27, colors saved before the settings expanded them), else the
+ * ATTABL lime.
+ */
 export function resolveStorefrontPrimary(primaryColor: string | null | undefined): string {
-  const hex = primaryColor?.trim() ?? '';
+  const hex = expandShortHex(primaryColor ?? '');
   return hexToRgb(hex) ? hex : STOREFRONT_DEFAULT_PRIMARY;
 }
 

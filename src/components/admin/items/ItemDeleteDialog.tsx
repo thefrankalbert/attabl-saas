@@ -38,7 +38,7 @@ export function ItemDeleteDialog({ deleteTarget, onOpenChange, onConfirm }: Item
               e.preventDefault();
               onConfirm();
             }}
-            className="bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:opacity-90"
+            className="bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:bg-[var(--destructive)] hover:opacity-90"
           >
             {tc('delete')}
           </AlertDialogAction>

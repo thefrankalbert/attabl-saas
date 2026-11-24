@@ -159,6 +159,49 @@ export function getTenantDayStart(
   return getDayStartInZone(resolveTenantTimezone(tenant), daysAgo, now);
 }
 
+/**
+ * Bornes d'un jour calendaire `AAAA-MM-JJ` dans un fuseau IANA: 00:00:00.000 et
+ * 23:59:59.999 locales, en instants ISO. `null` si la date est mal formee.
+ * Sert aux dates saisies sans heure (fin d'un coupon, B35): "jusqu'au 31/12"
+ * vaut jusqu'a la fin du 31/12 chez le restaurant, pas jusqu'a minuit UTC.
+ */
+export function zonedDayBounds(day: string, tz: string): { start: string; end: string } | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);
+  if (!m) return null;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const startOf = (dd: number): number => {
+    const naive = Date.UTC(y, mo - 1, dd, 0, 0, 0, 0);
+    return naive - tzOffsetMinutes(tz, new Date(naive)) * 60 * 1000;
+  };
+  const start = startOf(d);
+  if (Number.isNaN(start)) return null;
+  return {
+    start: new Date(start).toISOString(),
+    end: new Date(startOf(d + 1) - 1).toISOString(),
+  };
+}
+
+/**
+ * Jour calendaire `AAAA-MM-JJ` d'un instant, dans le fuseau IANA donne (celui du
+ * RESTAURANT), quel que soit le fuseau de l'appareil. Inverse de
+ * `zonedDayBounds`: relire puis reenregistrer une borne ne la deplace pas
+ * (B35, contre-audit 1: relue dans le fuseau de l'appareil, la fin "31/12" d'un
+ * restaurant burkinabe s'affichait "01/01" a Douala, et chaque sauvegarde
+ * allongeait le coupon d'un jour). Chaine vide si l'instant est illisible.
+ */
+export function isoToZonedDay(iso: string, tz: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(d);
+  const get = (type: string): string => parts.find((p) => p.type === type)?.value ?? '';
+  return `${get('year')}-${get('month')}-${get('day')}`;
+}
+
 /** Meme calcul a partir d'un fuseau IANA deja resolu (cote client). */
 export function getDayStartInZone(tz: string, daysAgo = 0, now = new Date()): Date {
   const parts = new Intl.DateTimeFormat('en-US', {

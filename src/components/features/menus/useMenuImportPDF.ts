@@ -8,6 +8,7 @@ import {
   MAX_FILE_SIZE,
   type ImportResult,
   type PdfExtractedItem,
+  type PdfNotImportedItem,
   type Step,
 } from './menu-import-pdf.types';
 
@@ -25,6 +26,11 @@ export function useMenuImportPDF({ menus, onImportComplete }: UseMenuImportPDFPa
   const [file, setFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [extractedItems, setExtractedItems] = useState<PdfExtractedItem[]>([]);
+  // B72: plats dont le prix est refuse, jamais envoyes a l'import.
+  const [notImported, setNotImported] = useState<PdfNotImportedItem[]>([]);
+  // B71: carte lue en partie seulement. Affiche DANS l'apercu (encadre
+  // persistant), pas en toast: a 375 px le toast couvrait la liste.
+  const [truncated, setTruncated] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -45,6 +51,8 @@ export function useMenuImportPDF({ menus, onImportComplete }: UseMenuImportPDFPa
 
     setFile(selectedFile);
     setExtractedItems([]);
+    setNotImported([]);
+    setTruncated(false);
     setImportResult(null);
     setStep('upload');
   };
@@ -91,15 +99,24 @@ export function useMenuImportPDF({ menus, onImportComplete }: UseMenuImportPDFPa
         return;
       }
 
-      const items = data.items as PdfExtractedItem[];
+      const items = (data.items ?? []) as PdfExtractedItem[];
+      const refused = Array.isArray(data.notImported)
+        ? (data.notImported as PdfNotImportedItem[])
+        : [];
 
-      if (!items || items.length === 0) {
+      // Rien a importer ET rien a signaler: le PDF n'a rien donne. Si des plats
+      // sont refuses, l'apercu les montre meme quand aucun n'est importable.
+      if (items.length === 0 && refused.length === 0) {
         toast({ title: t('pdfNoData'), variant: 'destructive' });
         setStep('upload');
         return;
       }
 
+      // B71: au-dela de la limite de lecture, seule la premiere partie de la
+      // carte a ete lue. Le restaurateur le sait avant d'importer.
+      setTruncated(data.truncated === true);
       setExtractedItems(items);
+      setNotImported(refused);
       setStep('preview');
     } catch {
       toast({ title: t('pdfExtractionError'), variant: 'destructive' });
@@ -160,6 +177,8 @@ export function useMenuImportPDF({ menus, onImportComplete }: UseMenuImportPDFPa
   const handleBackToUpload = () => {
     setStep('upload');
     setExtractedItems([]);
+    setNotImported([]);
+    setTruncated(false);
   };
 
   return {
@@ -169,6 +188,8 @@ export function useMenuImportPDF({ menus, onImportComplete }: UseMenuImportPDFPa
     file,
     isDragOver,
     extractedItems,
+    notImported,
+    truncated,
     importResult,
     fileInputRef,
     handleFileSelect,

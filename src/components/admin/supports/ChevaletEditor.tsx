@@ -10,13 +10,19 @@ import { useToast } from '@/components/ui/use-toast';
 import { ChevaletControls } from './ChevaletControls';
 import { ChevaletPreview } from './ChevaletPreview';
 import type { ChevaletConfig, TenantForEditor, UnitSystem } from '@/types/supports.types';
+import { expandShortHex } from '@/lib/utils/hex-color';
+
+/** Longueur maximale du slogan du chevalet (schema d'export, B11). */
+const TAGLINE_MAX = 200;
 
 // 1cm = 118.11px at 300 DPI - default positions in cm
-function buildDefaultConfig(tenant: TenantForEditor): ChevaletConfig {
+// B11: couleurs #RGB et description de plus de 200 caracteres (acceptees par
+// les reglages) rendaient l'export PDF impossible (400).
+export function buildDefaultConfig(tenant: TenantForEditor): ChevaletConfig {
   return {
     unit: 'cm',
-    background: tenant.primaryColor,
-    accentColor: tenant.secondaryColor,
+    background: expandShortHex(tenant.primaryColor),
+    accentColor: expandShortHex(tenant.secondaryColor),
     logo: { visible: !!tenant.logoUrl, x: 1, y: 0.8, width: 2.5 },
     name: { visible: true, x: 1, y: 4.2, fontSize: 18, text: tenant.name },
     tagline: {
@@ -24,7 +30,7 @@ function buildDefaultConfig(tenant: TenantForEditor): ChevaletConfig {
       x: 1,
       y: 5.8,
       fontSize: 10,
-      text: tenant.description ?? '',
+      text: (tenant.description ?? '').slice(0, TAGLINE_MAX),
     },
     qrCode: { x: 14.5, y: 0.8, width: 6, style: 'classic', menuUrl: tenant.menuUrl },
     verso: 'none',
@@ -112,7 +118,11 @@ export function ChevaletEditor({ tenant, savedConfig }: ChevaletEditorProps) {
         }),
       });
       if (!res.ok) {
-        toast({ title: t('exportPdfError'), variant: 'destructive' });
+        // 429: limite d'exports par minute, le dire au lieu d'une erreur vague.
+        toast({
+          title: res.status === 429 ? t('exportRateLimited') : t('exportPdfError'),
+          variant: 'destructive',
+        });
         return;
       }
       const blob = await res.blob();

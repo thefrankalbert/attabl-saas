@@ -40,7 +40,7 @@ export default function KDSTicketActionBar({
         className={cn(
           'flex-1 min-h-[44px] flex items-center justify-between px-3 font-bold text-sm uppercase tracking-wide active:scale-[0.98] rounded-none',
           isDelayed
-            ? 'bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:opacity-90'
+            ? 'bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:bg-[var(--destructive)] hover:opacity-90'
             : cta.bg,
         )}
       >

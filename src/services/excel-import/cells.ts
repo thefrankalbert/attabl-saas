@@ -8,5 +8,6 @@
 // rien ne signale l'ecart.
 //
 // Une seule implementation, donc un seul endroit ou la lecture d'un fichier
-// uploade peut se tromper. On re-exporte plutot que de dupliquer.
-export { parseBooleanCell, parseNumericCell } from '@/lib/excel-parse';
+// uploade peut se tromper. On re-exporte plutot que de dupliquer. Le prix,
+// lui, passe par `readMenuPrice` (regle par devise commune avec l'import PDF).
+export { parseBooleanCell } from '@/lib/excel-parse';

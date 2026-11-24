@@ -1,6 +1,12 @@
 import { z } from 'zod';
+import { expandShortHex } from '@/lib/utils/hex-color';
 
-const hexColorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Couleur hex invalide (#RRGGBB)');
+// B11: les reglages du restaurant acceptent #RGB; l'export le convertit en
+// #RRGGBB (format du PDF) au lieu de le refuser.
+const hexColorSchema = z
+  .string()
+  .regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/, 'Couleur hex invalide (#RGB ou #RRGGBB)')
+  .transform(expandShortHex);
 
 const logoConfigSchema = z.object({
   visible: z.boolean(),

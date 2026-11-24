@@ -189,9 +189,9 @@ export async function GET(request: Request) {
         } else {
           logger.error('OAuth signup failed', { error: message });
         }
-        return NextResponse.redirect(
-          `${requestUrl.origin}/signup?error=${encodeURIComponent(message)}&email=${encodeURIComponent(session.user.email || '')}`,
-        );
+        // B17: /signup n'affiche aucun bandeau d'erreur venu de l'URL (ni une
+        // phrase libre): l'echec restait muet. /login affiche `oauth_failed`.
+        return NextResponse.redirect(`${requestUrl.origin}/login?error=oauth_failed`);
       }
     }
   }

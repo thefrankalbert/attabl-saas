@@ -486,6 +486,35 @@ describe('POST /api/invitations', () => {
     expect(createInvitation).not.toHaveBeenCalled();
   });
 
+  // B54: une adresse retiree de ce restaurant n'est pas reinvitable. La route
+  // renvoie le code metier MEMBER_REMOVED (409) et ne cree rien.
+  it('B54: adresse retiree -> 409 avec le code MEMBER_REMOVED, sans rien creer', async () => {
+    mockRateLimit(true);
+    const mock = createMockSupabase();
+    vi.mocked(createClient).mockResolvedValue(mock as never);
+    setupMockAdminClient();
+    const createInvitation = vi.fn();
+    vi.mocked(createInvitationService).mockReturnValue({
+      getPendingInvitations: vi.fn(),
+      assertNotAlreadyMember: vi.fn().mockRejectedValue(
+        new ServiceError('Cette adresse a ete retiree de votre equipe.', 'CONFLICT', {
+          reason: 'MEMBER_REMOVED',
+        }),
+      ),
+      createInvitation,
+      cancelInvitation: vi.fn(),
+      resendInvitation: vi.fn(),
+    } as never);
+
+    const res = await POST(buildPostRequest({ email: 'awa@test.com', role: 'admin' }));
+    const body = (await res.json()) as { error: string; code?: string };
+
+    expect(res.status).toBe(409);
+    expect(body.code).toBe('MEMBER_REMOVED');
+    expect(body.error).toMatch(/retiree/);
+    expect(createInvitation).not.toHaveBeenCalled();
+  });
+
   it('passes the actor admin_users.id (membership PK) as invitedBy, never the auth user id', async () => {
     // Regression guard for the FK bug: invitations.invited_by references
     // admin_users(id), NOT auth.users(id). Passing user.id (== admin_users.user_id)

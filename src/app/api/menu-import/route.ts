@@ -88,7 +88,7 @@ export async function POST(request: Request) {
     const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
       .select(
-        'id, name, slug, subscription_plan, subscription_status, trial_ends_at, is_active, created_at',
+        'id, name, slug, currency, subscription_plan, subscription_status, trial_ends_at, is_active, created_at',
       )
       .eq('id', tenantId)
       .single();
@@ -127,9 +127,14 @@ export async function POST(request: Request) {
     // 10. Read file buffer and call service
     const buffer = await file.arrayBuffer();
     const importService = createExcelImportService(supabase);
-    const result = await importService.importFromExcel(tenant.id, menuId, buffer, {
-      maxNewItems,
-    });
+    // B72: la devise du restaurant decide de la lecture des prix en texte.
+    const result = await importService.importFromExcel(
+      tenant.id,
+      menuId,
+      buffer,
+      { maxNewItems },
+      tenant.currency,
+    );
 
     revalidateTag(CACHE_TAG_MENUS, 'max');
 

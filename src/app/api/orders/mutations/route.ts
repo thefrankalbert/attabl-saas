@@ -27,6 +27,7 @@ import {
   actionSetCourseHeld,
 } from '@/app/actions/orders';
 import { actionAssignServer, actionReleaseAssignment } from '@/app/actions/assignments';
+import type { ServiceErrorCode } from '@/services/errors';
 
 // Single idempotent endpoint for offline-replayable order mutations (status
 // change, server assignment, release). The durable outbox on a tablet POSTs
@@ -65,7 +66,7 @@ const KITCHEN_MUTATIONS: ReadonlySet<OrderMutationInput['type']> = new Set([
 async function dispatch(
   tenantId: string,
   input: OrderMutationInput,
-): Promise<{ success?: boolean; error?: string; paid?: boolean }> {
+): Promise<{ success?: boolean; error?: string; paid?: boolean; code?: ServiceErrorCode }> {
   switch (input.type) {
     case 'status':
       return actionUpdateOrderStatus(tenantId, input.orderId, input.status);
@@ -280,7 +281,7 @@ export async function POST(request: Request) {
     // Run the mutation. If it fails, release the key so the outbox can retry
     // (transient) or the operator can re-enter (permanent) without being blocked
     // by a key that never produced an effect.
-    let result: { success?: boolean; error?: string; paid?: boolean };
+    let result: { success?: boolean; error?: string; paid?: boolean; code?: ServiceErrorCode };
     try {
       result = await dispatch(tenantId, input);
     } catch (err) {
@@ -296,12 +297,19 @@ export async function POST(request: Request) {
         .from('order_mutation_requests')
         .delete()
         .eq('client_request_id', input.client_request_id);
-      // The actions signal an UNEXPECTED internal failure with exactly these
-      // sentinel messages (orders.ts: 'Erreur interne', assignments.ts:
-      // 'Server error'). Those are transient -> 500 so the outbox retries.
-      // Everything else is a business rejection (validation, permission,
-      // ServiceError) -> 422, permanent, surfaced to the operator.
-      const transient = result.error === 'Erreur interne' || result.error === 'Server error';
+      // The actions signal an UNEXPECTED internal failure with these sentinel
+      // messages (orders.ts: 'Erreur interne', assignments.ts: 'Server error'),
+      // or with a ServiceError of code INTERNAL (B7: ecriture du registre
+      // `payments`, UPDATE de paiement...), whose message is free text. Those
+      // are transient -> 500 so the outbox retries; the key was released just
+      // above, and the replay re-reads the order server-side (an encaissement
+      // already applied answers "deja reglee"). Everything else is a business
+      // rejection (validation, permission, conflict) -> 422, permanent,
+      // surfaced to the operator.
+      const transient =
+        result.code === 'INTERNAL' ||
+        result.error === 'Erreur interne' ||
+        result.error === 'Server error';
       return NextResponse.json({ error: result.error }, { status: transient ? 500 : 422 });
     }
 

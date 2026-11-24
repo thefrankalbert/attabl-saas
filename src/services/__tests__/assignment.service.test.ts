@@ -47,6 +47,8 @@ function createMockSupabase() {
             or: () => Promise<unknown>;
           };
           p.is = callResolve;
+          // B9: claimOrder filtre aussi le statut avant `.or()`.
+          Object.assign(p, { neq: () => p, in: () => p });
           // claimOrder awaits `.or()` directly with `{ count: 'exact' }`: no
           // `.select()` (PostgREST rejects or + returning rows with 42703).
           p.or = callResolve;

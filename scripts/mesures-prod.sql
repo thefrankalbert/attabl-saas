@@ -21,8 +21,10 @@ select t.currency        as devise_tenant,
        max(o.created_at) as derniere
 from public.orders o
 join public.tenants t on t.id = o.tenant_id
+-- B153: `<>` ecartait les restaurants a devise NULL (NULL <> 'XOF' n'est pas
+-- vrai). IS DISTINCT FROM les compte.
 where o.display_currency is not null
-  and o.display_currency <> t.currency
+  and o.display_currency is distinct from t.currency
 group by 1, 2
 order by nb_commandes desc;
 

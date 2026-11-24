@@ -8,6 +8,7 @@ import type {
   RecipeImportRpcRow,
 } from '@/types/inventory.types';
 import { convertQuantity } from './recipe-import/units';
+import { recipeQuantitySchema } from '@/lib/validations/recipe-quantity.schema';
 import { parseRecipeSheet, type ParsedRecipeSheet } from './recipe-import/parser';
 import { buildRecipeWorkbook, type RecipeTemplateData } from './recipe-import/template';
 
@@ -160,6 +161,18 @@ export function createRecipeImportService(supabase: SupabaseClient): RecipeImpor
           errors.push({
             row: row.rowNumber,
             message: `Unité incompatible pour "${row.ingredientName}" : l'ingrédient est suivi en ${targetUnit}, le fichier indique ${row.unit}`,
+          });
+          continue;
+        }
+        // B82: la colonne est numeric(10,3) > 0. Une quantite plus fine (0,5 g
+        // d'un ingredient suivi en kg = 0,0005 kg) etait arrondie en silence par
+        // la base, ou refusee a 0 en faisant echouer TOUT l'import. La ligne est
+        // refusee seule, avec ce qu'il faut corriger.
+        const quantityCheck = recipeQuantitySchema.safeParse(quantity);
+        if (!quantityCheck.success) {
+          errors.push({
+            row: row.rowNumber,
+            message: `Quantite invalide pour "${row.ingredientName}" (${quantity} ${targetUnit}) : ${quantityCheck.error.issues[0]?.message ?? ''}`,
           });
           continue;
         }

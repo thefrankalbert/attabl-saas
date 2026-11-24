@@ -16,7 +16,7 @@ import { createCouponService } from '@/services/coupon.service';
 import { createOrderReadyService } from '@/services/order-ready.service';
 import { createOrderAnnotationService, type OrderNote } from '@/services/order-annotation.service';
 import type { PaymentStatus } from '@/types/admin.types';
-import { ServiceError } from '@/services/errors';
+import { ServiceError, type ServiceErrorCode } from '@/services/errors';
 import { compOrderSchema, orderNoteSchema } from '@/lib/validations/house-account.schema';
 import { ALL_PAYMENT_METHOD_IDS } from '@/lib/payments/methods';
 import { MAX_TIP_AMOUNT } from '@/lib/validations/order.schema';
@@ -338,7 +338,7 @@ export async function actionUpdateOrderStatus(
   tenantId: string,
   orderId: string,
   status: string,
-): Promise<{ success?: boolean; error?: string }> {
+): Promise<{ success?: boolean; error?: string; code?: ServiceErrorCode }> {
   const parsed = updateOrderStatusSchema.safeParse({ tenantId, orderId, status });
   if (!parsed.success) {
     return { error: 'Donnees invalides' };
@@ -455,7 +455,7 @@ export async function actionUpdateOrderStatus(
       return { error: err.message };
     }
     if (err instanceof ServiceError) {
-      return { error: err.message };
+      return { error: err.message, code: err.code };
     }
     logger.error('actionUpdateOrderStatus: unexpected error', { err, tenantId, orderId });
     return { error: 'Erreur interne' };
@@ -542,7 +542,7 @@ export async function actionSetCourseHeld(
   orderId: string,
   course: string,
   held: boolean,
-): Promise<{ success?: boolean; error?: string }> {
+): Promise<{ success?: boolean; error?: string; code?: ServiceErrorCode }> {
   const parsed = setCourseHeldSchema.safeParse({ tenantId, orderId, course, held });
   if (!parsed.success) {
     return { error: 'Donnees invalides' };
@@ -573,7 +573,7 @@ export async function actionSetCourseHeld(
       return { error: err.message };
     }
     if (err instanceof ServiceError) {
-      return { error: err.message };
+      return { error: err.message, code: err.code };
     }
     logger.error('actionSetCourseHeld: unexpected error', { err, tenantId, orderId });
     return { error: 'Erreur interne' };
@@ -655,7 +655,7 @@ export async function actionMarkOrderPaid(
   orderId: string,
   method: string,
   tipAmount?: number,
-): Promise<{ success?: boolean; paid?: boolean; error?: string }> {
+): Promise<{ success?: boolean; paid?: boolean; error?: string; code?: ServiceErrorCode }> {
   const parsed = markOrderPaidSchema.safeParse({ tenantId, orderId, method, tipAmount });
   if (!parsed.success) {
     return { error: 'Donnees invalides' };
@@ -722,7 +722,7 @@ export async function actionMarkOrderPaid(
       return { error: err.message };
     }
     if (err instanceof ServiceError) {
-      return { error: err.message };
+      return { error: err.message, code: err.code };
     }
     logger.error('actionMarkOrderPaid: unexpected error', { err, tenantId, orderId });
     return { error: 'Erreur interne' };

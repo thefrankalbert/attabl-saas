@@ -90,16 +90,22 @@ async function auditRLS() {
   WHERE schemaname = 'public'
   ORDER BY tablename;`);
     console.log('\nOr create the RPC function for automated checks:\n');
-    console.log(`  CREATE OR REPLACE FUNCTION audit_rls_status()
+    // B153: la fonction proposee etait SECURITY DEFINER sans search_path ni
+    // retrait des droits, donc executable par anon (EXECUTE accorde a PUBLIC par
+    // defaut): n'importe quel visiteur aurait lu l'etat RLS de chaque table.
+    console.log(`  CREATE OR REPLACE FUNCTION public.audit_rls_status()
   RETURNS TABLE (tablename text, rowsecurity boolean)
   LANGUAGE sql
   SECURITY DEFINER
+  SET search_path = ''
   AS $$
-    SELECT tablename::text, rowsecurity
-    FROM pg_tables
-    WHERE schemaname = 'public'
-    ORDER BY tablename;
-  $$;`);
+    SELECT t.tablename::text, t.rowsecurity
+    FROM pg_catalog.pg_tables t
+    WHERE t.schemaname = 'public'
+    ORDER BY t.tablename;
+  $$;
+  REVOKE ALL ON FUNCTION public.audit_rls_status() FROM PUBLIC, anon, authenticated;
+  GRANT EXECUTE ON FUNCTION public.audit_rls_status() TO service_role;`);
   }
 }
 

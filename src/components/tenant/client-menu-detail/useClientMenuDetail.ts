@@ -215,42 +215,11 @@ export function useClientMenuDetail({
     onChange: scheduleRealtimeRefresh,
   });
 
-  // Tenant settings (tax on/off, tax rate, currency, name, colors...) change live.
-  // Only refresh when a storefront-relevant field actually changed: the tenants
-  // row is also written by high-frequency housekeeping (last_active_at on every
-  // admin page load, activation_events) - refreshing on those would churn every
-  // open storefront while staff simply navigate the dashboard.
-  const tenantSettingsSignature = useCallback(
-    (t: Partial<Tenant>) =>
-      JSON.stringify([
-        t.name,
-        t.logo_url,
-        t.primary_color,
-        t.secondary_color,
-        t.font_family,
-        t.currency,
-        t.supported_currencies,
-        t.tax_rate,
-        t.service_charge_rate,
-        t.enable_tax,
-        t.enable_service_charge,
-        t.enable_coupons,
-        t.description,
-        t.opening_hours,
-        t.is_active,
-      ]),
-    [],
-  );
-  useRealtimeSubscription<Partial<Tenant> & Record<string, unknown>>({
-    channelName: `tenant_settings_realtime_${tenant.id}`,
-    table: 'tenants',
-    filter: `id=eq.${tenant.id}`,
-    onUpdate: (record) => {
-      if (tenantSettingsSignature(record) !== tenantSettingsSignature(tenant)) {
-        scheduleRealtimeRefresh();
-      }
-    },
-  });
+  // B134: plus d'abonnement en temps reel a `tenants`. La table est sortie de
+  // la publication `supabase_realtime` (20260731000100: le flux re-exposait des
+  // colonnes revoquees a anon), l'abonnement ne recevait donc plus rien. Les
+  // reglages du restaurant (taxe, devise, couleurs) sont relus au chargement de
+  // la page; le montant facture est toujours recalcule par le serveur.
 
   // - Filtering logic -
 

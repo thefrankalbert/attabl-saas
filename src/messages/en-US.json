@@ -1680,7 +1680,7 @@
       "resendGeneric": "Send failed",
       "loginGeneric": "Sign-in failed",
       "oauthGeneric": "Sign-in failed. Please try again.",
-      "oauthFailed": "OAuth sign-in failed. Please try again.",
+      "oauthFailed": "Signing in with Google did not work. Please try again.",
       "authFailed": "Authentication error. Please try again.",
       "sessionExpired": "Your session has expired. Please sign in again.",
       "emailNotConfirmedUrl": "Please confirm your email before signing in.",
@@ -1782,6 +1782,7 @@
       "noUsers": "No account",
       "userActive": "Active",
       "userBanned": "Blocked",
+      "userDeactivated": "Deactivated by the restaurant",
       "userDeleted": "Deleted",
       "banUser": "Block",
       "unbanUser": "Unblock",
@@ -3056,6 +3057,7 @@
       "rectoLabel": "FRONT",
       "versoLabel": "BACK",
       "exportPdfError": "PDF export failed",
+      "exportRateLimited": "Too many exports at once. Wait a minute, then try again.",
       "exportPngError": "PNG export failed",
       "tenantNotFound": "Restaurant not found"
     },
@@ -3135,7 +3137,9 @@
     "courseDrink": "Drinks",
     "fireCourse": "Fire",
     "holdCourse": "Hold",
-    "staleScreen": "Screen not synced since {time}"
+    "staleScreen": "Screen not synced since {time}",
+    "loadFailedTitle": "Orders could not be loaded",
+    "loadFailedDesc": "Check the connection. The screen tries again on its own every 15 seconds."
   },
   "pos": {
     "title": "Point of Sale",
@@ -3931,7 +3935,17 @@
     "pdfConfirmImport": "Confirm import",
     "pdfExtracted": "{count} item(s) extracted from PDF",
     "pdfNoData": "No data could be extracted from this PDF",
+    "pdfAllRefused": "We read the dishes in this PDF, but no price is usable. Nothing will be imported.",
     "pdfExtractionError": "Error extracting from PDF",
+    "pdfTruncatedWarning": "This PDF is long: only the first part of the menu was read. Check the list, then import the rest in a second file.",
+    "pdfNotImportedTitle": "{count} dish(es) will not be imported",
+    "pdfNotImportedHelp": "We could not read their price. Add them by hand after the import, or fix the price in the PDF and try again.",
+    "pdfNotImportedReason": {
+      "illisible": "unreadable price ({price})",
+      "decimale": "CFA francs have no cents ({price})",
+      "negatif_ou_nul": "price is zero or negative ({price})",
+      "trop_eleve": "price too high ({price})"
+    },
     "modifiersTitle": "Modifiers",
     "manageModifiers": "Manage modifiers",
     "editItem": "Edit",
@@ -5210,7 +5224,10 @@
     "searchPopular": "Popular",
     "searchResultsCount": "{count} result(s) for \"{query}\"",
     "searchNoResults": "No results",
-    "searchNoneHint": "Try another word."
+    "searchNoneHint": "Try another word.",
+    "searchUnavailable": "Search is unavailable right now",
+    "searchRetryHint": "Check your connection and try again in a moment.",
+    "searchTypeMore": "Type at least 2 letters."
   },
   "bottomNav": {
     "navLabel": "Main navigation",

@@ -32,6 +32,21 @@ describe('updateTenantSettingsSchema', () => {
     expect(result.success).toBe(true);
   });
 
+  // B27: la vitrine ne lit que #RRGGBB; un #RGB enregistre tel quel affichait
+  // le lime ATTABL a la place de la couleur du restaurant.
+  it('B27: stores a 3-digit hex color as #RRGGBB', () => {
+    const result = updateTenantSettingsSchema.safeParse({
+      ...validInput,
+      primaryColor: '#f80',
+      secondaryColor: '#000',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.primaryColor).toBe('#FF8800');
+      expect(result.data.secondaryColor).toBe('#000000');
+    }
+  });
+
   it('should accept 6-digit hex colors', () => {
     const result = updateTenantSettingsSchema.safeParse({
       ...validInput,

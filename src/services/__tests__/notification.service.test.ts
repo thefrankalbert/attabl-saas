@@ -328,6 +328,81 @@ describe('checkAndNotifyLowStock', () => {
   });
 });
 
+// B57 (revue ligne par ligne, lot B2b-2): si l'e-mail ne partait pas (envoi en
+// echec, ou aucun membre avec e-mail), la fonction s'arretait AVANT la
+// notification dans l'application et le push, et sans poser la limite d'une
+// heure: meme echec, meme silence, a chaque commande.
+describe('checkAndNotifyLowStock - alerte sans e-mail (B57)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function harness(emails: Array<{ email: string }>) {
+    const notifInsert = vi.fn().mockResolvedValue({ data: null, error: null });
+    const rateInsert = vi.fn().mockResolvedValue({ data: null, error: null });
+    let adminCallIndex = 0;
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'ingredients') {
+        return ingredientsChain([
+          { id: 'ing-1', name: 'Riz', unit: 'kg', current_stock: 0, min_stock_alert: 5 },
+        ]);
+      }
+      if (table === 'stock_alert_notifications') {
+        const chain = setupChain(null);
+        chain.gte.mockResolvedValue({ data: [], error: null });
+        chain.insert = rateInsert;
+        return chain;
+      }
+      if (table === 'notifications') {
+        return { insert: notifInsert };
+      }
+      if (table === 'admin_users') {
+        const chain = setupChain(null);
+        if (adminCallIndex++ === 0) {
+          chain.eq.mockResolvedValue({ data: [{ user_id: 'user-1' }], error: null });
+        } else {
+          chain.not.mockResolvedValue({ data: emails, error: null });
+        }
+        return chain;
+      }
+      if (table === 'tenants') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          single: vi
+            .fn()
+            .mockResolvedValue({ data: { name: 'Resto', slug: 'resto' }, error: null }),
+        };
+      }
+      return setupChain(null);
+    });
+    return { notifInsert, rateInsert };
+  }
+
+  it('e-mail en echec: la notification dans l application part, la limite d une heure est posee', async () => {
+    const { notifInsert, rateInsert } = harness([{ email: 'patron@resto.test' }]);
+    mockSendStockAlertEmail.mockResolvedValue(false);
+
+    await checkAndNotifyLowStock('tenant-1');
+
+    expect(notifInsert).toHaveBeenCalledWith([
+      expect.objectContaining({ tenant_id: 'tenant-1', type: 'stock_alert' }),
+    ]);
+    expect(rateInsert).toHaveBeenCalledWith([
+      expect.objectContaining({ ingredient_id: 'ing-1', sent_to: [] }),
+    ]);
+  });
+
+  it('aucun membre avec e-mail: la notification dans l application part quand meme', async () => {
+    const { notifInsert } = harness([]);
+
+    await checkAndNotifyLowStock('tenant-1');
+
+    expect(mockSendStockAlertEmail).not.toHaveBeenCalled();
+    expect(notifInsert).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('notifyDestockFailed', () => {
   /**
    * The dish goes out whether or not the deduction worked. If nobody is told,

@@ -176,16 +176,21 @@ function creerSimulation(options: Options = {}) {
       if (table === 'admin_users') {
         return {
           select: () => ({
-            eq: () => ({
-              // `.limit(1)` et plus `.maybeSingle()`: admin_users n'est unique
-              // que par (tenant_id, email), donc un employe de deux restaurants
-              // a deux lignes et `.maybeSingle()` echouait en PGRST116
-              // (reserve S1' du contre-audit LOT 4).
-              limit: async () => ({
-                data: options.membreExistant ? [options.membreExistant] : [],
-                error: null,
-              }),
-            }),
+            eq: (col: string) =>
+              // B54: lecture de l'etat de l'adresse dans CE restaurant (membre
+              // retire ?). Aucun membre retire dans ces scenarios.
+              col === 'tenant_id'
+                ? { limit: async () => ({ data: [], error: null, count: 0 }) }
+                : {
+                    // `.limit(1)` et plus `.maybeSingle()`: admin_users n'est unique
+                    // que par (tenant_id, email), donc un employe de deux restaurants
+                    // a deux lignes et `.maybeSingle()` echouait en PGRST116
+                    // (reserve S1' du contre-audit LOT 4).
+                    limit: async () => ({
+                      data: options.membreExistant ? [options.membreExistant] : [],
+                      error: null,
+                    }),
+                  },
           }),
         };
       }

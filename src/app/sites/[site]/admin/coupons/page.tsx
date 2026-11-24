@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import CouponsClient from '@/components/admin/CouponsClient';
 import TenantNotFound from '@/components/admin/TenantNotFound';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
+import { resolveTenantTimezone } from '@/lib/timezones';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +34,7 @@ export default async function CouponsPage({ params }: { params: Promise<{ site: 
         tenantId={tenant.id}
         initialCoupons={coupons || []}
         currency={tenant.currency || 'XAF'}
+        timeZone={resolveTenantTimezone(tenant)}
       />
     </div>
   );

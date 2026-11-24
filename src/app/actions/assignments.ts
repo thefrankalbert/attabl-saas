@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
 import { createAssignmentService } from '@/services/assignment.service';
-import { ServiceError } from '@/services/errors';
+import { ServiceError, type ServiceErrorCode } from '@/services/errors';
 import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-tenant-serving';
 import { createClient } from '@/lib/supabase/server';
 import { isFeatureEntitled } from '@/lib/plans/assert-feature';
@@ -13,6 +13,8 @@ type ActionResponse<T = undefined> = {
   success?: boolean;
   data?: T;
   error?: string;
+  /** Code de la ServiceError, pour que la file hors ligne rejoue une panne interne (B7). */
+  code?: ServiceErrorCode;
 };
 
 const tenantIdSchema = z.string().uuid();
@@ -68,7 +70,7 @@ export async function actionAssignServer(
     const data = await assignmentService.assignServerToTable(tenantId, tableId, serverId);
     return { success: true, data };
   } catch (err) {
-    if (err instanceof ServiceError) return { error: err.message };
+    if (err instanceof ServiceError) return { error: err.message, code: err.code };
     return { error: 'Server error' };
   }
 }
@@ -96,7 +98,7 @@ export async function actionReleaseAssignment(
     await assignmentService.releaseAssignment(assignmentId, tenantId);
     return { success: true };
   } catch (err) {
-    if (err instanceof ServiceError) return { error: err.message };
+    if (err instanceof ServiceError) return { error: err.message, code: err.code };
     return { error: 'Server error' };
   }
 }

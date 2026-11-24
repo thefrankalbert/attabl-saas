@@ -249,26 +249,23 @@ export async function generateAndSaveSuggestions(
   const generated = generateSuggestions(items as MenuItem[]);
   if (generated.length === 0) return 0;
 
-  // Clear existing suggestions before inserting new ones. A silent delete
-  // failure followed by a successful insert would duplicate suggestions.
-  const { error: deleteError } = await supabase
-    .from('item_suggestions')
-    .delete()
-    .eq('tenant_id', tenantId);
-  if (deleteError) throw deleteError;
-
+  // B95: une seule fonction SQL, en transaction: elle n'efface que les
+  // suggestions GENEREES (source = 'auto') et garde celles creees a la main.
+  // Avant, un DELETE de toutes les suggestions du restaurant puis un INSERT en
+  // deux requetes: les suggestions manuelles disparaissaient, et un INSERT en
+  // echec laissait le restaurant sans aucune suggestion.
   const rows = generated.map((s, i) => ({
-    tenant_id: tenantId,
     menu_item_id: s.menu_item_id,
     suggested_item_id: s.suggested_item_id,
     suggestion_type: s.suggestion_type,
-    description: s.description,
     display_order: i,
-    is_active: true,
   }));
 
-  const { error } = await supabase.from('item_suggestions').insert(rows);
+  const { data, error } = await supabase.rpc('regenerate_auto_suggestions', {
+    p_tenant_id: tenantId,
+    p_rows: rows,
+  });
   if (error) throw error;
 
-  return generated.length;
+  return typeof data === 'number' ? data : generated.length;
 }

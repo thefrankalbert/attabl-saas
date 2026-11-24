@@ -1,11 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Volume2 } from 'lucide-react';
+import { Volume2, WifiOff } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useKitchenData } from '@/hooks/useKitchenData';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useContextualShortcuts } from '@/hooks/useContextualShortcuts';
+import { Button } from '@/components/ui/button';
 import KitchenFilters from '@/components/features/kitchen/KitchenFilters';
 import KitchenBoard from '@/components/features/kitchen/KitchenBoard';
 import FooterSummaryBar from '@/components/features/kitchen/FooterSummaryBar';
@@ -27,6 +28,7 @@ export default function KitchenClient({
   barDisplayEnabled = false,
 }: KitchenClientProps) {
   const t = useTranslations('kitchen');
+  const tc = useTranslations('common');
   const { role } = usePermissions();
 
   const ts = useTranslations('shortcuts');
@@ -180,6 +182,8 @@ export default function KitchenClient({
   useContextualShortcuts(shortcuts);
 
   const [viewMode, setViewMode] = useState<'active' | 'completed'>('active');
+  // Le nouvel essai peut durer une dizaine de secondes: le bouton le montre.
+  const [retrying, setRetrying] = useState(false);
   const isFs = kitchen.isFullscreen;
 
   const safeAreaStyle = isFs
@@ -193,6 +197,41 @@ export default function KitchenClient({
 
   if (kitchen.loading) {
     return <KitchenSkeleton className={containerClass} style={safeAreaStyle} />;
+  }
+
+  // Aucune commande n'a jamais pu etre lue: une liste vide dirait "Aucune
+  // commande active" alors que des commandes attendent peut-etre. Etat
+  // d'erreur distinct; le rechargement automatique continue en fond.
+  if (kitchen.stale && !kitchen.hasLoaded) {
+    return (
+      <div
+        className={`${containerClass} bg-app-bg text-app-text flex flex-col items-center justify-center gap-4 px-6 text-center`}
+        style={safeAreaStyle}
+      >
+        <WifiOff className="h-10 w-10 text-[var(--destructive)]" />
+        <div role="alert" className="space-y-1">
+          <p className="text-base font-semibold text-app-text">{t('loadFailedTitle')}</p>
+          <p className="text-sm text-app-text-secondary">{t('loadFailedDesc')}</p>
+        </div>
+        <div className="flex flex-wrap justify-center gap-3">
+          <Button
+            type="button"
+            className="min-h-[44px]"
+            disabled={retrying}
+            aria-busy={retrying}
+            onClick={() => {
+              setRetrying(true);
+              void kitchen.loadOrders().finally(() => setRetrying(false));
+            }}
+          >
+            {retrying ? tc('loading') : tc('retry')}
+          </Button>
+          <Button type="button" variant="outline" className="min-h-[44px]" onClick={kitchen.goBack}>
+            {tc('back')}
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
