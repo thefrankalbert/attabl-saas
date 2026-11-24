@@ -107,12 +107,6 @@ const setRecipeSchema = z.object({
   ),
 });
 
-const setOpeningStockSchema = z.object({
-  tenantId: z.string().uuid(),
-  ingredientId: z.string().uuid(),
-  quantity: z.number().finite().nonnegative(),
-});
-
 type ActionResult<T = undefined> =
   { success: true; data?: T; error?: never } | { success?: never; error: string };
 
@@ -384,31 +378,6 @@ export async function actionSetRecipe(
   try {
     const service = createInventoryService(supabase);
     await service.setRecipe(tenantId, menuItemId, lines);
-    return { success: true };
-  } catch (err) {
-    if (err instanceof ServiceError) return { error: err.message };
-    return { error: 'Erreur serveur' };
-  }
-}
-
-/**
- * SECURITY: Sets the opening stock for an ingredient.
- * Session membership verified server-side.
- */
-export async function actionSetOpeningStock(
-  tenantId: string,
-  ingredientId: string,
-  quantity: number,
-): Promise<ActionResult> {
-  const parsed = setOpeningStockSchema.safeParse({ tenantId, ingredientId, quantity });
-  if (!parsed.success) return { error: 'Invalid input' };
-
-  const { error: permError, supabase } = await checkInventoryPermissions(tenantId);
-  if (permError || !supabase) return { error: permError ?? 'Erreur serveur' };
-
-  try {
-    const service = createInventoryService(supabase);
-    await service.setOpeningStock(tenantId, ingredientId, quantity);
     return { success: true };
   } catch (err) {
     if (err instanceof ServiceError) return { error: err.message };

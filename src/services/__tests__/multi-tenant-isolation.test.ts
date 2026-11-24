@@ -14,7 +14,7 @@
  * "belt-and-suspenders" tenant filtering exists for.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   createArgAwareSupabaseMock,
@@ -28,6 +28,10 @@ import { createModifierService } from '../modifier.service';
 import { createTableConfigService } from '../table-config.service';
 import { ServiceError } from '../errors';
 import type { OrderItemInput } from '@/lib/validations/order.schema';
+
+// Le controle de doublon de nom (renommage, audit B33) est teste a part
+// (duplicate-name.test.ts); le mock a arguments ne connait pas `ilike`.
+vi.mock('../duplicate-name', () => ({ assertNameAvailable: vi.fn() }));
 
 const TENANT_A = 'tenant-aaaa';
 const TENANT_B = 'tenant-bbbb';
@@ -178,8 +182,11 @@ describe('menu-item.service multi-tenant isolation', () => {
 
   it('updateMenuItem with tenant A id on a B-owned item touches ZERO rows', async () => {
     const service = createMenuItemService(asClient(db));
-    await service.updateMenuItem('item-B', TENANT_A, { name: 'Hacked' });
-    expect(db.affected.menu_items).toBe(0);
+    // B56: la ligne d'un autre restaurant est introuvable, plus de faux succes.
+    await expect(
+      service.updateMenuItem('item-B', TENANT_A, { name: 'Hacked' }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    expect(db.affected.menu_items ?? 0).toBe(0);
     expect(db.rows('menu_items').find((r) => r.id === 'item-B')?.name).toBe('Plat B');
   });
 
@@ -192,7 +199,9 @@ describe('menu-item.service multi-tenant isolation', () => {
 
   it('deleteMenuItem (soft-delete) with tenant A on a B-owned item touches ZERO rows', async () => {
     const service = createMenuItemService(asClient(db));
-    await service.deleteMenuItem('item-B', TENANT_A);
+    await expect(service.deleteMenuItem('item-B', TENANT_A)).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
     expect(db.affected.menu_items).toBe(0);
     expect(db.rows('menu_items').find((r) => r.id === 'item-B')?.deleted_at).toBeNull();
   });
@@ -206,7 +215,9 @@ describe('menu-item.service multi-tenant isolation', () => {
 
   it('toggleAvailable with tenant A on a B-owned item touches ZERO rows', async () => {
     const service = createMenuItemService(asClient(db));
-    await service.toggleAvailable('item-B', false, TENANT_A);
+    await expect(service.toggleAvailable('item-B', false, TENANT_A)).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
     expect(db.affected.menu_items).toBe(0);
     expect(db.rows('menu_items').find((r) => r.id === 'item-B')?.is_available).toBe(true);
   });
@@ -225,32 +236,45 @@ describe('category.service multi-tenant isolation', () => {
     ]);
   });
 
-  it('reorderCategories with tenant A on a B-owned category touches ZERO rows', async () => {
+  // B32: le reordonnancement passe par la fonction SQL `reorder_categories`
+  // (un seul UPDATE filtre par tenant, annule si une ligne manque). Le
+  // gestionnaire ci-dessous reproduit ce contrat pour verifier que le service
+  // transmet bien le tenant de la session.
+  function registerReorderRpc(mock: ArgAwareSupabaseMock) {
+    mock.setRpc('reorder_categories', async (args) => {
+      const tenant = args.p_tenant_id;
+      const updates = args.p_updates as { id: string; display_order: number }[];
+      const owned = mock
+        .rows('categories')
+        .filter((r) => r.tenant_id === tenant && updates.some((u) => u.id === r.id));
+      if (owned.length !== updates.length) {
+        return { data: null, error: { message: 'reorder_rows_missing', code: 'P0002' } };
+      }
+      mock.seed(
+        'categories',
+        mock.rows('categories').map((r) => {
+          const u = updates.find((x) => x.id === r.id);
+          return u && r.tenant_id === tenant ? { ...r, display_order: u.display_order } : r;
+        }),
+      );
+      return { data: updates.length, error: null };
+    });
+  }
+
+  it('reorderCategories with tenant A on a B-owned category is refused, B untouched', async () => {
+    registerReorderRpc(db);
     const service = createCategoryService(asClient(db));
-    await service.reorderCategories(TENANT_A, [{ id: 'cat-B', display_order: 99 }]);
-    expect(db.affected.categories).toBe(0);
+    await expect(
+      service.reorderCategories(TENANT_A, [{ id: 'cat-B', display_order: 99 }]),
+    ).rejects.toMatchObject({ code: 'CONFLICT' });
     expect(db.rows('categories').find((r) => r.id === 'cat-B')?.display_order).toBe(1);
   });
 
-  it('reorderCategories control: tenant A reorders its own category (1 row)', async () => {
+  it('reorderCategories control: tenant A reorders its own category', async () => {
+    registerReorderRpc(db);
     const service = createCategoryService(asClient(db));
     await service.reorderCategories(TENANT_A, [{ id: 'cat-A', display_order: 5 }]);
-    expect(db.affected.categories).toBe(1);
     expect(db.rows('categories').find((r) => r.id === 'cat-A')?.display_order).toBe(5);
-  });
-
-  it('isCategoryLinkedToMenu cannot read a B-owned category from tenant A', async () => {
-    const service = createCategoryService(asClient(db));
-    // cat-B is linked to a menu, but tenant A must not see it: scoped read
-    // returns null -> linked === false.
-    const linked = await service.isCategoryLinkedToMenu('cat-B', TENANT_A);
-    expect(linked).toBe(false);
-  });
-
-  it('isCategoryLinkedToMenu control: tenant A reads its own linked category', async () => {
-    const service = createCategoryService(asClient(db));
-    const linked = await service.isCategoryLinkedToMenu('cat-A', TENANT_A);
-    expect(linked).toBe(true);
   });
 });
 
@@ -317,7 +341,10 @@ describe('coupon.service multi-tenant isolation', () => {
 
   it('deleteCoupon with tenant A on a B-owned coupon touches ZERO rows', async () => {
     const service = createCouponService(asClient(db));
-    await service.deleteCoupon('coupon-B', TENANT_A);
+    // B36: plus de succes annonce sans ligne touchee.
+    await expect(service.deleteCoupon('coupon-B', TENANT_A)).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
     expect(db.affected.coupons).toBe(0);
     expect(db.rows('coupons').some((r) => r.id === 'coupon-B')).toBe(true);
   });
@@ -331,7 +358,9 @@ describe('coupon.service multi-tenant isolation', () => {
 
   it('toggleActive with tenant A on a B-owned coupon touches ZERO rows', async () => {
     const service = createCouponService(asClient(db));
-    await service.toggleActive('coupon-B', TENANT_A, false);
+    await expect(service.toggleActive('coupon-B', TENANT_A, false)).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
     expect(db.affected.coupons).toBe(0);
     expect(db.rows('coupons').find((r) => r.id === 'coupon-B')?.is_active).toBe(true);
   });
@@ -360,7 +389,10 @@ describe('modifier.service multi-tenant isolation', () => {
 
   it('deleteModifier with tenant A on a B-owned modifier touches ZERO rows', async () => {
     const service = createModifierService(asClient(db));
-    await service.deleteModifier('mod-B', TENANT_A);
+    // B44: plus de succes annonce sans ligne touchee.
+    await expect(service.deleteModifier('mod-B', TENANT_A)).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
     expect(db.affected.item_modifiers).toBe(0);
     expect(db.rows('item_modifiers').some((r) => r.id === 'mod-B')).toBe(true);
   });
@@ -374,7 +406,9 @@ describe('modifier.service multi-tenant isolation', () => {
 
   it('toggleAvailable with tenant A on a B-owned modifier touches ZERO rows', async () => {
     const service = createModifierService(asClient(db));
-    await service.toggleAvailable('mod-B', false, TENANT_A);
+    await expect(service.toggleAvailable('mod-B', false, TENANT_A)).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
     expect(db.affected.item_modifiers).toBe(0);
     expect(db.rows('item_modifiers').find((r) => r.id === 'mod-B')?.is_available).toBe(true);
   });

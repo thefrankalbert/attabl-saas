@@ -214,12 +214,19 @@ export function createRecipeImportService(supabase: SupabaseClient): RecipeImpor
         recipes_created?: number;
         recipes_updated?: number;
         ingredients_created?: number;
+        recipes_removed?: number;
       } = {};
-      if (cleanRows.length > 0) {
-        // All-or-nothing on the clean set: only ever receives pre-validated rows.
+      if (cleanRows.length > 0 || toRemove.length > 0) {
+        // All-or-nothing on the clean set AND the removals (audit B84: the
+        // removals used to run one by one after the committed write, so a
+        // failing one left a partial import). Only pre-validated rows go in.
         const { data, error } = await supabase.rpc('import_recipes_tx', {
           p_tenant_id: tenantId,
           p_rows: cleanRows,
+          p_removals: toRemove.map((t) => ({
+            menu_item_id: t.menuItemId,
+            ingredient_id: t.ingredientId,
+          })),
         });
 
         if (error) {
@@ -243,26 +250,11 @@ export function createRecipeImportService(supabase: SupabaseClient): RecipeImpor
         counts = (data ?? {}) as typeof counts;
       }
 
-      let removed = 0;
-      for (const target of toRemove) {
-        // count: 'exact' - PostgREST reports no error on a DELETE that matched nothing.
-        const { error, count } = await supabase
-          .from('recipes')
-          .delete({ count: 'exact' })
-          .eq('tenant_id', tenantId)
-          .eq('menu_item_id', target.menuItemId)
-          .eq('ingredient_id', target.ingredientId);
-        if (error) {
-          throw new ServiceError('Erreur lors du retrait d un ingredient', 'INTERNAL', error);
-        }
-        removed += count ?? 0;
-      }
-
       return result({
         created: counts.recipes_created,
         updated: counts.recipes_updated,
         ingredients: counts.ingredients_created,
-        removed,
+        removed: counts.recipes_removed,
       });
     },
 

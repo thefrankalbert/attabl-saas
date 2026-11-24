@@ -34,6 +34,14 @@ export const updateMenuSchema = menuBaseSchema.partial().extend({
   id: z.string().uuid(),
 });
 
+// --- Reorder Menus Schema --------------------------------
+
+// Audit B56: `orderedIds` arrivait sans validation (5000 entrees, doublons).
+export const reorderMenusSchema = z
+  .array(z.string().uuid())
+  .max(500)
+  .refine((ids) => new Set(ids).size === ids.length, { message: 'Identifiant en double' });
+
 // --- Inferred Types --------------------------------------
 
 export type CreateMenuInput = z.infer<typeof createMenuSchema>;

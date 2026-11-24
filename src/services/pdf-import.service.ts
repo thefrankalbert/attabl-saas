@@ -116,18 +116,24 @@ export function createPdfImportService(supabase: SupabaseClient): PdfImportServi
 
       let pdfText: string;
       let pageCount: number;
+      // Audit B73: `destroy()` dans un `finally`, sinon une lecture en echec
+      // laissait le parseur (et son worker) ouvert.
+      let parser: InstanceType<typeof PDFParse> | null = null;
       try {
-        const parser = new PDFParse({ data: new Uint8Array(pdfBuffer) });
+        parser = new PDFParse({ data: new Uint8Array(pdfBuffer) });
         const textResult = await parser.getText();
         pdfText = textResult.text.trim();
         pageCount = textResult.pages.length;
-        await parser.destroy();
       } catch (err) {
         logger.error('Failed to parse PDF', err);
         throw new ServiceError(
           'Failed to parse the PDF file. Ensure it is a valid, non-corrupted PDF.',
           'VALIDATION',
         );
+      } finally {
+        await parser?.destroy().catch((err: unknown) => {
+          logger.warn('Failed to release the PDF parser', { error: String(err) });
+        });
       }
 
       if (!pdfText || pdfText.length < 10) {

@@ -19,6 +19,25 @@ const DEFAULT_ZONE_NAME = 'Salle principale';
 const DEFAULT_ZONE_PREFIX = 'TAB';
 
 /**
+ * Audit B66: never send a Postgres message to the browser. The error is logged
+ * server-side and the caller gets a fixed sentence.
+ */
+function internalError(message: string, error: { message?: string } | null | undefined) {
+  logger.error(message, { error: error?.message });
+  return new ServiceError(message, 'INTERNAL', error);
+}
+
+/** 23505 -> the actionable conflict message; anything else -> logged INTERNAL. */
+function conflictOrInternal(
+  error: { code?: string; message?: string } | null | undefined,
+  conflictMessage: string,
+  fallbackMessage: string,
+): ServiceError {
+  if (error?.code === '23505') return uniqueConflictOr(error, conflictMessage, fallbackMessage);
+  return internalError(fallbackMessage, error);
+}
+
+/**
  * A generated table number may equal the NAME of another table (refused by the
  * database since migration 20261124150400, marker
  * `table_number_is_other_table_display_name: <number>`): say which table to
@@ -39,7 +58,7 @@ function tableInsertError(
       error,
     );
   }
-  return uniqueConflictOr(
+  return conflictOrInternal(
     error,
     'Ce numéro de table existe déjà dans le restaurant.',
     fallbackMessage,
@@ -105,7 +124,7 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
         error,
       );
     }
-    return new ServiceError(`Erreur suppression ${label}: ${error.message}`, 'INTERNAL', error);
+    return internalError(`Erreur suppression ${label}`, error);
   }
 
   /** Numeros des tables visees, lus cote serveur et bornes au restaurant. */
@@ -161,10 +180,10 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
         .select();
 
       if (zonesError || !insertedZones) {
-        throw uniqueConflictOr(
+        throw conflictOrInternal(
           zonesError,
           'Une zone porte déjà ce nom ou ce préfixe.',
-          `Erreur creation zones: ${zonesError?.message || 'Donnees manquantes'}`,
+          'Erreur creation zones',
         );
       }
 
@@ -197,9 +216,11 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
         // The zones were inserted by the previous query: without their tables
         // they are empty shells that a retry would duplicate (and that make the
         // onboarding believe the dining room already exists). Remove them.
-        const { error: cleanupError } = await supabase
+        // Audit B106: `count: 'exact'`, sinon un nettoyage qui ne supprime rien
+        // (RLS, zone deja partie) passe inapercu.
+        const { error: cleanupError, count: cleaned } = await supabase
           .from('zones')
-          .delete()
+          .delete({ count: 'exact' })
           .in(
             'id',
             typedZones.map((zone) => zone.id),
@@ -209,11 +230,14 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
           logger.error('Failed to remove zones after table creation failure', cleanupError, {
             tenantId,
           });
+        } else if (cleaned !== typedZones.length) {
+          logger.error('Zones left behind after table creation failure', {
+            tenantId,
+            expected: typedZones.length,
+            removed: cleaned,
+          });
         }
-        throw tableInsertError(
-          tablesError,
-          `Erreur creation tables: ${tablesError?.message || 'Donnees manquantes'}`,
-        );
+        throw tableInsertError(tablesError, 'Erreur creation tables');
       }
 
       const typedTables = (Array.isArray(allTables) ? allTables : [allTables]) as TableRow[];
@@ -299,11 +323,15 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
       // 1. Find the max existing table number for this prefix. Numeric max, not a
       // text sort: "BAR-9" sorts after "BAR-10" as text, which restarted the
       // numbering on an existing table once a zone had 10 tables.
-      const { data: existing } = await supabase
+      // Audit B106: une lecture en echec ne doit pas repartir a 1 (numeros en
+      // double, refus 23505 trompeur).
+      const { data: existing, error: existingError } = await supabase
         .from('tables')
         .select('table_number')
+        .eq('tenant_id', tenantId)
         .eq('zone_id', zoneId)
         .like('table_number', `${prefix}-%`);
+      if (existingError) throw internalError('Erreur lecture des tables', existingError);
 
       const lastNum = Math.max(
         0,
@@ -335,10 +363,7 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
         .select();
 
       if (tablesError || !tables) {
-        throw tableInsertError(
-          tablesError,
-          `Erreur ajout tables: ${tablesError?.message || 'Donnees manquantes'}`,
-        );
+        throw tableInsertError(tablesError, 'Erreur ajout tables');
       }
 
       return (Array.isArray(tables) ? tables : [tables]) as TableRow[];
@@ -368,10 +393,10 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
       ]);
 
       if (error) {
-        throw uniqueConflictOr(
+        throw conflictOrInternal(
           error,
           'Une zone porte déjà ce nom ou ce préfixe.',
-          `Erreur creation zone: ${error.message}`,
+          'Erreur creation zone',
         );
       }
     },
@@ -386,10 +411,10 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
       const { error } = await supabase.from('zones').update({ name }).eq('id', zoneId);
 
       if (error) {
-        throw uniqueConflictOr(
+        throw conflictOrInternal(
           error,
           'Une zone porte déjà ce nom ou ce préfixe.',
-          `Erreur mise a jour zone: ${error.message}`,
+          'Erreur mise a jour zone',
         );
       }
     },
@@ -433,11 +458,7 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
         .eq('venues.tenant_id', tenantId);
 
       if (zonesError) {
-        throw new ServiceError(
-          `Erreur verification zones: ${zonesError.message}`,
-          'INTERNAL',
-          zonesError,
-        );
+        throw internalError('Erreur verification zones', zonesError);
       }
 
       const ownedZoneIds = new Set(((ownedZones as Array<{ id: string }>) ?? []).map((z) => z.id));
@@ -454,7 +475,7 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
         .insert(tables.map((t) => ({ ...t, tenant_id: tenantId })));
 
       if (error) {
-        throw tableInsertError(error, `Erreur creation tables: ${error.message}`);
+        throw tableInsertError(error, 'Erreur creation tables');
       }
     },
 
@@ -471,7 +492,7 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
         .eq('id', tableId);
 
       if (error) {
-        throw new ServiceError(`Erreur mise a jour table: ${error.message}`, 'INTERNAL', error);
+        throw internalError('Erreur mise a jour table', error);
       }
     },
 
@@ -485,7 +506,7 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
       const { error } = await supabase.from('tables').update({ capacity }).eq('id', tableId);
 
       if (error) {
-        throw new ServiceError(`Erreur mise a jour capacite: ${error.message}`, 'INTERNAL', error);
+        throw internalError('Erreur mise a jour capacite', error);
       }
     },
 
@@ -508,10 +529,10 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
       if (error) {
         // 23505: the name is another table's number (migration
         // 20261124150400): the QR of that table would land on this one.
-        throw uniqueConflictOr(
+        throw conflictOrInternal(
           error,
           "Ce nom est deja le numero d'une autre table du restaurant.",
-          `Erreur mise a jour nom table: ${error.message}`,
+          'Erreur mise a jour nom table',
         );
       }
     },
@@ -545,7 +566,7 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
         .order('display_order');
 
       if (error) {
-        throw new ServiceError(`Erreur chargement zones: ${error.message}`, 'INTERNAL', error);
+        throw internalError('Erreur chargement zones', error);
       }
       return (data as ZoneWithVenueRef[]) || [];
     },
@@ -563,7 +584,7 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
         .order('table_number');
 
       if (error) {
-        throw new ServiceError(`Erreur chargement tables: ${error.message}`, 'INTERNAL', error);
+        throw internalError('Erreur chargement tables', error);
       }
       return sortByTableNumber((data as TableWithZoneRef[]) || []);
     },

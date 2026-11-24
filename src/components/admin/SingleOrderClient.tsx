@@ -24,9 +24,11 @@ export default function SingleOrderClient({
   const displayLabel = orderDisplayLabel(initialOrder);
 
   return (
-    // Fixed-height split view from lg only: below it the panels stack and the
-    // page must scroll in main#main-content, or the items list collapses to 0.
-    <div className="flex flex-col lg:h-full lg:overflow-hidden">
+    // Audit B129: no fixed-height split view. The actions column is taller than
+    // a 768 px screen; locked to the viewport it scrolled on its own (cancel
+    // button out of sight) and nested a second scroller. The page scrolls in
+    // main#main-content only, at every width.
+    <div className="flex flex-col">
       {/* Inline header - same line as breadcrumb text */}
       <div className="flex items-center gap-2 mb-3 shrink-0">
         <Button

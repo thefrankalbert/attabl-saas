@@ -2,7 +2,11 @@
 
 import { revalidateTag } from 'next/cache';
 import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
-import { createMenuSchema, updateMenuSchema } from '@/lib/validations/menu.schema';
+import {
+  createMenuSchema,
+  reorderMenusSchema,
+  updateMenuSchema,
+} from '@/lib/validations/menu.schema';
 import '@/lib/validations/zod-fr-error-map';
 import { createMenuService } from '@/services/menu.service';
 import { getStorageCleanup } from '@/services/storage-cleanup.service';
@@ -225,12 +229,15 @@ export async function actionReorderMenus(
   tenantId: string,
   orderedIds: string[],
 ): Promise<ActionResponse> {
+  const parsedIds = reorderMenusSchema.safeParse(orderedIds);
+  if (!parsedIds.success) return { error: 'Invalid input' };
+
   const { error: permError, supabase } = await checkMenuPermissions(tenantId);
   if (permError || !supabase) return { error: permError || 'Erreur serveur' };
 
   try {
     const menuService = createMenuService(supabase);
-    await menuService.reorderMenus(tenantId, orderedIds);
+    await menuService.reorderMenus(tenantId, parsedIds.data);
 
     revalidateTag(CACHE_TAG_MENUS, 'max');
     return { success: true };

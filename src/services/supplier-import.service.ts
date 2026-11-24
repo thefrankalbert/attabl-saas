@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
+import { phoneSchema } from '@/lib/validations/common.schema';
 import {
   findHeaderRow,
   mapHeaders,
@@ -58,17 +59,19 @@ function parseSupplierActive(value: unknown): boolean | undefined {
   return asTrue === asFalse ? asTrue : undefined;
 }
 
+// Audit B101: memes bornes que `actionUpdateSupplier` (actions/suppliers.ts).
+// L'import acceptait un nom de 200 caracteres et un telephone libre de 50: la
+// fiche importee ne pouvait ensuite plus etre modifiee (message generique).
 const supplierRowSchema = z.object({
   name: z
     .string({ error: 'Le nom du fournisseur est requis' })
     .min(1, 'Le nom du fournisseur est requis')
-    .max(200, 'Le nom doit faire 200 caracteres ou moins'),
-  contact_name: z.string().max(200).nullable(),
-  // phone kept lenient (formats vary): length-bounded string only.
-  phone: z.string().max(50, 'Le telephone doit faire 50 caracteres ou moins').nullable(),
+    .max(100, 'Le nom doit faire 100 caracteres ou moins'),
+  contact_name: z.string().max(100, 'Le contact doit faire 100 caracteres ou moins').nullable(),
+  phone: phoneSchema.nullable(),
   // email is optional; when provided it must be a valid address (else row error).
   email: z.string().email('Email invalide').max(255).nullable(),
-  address: z.string().max(500).nullable(),
+  address: z.string().max(300, 'L adresse doit faire 300 caracteres ou moins').nullable(),
   notes: z.string().max(1000).nullable(),
   is_active: z.boolean().nullable(),
 });
