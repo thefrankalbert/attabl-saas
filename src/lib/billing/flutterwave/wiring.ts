@@ -10,7 +10,7 @@ import { createFlutterwaveClient } from './client';
 import { getFlutterwaveConfig, type FlutterwaveConfig } from './config';
 
 /** Origine publique, meme regle que la route Stripe. */
-export function appBaseUrl(): string {
+function appBaseUrl(): string {
   return (
     process.env.NEXT_PUBLIC_APP_URL ||
     (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://attabl.com')

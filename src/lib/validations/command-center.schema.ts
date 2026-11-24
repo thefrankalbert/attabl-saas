@@ -23,5 +23,3 @@ export const commandCenterQuerySchema = z.discriminatedUnion('kind', [
   }),
   z.object({ kind: z.literal('chart'), tenantIds, start: windowStart }),
 ]);
-
-export type CommandCenterQuery = z.infer<typeof commandCenterQuerySchema>;

@@ -19,7 +19,7 @@ export function escapeHtml(str: string): string {
  * `%XX` deja present: `encodeURI` le transformait en `%25XX`, et un lien passe
  * deux fois (modele puis `cta`) arrivait casse.
  */
-export function sanitizeUrl(url: string): string {
+function sanitizeUrl(url: string): string {
   try {
     const parsed = new URL(url);
     if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {

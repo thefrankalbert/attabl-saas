@@ -5,7 +5,7 @@ import type { MenuItem } from '@/types/admin.types';
 import { ServiceError } from './errors';
 
 /** Nombre maximal de plats renvoyes pour un terme. */
-export const MENU_SEARCH_MAX_RESULTS = 50;
+const MENU_SEARCH_MAX_RESULTS = 50;
 
 /** Taille d'une page de lecture (plafond `max_rows` de PostgREST). */
 const SCAN_PAGE_SIZE = 1000;

@@ -131,6 +131,11 @@ jobs:
       - name: Test (with coverage gate)
         run: pnpm test:coverage
 
+      # Charte typographique (CLAUDE.md, audit X1): ni tiret long, ni points de
+      # suspension unicode, ni guillemets typographiques dans src.
+      - name: Typographie
+        run: bash scripts/verifier-typographie.sh src
+
       # Tests des scripts shell. Vitest ne les voit pas, et un test sans
       # executant ne protege rien (lecon des tests pgTAP, qui sont restes sans
       # executant pendant des mois). La sortie est grep-friendly, comme les

@@ -149,13 +149,13 @@ export function dueNotStarted(
 }
 
 /** Combien de minutes avant l'ouverture on previent pour les ruptures. */
-export const PRE_SERVICE_LEAD_MIN = 30;
+const PRE_SERVICE_LEAD_MIN = 30;
 /**
  * Les rappels a heure fixe ne sont evalues que pendant 3 minutes: assez pour
  * survivre a un passage manque de la tache planifiee, sans relancer les
  * lectures lourdes chaque minute pendant une heure.
  */
-export const SCHEDULED_EVAL_MIN = 3;
+const SCHEDULED_EVAL_MIN = 3;
 
 const DAY_MS = 24 * 60 * MINUTE;
 
@@ -202,7 +202,7 @@ export function weeklyCoachWindow(timeZone: string, now: Date): { ymd: string } 
 }
 
 /** Seuils de donnees en dessous desquels le coach se tait. */
-export const COACH_MIN_WEEKS = 4;
+const COACH_MIN_WEEKS = 4;
 export const COACH_MIN_ORDERS = 80;
 
 export interface CoachFacts {

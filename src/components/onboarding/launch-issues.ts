@@ -18,7 +18,7 @@ type Translate = (key: string, values?: Record<string, string | number>) => stri
  * Libelle d'une zone pour le restaurateur: son numero AFFICHE (indice + 1) et
  * son nom quand elle en a un. Jamais l'indice informatique.
  */
-export function zoneLabel(index: number, name: string | undefined, t: Translate): string {
+function zoneLabel(index: number, name: string | undefined, t: Translate): string {
   const trimmed = name?.trim();
   return trimmed
     ? t('zoneLabelNamed', { number: index + 1, name: trimmed })

@@ -19,7 +19,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * `apply_flutterwave_payment` (SQL): au-dela, la tentative n'est plus reutilisee
  * et un paiement tardif doit couvrir le prix ACTUEL.
  */
-export const PENDING_TTL_DAYS = 7;
+const PENDING_TTL_DAYS = 7;
 
 /**
  * Fenetre du rattrapage (B47). PLUS LARGE que la reutilisation des liens
@@ -28,7 +28,7 @@ export const PENDING_TTL_DAYS = 7;
  * (argent pris, abonnement non prolonge). Un paiement tardif reste juge par
  * `apply_flutterwave_payment` (prix actuel, journal de remboursement sinon).
  */
-export const RECONCILE_WINDOW_DAYS = 30;
+const RECONCILE_WINDOW_DAYS = 30;
 
 /** Un changement de plan n'est admis qu'a moins d'un jour de l'echeance (meme valeur que le SQL). */
 const PLAN_CHANGE_WINDOW_MS = DAY_MS;

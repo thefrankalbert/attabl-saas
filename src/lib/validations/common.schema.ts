@@ -46,7 +46,7 @@ const COMMON_PASSWORDS = new Set([
 ]);
 
 /** Longueur minimale de la politique Auth de la production. */
-export const PASSWORD_MIN_LENGTH = 12;
+const PASSWORD_MIN_LENGTH = 12;
 
 /**
  * Plafond de GoTrue: 72 OCTETS (limite de bcrypt, supabase/auth
@@ -55,7 +55,7 @@ export const PASSWORD_MIN_LENGTH = 12;
  * refus a part (contre-audit 4). Le site refuse donc lui-meme, a l'identique
  * pour toutes les adresses.
  */
-export const PASSWORD_MAX_BYTES = 72;
+const PASSWORD_MAX_BYTES = 72;
 
 function utf8Bytes(value: string): number {
   return new TextEncoder().encode(value).length;
@@ -100,9 +100,9 @@ export function missingPasswordRules(value: string): PasswordRule[] {
  * Messages du schema: des CODES, traduits par l'interface (fr-FR, en-US).
  * `PASSWORD_RULES:length,upper` nomme TOUTES les regles manquantes d'un coup.
  */
-export const PASSWORD_RULES_ISSUE = 'PASSWORD_RULES:';
-export const PASSWORD_TOO_LONG = 'PASSWORD_TOO_LONG';
-export const PASSWORD_TOO_COMMON = 'PASSWORD_TOO_COMMON';
+const PASSWORD_RULES_ISSUE = 'PASSWORD_RULES:';
+const PASSWORD_TOO_LONG = 'PASSWORD_TOO_LONG';
+const PASSWORD_TOO_COMMON = 'PASSWORD_TOO_COMMON';
 
 export type PasswordIssue =
   { kind: 'rules'; missing: PasswordRule[] } | { kind: 'tooLong' } | { kind: 'tooCommon' };

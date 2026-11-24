@@ -36,7 +36,7 @@ interface PdfExtractionResult {
   notImported: PdfNotImportedItem[];
 }
 
-export interface PdfNotImportedItem {
+interface PdfNotImportedItem {
   name: string;
   /** Le prix tel que lu dans la reponse du modele. */
   price: string;

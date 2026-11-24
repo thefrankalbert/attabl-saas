@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { REMINDER_RULES, type ReminderRule } from '@/lib/validations/reminders.schema';
 
 /** "Regle" en 5 minutes apres le rappel: le seuil de reussite affiche a l'administration. */
-export const RESOLVED_WITHIN_MIN = 5;
+const RESOLVED_WITHIN_MIN = 5;
 
 export interface ReminderRuleStats {
   rule: ReminderRule;
