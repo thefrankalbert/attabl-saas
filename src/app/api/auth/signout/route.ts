@@ -19,13 +19,21 @@ export async function POST(request: Request) {
       );
     }
     const supabase = await createClient();
-    await supabase.auth.signOut();
+    // signOut() ne leve pas: il renvoie { error }. Sans ce controle, un echec de
+    // revocation repondait comme un succes, et "Se deconnecter partout" laissait
+    // croire que les autres appareils etaient fermes alors qu'ils ne l'etaient pas.
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      logger.error('Signout revocation failed', error);
+      return NextResponse.json({ error: 'Signout failed' }, { status: 502 });
+    }
 
     const origin = new URL(request.url).origin;
     return NextResponse.redirect(`${origin}/login`, { status: 302 });
   } catch (error) {
+    // Une exception n'est pas une deconnexion reussie: on ne redirige pas comme
+    // si elle l'etait (le menu du compte navigue vers /login de lui-meme).
     logger.error('Signout error', error);
-    const origin = new URL(request.url).origin;
-    return NextResponse.redirect(`${origin}/login`, { status: 302 });
+    return NextResponse.json({ error: 'Signout failed' }, { status: 500 });
   }
 }

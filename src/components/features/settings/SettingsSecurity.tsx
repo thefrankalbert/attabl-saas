@@ -1,14 +1,24 @@
 'use client';
 
-import { Input } from '@/components/ui/input';
+import { useTranslations } from 'next-intl';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { TabsContent } from '@/components/ui/tabs';
 import type { UseFormReturn } from 'react-hook-form';
 import type { SettingsFormValues } from '@/hooks/useSettingsData';
 import RoleGuard from '@/components/admin/RoleGuard';
 import SettingsDataReset from './SettingsDataReset';
 import DeleteAccountSection from './DeleteAccountSection';
+import SecurityAccountSection from './SecurityAccountSection';
+import { SecurityRow, SecuritySection } from './SecuritySection';
 
 // --- Types -------------------------------------------------
 
@@ -19,6 +29,10 @@ interface SettingsSecurityProps {
   tenantName: string;
 }
 
+/** Delays offered for the automatic lock, in minutes (the schema allows 5 to 120). */
+const LOCK_DELAYS = [5, 10, 15, 30, 60, 120];
+const DEFAULT_LOCK_DELAY = 30;
+
 // --- Component ---------------------------------------------
 
 export default function SettingsSecurity({
@@ -27,112 +41,96 @@ export default function SettingsSecurity({
   tenantSlug,
   tenantName,
 }: SettingsSecurityProps) {
-  const {
-    register,
-    watch,
-    setValue,
-    formState: { errors },
-  } = form;
+  const tSettings = useTranslations('settings');
+  const { watch, setValue } = form;
 
-  const watchIdleTimeoutMinutes = watch('idleTimeoutMinutes');
-  const watchScreenLockMode = watch('screenLockMode');
+  const idleMinutes = watch('idleTimeoutMinutes');
+  const lockMode = watch('screenLockMode') ?? 'overlay';
+  const lockEnabled = idleMinutes !== null && idleMinutes !== undefined;
+
+  // A delay saved before the list existed (e.g. 25) stays selectable.
+  const delays =
+    lockEnabled && !LOCK_DELAYS.includes(idleMinutes)
+      ? [...LOCK_DELAYS, idleMinutes].sort((a, b) => a - b)
+      : LOCK_DELAYS;
 
   return (
     <TabsContent value="security" className="mt-0">
-      <div className="space-y-4">
-        {/* Enable/disable toggle */}
-        <div className="flex items-center justify-between p-4 rounded-lg border border-app-border">
-          <div>
-            <Label className="text-sm font-medium text-app-text">{t('enableAutoLock')}</Label>
-            <p className="text-xs text-app-text-secondary mt-0.5">{t('screenLockedAfterIdle')}</p>
-          </div>
-          <Label className="relative inline-flex items-center cursor-pointer">
-            {/* eslint-disable-next-line react/forbid-elements -- sr-only peer backing a custom-styled toggle switch */}
-            <input
-              type="checkbox"
-              checked={watchIdleTimeoutMinutes !== null && watchIdleTimeoutMinutes !== undefined}
-              onChange={(e) => {
-                setValue('idleTimeoutMinutes', e.target.checked ? 30 : null);
-              }}
-              className="sr-only peer"
+      <div className="space-y-8">
+        <SecuritySection title={t('securityLockTitle')} description={t('securityLockDesc')}>
+          <SecurityRow title={t('enableAutoLock')} description={t('screenLockedAfterIdle')}>
+            <Switch
+              aria-label={t('enableAutoLock')}
+              checked={lockEnabled}
+              onCheckedChange={(on) =>
+                setValue('idleTimeoutMinutes', on ? DEFAULT_LOCK_DELAY : null)
+              }
             />
-            <div className="w-11 h-6 bg-app-elevated peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-accent/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-accent-text after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-accent-text after:border-app-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
-          </Label>
-        </div>
+          </SecurityRow>
 
-        {/* Timeout duration + lock mode (shown only when enabled) */}
-        {watchIdleTimeoutMinutes !== null && watchIdleTimeoutMinutes !== undefined && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-            {/* Duration */}
-            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-              <Label
-                htmlFor="idleTimeoutMinutes"
-                className="text-sm text-app-text-secondary whitespace-nowrap"
-              >
-                {t('idleTimeout')}
-              </Label>
-              <div className="relative w-28">
-                <Input
-                  id="idleTimeoutMinutes"
-                  type="number"
-                  min={5}
-                  max={120}
-                  step={5}
-                  {...register('idleTimeoutMinutes', { valueAsNumber: true })}
-                  className="pr-12 min-h-[44px]"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-app-text-muted">
-                  min
-                </span>
-              </div>
-              <span className="text-xs text-app-text-muted">{t('idleRange')}</span>
-            </div>
-            {errors.idleTimeoutMinutes && (
-              <p className="text-xs text-status-error">{errors.idleTimeoutMinutes.message}</p>
-            )}
-
-            {/* Lock mode */}
-            <div className="space-y-2">
-              <Label className="text-sm text-app-text-secondary">{t('screenLockMode')}</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setValue('screenLockMode', 'overlay')}
-                  className={`p-3 min-h-[44px] rounded-lg border-2 text-left h-auto flex flex-col items-start whitespace-normal ${
-                    watchScreenLockMode === 'overlay'
-                      ? 'border-accent bg-accent-muted ring-1 ring-accent/20'
-                      : 'border-app-border hover:border-app-text-muted'
-                  }`}
+          {lockEnabled && (
+            <>
+              <SecurityRow title={t('lockAfterLabel')}>
+                <Select
+                  value={String(idleMinutes)}
+                  onValueChange={(v) => setValue('idleTimeoutMinutes', Number(v))}
                 >
-                  <div className="font-medium text-sm text-app-text">{t('overlaySimple')}</div>
-                  <div className="text-xs text-app-text-secondary mt-0.5">{t('clickToUnlock')}</div>
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setValue('screenLockMode', 'password')}
-                  className={`p-3 min-h-[44px] rounded-lg border-2 text-left h-auto flex flex-col items-start whitespace-normal ${
-                    watchScreenLockMode === 'password'
-                      ? 'border-accent bg-accent-muted ring-1 ring-accent/20'
-                      : 'border-app-border hover:border-app-text-muted'
-                  }`}
+                  <SelectTrigger
+                    aria-label={t('lockAfterLabel')}
+                    className="min-h-[44px] w-full sm:w-40"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {delays.map((m) => (
+                      <SelectItem key={m} value={String(m)}>
+                        {tSettings('lockMinutes', { count: m })}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </SecurityRow>
+
+              <div className="space-y-3 p-4">
+                <p className="text-sm font-medium text-app-text">{t('unlockLabel')}</p>
+                <RadioGroup
+                  value={lockMode}
+                  onValueChange={(v) => setValue('screenLockMode', v as 'overlay' | 'password')}
+                  className="grid gap-3 sm:grid-cols-2"
                 >
-                  <div className="font-medium text-sm text-app-text">{t('passwordRequired')}</div>
-                  <div className="text-xs text-app-text-secondary mt-0.5">
-                    {t('reenterPassword')}
-                  </div>
-                </Button>
+                  {(
+                    [
+                      ['password', 'unlockPassword', 'unlockPasswordDesc'],
+                      ['overlay', 'unlockTouch', 'unlockTouchDesc'],
+                    ] as const
+                  ).map(([value, title, desc]) => (
+                    <Label
+                      key={value}
+                      htmlFor={`unlock-${value}`}
+                      className="flex min-h-[44px] cursor-pointer items-start gap-3 rounded-lg border border-app-border p-3 has-[[data-state=checked]]:border-app-text"
+                    >
+                      <RadioGroupItem id={`unlock-${value}`} value={value} className="mt-0.5" />
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium text-app-text">{t(title)}</span>
+                        <span className="mt-0.5 block text-xs font-normal text-app-text-secondary">
+                          {t(desc)}
+                        </span>
+                      </span>
+                    </Label>
+                  ))}
+                </RadioGroup>
               </div>
-            </div>
-          </div>
-        )}
+            </>
+          )}
+        </SecuritySection>
 
-        {/* Data Reset -- Danger Zone (owner only) */}
-        <SettingsDataReset tenantSlug={tenantSlug} />
+        <SecurityAccountSection />
 
-        {/* Account deletion (owner only): closes THIS restaurant */}
+        {/* Owner only: reset data, close the restaurant */}
         <RoleGuard roles={['owner']} fallback={null}>
+          <SecuritySection title={t('dangerZone')} description={t('dangerZoneDescription')}>
+            <SettingsDataReset tenantSlug={tenantSlug} />
+          </SecuritySection>
           <DeleteAccountSection variant="owner" restaurantName={tenantName} />
         </RoleGuard>
       </div>
