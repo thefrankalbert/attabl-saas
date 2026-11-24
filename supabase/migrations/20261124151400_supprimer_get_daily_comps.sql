@@ -1,0 +1,32 @@
+-- ============================================================================
+-- Revue ligne par ligne, lot B2b-1: B132 (Basse). Code mort supprime: la
+-- fonction `get_daily_comps`.
+--
+-- CE QUI NE TENAIT PAS. `get_daily_comps` (SECURITY DEFINER, executable par
+-- `authenticated`) n'a aucun appelant: la valeur des offerts n'apparait sur
+-- aucun ecran, et elle regroupait les jours en UTC. Recherche
+-- `get_daily_comps` dans src/, scripts/ et tests/: deux commentaires et un
+-- test d'integration, retires dans le meme lot (temoin: la meme recherche sur
+-- `get_daily_revenue` trouve son appelant `useReportData.ts`).
+--
+-- LA CORRECTION. `DROP FUNCTION IF EXISTS`. Brancher la fonction sur un
+-- rapport serait une decision produit: elle pourra etre recreee alors, avec
+-- le fuseau du restaurant.
+--
+-- HORS DE CETTE MIGRATION (decision de l'orchestrateur, contre-audit 1):
+-- la colonne `tenants.banner_url` RESTE. Elle n'est affichee nulle part, mais
+-- un restaurant de production en a une, dont le fichier existe dans l'espace
+-- `menu-items`; la recherche des fichiers orphelins (`REFERENCE_SOURCES`) doit
+-- continuer de le proteger.
+--
+-- ORDRE DE DEPLOIEMENT: AVANT ou APRES le code en ligne. Aucun code en ligne
+-- n'appelle la fonction (seuls des commentaires et un test d'integration la
+-- citent); sans le retrait de colonne, plus rien ne depend de l'ordre.
+--
+-- ROLLBACK: recreer la fonction depuis `lot-b2b1/prod-fonctions.sql`
+-- (`get_daily_comps`), puis
+--   REVOKE ALL ON FUNCTION public.get_daily_comps(uuid, timestamptz, timestamptz) FROM PUBLIC, anon;
+--   GRANT EXECUTE ON FUNCTION public.get_daily_comps(uuid, timestamptz, timestamptz) TO authenticated, service_role;
+-- ============================================================================
+
+DROP FUNCTION IF EXISTS public.get_daily_comps(uuid, timestamptz, timestamptz);

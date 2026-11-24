@@ -35,6 +35,15 @@ values
 insert into public.tenants (id, slug, name, is_active, subscription_plan, subscription_status)
 values ('da000000-0000-4000-8000-00000000000a', 'b150-a', 'B150 A', true, 'pro', 'active');
 
+-- Table de destination du changement de table (B133, 20261124150500: la
+-- destination doit exister dans le restaurant).
+insert into public.venues (id, tenant_id, slug, name)
+values ('dd000000-0000-4000-8000-00000000000a', 'da000000-0000-4000-8000-00000000000a', 'b150-salle', 'Salle');
+insert into public.zones (id, venue_id, tenant_id, name, prefix)
+values ('de000000-0000-4000-8000-00000000000a', 'dd000000-0000-4000-8000-00000000000a', 'da000000-0000-4000-8000-00000000000a', 'Salle', 'T');
+insert into public.tables (zone_id, tenant_id, table_number, display_name)
+values ('de000000-0000-4000-8000-00000000000a', 'da000000-0000-4000-8000-00000000000a', 'T9', 'T9');
+
 insert into public.admin_users (tenant_id, user_id, email, role, is_active)
 values ('da000000-0000-4000-8000-00000000000a', 'd1111111-1111-4111-8111-111111111111',
         'caissier-b150@test.local', 'cashier', true),

@@ -362,9 +362,6 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
       });
 
       if (error) {
-        if (error.message?.includes('INSUFFICIENT_STOCK')) {
-          throw new ServiceError('Stock insuffisant pour cette commande', 'CONFLICT', error);
-        }
         throw new ServiceError('Erreur déstockage commande', 'INTERNAL', error);
       }
       const count = (data as number) ?? 0;
@@ -399,8 +396,9 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
         data: { user },
       } = await supabase.auth.getUser();
 
-      // Atomic RPC: clamps stock at >=0, records the ACTUAL applied delta as a
-      // movement, and validates the supplier belongs to the tenant - all in one
+      // Atomic RPC: moves the stock by exactly the delta (it may go below zero,
+      // like a sale - audit B142), records it as a movement, and validates the
+      // supplier belongs to the tenant - all in one
       // transaction so the ledger always reconstructs current_stock.
       const { error } = await supabase.rpc('adjust_ingredient_stock_tx', {
         p_tenant_id: tenantId,
@@ -479,7 +477,7 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
       } = await supabase.auth.getUser();
 
       // Reuse the canonical manual-add ledger path: same atomic RPC as
-      // adjustStock (clamps at >=0, records the applied delta, reconcilable).
+      // adjustStock (exact delta, recorded as a movement, reconcilable).
       // supplier_id is forwarded for supplier attribution (validated by the RPC).
       const { error } = await supabase.rpc('adjust_ingredient_stock_tx', {
         p_tenant_id: tenantId,

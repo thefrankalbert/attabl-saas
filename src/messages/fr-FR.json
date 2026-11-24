@@ -2527,7 +2527,7 @@
     "movementPhysicalCount": "Inventaire physique",
     "declareLoss": "Déclarer une perte",
     "lossQty": "Quantité perdue",
-    "exceedsStockWarning": "Cette quantité dépasse le stock actuel ({stock} {unit}). Le stock sera ramené à 0.",
+    "exceedsStockWarning": "Cette quantité dépasse le stock actuel ({stock} {unit}). Le stock passera sous zéro.",
     "lossReason": "Motif de la perte",
     "lossNotes": "Notes (facultatif)",
     "lossRecorded": "Perte enregistrée",

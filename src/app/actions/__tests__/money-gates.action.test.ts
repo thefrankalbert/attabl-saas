@@ -88,6 +88,12 @@ vi.mock('@/services/order.service', () => ({
   })),
 }));
 
+vi.mock('@/services/coupon.service', () => ({
+  createCouponService: vi.fn(() => ({
+    releaseForCancelledOrder: vi.fn().mockResolvedValue(false),
+  })),
+}));
+
 const mockRecordTender = vi.fn();
 const mockGetSummary = vi.fn();
 vi.mock('@/services/payment.service', () => ({
@@ -178,20 +184,13 @@ describe('statut: avancer oui, annuler non, pour le serveur et le chef', () => {
     expect(mockCancelOrder).not.toHaveBeenCalled();
   });
 
-  it('le caissier annule une commande, sans l autorite sur l argent', async () => {
+  it('le caissier annule une commande', async () => {
     member.role = 'cashier';
+    mockCancelOrder.mockResolvedValue(true);
     const { actionUpdateOrderStatus } = await import('@/app/actions/orders');
     const res = await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, 'cancelled');
     expect(res.success).toBe(true);
-    expect(mockCancelOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID, { canManageMoney: false });
-  });
-
-  it.each(['manager', 'admin', 'owner'])('%s annule avec l autorite sur l argent', async (role) => {
-    member.role = role;
-    const { actionUpdateOrderStatus } = await import('@/app/actions/orders');
-    const res = await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, 'cancelled');
-    expect(res.success).toBe(true);
-    expect(mockCancelOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID, { canManageMoney: true });
+    expect(mockCancelOrder).toHaveBeenCalled();
   });
 
   it('un acompte au registre refuse au caissier: message traduit, pas le texte brut', async () => {

@@ -154,19 +154,6 @@ export function createCreationMethods(supabase: SupabaseClient) {
       });
 
       if (error) {
-        // DEPLOY-ORDERING: migration 20260629000600 (table_sessions) replaces the
-        // RPC's TABLE_ACTIVE_ORDER raise with find-or-create-session, so this
-        // handler is dead ONCE THAT MIGRATION IS LIVE. It is intentionally kept
-        // until then: prod still runs the old RPC that raises TABLE_ACTIVE_ORDER,
-        // and removing it now would degrade that error to a generic 500. Remove
-        // this branch in the same release that applies migration 20260629000600.
-        if (error.message?.includes('TABLE_ACTIVE_ORDER')) {
-          throw new ServiceError(
-            'Une commande est deja en cours sur cette table',
-            'CONFLICT',
-            error,
-          );
-        }
         logger.error('Atomic order creation failed', error);
         throw new ServiceError('Erreur lors de la creation de la commande', 'INTERNAL', error);
       }

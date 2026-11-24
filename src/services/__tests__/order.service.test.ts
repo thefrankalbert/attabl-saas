@@ -1268,80 +1268,129 @@ describe('OrderService', () => {
   });
 
   describe('cancelOrder (reverses side-effects)', () => {
-    // Mock: from('orders').select().eq().eq().maybeSingle() for the fetch,
-    // rpc() for restock/unclaim, from('orders').update().eq().eq() for the flip.
+    // In-memory order row that REALLY applies the filters the code sets
+    // (eq / neq / or), like Postgres re-checks them on the locked row:
+    // without that, a double cancellation could not be told from a single one.
+    type Row = {
+      id: string;
+      status: string;
+      payment_status: string | null;
+      coupon_id: string | null;
+    };
     function makeSupabase(opts: {
-      order: Record<string, unknown> | null;
-      ledger?: Array<{ amount: number; status: string }>;
+      order: Row | null;
       fetchError?: unknown;
-      restockError?: unknown;
-      unclaimError?: unknown;
       updateError?: unknown;
+      /** A concurrent markPaid commits just before our UPDATE takes the row. */
+      paidJustBeforeUpdate?: boolean;
     }) {
-      const maybeSingle = vi
-        .fn()
-        .mockResolvedValue({ data: opts.order, error: opts.fetchError ?? null });
-      const select = vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle }) }),
-      });
-      const updateEq2 = vi.fn().mockResolvedValue({ error: opts.updateError ?? null });
-      const update = vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ eq: updateEq2 }) });
-      const rpc = vi.fn().mockImplementation((name: string) => {
-        if (name === 'restock_order') return Promise.resolve({ error: opts.restockError ?? null });
-        if (name === 'unclaim_coupon_usage')
-          return Promise.resolve({ error: opts.unclaimError ?? null });
-        return Promise.resolve({ error: null });
-      });
-      // Registre: from('payments').select().eq().eq() rend les lignes de la commande.
-      const ledgerSelect = vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          eq: vi.fn().mockResolvedValue({ data: opts.ledger ?? [], error: null }),
-        }),
-      });
-      const from = vi
-        .fn()
-        .mockImplementation((table: string) =>
-          table === 'payments' ? { select: ledgerSelect } : { select, update },
-        );
-      return { client: { from, rpc } as unknown as SupabaseClient, rpc, update };
+      const state = { row: opts.order ? { ...opts.order } : null };
+      // Postgres semantics: a comparison with NULL is never true.
+      const neq = (a: unknown, b: unknown) => a !== null && a !== undefined && a !== b;
+      function chain(payload: Record<string, unknown> | null) {
+        const tests: Array<(r: Record<string, unknown>) => boolean> = [];
+        const api = {
+          eq(k: string, v: unknown) {
+            if (k !== 'tenant_id') tests.push((r) => r[k] === v);
+            return api;
+          },
+          neq(k: string, v: unknown) {
+            tests.push((r) => neq(r[k], v));
+            return api;
+          },
+          or(expr: string) {
+            // Only the form the code uses: "<col>.is.null,<col>.neq.<value>".
+            const [isNull, notEq] = expr.split(',');
+            const col = isNull.split('.')[0];
+            const value = notEq.split('.').slice(2).join('.');
+            tests.push((r) => r[col] === null || neq(r[col], value));
+            return api;
+          },
+          async select() {
+            if (opts.updateError) return { data: null, error: opts.updateError };
+            if (payload && opts.paidJustBeforeUpdate && state.row) {
+              state.row.payment_status = 'paid';
+            }
+            const row = state.row as Record<string, unknown> | null;
+            const ok = !!row && tests.every((t) => t(row));
+            if (!payload || !ok) return { data: [], error: null };
+            Object.assign(row as Record<string, unknown>, payload);
+            return { data: [{ id: row!.id }], error: null };
+          },
+          async maybeSingle() {
+            return { data: state.row ? { ...state.row } : null, error: opts.fetchError ?? null };
+          },
+        };
+        return api;
+      }
+      const update = vi.fn((payload: Record<string, unknown>) => chain(payload));
+      const select = vi.fn(() => chain(null));
+      const rpc = vi.fn().mockResolvedValue({ error: null });
+      const from = vi.fn().mockReturnValue({ select, update });
+      return { client: { from, rpc } as unknown as SupabaseClient, rpc, update, state };
     }
 
-    it('unclaims the coupon then marks cancelled (restock handled by the caller)', async () => {
+    it('marks cancelled, with no RPC from the staff session (coupon and stock by the caller)', async () => {
       const m = makeSupabase({
         order: { id: 'o1', status: 'preparing', payment_status: 'pending', coupon_id: 'c1' },
       });
       const service = createOrderService(m.client);
 
-      await service.cancelOrder('o1', 'tenant-123');
+      await expect(service.cancelOrder('o1', 'tenant-123')).resolves.toBe(true);
 
-      // restock is NOT done here - it goes through the service_role path in the action.
-      expect(m.rpc).not.toHaveBeenCalledWith('restock_order', expect.anything());
-      expect(m.rpc).toHaveBeenCalledWith('unclaim_coupon_usage', { p_coupon_id: 'c1' });
+      // Neither restock nor coupon release from the staff session: both are
+      // service-role only and done by the caller.
+      expect(m.rpc).not.toHaveBeenCalled();
       expect(m.update).toHaveBeenCalledWith({ status: 'cancelled' });
+      expect(m.state.row?.status).toBe('cancelled');
     });
 
-    it('does not unclaim when the order has no coupon', async () => {
+    it('B67: of two concurrent cancellations, only one cancels', async () => {
       const m = makeSupabase({
-        order: { id: 'o1', status: 'ready', payment_status: 'pending', coupon_id: null },
+        order: { id: 'o1', status: 'preparing', payment_status: 'pending', coupon_id: 'c1' },
       });
       const service = createOrderService(m.client);
 
-      await service.cancelOrder('o1', 'tenant-123');
+      const results = await Promise.all([
+        service.cancelOrder('o1', 'tenant-123'),
+        service.cancelOrder('o1', 'tenant-123'),
+      ]);
 
-      expect(m.rpc).not.toHaveBeenCalledWith('unclaim_coupon_usage', expect.anything());
-      expect(m.update).toHaveBeenCalledWith({ status: 'cancelled' });
+      expect([...results].sort()).toEqual([false, true]);
     });
 
-    it('is a no-op when the order is already cancelled', async () => {
+    it('B68: an order paid in the meantime is NOT cancelled (CONFLICT)', async () => {
+      // Read as pending, then a concurrent encashment lands before the write:
+      // the old unguarded UPDATE produced an order paid AND cancelled.
+      const m = makeSupabase({
+        order: { id: 'o1', status: 'preparing', payment_status: 'pending', coupon_id: 'c1' },
+        paidJustBeforeUpdate: true,
+      });
+      const service = createOrderService(m.client);
+
+      await expect(service.cancelOrder('o1', 'tenant-123')).rejects.toMatchObject({
+        code: 'CONFLICT',
+      });
+      expect(m.state.row?.status).toBe('preparing');
+    });
+
+    it('cancels an order whose payment status is NULL (treated as pending)', async () => {
+      const m = makeSupabase({
+        order: { id: 'o1', status: 'pending', payment_status: null, coupon_id: null },
+      });
+      const service = createOrderService(m.client);
+
+      await expect(service.cancelOrder('o1', 'tenant-123')).resolves.toBe(true);
+      expect(m.state.row?.status).toBe('cancelled');
+    });
+
+    it('is a no-op when the order is already cancelled (returns false)', async () => {
       const m = makeSupabase({
         order: { id: 'o1', status: 'cancelled', payment_status: 'pending', coupon_id: 'c1' },
       });
       const service = createOrderService(m.client);
 
-      await service.cancelOrder('o1', 'tenant-123');
-
-      expect(m.rpc).not.toHaveBeenCalled();
-      expect(m.update).not.toHaveBeenCalled();
+      await expect(service.cancelOrder('o1', 'tenant-123')).resolves.toBe(false);
     });
 
     it('refuses to cancel a paid order (CONFLICT)', async () => {
@@ -1353,7 +1402,6 @@ describe('OrderService', () => {
       await expect(service.cancelOrder('o1', 'tenant-123')).rejects.toMatchObject({
         code: 'CONFLICT',
       });
-      expect(m.rpc).not.toHaveBeenCalled();
     });
 
     it('throws NOT_FOUND when the order does not exist', async () => {
@@ -1365,98 +1413,53 @@ describe('OrderService', () => {
       });
     });
 
-    // Acompte au registre: annulable par l'autorite sur l'argent (gerant, admin,
-    // proprietaire), refuse au caissier (migration 20261124120000). Le NET du
-    // registre juge, comme la base.
-    const acompte = {
-      order: {
-        id: 'o1',
-        status: 'preparing',
-        payment_status: 'partial',
-        coupon_id: null,
-        total: 5000,
-        tip_amount: 0,
-      },
-      ledger: [{ amount: 2000, status: 'completed' }],
-    };
-
-    it('cancels a partial order when the caller holds the money authority (manager)', async () => {
-      const m = makeSupabase(acompte);
+    it('maps a guard refusal (42501) to UNAUTHORIZED', async () => {
+      const m = makeSupabase({
+        order: { id: 'o1', status: 'preparing', payment_status: 'pending', coupon_id: 'c1' },
+        updateError: { code: '42501', message: 'exige le droit d encaisser' },
+      });
       const service = createOrderService(m.client);
 
-      await service.cancelOrder('o1', 'tenant-123', { canManageMoney: true });
-
-      expect(m.update).toHaveBeenCalledWith({ status: 'cancelled' });
+      await expect(service.cancelOrder('o1', 'tenant-123')).rejects.toMatchObject({
+        code: 'UNAUTHORIZED',
+      });
     });
 
-    it('refuses a partial order without the money authority (cashier)', async () => {
-      const m = makeSupabase({ ...acompte, order: { ...acompte.order, coupon_id: 'c1' } });
+    // Money still in the ledger: the database guard (migration 20261124160000)
+    // refuses with a HINT; the service turns it into a clear refusal instead
+    // of the generic permission message, without reading the ledger itself.
+    it('maps the deposit refusal (money authority needed) to the translatable reason', async () => {
+      const m = makeSupabase({
+        order: { id: 'o1', status: 'preparing', payment_status: 'partial', coupon_id: null },
+        updateError: {
+          code: '42501',
+          message: 'exige l autorite sur l argent',
+          hint: 'orders_annulation_exige_autorite_argent',
+        },
+      });
       const service = createOrderService(m.client);
 
-      await expect(
-        service.cancelOrder('o1', 'tenant-123', { canManageMoney: false }),
-      ).rejects.toMatchObject({
+      await expect(service.cancelOrder('o1', 'tenant-123')).rejects.toMatchObject({
         code: 'CONFLICT',
         details: { reason: 'cancel_needs_money_authority' },
       });
-      await expect(service.cancelOrder('o1', 'tenant-123')).rejects.toMatchObject({
-        code: 'CONFLICT',
-      });
       expect(m.rpc).not.toHaveBeenCalled();
-      expect(m.update).not.toHaveBeenCalled();
     });
 
-    it('judges on the ledger, not on payment_status: pending with money in the ledger is refused to a cashier', async () => {
+    it('maps the refund-first refusal (ledger covers the due) to CONFLICT', async () => {
       const m = makeSupabase({
-        ...acompte,
-        order: { ...acompte.order, payment_status: 'pending' },
+        order: { id: 'o1', status: 'preparing', payment_status: 'partial', coupon_id: null },
+        updateError: {
+          code: '42501',
+          message: 'il faut d abord la rembourser',
+          hint: 'orders_annulation_exige_remboursement',
+        },
       });
       const service = createOrderService(m.client);
 
-      await expect(
-        service.cancelOrder('o1', 'tenant-123', { canManageMoney: false }),
-      ).rejects.toMatchObject({ details: { reason: 'cancel_needs_money_authority' } });
-      expect(m.update).not.toHaveBeenCalled();
-    });
-
-    it('a ledger that covers the due needs a refund first, even for the money authority', async () => {
-      const m = makeSupabase({
-        ...acompte,
-        order: { ...acompte.order, payment_status: 'pending' },
-        ledger: [{ amount: 5000, status: 'completed' }],
-      });
-      const service = createOrderService(m.client);
-
-      await expect(
-        service.cancelOrder('o1', 'tenant-123', { canManageMoney: true }),
-      ).rejects.toMatchObject({ code: 'CONFLICT' });
-      expect(m.update).not.toHaveBeenCalled();
-    });
-
-    it('a fully refunded ledger (net 0) can be cancelled by a cashier', async () => {
-      const m = makeSupabase({
-        ...acompte,
-        ledger: [
-          { amount: 5000, status: 'completed' },
-          { amount: 5000, status: 'refunded' },
-        ],
-      });
-      const service = createOrderService(m.client);
-
-      await service.cancelOrder('o1', 'tenant-123', { canManageMoney: false });
-
-      expect(m.update).toHaveBeenCalledWith({ status: 'cancelled' });
-    });
-
-    it('a cashier can still cancel an unpaid order', async () => {
-      const m = makeSupabase({
-        order: { id: 'o1', status: 'preparing', payment_status: 'pending', coupon_id: null },
-      });
-      const service = createOrderService(m.client);
-
-      await service.cancelOrder('o1', 'tenant-123', { canManageMoney: false });
-
-      expect(m.update).toHaveBeenCalledWith({ status: 'cancelled' });
+      const err = await service.cancelOrder('o1', 'tenant-123').catch((e: unknown) => e);
+      expect(err).toMatchObject({ code: 'CONFLICT' });
+      expect((err as { details?: { reason?: string } }).details?.reason).toBeUndefined();
     });
   });
 });

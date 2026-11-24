@@ -84,6 +84,8 @@ describe('actionReassignOrderTable', () => {
 
   it.each([
     ['Destination table is now occupied', undefined, "Cette table vient d'etre occupee"],
+    // B133: destination absente des tables du restaurant.
+    ['Destination table not found', 'P0002', "Cette table n'existe pas dans votre restaurant"],
     ['permission denied', '42501', 'Votre role ne permet pas'],
     [
       'duplicate key value violates unique constraint "x_pkey"',

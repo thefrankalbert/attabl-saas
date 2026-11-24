@@ -3,6 +3,23 @@
 -- directe (constats X2, X3 et N3, audit de mise en production du 2026-11-23).
 -- ============================================================================
 --
+-- VERSION. Ecrite d'abord sous 20261124120000, renommee 20261124160000 pour
+-- s'appliquer APRES 20261124150000 (lot B2b-1, deja en production), dont elle
+-- complete la regle sans rien redefinir. Elle n'a jamais ete appliquee sous
+-- l'ancienne version.
+--
+-- CE QUE 20261124150000 COUVRE DEJA (declencheur BEFORE UPDATE
+-- `refuser_argent_sans_orders_pay`, non touche ici): une commande `paid` ne
+-- s'annule pour aucun client; annuler exige `orders.pay`; annuler une commande
+-- `comp` ou `refunded` exige l'autorite sur l'argent. CE QU'IL NE COUVRE PAS,
+-- et qui reste l'objet de ce declencheur: une commande `partial` (ou toute
+-- commande non `paid`) dont l'argent net est encore au registre `payments`.
+-- Un caissier (`orders.pay` sans autorite sur l'argent) l'annulait encore par
+-- l'API directe, et la commande sortait du chiffre d'affaires avec son argent
+-- en caisse (sonde du 2026-11-24, transaction COMMITEE, migrations de `main`
+-- appliquees). Les deux gardes sont cumulatives: la plus stricte l'emporte, et
+-- aucune n'autorise ce que l'autre refuse.
+--
 -- LE DEFAUT. Un employe qui detient `orders.pay` sans l'autorite sur l'argent
 -- (un caissier) pouvait, par un UPDATE direct de `orders` par l'API PostgREST
 -- avec son propre jeton, passer a 'cancelled' une commande 'paid' (5000 au
@@ -63,6 +80,11 @@
 -- modifiees. Une insertion directe d'une commande 'cancelled' n'est pas
 -- couverte: la RLS ferme l'INSERT direct aux employes (20261124100200) et une
 -- commande qui nait n'a aucune ligne au registre.
+--
+-- HINT. Deux valeurs, lues par cancelOrder (src/services/order/order-lifecycle.ts)
+-- pour donner un message clair sans recalculer le registre cote application:
+-- `orders_annulation_exige_remboursement` (regle 1) et
+-- `orders_annulation_exige_autorite_argent` (regle 2). Changer les deux ensemble.
 --
 -- COUT. Une lecture par cle primaire et une somme sur `payments` par l'index
 -- (tenant_id, order_id), seulement au passage a 'cancelled'.
@@ -145,7 +167,7 @@ BEGIN
     RAISE EXCEPTION
       'Annuler une commande dont l''argent est encore en caisse exige l''autorite sur l''argent'
       USING ERRCODE = '42501',
-            HINT = 'orders_annulation_exige_remboursement';
+            HINT = 'orders_annulation_exige_autorite_argent';
   END IF;
 
   RETURN NULL;

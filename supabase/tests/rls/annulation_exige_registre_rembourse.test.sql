@@ -1,5 +1,8 @@
 -- Une commande dont l'argent est au registre ne s'annule pas par l'API directe
--- (migration 20261124120000, constats X2, X3, N3).
+-- (migration 20261124160000, constats X2, X3, N3). Les refus de commande `paid`
+-- viennent aussi de 20261124150000 (declencheur BEFORE, deja en production);
+-- les cas `partial` (X2, partiellement remboursee) ne sont refuses QUE par
+-- celui-ci: ce sont eux qui prouvent qu'il reste necessaire.
 --
 -- Le controle est un declencheur de contrainte REPORTE a la validation. Un test
 -- pgTAP ne valide jamais sa transaction: test_x23_valider force l'execution des
@@ -14,7 +17,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(16);
+select plan(18);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -36,7 +39,7 @@ values ('e7000000-0000-4000-8000-00000000000a', 'e7111111-1111-4111-8111-1111111
 -- 01 partial, 2000 au registre       02 paid, 5000 au registre
 -- 03 impayee, registre vide          04 partial: 5000 encaisses, 3000 rendus
 -- 05 rembourse en entier (net 0)     06 paid, 5000 (gerant)
--- 07 paid, 5000 (service_role)
+-- 07 paid, 5000 (service_role)   08 partial mais 5000 au registre (net = du)
 insert into public.orders (id, tenant_id, service_type, order_number, subtotal, total, tip_amount,
                            status, payment_status)
 values
@@ -46,7 +49,8 @@ values
   ('e7c00000-0000-4000-8000-000000000004', 'e7000000-0000-4000-8000-00000000000a', 'takeaway', 'X-04', 5000, 5000, 0, 'served', 'partial'),
   ('e7c00000-0000-4000-8000-000000000005', 'e7000000-0000-4000-8000-00000000000a', 'takeaway', 'X-05', 5000, 5000, 0, 'served', 'refunded'),
   ('e7c00000-0000-4000-8000-000000000006', 'e7000000-0000-4000-8000-00000000000a', 'takeaway', 'X-06', 5000, 5000, 0, 'served', 'paid'),
-  ('e7c00000-0000-4000-8000-000000000007', 'e7000000-0000-4000-8000-00000000000a', 'takeaway', 'X-07', 5000, 5000, 0, 'served', 'paid');
+  ('e7c00000-0000-4000-8000-000000000007', 'e7000000-0000-4000-8000-00000000000a', 'takeaway', 'X-07', 5000, 5000, 0, 'served', 'paid'),
+  ('e7c00000-0000-4000-8000-000000000008', 'e7000000-0000-4000-8000-00000000000a', 'takeaway', 'X-08', 5000, 5000, 0, 'served', 'partial');
 
 insert into public.payments (tenant_id, order_id, amount, method, status)
 values
@@ -57,7 +61,8 @@ values
   ('e7000000-0000-4000-8000-00000000000a', 'e7c00000-0000-4000-8000-000000000005', 5000, 'cash', 'completed'),
   ('e7000000-0000-4000-8000-00000000000a', 'e7c00000-0000-4000-8000-000000000005', 5000, 'cash', 'refunded'),
   ('e7000000-0000-4000-8000-00000000000a', 'e7c00000-0000-4000-8000-000000000006', 5000, 'cash', 'completed'),
-  ('e7000000-0000-4000-8000-00000000000a', 'e7c00000-0000-4000-8000-000000000007', 5000, 'cash', 'completed');
+  ('e7000000-0000-4000-8000-00000000000a', 'e7c00000-0000-4000-8000-000000000007', 5000, 'cash', 'completed'),
+  ('e7000000-0000-4000-8000-00000000000a', 'e7c00000-0000-4000-8000-000000000008', 5000, 'cash', 'completed');
 
 create function public.test_x23_valider(p_sql text) returns void
 language plpgsql security invoker as $$
@@ -74,6 +79,21 @@ begin
 end;
 $$;
 grant execute on function public.test_x23_valider(text) to authenticated, service_role;
+
+-- Rend le HINT du refus (lu par cancelOrder pour choisir le message), ou NULL.
+create function public.test_x23_hint(p_sql text) returns text
+language plpgsql security invoker as $$
+declare
+  v_hint text;
+begin
+  perform public.test_x23_valider(p_sql);
+  return null;
+exception when insufficient_privilege then
+  get stacked diagnostics v_hint = pg_exception_hint;
+  return v_hint;
+end;
+$$;
+grant execute on function public.test_x23_hint(text) to authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
 -- Caissier (orders.pay, sans autorite sur l'argent)
@@ -102,6 +122,15 @@ select throws_ok(
   $$select public.test_x23_valider($q$update public.orders set status = 'cancelled'
       where id = 'e7c00000-0000-4000-8000-000000000004'$q$)$$,
   '42501', null, 'caissier: annuler une commande partiellement remboursee (net 2000) refuse');
+
+-- Les HINT que cancelOrder traduit: acompte (regle 2) et registre qui couvre
+-- le du sans marque `paid` (regle 1).
+select is(public.test_x23_hint($q$update public.orders set status = 'cancelled'
+      where id = 'e7c00000-0000-4000-8000-000000000001'$q$),
+  'orders_annulation_exige_autorite_argent', 'caissier: le refus d un acompte porte le HINT autorite');
+select is(public.test_x23_hint($q$update public.orders set status = 'cancelled'
+      where id = 'e7c00000-0000-4000-8000-000000000008'$q$),
+  'orders_annulation_exige_remboursement', 'caissier: registre qui couvre le du, HINT remboursement');
 
 -- Temoin positif: commande impayee, registre vide (chemin applicatif normal).
 select lives_ok(
@@ -160,7 +189,7 @@ select lives_ok(
 reset role;
 select is((select count(*)::int from public.payments
             where tenant_id = 'e7000000-0000-4000-8000-00000000000a' and status = 'completed'),
-  6, 'aucun refus n a touche au registre');
+  7, 'aucun refus n a touche au registre');
 select is((select prosecdef from pg_proc where proname = 'exiger_registre_rembourse_pour_annuler'),
   false, 'la garde est SECURITY INVOKER (current_user reel)');
 

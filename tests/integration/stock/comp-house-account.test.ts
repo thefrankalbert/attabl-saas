@@ -1,8 +1,8 @@
 /**
  * Integration tests for phase 8 (comp/offert + manager notes + house accounts)
  * against a REAL local Postgres. Verifies the additive migration
- * 20260703200000: comp is columns-only (keeps destock, excluded from revenue,
- * present in get_daily_comps), house-account outstanding = due - ledger net, RLS
+ * 20260703200000: comp is columns-only (keeps destock, excluded from revenue),
+ * house-account outstanding = due - ledger net, RLS
  * isolation, and the append-only order_notes trail. Driven by `pnpm test:db`.
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -159,7 +159,7 @@ afterAll(async () => {
 });
 
 describe('comp / offert (real Postgres)', () => {
-  it('comp keeps destock rows, sets comp columns, and is excluded from revenue but present in get_daily_comps', async () => {
+  it('comp keeps destock rows, sets comp columns, and is excluded from revenue (traced by its comp columns)', async () => {
     const ing = await seedIngredient(100);
     const item = await seedMenuItem();
     await db.from('recipes').insert({
@@ -210,7 +210,7 @@ describe('comp / offert (real Postgres)', () => {
     expect(movementsAfter.length).toBe(movementsBefore.length);
     expect(await getStock(ing)).toBe(stockBefore);
 
-    // Revenue excludes the comp; get_daily_comps includes it.
+    // Revenue excludes the comp (get_daily_comps, never called, was dropped: B132).
     const { data: revenue } = await db.rpc('get_daily_revenue', {
       p_tenant_id: tenantId,
       p_start_date: WINDOW_START,
@@ -221,22 +221,6 @@ describe('comp / offert (real Postgres)', () => {
       0,
     );
     expect(revenueTotal).toBe(0);
-
-    const { data: comps } = await db.rpc('get_daily_comps', {
-      p_tenant_id: tenantId,
-      p_start_date: WINDOW_START,
-      p_end_date: WINDOW_END,
-    });
-    const compTotal = (comps ?? []).reduce(
-      (s: number, r: { comp_total: number | string }) => s + Number(r.comp_total),
-      0,
-    );
-    const compCount = (comps ?? []).reduce(
-      (s: number, r: { comp_count: number | string }) => s + Number(r.comp_count),
-      0,
-    );
-    expect(compTotal).toBe(5500);
-    expect(compCount).toBe(1);
   });
 
   it('comp guards: CONFLICT on paid and cancelled; idempotent no-op on already-comp', async () => {

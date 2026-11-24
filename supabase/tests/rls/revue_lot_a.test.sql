@@ -121,6 +121,15 @@ select lives_ok(
   'A4 temoin: une ardoise dont tout est encaisse se solde');
 
 -- ------------------------------------------------------------ A14, caissier
+-- Tables de destination: depuis 20261124150500 (B133), une commande ne part
+-- que vers une table qui existe dans le restaurant.
+insert into public.venues (id, tenant_id, slug, name)
+values ('cb000000-0000-4000-8000-000000000001', 'aa000000-0000-4000-8000-000000000001', 'salle-a14', 'Salle A14');
+insert into public.zones (id, venue_id, tenant_id, name, prefix)
+values ('db000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', 'aa000000-0000-4000-8000-000000000001', 'Salle', 'T');
+insert into public.tables (zone_id, tenant_id, table_number, display_name)
+select 'db000000-0000-4000-8000-000000000001', 'aa000000-0000-4000-8000-000000000001', n, n
+from unnest(array['T2', 'T4', 'T5', 'T6']) as n;
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"a2222222-2222-4222-8222-222222222222","role":"authenticated"}', true);
 select reassign_order_table('0a000000-0000-4000-8000-000000000005', 'aa000000-0000-4000-8000-000000000001', 'T2');
