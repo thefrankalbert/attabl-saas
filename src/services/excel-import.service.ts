@@ -163,7 +163,7 @@ export function createExcelImportService(supabase: SupabaseClient): ExcelImportS
 
       if (rows.length === 0) {
         throw new ServiceError(
-          'Aucun plat trouve sous la ligne d en-tetes du fichier',
+          "Aucun plat trouvé sous la ligne d'en-têtes du fichier",
           'VALIDATION',
         );
       }

@@ -81,7 +81,7 @@ export async function parseRecipeSheet(buffer: ArrayBuffer): Promise<ParsedRecip
 
   if (rawData.length < 2) {
     throw new ServiceError(
-      'Le fichier Excel doit contenir une ligne d en-tete et au moins une ligne de donnees',
+      "Le fichier Excel doit contenir une ligne d'en-tête et au moins une ligne de données",
       'VALIDATION',
     );
   }
@@ -91,7 +91,7 @@ export async function parseRecipeSheet(buffer: ArrayBuffer): Promise<ParsedRecip
   const headerIndex = findHeaderRow(RECIPE_ALIASES, rawData, required);
   if (headerIndex === -1) {
     throw new ServiceError(
-      'Colonnes obligatoires manquantes. Colonnes attendues : Plat, Ingredient, Unite, Quantite, Notes',
+      'Colonnes obligatoires manquantes. Colonnes attendues : Plat, Ingrédient, Unité, Quantité, Notes',
       'VALIDATION',
     );
   }
@@ -152,13 +152,13 @@ export async function parseRecipeSheet(buffer: ArrayBuffer): Promise<ParsedRecip
     if (!unit) {
       errors.push({
         row: rowNumber,
-        message: `Unite invalide : ${rawRow.unit ?? ''}`.trim(),
+        message: `Unité invalide : ${rawRow.unit ?? ''}`.trim(),
       });
       continue;
     }
 
     if (quantity === null || quantity < 0) {
-      errors.push({ row: rowNumber, message: 'La quantite doit etre un nombre positif' });
+      errors.push({ row: rowNumber, message: 'La quantité doit être un nombre positif' });
       continue;
     }
 

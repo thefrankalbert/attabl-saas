@@ -164,10 +164,14 @@ export default function InventoryAdjustModal({
             )}
 
             <div>
-              <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+              <Label
+                htmlFor="adjust-quantity"
+                className="text-xs font-medium text-app-text-secondary mb-1 block"
+              >
                 {tc('quantity')}
               </Label>
               <Input
+                id="adjust-quantity"
                 type="number"
                 step="0.01"
                 value={adjustQty}
@@ -176,6 +180,9 @@ export default function InventoryAdjustModal({
                 autoFocus
               />
               {convertedHint && <p className="text-xs text-app-text-muted mt-1">{convertedHint}</p>}
+              {adjustType === 'opening' && (
+                <p className="text-xs text-app-text-muted mt-1">{t('openingStockHint')}</p>
+              )}
               {adjustType === 'manual_remove' &&
                 parseFloat(adjustQty) > selectedIngredient.current_stock && (
                   <p role="alert" className="text-xs text-status-warning mt-1">
@@ -215,10 +222,14 @@ export default function InventoryAdjustModal({
             )}
 
             <div>
-              <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+              <Label
+                htmlFor="adjust-notes"
+                className="text-xs font-medium text-app-text-secondary mb-1 block"
+              >
                 {t('notesOptional')}
               </Label>
               <Input
+                id="adjust-notes"
                 value={adjustNotes}
                 onChange={(e) => setAdjustNotes(e.target.value)}
                 placeholder={t('adjustReasonPlaceholder')}

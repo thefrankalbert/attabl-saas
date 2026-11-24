@@ -113,6 +113,15 @@ export interface InventoryService {
   cancelStockCount(tenantId: string, countId: string): Promise<void>;
 }
 
+const QUANTITY_TOO_LARGE_MESSAGE =
+  'La quantité est trop grande pour le stock (9 999 999 au maximum).';
+
+// Depassement de la colonne numeric(10,3): sans ce cas, l'ecran affichait une
+// erreur generique sans dire que c'est la quantite qu'il faut reduire.
+function isNumericOverflow(error: { code?: string; message?: string }): boolean {
+  return error.code === '22003' || /numeric field overflow/i.test(error.message ?? '');
+}
+
 /**
  * Set an ingredient's quantity through the canonical ledger path: the RPC writes
  * the 'opening' movement for the DELTA, so current_stock never moves without a
@@ -139,7 +148,10 @@ async function applyOpeningStock(
 
   if (error) {
     if (error.message?.includes('INGREDIENT_NOT_FOUND')) {
-      throw new ServiceError('Ingredient introuvable', 'NOT_FOUND', error);
+      throw new ServiceError('Ingrédient introuvable', 'NOT_FOUND', error);
+    }
+    if (isNumericOverflow(error)) {
+      throw new ServiceError(QUANTITY_TOO_LARGE_MESSAGE, 'VALIDATION', error);
     }
     throw new ServiceError("Erreur stock d'ouverture", 'INTERNAL', error);
   }
@@ -283,7 +295,7 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
       ).maybeSingle();
 
       if (!menuItem) {
-        throw new ServiceError('Article non trouve dans ce restaurant', 'NOT_FOUND');
+        throw new ServiceError('Article non trouvé dans ce restaurant', 'NOT_FOUND');
       }
 
       const { data, error } = await supabase
@@ -302,20 +314,20 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
       ).maybeSingle();
 
       if (!menuItem) {
-        throw new ServiceError('Article non trouve dans ce restaurant', 'NOT_FOUND');
+        throw new ServiceError('Article non trouvé dans ce restaurant', 'NOT_FOUND');
       }
 
       const ingredientIds = lines.map((l) => l.ingredient_id);
       if (new Set(ingredientIds).size !== ingredientIds.length) {
-        throw new ServiceError('Ingredient en double dans la fiche', 'VALIDATION');
+        throw new ServiceError('Ingrédient en double dans la fiche', 'VALIDATION');
       }
 
       for (const line of lines) {
         if (!line.ingredient_id) {
-          throw new ServiceError('Ingredient manquant', 'VALIDATION');
+          throw new ServiceError('Ingrédient manquant', 'VALIDATION');
         }
         if (!(Number(line.quantity_needed) > 0)) {
-          throw new ServiceError('Quantite invalide pour un ingredient', 'VALIDATION');
+          throw new ServiceError('Quantité invalide pour un ingrédient', 'VALIDATION');
         }
       }
 
@@ -328,10 +340,10 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
           .in('id', ingredientIds);
 
         if (ingError) {
-          throw new ServiceError('Erreur validation ingredients', 'INTERNAL', ingError);
+          throw new ServiceError('Erreur de validation des ingrédients', 'INTERNAL', ingError);
         }
         if ((ingredients?.length ?? 0) !== ingredientIds.length) {
-          throw new ServiceError('Un ou plusieurs ingredients sont invalides', 'VALIDATION');
+          throw new ServiceError('Un ou plusieurs ingrédients sont invalides', 'VALIDATION');
         }
       }
 
@@ -415,7 +427,10 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
           throw new ServiceError('Fournisseur invalide', 'VALIDATION', error);
         }
         if (error.message?.includes('INGREDIENT_NOT_FOUND')) {
-          throw new ServiceError('Ingredient introuvable', 'NOT_FOUND', error);
+          throw new ServiceError('Ingrédient introuvable', 'NOT_FOUND', error);
+        }
+        if (isNumericOverflow(error)) {
+          throw new ServiceError(QUANTITY_TOO_LARGE_MESSAGE, 'VALIDATION', error);
         }
         throw new ServiceError('Erreur ajustement stock', 'INTERNAL', error);
       }
@@ -433,8 +448,8 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
         .maybeSingle();
 
       if (fetchError)
-        throw new ServiceError('Erreur chargement ingredient', 'INTERNAL', fetchError);
-      if (!ingredient) throw new ServiceError('Ingredient introuvable', 'NOT_FOUND');
+        throw new ServiceError("Erreur de chargement de l'ingrédient", 'INTERNAL', fetchError);
+      if (!ingredient) throw new ServiceError('Ingrédient introuvable', 'NOT_FOUND');
 
       const ing = ingredient as Pick<
         Ingredient,
@@ -494,9 +509,12 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
           throw new ServiceError('Fournisseur invalide', 'VALIDATION', error);
         }
         if (error.message?.includes('INGREDIENT_NOT_FOUND')) {
-          throw new ServiceError('Ingredient introuvable', 'NOT_FOUND', error);
+          throw new ServiceError('Ingrédient introuvable', 'NOT_FOUND', error);
         }
-        throw new ServiceError('Erreur reception stock', 'INTERNAL', error);
+        if (isNumericOverflow(error)) {
+          throw new ServiceError(QUANTITY_TOO_LARGE_MESSAGE, 'VALIDATION', error);
+        }
+        throw new ServiceError('Erreur de réception du stock', 'INTERNAL', error);
       }
     },
 
@@ -520,7 +538,7 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
 
       if (error) {
         if (error.message?.includes('INGREDIENT_NOT_FOUND')) {
-          throw new ServiceError('Ingredient introuvable', 'NOT_FOUND', error);
+          throw new ServiceError('Ingrédient introuvable', 'NOT_FOUND', error);
         }
         if (
           error.message?.includes('INVALID_REASON') ||
@@ -675,12 +693,12 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
         // (uniq_stock_counts_one_open) is the real guard and raises 23505 on a
         // concurrent open. Map both to the same CONFLICT so the UI stays coherent.
         if (error.message?.includes('OPEN_COUNT_EXISTS') || error.code === '23505') {
-          throw new ServiceError('Un inventaire est deja ouvert', 'CONFLICT', error);
+          throw new ServiceError('Un inventaire est déjà ouvert', 'CONFLICT', error);
         }
         if (error.message?.includes('NO_INGREDIENTS')) {
-          throw new ServiceError('Aucun ingredient disponible', 'VALIDATION', error);
+          throw new ServiceError('Aucun ingrédient disponible', 'VALIDATION', error);
         }
-        throw new ServiceError('Erreur creation inventaire', 'INTERNAL', error);
+        throw new ServiceError("Erreur de création de l'inventaire", 'INTERNAL', error);
       }
       return data as string;
     },
@@ -747,7 +765,7 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
           throw new ServiceError('Inventaire non ouvert', 'CONFLICT', error);
         }
         if (error.message?.includes('INVALID_COUNTED_QTY')) {
-          throw new ServiceError('Quantite comptee invalide', 'VALIDATION', error);
+          throw new ServiceError('Quantité comptée invalide', 'VALIDATION', error);
         }
         throw new ServiceError('Erreur sauvegarde lignes inventaire', 'INTERNAL', error);
       }
@@ -769,7 +787,7 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
           throw new ServiceError('Inventaire introuvable', 'NOT_FOUND', error);
         }
         if (error.message?.includes('COUNT_ALREADY_CLOSED')) {
-          throw new ServiceError('Inventaire deja clos', 'CONFLICT', error);
+          throw new ServiceError('Inventaire déjà clos', 'CONFLICT', error);
         }
         throw new ServiceError('Erreur validation inventaire', 'INTERNAL', error);
       }

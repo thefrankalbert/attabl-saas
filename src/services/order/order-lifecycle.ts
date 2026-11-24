@@ -333,7 +333,11 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
         // `neq` alone would skip a NULL payment status (NULL <> 'paid' is not
         // true), which the application treats as pending.
         .or('payment_status.is.null,payment_status.neq.paid')
-        .select('id');
+        // `payment_status` DOIT figurer dans le select: PostgREST refuse un
+        // filtre `or` sur une colonne absente des lignes renvoyees (42703
+        // "column orders.payment_status does not exist", mesure sur v14.3 le
+        // 2026-11-24). Avec `select('id')`, AUCUNE annulation n'aboutissait.
+        .select('id, payment_status');
       if (updateError) {
         // 42501: a guard trigger refused (no orders.pay, or an offered /
         // refunded order without the money authority).

@@ -34,11 +34,15 @@ vi.mock('@/lib/auth/get-session', () => ({
 const mockRecordLoss = vi.fn<() => Promise<void>>();
 const mockGetLossesByReason = vi.fn<() => Promise<unknown[]>>();
 const mockReceiveStock = vi.fn<() => Promise<void>>();
+const mockAdjustStock = vi.fn<() => Promise<void>>();
+const mockSetOpeningStock = vi.fn<() => Promise<void>>();
 vi.mock('@/services/inventory.service', () => ({
   createInventoryService: vi.fn(() => ({
     recordLoss: mockRecordLoss,
     getLossesByReason: mockGetLossesByReason,
     receiveStock: mockReceiveStock,
+    adjustStock: mockAdjustStock,
+    setOpeningStock: mockSetOpeningStock,
   })),
 }));
 
@@ -89,7 +93,7 @@ describe('actionRecordLoss', () => {
       reason_code: 'recount',
     });
 
-    expect(result).toEqual({ error: 'Invalid input' });
+    expect(result).toEqual({ error: 'Motif de perte invalide.' });
     expect(mockRecordLoss).not.toHaveBeenCalled();
   });
 
@@ -97,7 +101,7 @@ describe('actionRecordLoss', () => {
     const { actionRecordLoss } = await import('@/app/actions/inventory');
     const result = await actionRecordLoss(TENANT_ID, { ...validInput, quantity: 0 });
 
-    expect(result).toEqual({ error: 'Invalid input' });
+    expect(result).toEqual({ error: 'La quantité doit être supérieure à 0.' });
     expect(mockRecordLoss).not.toHaveBeenCalled();
   });
 
@@ -108,7 +112,7 @@ describe('actionRecordLoss', () => {
       ingredient_id: 'not-a-uuid',
     });
 
-    expect(result).toEqual({ error: 'Invalid input' });
+    expect(result).toEqual({ error: 'Élément introuvable. Rechargez la page et réessayez.' });
     expect(mockRecordLoss).not.toHaveBeenCalled();
   });
 
@@ -160,7 +164,7 @@ describe('actionReceiveStock (WRITE gated at inventory.edit)', () => {
     const { actionReceiveStock } = await import('@/app/actions/inventory');
     const result = await actionReceiveStock(TENANT_ID, { ...validReceive, quantity: 0 });
 
-    expect(result).toEqual({ error: 'Invalid input' });
+    expect(result).toEqual({ error: 'La quantité doit être supérieure à 0.' });
     expect(mockReceiveStock).not.toHaveBeenCalled();
   });
 
@@ -172,7 +176,7 @@ describe('actionReceiveStock (WRITE gated at inventory.edit)', () => {
       inPurchaseUnit: 'yes',
     });
 
-    expect(result).toEqual({ error: 'Invalid input' });
+    expect(result).toEqual({ error: "Choix d'unité invalide." });
     expect(mockReceiveStock).not.toHaveBeenCalled();
   });
 
@@ -183,7 +187,7 @@ describe('actionReceiveStock (WRITE gated at inventory.edit)', () => {
       ingredient_id: 'nope',
     });
 
-    expect(result).toEqual({ error: 'Invalid input' });
+    expect(result).toEqual({ error: 'Élément introuvable. Rechargez la page et réessayez.' });
     expect(mockReceiveStock).not.toHaveBeenCalled();
   });
 
@@ -234,7 +238,7 @@ describe('actionReceiveStock (WRITE gated at inventory.edit)', () => {
       supplier_id: 'not-a-uuid',
     });
 
-    expect(result).toEqual({ error: 'Invalid input' });
+    expect(result).toEqual({ error: 'Élément introuvable. Rechargez la page et réessayez.' });
     expect(mockReceiveStock).not.toHaveBeenCalled();
   });
 
@@ -245,7 +249,7 @@ describe('actionReceiveStock (WRITE gated at inventory.edit)', () => {
       notes: 'x'.repeat(501),
     });
 
-    expect(result).toEqual({ error: 'Invalid input' });
+    expect(result).toEqual({ error: 'La note est trop longue (500 caractères au maximum).' });
     expect(mockReceiveStock).not.toHaveBeenCalled();
   });
 
@@ -278,7 +282,7 @@ describe('actionCreateIngredient / actionUpdateIngredient purchase-unit schema',
       units_per_purchase: 0,
     });
 
-    expect(result).toEqual({ error: 'Invalid input' });
+    expect(result).toEqual({ error: "Le nombre d'unités par achat doit être supérieur à 0." });
   });
 
   it('rejects units_per_purchase <= 0 on update', async () => {
@@ -287,7 +291,7 @@ describe('actionCreateIngredient / actionUpdateIngredient purchase-unit schema',
       units_per_purchase: -5,
     });
 
-    expect(result).toEqual({ error: 'Invalid input' });
+    expect(result).toEqual({ error: "Le nombre d'unités par achat doit être supérieur à 0." });
   });
 });
 
@@ -387,5 +391,86 @@ describe('garde de plan (F4)', () => {
 
     expect(result).toEqual({ success: true });
     expect(mockRecordLoss).toHaveBeenCalled();
+  });
+});
+
+describe("actionAdjustStock / actionSetOpeningStock: stock d'ouverture et messages", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetAuthUserForTenant.mockResolvedValue({
+      supabase: supabaseOnPlan('pro'),
+      user: { id: 'user-9' },
+    });
+    mockAdjustStock.mockResolvedValue(undefined);
+    mockSetOpeningStock.mockResolvedValue(undefined);
+  });
+
+  it('le type "opening" REMPLACE le stock: il passe par setOpeningStock, jamais par adjustStock', async () => {
+    const { actionAdjustStock } = await import('@/app/actions/inventory');
+    const result = await actionAdjustStock(TENANT_ID, {
+      ingredient_id: INGREDIENT_ID,
+      quantity: 5,
+      movement_type: 'opening',
+    });
+
+    expect(result).toEqual({ success: true });
+    expect(mockSetOpeningStock).toHaveBeenCalledWith(TENANT_ID, INGREDIENT_ID, 5);
+    expect(mockAdjustStock).not.toHaveBeenCalled();
+  });
+
+  it('un ajout manuel continue de passer par adjustStock (temoin: la mesure reagit)', async () => {
+    const { actionAdjustStock } = await import('@/app/actions/inventory');
+    await actionAdjustStock(TENANT_ID, {
+      ingredient_id: INGREDIENT_ID,
+      quantity: 5,
+      movement_type: 'manual_add',
+    });
+
+    expect(mockAdjustStock).toHaveBeenCalledTimes(1);
+    expect(mockSetOpeningStock).not.toHaveBeenCalled();
+  });
+
+  it('actionSetOpeningStock accepte 0 (remise a zero) et refuse un negatif en francais', async () => {
+    const { actionSetOpeningStock } = await import('@/app/actions/inventory');
+
+    expect(await actionSetOpeningStock(TENANT_ID, INGREDIENT_ID, 0)).toEqual({ success: true });
+    expect(mockSetOpeningStock).toHaveBeenCalledWith(TENANT_ID, INGREDIENT_ID, 0);
+
+    expect(await actionSetOpeningStock(TENANT_ID, INGREDIENT_ID, -1)).toEqual({
+      error: 'Le stock ne peut pas être négatif.',
+    });
+  });
+
+  it('une quantite trop grande donne un message qui dit la limite', async () => {
+    const { actionAdjustStock } = await import('@/app/actions/inventory');
+    const result = await actionAdjustStock(TENANT_ID, {
+      ingredient_id: INGREDIENT_ID,
+      quantity: 99999999999,
+      movement_type: 'manual_add',
+    });
+
+    expect(result).toEqual({ error: 'La quantité est trop grande (9 999 999 au maximum).' });
+    expect(mockAdjustStock).not.toHaveBeenCalled();
+  });
+
+  it('un nom de produit de 101 caracteres dit quoi corriger, en francais', async () => {
+    const { actionCreateIngredient } = await import('@/app/actions/inventory');
+    const result = await actionCreateIngredient(TENANT_ID, {
+      name: 'x'.repeat(101),
+      unit: 'kg',
+    });
+
+    expect(result).toEqual({ error: 'Le nom est trop long (100 caractères au maximum).' });
+  });
+
+  it('un stock initial negatif dit que le stock ne peut pas etre negatif', async () => {
+    const { actionCreateIngredient } = await import('@/app/actions/inventory');
+    const result = await actionCreateIngredient(TENANT_ID, {
+      name: 'Riz',
+      unit: 'kg',
+      current_stock: -3,
+    });
+
+    expect(result).toEqual({ error: 'Le stock ne peut pas être négatif.' });
   });
 });

@@ -8,9 +8,11 @@ import {
   actionCreateIngredient,
   actionUpdateIngredient,
   actionAdjustStock,
+  actionSetOpeningStock,
   actionReceiveStock,
   actionRecordLoss,
 } from '@/app/actions/inventory';
+import { MAX_STOCK_QUANTITY } from '@/lib/inventory/quantity-format';
 import type {
   Ingredient,
   IngredientUnit,
@@ -133,10 +135,29 @@ export function useInventoryActions(tenantId: string) {
       return;
     }
 
+    if (formName.trim().length > 100) {
+      toast({ title: t('nameTooLong'), variant: 'destructive' });
+      return;
+    }
+
+    if (
+      [formStock, formMinAlert, formCostPerUnit].some((v) => parseFloat(v) > MAX_STOCK_QUANTITY)
+    ) {
+      toast({ title: t('quantityTooLarge'), variant: 'destructive' });
+      return;
+    }
+
     // Purchase-unit config (#15): empty label = bought in base unit (identity).
+    // Un facteur renseigne mais nul ou negatif etait corrige en 1 sans rien dire:
+    // on le refuse, le champ vide valant 1.
     const purchaseUnit = formPurchaseUnit.trim() || null;
-    const parsedUpp = parseFloat(formUnitsPerPurchase);
-    const unitsPerPurchase = Number.isFinite(parsedUpp) && parsedUpp > 0 ? parsedUpp : 1;
+    const uppRaw = formUnitsPerPurchase.trim();
+    const parsedUpp = parseFloat(uppRaw);
+    if (uppRaw !== '' && !(Number.isFinite(parsedUpp) && parsedUpp > 0)) {
+      toast({ title: t('purchaseFactorInvalid'), variant: 'destructive' });
+      return;
+    }
+    const unitsPerPurchase = uppRaw === '' ? 1 : parsedUpp;
 
     setIsSubmitting(true);
     try {
@@ -208,9 +229,20 @@ export function useInventoryActions(tenantId: string) {
   const handleAdjust = async () => {
     if (isSubmitting) return;
     if (!selectedIngredient || !adjustQty) return;
-    // Le sens vient du type de mouvement: la quantite est toujours positive.
-    if (!(parseFloat(adjustQty) > 0)) {
-      toast({ title: t('quantityMustBePositive'), variant: 'destructive' });
+    const qty = parseFloat(adjustQty);
+    // "Stock d'ouverture" fixe le stock a la quantite saisie: 0 est une valeur
+    // valide (remise a zero). Pour les autres types, le sens vient du type de
+    // mouvement et la quantite est toujours positive.
+    const isOpening = adjustType === 'opening';
+    if (isOpening ? !(qty >= 0) : !(qty > 0)) {
+      toast({
+        title: isOpening ? t('openingQuantityInvalid') : t('quantityMustBePositive'),
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (qty > MAX_STOCK_QUANTITY) {
+      toast({ title: t('quantityTooLarge'), variant: 'destructive' });
       return;
     }
 
@@ -224,21 +256,25 @@ export function useInventoryActions(tenantId: string) {
 
     setIsSubmitting(true);
     try {
-      const r = isPurchaseReceipt
-        ? await actionReceiveStock(tenantId, {
-            ingredient_id: selectedIngredient.id,
-            quantity: parseFloat(adjustQty),
-            inPurchaseUnit: true,
-            supplier_id: adjustSupplierId || undefined,
-            notes: adjustNotes.trim() || undefined,
-          })
-        : await actionAdjustStock(tenantId, {
-            ingredient_id: selectedIngredient.id,
-            quantity: parseFloat(adjustQty),
-            movement_type: adjustType,
-            notes: adjustNotes.trim() || undefined,
-            supplier_id: adjustSupplierId || undefined,
-          });
+      // "Stock d'ouverture" REMPLACE le stock (10 puis ouverture 5 = 5): il passe
+      // par actionSetOpeningStock. actionAdjustStock AJOUTE la quantite au stock.
+      const r = isOpening
+        ? await actionSetOpeningStock(tenantId, selectedIngredient.id, qty)
+        : isPurchaseReceipt
+          ? await actionReceiveStock(tenantId, {
+              ingredient_id: selectedIngredient.id,
+              quantity: qty,
+              inPurchaseUnit: true,
+              supplier_id: adjustSupplierId || undefined,
+              notes: adjustNotes.trim() || undefined,
+            })
+          : await actionAdjustStock(tenantId, {
+              ingredient_id: selectedIngredient.id,
+              quantity: qty,
+              movement_type: adjustType,
+              notes: adjustNotes.trim() || undefined,
+              supplier_id: adjustSupplierId || undefined,
+            });
       if (r.error) throw new Error(r.error);
       toast({ title: t('stockAdjusted') });
       setModalMode(null);
@@ -258,12 +294,22 @@ export function useInventoryActions(tenantId: string) {
   const handleRecordLoss = async () => {
     if (isSubmitting) return;
     if (!selectedIngredient || !lossQty) return;
+    const lossQuantity = parseFloat(lossQty);
+    // Une perte de 0 ou negative ressortait en "Invalid input": on dit quoi corriger.
+    if (!(lossQuantity > 0)) {
+      toast({ title: t('lossQuantityMustBePositive'), variant: 'destructive' });
+      return;
+    }
+    if (lossQuantity > MAX_STOCK_QUANTITY) {
+      toast({ title: t('quantityTooLarge'), variant: 'destructive' });
+      return;
+    }
 
     setIsSubmitting(true);
     try {
       const r = await actionRecordLoss(tenantId, {
         ingredient_id: selectedIngredient.id,
-        quantity: parseFloat(lossQty),
+        quantity: lossQuantity,
         reason_code: lossReason,
         notes: lossNotes.trim() || undefined,
       });

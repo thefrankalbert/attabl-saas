@@ -32,8 +32,8 @@ export async function parseExcelBuffer(
   const headerIndex = findHeaderRow(COLUMN_ALIASES, rawData, ['category', 'name', 'price']);
   if (headerIndex === -1) {
     throw new ServiceError(
-      'Colonnes obligatoires introuvables : Categorie, Nom du plat, Prix. ' +
-        'Gardez la ligne d en-tetes du modele telle quelle.',
+      'Colonnes obligatoires introuvables : Catégorie, Nom du plat, Prix. ' +
+        "Gardez la ligne d'en-têtes du modèle telle quelle.",
       'VALIDATION',
     );
   }

@@ -74,7 +74,7 @@ describe('parseExcelBuffer - refus du fichier entier', () => {
     ]);
 
     await expect(parseExcelBuffer(tampon)).rejects.toThrow(/Colonnes obligatoires introuvables/);
-    await expect(parseExcelBuffer(tampon)).rejects.toThrow(/Categorie/);
+    await expect(parseExcelBuffer(tampon)).rejects.toThrow(/Catégorie/);
     await expect(parseExcelBuffer(tampon)).rejects.toThrow(/Prix/);
   });
 

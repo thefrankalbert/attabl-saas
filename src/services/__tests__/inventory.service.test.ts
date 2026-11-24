@@ -539,6 +539,26 @@ describe('InventoryService', () => {
     });
   });
 
+  describe('adjustStock: depassement de quantite', () => {
+    it("dit que la quantite est trop grande au lieu d'une erreur generique", async () => {
+      supabase.rpc = vi.fn().mockResolvedValue({
+        data: null,
+        error: { code: '22003', message: 'numeric field overflow' },
+      });
+
+      await expect(
+        service.adjustStock('t1', {
+          ingredient_id: 'ing-1',
+          quantity: 99999999999,
+          movement_type: 'manual_add',
+        }),
+      ).rejects.toMatchObject({
+        code: 'VALIDATION',
+        message: expect.stringContaining('trop grande'),
+      });
+    });
+  });
+
   describe('receiveStock', () => {
     function mockIngredientFetch(ingredient: Record<string, unknown> | null) {
       const maybeSingleFn = vi.fn().mockResolvedValue({ data: ingredient, error: null });
@@ -846,6 +866,33 @@ describe('InventoryService', () => {
         p_ingredient_id: 'ing-1',
         p_quantity: 50,
         p_created_by: 'user-1',
+      });
+    });
+
+    it("envoie la quantite saisie telle quelle (REMPLACE le stock, ne s'ajoute pas)", async () => {
+      // La fonction SQL set_opening_stock ecrit current_stock = p_quantity et le
+      // mouvement `opening` pour l'ECART (p_quantity - stock avant). Le service ne
+      // doit donc jamais convertir en delta lui-meme: 10 puis ouverture 5 = 5.
+      supabase.rpc = vi.fn().mockResolvedValue({ data: null, error: null });
+
+      await service.setOpeningStock('t1', 'ing-1', 5);
+
+      const rpc = supabase.rpc as unknown as ReturnType<typeof vi.fn>;
+      expect(rpc).toHaveBeenCalledTimes(1);
+      expect(rpc.mock.calls[0][0]).toBe('set_opening_stock');
+      expect(rpc.mock.calls[0][1]).toMatchObject({ p_quantity: 5 });
+      expect(rpc.mock.calls[0][1]).not.toHaveProperty('p_delta');
+    });
+
+    it('dit que la quantite est trop grande quand la colonne deborde', async () => {
+      supabase.rpc = vi.fn().mockResolvedValue({
+        data: null,
+        error: { code: '22003', message: 'numeric field overflow' },
+      });
+
+      await expect(service.setOpeningStock('t1', 'ing-1', 99999999999)).rejects.toMatchObject({
+        code: 'VALIDATION',
+        message: expect.stringContaining('trop grande'),
       });
     });
   });

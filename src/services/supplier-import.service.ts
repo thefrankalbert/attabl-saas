@@ -45,10 +45,10 @@ const supplierRowSchema = z.object({
   name: z
     .string({ error: 'Le nom du fournisseur est requis' })
     .min(1, 'Le nom du fournisseur est requis')
-    .max(200, 'Le nom doit faire 200 caracteres ou moins'),
+    .max(200, 'Le nom doit faire 200 caractères ou moins'),
   contact_name: z.string().max(200).nullable(),
   // phone kept lenient (formats vary): length-bounded string only.
-  phone: z.string().max(50, 'Le telephone doit faire 50 caracteres ou moins').nullable(),
+  phone: z.string().max(50, 'Le téléphone doit faire 50 caractères ou moins').nullable(),
   // email is optional; when provided it must be a valid address (else row error).
   email: z.string().email('Email invalide').max(255).nullable(),
   address: z.string().max(500).nullable(),
@@ -91,7 +91,7 @@ export function createSupplierImportService(supabase: SupabaseClient): SupplierI
 
       if (rawData.length < 2) {
         throw new ServiceError(
-          'Le fichier Excel doit contenir une ligne d en-tete et au moins une ligne de donnees',
+          "Le fichier Excel doit contenir une ligne d'en-tête et au moins une ligne de données",
           'VALIDATION',
         );
       }
@@ -100,7 +100,7 @@ export function createSupplierImportService(supabase: SupabaseClient): SupplierI
       const headerIndex = findHeaderRow(SUPPLIER_ALIASES, rawData, ['name']);
       if (headerIndex === -1) {
         throw new ServiceError(
-          'Colonne obligatoire manquante : Nom (Name). Colonnes attendues : Nom, Contact, Telephone, Email, Adresse, Notes, Actif',
+          'Colonne obligatoire manquante : Nom (Name). Colonnes attendues : Nom, Contact, Téléphone, Email, Adresse, Notes, Actif',
           'VALIDATION',
         );
       }
@@ -170,7 +170,11 @@ export function createSupplierImportService(supabase: SupabaseClient): SupplierI
         .eq('tenant_id', tenantId);
 
       if (loadError) {
-        throw new ServiceError('Erreur chargement fournisseurs existants', 'INTERNAL', loadError);
+        throw new ServiceError(
+          'Erreur de chargement des fournisseurs existants',
+          'INTERNAL',
+          loadError,
+        );
       }
 
       const idByLowerName = new Map<string, string>();
@@ -208,7 +212,7 @@ export function createSupplierImportService(supabase: SupabaseClient): SupplierI
             .eq('tenant_id', tenantId);
 
           if (error) {
-            errors.push({ row: row.rowNumber, message: 'Erreur de mise a jour du fournisseur' });
+            errors.push({ row: row.rowNumber, message: 'Erreur de mise à jour du fournisseur' });
             continue;
           }
           updated += 1;
@@ -229,7 +233,7 @@ export function createSupplierImportService(supabase: SupabaseClient): SupplierI
             .single();
 
           if (error || !inserted) {
-            errors.push({ row: row.rowNumber, message: 'Erreur de creation du fournisseur' });
+            errors.push({ row: row.rowNumber, message: 'Erreur de création du fournisseur' });
             continue;
           }
           // Dedup within the same file: a later row with the same name updates.

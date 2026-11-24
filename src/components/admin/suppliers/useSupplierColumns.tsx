@@ -15,6 +15,8 @@ interface UseSupplierColumnsArgs {
   handleDelete: (supplierId: string) => void;
   deleteConfirm: string | null;
   setDeleteConfirm: (id: string | null) => void;
+  /** `inventory.edit`: sans lui, pas de colonne d'actions (modifier, desactiver, supprimer). */
+  canEdit: boolean;
 }
 
 // TanStack Table column definitions for the suppliers table.
@@ -24,6 +26,7 @@ export function useSupplierColumns({
   handleDelete,
   deleteConfirm,
   setDeleteConfirm,
+  canEdit,
 }: UseSupplierColumnsArgs): ColumnDef<Supplier, unknown>[] {
   const t = useTranslations('suppliers');
   const tc = useTranslations('common');
@@ -107,67 +110,71 @@ export function useSupplierColumns({
         ),
         enableSorting: false,
       },
-      {
-        id: 'actions',
-        header: () => <span className="w-full text-right block">{t('edit')}</span>,
-        cell: ({ row }) => {
-          const supplier = row.original;
-          return (
-            <div className="flex justify-end gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => openEdit(supplier)}
-                className="gap-1 text-xs"
-              >
-                <Pencil className="w-3 h-3" />
-                {t('edit')}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleToggleActive(supplier)}
-                className="text-xs"
-              >
-                {supplier.is_active ? t('disable') : t('enable')}
-              </Button>
-              {deleteConfirm === supplier.id ? (
-                <div className="flex gap-1">
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDelete(supplier.id)}
-                    className="text-xs"
-                  >
-                    {t('confirmAction')}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setDeleteConfirm(null)}
-                    className="text-xs"
-                  >
-                    {t('cancelAction')}
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setDeleteConfirm(supplier.id)}
-                  title={tc('delete')}
-                  className="text-xs text-status-error hover:text-status-error"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
-              )}
-            </div>
-          );
-        },
-        enableSorting: false,
-      },
+      ...(canEdit
+        ? ([
+            {
+              id: 'actions',
+              header: () => <span className="w-full text-right block">{t('edit')}</span>,
+              cell: ({ row }) => {
+                const supplier = row.original;
+                return (
+                  <div className="flex justify-end gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openEdit(supplier)}
+                      className="gap-1 text-xs"
+                    >
+                      <Pencil className="w-3 h-3" />
+                      {t('edit')}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleToggleActive(supplier)}
+                      className="text-xs"
+                    >
+                      {supplier.is_active ? t('disable') : t('enable')}
+                    </Button>
+                    {deleteConfirm === supplier.id ? (
+                      <div className="flex gap-1">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(supplier.id)}
+                          className="text-xs"
+                        >
+                          {t('confirmAction')}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeleteConfirm(null)}
+                          className="text-xs"
+                        >
+                          {t('cancelAction')}
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeleteConfirm(supplier.id)}
+                        title={tc('delete')}
+                        className="text-xs text-status-error hover:text-status-error"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
+                );
+              },
+              enableSorting: false,
+            },
+          ] satisfies ColumnDef<Supplier>[])
+        : []),
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: openEdit/handleToggleActive/handleDelete are stable action handlers; the reactive values (t, deleteConfirm) are listed, and adding the handler identities would rebuild columns each render with no behavior change (2026-06-18)
-    [t, tc, deleteConfirm],
+    [t, tc, deleteConfirm, canEdit],
   );
 }
