@@ -719,7 +719,7 @@
             },
             "truck": {
               "title": "Delivery orders",
-              "desc": "Track runs and drivers."
+              "desc": "Orders with a delivery address, tracked like any other."
             },
             "bed": {
               "title": "Room service",
@@ -1659,6 +1659,7 @@
       "strengthMedium": "Medium",
       "strengthStrong": "Strong",
       "trialNote": "14 days free - no commitment",
+      "legalNotice": "<terms>Terms of use</terms> and <privacy>privacy</privacy>",
       "accountDeletedSuccess": "Done: your account is deleted. Thank you for working with ATTABL."
     },
     "confirm": {

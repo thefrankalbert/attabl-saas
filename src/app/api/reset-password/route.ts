@@ -19,6 +19,7 @@ import { RECOVERY_MARKER_COOKIE, verifyRecoveryMarker } from '@/lib/auth/recover
  *  3. l'adresse du compte, retapee par la personne. Si elle ne correspond pas, le
  *     lien n'etait pas le sien (lien d'un autre compte envoye a une victime): on
  *     deconnecte localement et on ne change rien.
+ * Apres le changement, les autres sessions du compte sont fermees.
  *
  * Codes de refus: NO_RECOVERY (401/403), EMAIL_MISMATCH (403), SAME_PASSWORD (400).
  */
@@ -78,6 +79,16 @@ export async function POST(request: Request) {
         return NextResponse.json({ code: 'SAME_PASSWORD' }, { status: 400 });
       }
       return NextResponse.json({ code: 'GENERIC' }, { status: 500 });
+    }
+
+    // Une session volee ne doit pas survivre a la reinitialisation: on ferme
+    // toutes les AUTRES sessions du compte (celle-ci reste ouverte). Le mot de
+    // passe est deja change: un echec ici est journalise, pas renvoye.
+    const { error: signOutError } = await supabase.auth.signOut({ scope: 'others' });
+    if (signOutError) {
+      logger.error('Closing other sessions after password reset failed', {
+        error: signOutError.message,
+      });
     }
 
     cookieStore.delete(RECOVERY_MARKER_COOKIE);

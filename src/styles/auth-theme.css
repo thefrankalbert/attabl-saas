@@ -111,6 +111,15 @@
   box-shadow: none;
 }
 
+/* Focus visible au clavier comme a la souris: la regle ci-dessus annule les
+   anneaux focus-visible des utilitaires (plus specifique), d'ou cet etat
+   explicite. Bordure couleur de titre (contraste >= 3:1 sur la carte) et halo. */
+.auth-shell .auth-input:focus-visible {
+  outline: none;
+  border-color: var(--heading);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--heading) 22%, transparent);
+}
+
 .auth-shell .auth-btn-primary,
 .auth-shell .auth-btn-secondary {
   display: inline-flex;
