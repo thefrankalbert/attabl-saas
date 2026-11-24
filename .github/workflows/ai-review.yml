@@ -43,7 +43,7 @@ jobs:
       - name: Secret absent
         if: env.HAS_KEY != 'true'
         run: echo "ANTHROPIC_API_KEY absent - revue IA ignoree. Voir l'en-tete de ai-review.yml." >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: env.HAS_KEY == 'true'
         with:
           fetch-depth: 0
@@ -91,11 +91,17 @@ jobs:
       - name: Secret absent
         if: env.HAS_KEY != 'true'
         run: echo "ANTHROPIC_API_KEY absent - revue de securite IA ignoree. Voir l'en-tete de ai-review.yml." >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: env.HAS_KEY == 'true'
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 2
+      # Limite amont connue (2026-11-24): cette action composite epingle en
+      # interne setup-python v5, cache v4, setup-node v4 et upload-artifact v4,
+      # qui tournent sur Node.js 20. Le correctif n'est pas fusionne en amont:
+      # https://github.com/anthropics/claude-code-security-review/issues/118
+      # Aucune version plus recente n'existe (main inchangee depuis le
+      # 2026-02-11). Monter l'epinglage des que l'issue est fermee.
       - uses: anthropics/claude-code-security-review@0c6a49f1fa56a1d472575da86a94dbc1edb78eda # main 2026-02-11
         if: env.HAS_KEY == 'true'
         with:
