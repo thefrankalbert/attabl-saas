@@ -83,9 +83,11 @@ export function StockReportClient({
       {/* Controls */}
       <div className="flex flex-wrap items-end gap-4 px-1 print:hidden">
         <div className="space-y-1.5">
-          <Label className="text-xs text-app-text-secondary">{t('reportModel')}</Label>
+          <Label htmlFor="stock-report-model" className="text-xs text-app-text-secondary">
+            {t('reportModel')}
+          </Label>
           <Select value={model} onValueChange={(v) => setModel(v as StockReportModel)}>
-            <SelectTrigger className="w-56">
+            <SelectTrigger id="stock-report-model" className="w-56">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -99,9 +101,11 @@ export function StockReportClient({
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs text-app-text-secondary">{t('orientation')}</Label>
+          <Label htmlFor="stock-report-orientation" className="text-xs text-app-text-secondary">
+            {t('orientation')}
+          </Label>
           <Select value={orientation} onValueChange={(v) => setOrientation(v as Orientation)}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger id="stock-report-orientation" className="w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -145,9 +149,20 @@ export function StockReportClient({
           }
           /* @page margin is the only page margin - drop the on-screen padding */
           #report-sheet .report-body { padding: 0 !important; }
-          /* Force the table to fit the printable width (wide "detailed" model
-             overflows A4 otherwise and the right columns get clipped) */
-          #report-sheet table { table-layout: fixed; width: 100%; }
+          /* Fit the printable width with an AUTO layout: numbers stay on one
+             line (nowrap) and the text columns wrap. table-layout: fixed cut
+             amounts in the middle ("450 / 0 / FCFA"). The Table's own on-screen
+             scroll wrapper (overflow-auto) must not clip the printed page. */
+          #report-sheet table { table-layout: auto; width: 100%; }
+          #report-sheet .overflow-auto { overflow: visible !important; }
+          /* On paper the numbers may drop "FCFA" to the next line (a normal
+             space) but never break inside the digits (narrow no-break spaces),
+             so the 8 columns of the detailed model fit an A4 portrait page. */
+          #report-sheet th, #report-sheet td {
+            white-space: normal !important; overflow-wrap: normal !important;
+            word-break: normal !important; font-size: 9.5px !important;
+            padding: 5px 4px !important;
+          }
           /* Repeat the table header on every printed page, keep rows whole */
           #report-sheet thead { display: table-header-group; }
           #report-sheet tfoot { display: table-footer-group; }

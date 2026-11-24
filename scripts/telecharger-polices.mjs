@@ -84,6 +84,12 @@ for (const f of FAMILLES) {
   for (const face of faces) {
     // Une police variable rend UN fichier; une statique en rend un par graisse.
     const suffixe = f.axe ? 'variable' : face.poids;
+    // Le nom du fichier ecrit ne doit dependre que de valeurs sures: le slug vient
+    // de FAMILLES, la graisse doit etre un nombre (400, 700...). Une reponse
+    // inattendue de Google ne peut donc pas ecrire hors du dossier de sortie.
+    if (!/^\d{3}$/.test(String(suffixe)) && suffixe !== 'variable') {
+      throw new Error(`graisse inattendue "${suffixe}" pour ${f.google}`);
+    }
     const nomFichier = `${f.slug}-${suffixe}.woff2`;
     const octets = Buffer.from(await (await recuperer(face.url)).arrayBuffer());
     await writeFile(path.join(SORTIE, nomFichier), octets);

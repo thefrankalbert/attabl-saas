@@ -151,7 +151,7 @@ export function createOrderAnnotationService(supabase: SupabaseClient) {
     ): Promise<void> {
       const { data: account, error: accErr } = await supabase
         .from('house_accounts')
-        .select('id')
+        .select('id, status')
         .eq('id', accountId)
         .eq('tenant_id', tenantId)
         .maybeSingle();
@@ -162,6 +162,13 @@ export function createOrderAnnotationService(supabase: SupabaseClient) {
       if (!account) {
         throw new ServiceError('Ardoise introuvable', 'NOT_FOUND');
       }
+      // Une ardoise soldee ne se rouvre jamais: une commande posee dessus (liste
+      // perimee a l'ecran, solde en cours sur un autre poste) ne serait plus
+      // jamais encaissee par `settle()` (revue L007, A4). La base porte la meme
+      // garde (20261121200100), pour la course avec le solde.
+      if (account.status !== 'open') {
+        throw new ServiceError('Cette ardoise est deja soldee', 'CONFLICT');
+      }
 
       const { error } = await supabase
         .from('orders')
@@ -171,21 +178,6 @@ export function createOrderAnnotationService(supabase: SupabaseClient) {
 
       if (error) {
         throw new ServiceError('Erreur lors de la mise sur l ardoise', 'INTERNAL', error);
-      }
-    },
-
-    /**
-     * Detach an order from any house account. Tenant-scoped.
-     */
-    async detachOrderFromHouseAccount(orderId: string, tenantId: string): Promise<void> {
-      const { error } = await supabase
-        .from('orders')
-        .update({ house_account_id: null })
-        .eq('id', orderId)
-        .eq('tenant_id', tenantId);
-
-      if (error) {
-        throw new ServiceError('Erreur lors du retrait de l ardoise', 'INTERNAL', error);
       }
     },
 

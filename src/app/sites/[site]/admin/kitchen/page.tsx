@@ -41,6 +41,7 @@ export default async function KitchenPage({ params }: { params: Promise<{ site: 
         feature="kds"
         checkoutUrl={`/sites/${tenantSlug}/admin/subscription`}
         tenantId={tenant.id}
+        backHref={`/sites/${tenantSlug}/admin`}
       />
     );
   }

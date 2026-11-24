@@ -21,7 +21,7 @@ export function ReportsSkeleton() {
       </div>
 
       {/* 3 KPI cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="space-y-3 rounded-xl border border-app-border bg-app-card p-6">
             <div className="h-3 w-28 rounded bg-app-elevated" />

@@ -1,7 +1,5 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
-import { AlertCircle } from 'lucide-react';
 import type { Order, Tenant, CurrencyCode } from '@/types/admin.types';
 import PaymentModal from './PaymentModal';
 import { useOrderDetails } from './order-details/useOrderDetails';
@@ -24,7 +22,6 @@ export default function OrderDetails({
   tenant,
   currency = 'XAF',
 }: OrderDetailsProps) {
-  const t = useTranslations('orders');
   const {
     loading,
     showPayment,
@@ -91,14 +88,6 @@ export default function OrderDetails({
           onPrintReceipt={handlePrintReceipt}
           onPrintInvoice={handlePrintInvoice}
         />
-
-        {/* Warnings */}
-        {order.status !== 'ready' && order.status !== 'delivered' && (
-          <div className="flex items-center gap-2 p-4 border border-[var(--border)] text-[var(--warning)] rounded-xl text-xs">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            {t('warningReadyBeforeCheckout')}
-          </div>
-        )}
       </div>
 
       {showPayment && (

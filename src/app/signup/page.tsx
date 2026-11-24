@@ -5,7 +5,7 @@ import { Suspense } from 'react';
 
 export default function SignupPage() {
   return (
-    <AuthShell>
+    <AuthShell scene="signup">
       <Suspense fallback={<AuthFormSkeleton />}>
         <AuthForm mode="signup" />
       </Suspense>

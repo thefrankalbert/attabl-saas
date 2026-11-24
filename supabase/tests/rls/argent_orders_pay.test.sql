@@ -19,7 +19,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(53);
+select plan(54);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -310,15 +310,32 @@ select throws_ok(
   'chef: ne cree PAS de commande sur l ardoise d un client (API directe)'
 );
 
--- Temoin positif: le caissier detient orders.pay, il garde ce geste.
+-- Depuis 20261124100200 (constat B150), le caissier non plus ne cree plus de
+-- commande par l'API directe: plus aucune politique INSERT sur `orders`. Il
+-- choisissait le total d'une commande portant des plats payants.
 set local request.jwt.claims = '{"sub":"f3333333-3333-3333-3333-333333333333"}';
+select throws_ok(
+  $$insert into public.orders (id, tenant_id, order_number, subtotal, total, status,
+      payment_status, house_account_id, tip_amount)
+    values ('f6000000-0000-4000-8000-000000000014', 'f5555555-5555-4555-8555-555555555555',
+            'CMD-PAY-14', 2000, 2000, 'pending', 'pending',
+            'f6400000-0000-4000-8000-000000000001', 500)$$,
+  '42501',
+  null,
+  'caissier: ne cree plus de commande sur une ardoise par l API directe'
+);
+
+-- Temoin positif: le serveur applicatif (service_role, route /api/orders/pos)
+-- cree toujours une commande sur une ardoise ouverte.
+reset role;
+set local role service_role;
 select lives_ok(
   $$insert into public.orders (id, tenant_id, order_number, subtotal, total, status,
       payment_status, house_account_id, tip_amount)
     values ('f6000000-0000-4000-8000-000000000013', 'f5555555-5555-4555-8555-555555555555',
             'CMD-PAY-13', 2000, 2000, 'pending', 'pending',
             'f6400000-0000-4000-8000-000000000001', 500)$$,
-  'caissier: cree une commande sur une ardoise'
+  'serveur applicatif: cree une commande sur une ardoise'
 );
 
 reset role;
@@ -336,12 +353,12 @@ select is(
   (select coalesce(sum(o.total + coalesce(o.tip_amount, 0)), 0)::int from public.orders o
     where o.house_account_id = 'f6400000-0000-4000-8000-000000000001'),
   2500,
-  'ardoise: seule la commande du caissier compte dans la dette du client'
+  'ardoise: seule la commande du serveur applicatif compte dans la dette du client'
 );
 select is(
   (select house_account_id from public.orders where id = 'f6000000-0000-4000-8000-000000000013'),
   'f6400000-0000-4000-8000-000000000001'::uuid,
-  'caissier: la commande est REELLEMENT sur l ardoise (la garde ne bloque pas tout)'
+  'serveur applicatif: la commande est REELLEMENT sur l ardoise (la garde ne bloque pas tout)'
 );
 
 -- ===========================================================================
@@ -443,15 +460,19 @@ select throws_ok(
   'chef: ne sort PAS une commande impayee de la note de sa table'
 );
 
--- Temoins positifs: le caissier detient orders.pay, il garde ces gestes.
+-- Depuis 20261124100200 (constat B150), le caissier non plus n'ajoute plus
+-- d'article par l'API directe (plus aucune politique INSERT sur order_items).
+-- Temoins positifs ensuite: il garde la correction d'un article existant.
 set local request.jwt.claims = '{"sub":"f3333333-3333-3333-3333-333333333333"}';
-select lives_ok(
+select throws_ok(
   $$insert into public.order_items (id, tenant_id, order_id, menu_item_id, quantity,
       price_at_order, item_name)
     values ('f6300000-0000-4000-8000-000000000013', 'f5555555-5555-4555-8555-555555555555',
             'f6000000-0000-4000-8000-000000000001', 'f6200000-0000-4000-8000-000000000001',
             1, 5000, 'Poulet DG')$$,
-  'caissier: ajoute un article'
+  '42501',
+  null,
+  'caissier: n ajoute plus d article par l API directe'
 );
 select lives_ok(
   $$update public.order_items set quantity = 2
@@ -463,8 +484,8 @@ reset role;
 select is(
   (select array_agg(id::text order by id) from public.order_items
     where order_id = 'f6000000-0000-4000-8000-000000000001'),
-  array['f6300000-0000-4000-8000-000000000001', 'f6300000-0000-4000-8000-000000000013'],
-  'articles: seuls l original et celui du caissier existent (relu)'
+  array['f6300000-0000-4000-8000-000000000001'],
+  'articles: seul l original existe, aucun ajout par l API directe (relu)'
 );
 select is(
   (select quantity::text || '/' || price_at_order::text from public.order_items

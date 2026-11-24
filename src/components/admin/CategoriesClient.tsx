@@ -249,6 +249,7 @@ export default function CategoriesClient({
                   onClick={openNewModal}
                   variant="default"
                   size="sm"
+                  aria-label={t('newCategory')}
                   className="gap-1.5 shrink-0"
                 >
                   <Plus className="w-4 h-4" />

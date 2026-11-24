@@ -67,8 +67,19 @@ describe('onboardingDataToQRConfig - ce qui est enregistre comme design', () => 
   it('produit une forme acceptee par le schema du design QR', async () => {
     const { qrDesignConfigSchema } = await import('@/lib/validations/qr-design.schema');
     const cfg = onboardingDataToQRConfig(
-      data({ qrTemplate: 'chevalet', qrStyle: 'inverted', qrCta: 'Scannez', qrDescription: 'x' }),
+      data({ qrTemplate: 'chevalet', qrStyle: 'classic', qrCta: 'Scannez', qrDescription: 'x' }),
     );
     expect(qrDesignConfigSchema.safeParse(cfg).success).toBe(true);
+  });
+
+  it('imprime en noir une couleur de marque trop claire (lime sur blanc)', () => {
+    const cfg = onboardingDataToQRConfig(data({ qrStyle: 'branded', primaryColor: '#CCFF00' }));
+    expect(cfg.qrFgColor).toBe('#000000');
+    expect(cfg.qrBgColor).toBe('#FFFFFF');
+  });
+
+  it('garde une couleur de marque assez foncee', () => {
+    const cfg = onboardingDataToQRConfig(data({ qrStyle: 'branded', primaryColor: '#4d7c0f' }));
+    expect(cfg.qrFgColor).toBe('#4d7c0f');
   });
 });

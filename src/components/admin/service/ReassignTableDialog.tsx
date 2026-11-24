@@ -99,7 +99,7 @@ export function ReassignTableDialog({
 
         {freeTables.length > 0 ? (
           <Select value={target} onValueChange={setTarget}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger aria-label={labels.title} className="w-full">
               <SelectValue placeholder={labels.placeholder} />
             </SelectTrigger>
             <SelectContent>

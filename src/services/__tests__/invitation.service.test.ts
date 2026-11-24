@@ -94,8 +94,13 @@ function createMockSupabase(
                   data: { ...invitationRow, token: 'mock-token-abc123def456' },
                   error: null,
                 }),
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data: { ...invitationRow, token: 'mock-token-abc123def456' },
+                  error: null,
+                }),
               }),
               then: undefined,
+              count: 1,
               ...(options.invitationUpdateError
                 ? { error: { message: 'Update failed' } }
                 : { error: null }),
@@ -365,6 +370,43 @@ describe('InvitationService', () => {
       expect(result).toBeDefined();
       expect(result.token).toBe('mock-token-abc123def456');
       expect(supabase.from).toHaveBeenCalledWith('invitations');
+    });
+  });
+
+  // Revue L021/L022 (A22, A23): une invitation qui n'est plus en attente.
+  describe('invitation qui n est plus en attente', () => {
+    function updateReturning(result: Record<string, unknown>) {
+      const chain: Record<string, unknown> = {};
+      chain.eq = vi.fn(() => chain);
+      chain.select = vi.fn(() => chain);
+      chain.maybeSingle = vi.fn(async () => result);
+      chain.then = (ok: (v: unknown) => unknown) => ok(result);
+      return {
+        from: vi.fn(() => ({ update: vi.fn(() => chain) })),
+      } as unknown as Parameters<typeof createInvitationService>[0];
+    }
+
+    it('annuler une invitation deja acceptee: CONFLICT, pas de faux succes', async () => {
+      const service = createInvitationService(updateReturning({ error: null, count: 0 }));
+      await expect(service.cancelInvitation('inv-001')).rejects.toMatchObject({
+        code: 'CONFLICT',
+      });
+    });
+
+    it('renvoyer une invitation deja acceptee: CONFLICT sans texte PostgREST', async () => {
+      const service = createInvitationService(updateReturning({ data: null, error: null }));
+      const err = await service.resendInvitation('inv-001').catch((e: unknown) => e);
+      expect(err).toMatchObject({ code: 'CONFLICT' });
+      expect((err as Error).message).not.toMatch(/JSON object requested|rows returned/);
+    });
+
+    it('erreur de base au renvoi: INTERNAL, message sans le texte brut', async () => {
+      const service = createInvitationService(
+        updateReturning({ data: null, error: { message: 'JSON object requested, multiple' } }),
+      );
+      const err = await service.resendInvitation('inv-001').catch((e: unknown) => e);
+      expect(err).toMatchObject({ code: 'INTERNAL' });
+      expect((err as Error).message).not.toMatch(/JSON object requested/);
     });
   });
 });

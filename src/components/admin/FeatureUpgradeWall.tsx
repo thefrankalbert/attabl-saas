@@ -6,7 +6,15 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
 import { getAdminPermission } from '@/lib/auth/require-admin-permission';
 
-type GatedFeature = 'kds' | 'inventory' | 'recipes' | 'reports' | 'service' | 'tables';
+type GatedFeature =
+  | 'kds'
+  | 'inventory'
+  | 'recipes'
+  | 'reports'
+  | 'service'
+  | 'tables'
+  | 'venueReports'
+  | 'advancedReports';
 
 const FEATURE_EVENT_KEY: Record<GatedFeature, string> = {
   kds: 'kds_access_attempted',
@@ -15,18 +23,29 @@ const FEATURE_EVENT_KEY: Record<GatedFeature, string> = {
   reports: 'reports_access_attempted',
   service: 'service_access_attempted',
   tables: 'tables_access_attempted',
+  venueReports: 'venue_reports_access_attempted',
+  advancedReports: 'advanced_reports_access_attempted',
 };
+
+// Plan minimal de chaque fonction: le libelle et le bouton le disent.
+const BUSINESS_FEATURES: ReadonlySet<GatedFeature> = new Set(['venueReports', 'advancedReports']);
 
 interface FeatureUpgradeWallProps {
   feature: GatedFeature;
   checkoutUrl: string;
   tenantId?: string;
+  /**
+   * Lien de retour, pour les pages plein ecran sans menu (ecran cuisine): sans
+   * lui, le mur serait une impasse, la seule sortie etant "Passer au Pro".
+   */
+  backHref?: string;
 }
 
 export async function FeatureUpgradeWall({
   feature,
   checkoutUrl,
   tenantId,
+  backHref,
 }: FeatureUpgradeWallProps) {
   const t = await getTranslations('admin.upgradeWall');
   // Le bouton mene a /subscription (settings.view): le personnel ne peut pas
@@ -34,6 +53,7 @@ export async function FeatureUpgradeWall({
   // lit dans l'en-tete injecte par le middleware, l'URL ne sert que de repli.
   const site = /\/sites\/([^/]+)\//.exec(checkoutUrl)?.[1] ?? '';
   const canUpgrade = await getAdminPermission(site, 'settings.view');
+  const isBusiness = BUSINESS_FEATURES.has(feature);
 
   if (tenantId) {
     const eventKey = FEATURE_EVENT_KEY[feature];
@@ -58,21 +78,23 @@ export async function FeatureUpgradeWall({
       </div>
       <div className="flex flex-col gap-2 max-w-sm">
         <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-          {t('planRequired')}
+          {t(isBusiness ? 'planRequiredBusiness' : 'planRequired')}
         </p>
         <h2 className="text-2xl font-bold">{t(`${feature}.title`)}</h2>
         <p className="text-muted-foreground">{t(`${feature}.desc`)}</p>
       </div>
       <div className="flex flex-col items-center gap-2">
         {canUpgrade ? (
-          <>
-            <Button asChild size="lg">
-              <Link href={checkoutUrl}>{t('upgradeCta')}</Link>
-            </Button>
-            <p className="text-xs text-muted-foreground">{t('trialNote')}</p>
-          </>
+          <Button asChild size="lg">
+            <Link href={checkoutUrl}>{t(isBusiness ? 'upgradeCtaBusiness' : 'upgradeCta')}</Link>
+          </Button>
         ) : (
           <p className="text-sm text-muted-foreground">{t('askOwner')}</p>
+        )}
+        {backHref && (
+          <Button asChild variant="ghost" size="lg">
+            <Link href={backHref}>{t('back')}</Link>
+          </Button>
         )}
       </div>
     </div>

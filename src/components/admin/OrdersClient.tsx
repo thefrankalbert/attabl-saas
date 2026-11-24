@@ -181,6 +181,17 @@ export default function OrdersClient({
     return result;
   }, [orders, statusFilter, debouncedSearch]);
 
+  // La fenetre de detail montre la commande TELLE QUE LA LISTE LA CONNAIT
+  // (requete `orders`, rafraichie par le temps reel et par onUpdate), pas la
+  // copie prise au clic: apres une annulation, un encaissement ou un changement
+  // de statut fait dans la fenetre, elle affichait encore l'ancien etat
+  // (verification visuelle du lot A, D2). La copie ne sert que si la commande
+  // n'est plus dans la page chargee.
+  const shownOrder = useMemo(
+    () => (selectedOrder ? (orders.find((o) => o.id === selectedOrder.id) ?? selectedOrder) : null),
+    [orders, selectedOrder],
+  );
+
   const getStatusConfig = useOrderStatusConfig();
 
   const handleStatusChange = useCallback(
@@ -245,7 +256,14 @@ export default function OrdersClient({
         />
 
         {/* Orders Table / Cards */}
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+        {/* tabIndex: la zone defile seule; au clavier elle doit pouvoir prendre le
+            focus pour defiler (axe: scrollable-region-focusable). */}
+        <div
+          className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          tabIndex={0}
+          role="region"
+          aria-label={t('title')}
+        >
           {orders.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <ShoppingBag className="w-10 h-10 text-app-text-muted mb-3" />
@@ -312,18 +330,19 @@ export default function OrdersClient({
 
         {/* Detail Modal */}
         <AdminModal
-          isOpen={!!selectedOrder}
+          isOpen={!!shownOrder}
           onClose={() => setSelectedOrder(null)}
-          title={selectedOrder ? `${tk('ticketOrder')} ${orderDisplayLabel(selectedOrder)}` : ''}
+          title={shownOrder ? `${tk('ticketOrder')} ${orderDisplayLabel(shownOrder)}` : ''}
           size="lg"
         >
-          {selectedOrder && (
+          {shownOrder && (
             <OrderDetails
-              order={selectedOrder}
+              order={shownOrder}
               onClose={() => setSelectedOrder(null)}
+              // Recharge la liste, donc la commande affichee (shownOrder), sans
+              // attendre le temps reel, qui peut manquer (connexion coupee).
               onUpdate={() => {
-                // Trigger a refresh logic if usually needed, but generic realtime handles it mostly.
-                // We can force status update in local state here if specialized logic requires it.
+                queryClient.invalidateQueries({ queryKey: ['orders', tenantId] });
               }}
               tenant={tenantSettings as Partial<import('@/types/admin.types').Tenant> | undefined}
               currency={(tenantSettings?.currency || 'XAF') as CurrencyCode}

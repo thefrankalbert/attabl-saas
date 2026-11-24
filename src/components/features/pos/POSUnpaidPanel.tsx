@@ -8,6 +8,7 @@ import { ListRowsSkeleton } from '@/components/admin/skeletons/ListRowsSkeleton'
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatCurrencyMinor } from '@/lib/utils/money';
+import { dueFor } from '@/services/payment.calc';
 import type { Order, CurrencyCode } from '@/types/admin.types';
 
 interface POSUnpaidPanelProps {
@@ -156,7 +157,18 @@ export default function POSUnpaidPanel({
                             {t('toSettleRemaining')}
                           </span>
                         )}
-                        {formatCurrencyMinor(order.amount_due ?? order.total_price ?? 0, currency)}
+                        {/* What the payment screen will ask for: total + the tip the
+                            customer already left (it used to show the total alone,
+                            5 000 here and 5 500 on the next screen). */}
+                        {formatCurrencyMinor(
+                          order.amount_due ??
+                            dueFor({
+                              total: order.total_price ?? 0,
+                              tip_amount: order.tip_amount ?? 0,
+                              display_currency: null,
+                            }),
+                          currency,
+                        )}
                       </span>
                     </Button>
                   </li>

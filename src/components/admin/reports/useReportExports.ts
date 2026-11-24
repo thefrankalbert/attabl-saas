@@ -79,13 +79,14 @@ export function useReportExports({
       doc.line(M, y, RIGHT, y);
       y += 12;
 
-      // --- Summary stats (3 columns) ---
+      // --- Summary stats (one column per figure) ---
       const stats: Array<[string, string]> = [
         [t('revenueLabel'), fmt(summary.revenue)],
         [t('orders'), String(summary.orders)],
         [t('averageBasket'), fmt(summary.avgBasket)],
+        [t('tipsLabel'), fmt(summary.tips)],
       ];
-      const colW = (RIGHT - M) / 3;
+      const colW = (RIGHT - M) / stats.length;
       stats.forEach(([label, value], i) => {
         const x = M + i * colW;
         doc.setFont('helvetica', 'bold');
@@ -93,7 +94,9 @@ export function useReportExports({
         doc.setTextColor(...FAINT);
         doc.text(label.toUpperCase(), x, y);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(15);
+        // 13 et non 15: quatre colonnes depuis la ligne des pourboires, un
+        // chiffre d'affaires a 8 chiffres doit tenir dans la sienne.
+        doc.setFontSize(13);
         doc.setTextColor(...INK);
         doc.text(value, x, y + 7);
       });
@@ -203,8 +206,10 @@ export function useReportExports({
       rows.push(`${t('activityReport')} - ${periodDisplayLabel}`);
       rows.push(`${t('generatedOn', { date: format(new Date(), 'dd/MM/yyyy HH:mm') })}`);
       rows.push('');
-      rows.push(`${t('revenueLabel')},${t('orders')},${t('averageBasket')}`);
-      rows.push(`${toMajor(summary.revenue)},${summary.orders},${toMajor(summary.avgBasket)}`);
+      rows.push(`${t('revenueLabel')},${t('orders')},${t('averageBasket')},${t('tipsLabel')}`);
+      rows.push(
+        `${toMajor(summary.revenue)},${summary.orders},${toMajor(summary.avgBasket)},${toMajor(summary.tips)}`,
+      );
       rows.push('');
       rows.push(`Date,${t('revenueLabel')},${t('orders')}`);
       dailyStats.forEach((d) => rows.push(`${d.date},${toMajor(d.revenue)},${d.orders}`));

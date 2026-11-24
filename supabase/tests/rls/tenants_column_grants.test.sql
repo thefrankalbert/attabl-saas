@@ -28,7 +28,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(3);
+select plan(5);
 
 select is(
   array(
@@ -65,7 +65,9 @@ select is(
 -- (constat C-069: les modes de paiement ne s'enregistraient jamais). Une colonne
 -- de facturation ou de droit du plan ne doit JAMAIS apparaitre ici.
 -- `custom_domain` en est volontairement absente: l'ouvrir est une decision de
--- securite (le routage des restaurants en depend), pas un oubli.
+-- securite (le routage des restaurants en depend), pas un oubli. `slug` aussi,
+-- pour la meme raison, depuis 20261123100400 (audit B117): un proprietaire qui
+-- prenait l'adresse `login` faisait servir sa page sur login.attabl.com.
 select is(
   array(
     select c.attname::text
@@ -80,11 +82,36 @@ select is(
     'enabled_payment_methods', 'establishment_details', 'establishment_type',
     'idle_timeout_minutes', 'logo_url', 'name', 'notification_sound_id',
     'onboarding_completed', 'onboarding_completed_at', 'opening_hours', 'phone',
-    'primary_color', 'screen_lock_mode', 'secondary_color', 'service_charge_rate', 'slug',
+    'primary_color', 'screen_lock_mode', 'secondary_color', 'service_charge_rate',
     'supported_currencies', 'table_count', 'tax_rate', 'updated_at'
   ]::text[],
   'tenants: authenticated ecrit exactement les colonnes de reglage, aucune de facturation'
 );
+
+-- Le comportement, pas seulement la liste (audit B117): un proprietaire avec
+-- sa session ne change pas l'adresse de son restaurant, mais garde son nom.
+insert into public.tenants (id, slug, name, is_active, currency, subscription_status) values
+  ('b1170000-0000-0000-0000-00000000000a', 'b117-resto', 'Resto B117', true, 'XOF', 'active');
+insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
+values ('e1170000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-000000000000',
+        'authenticated', 'authenticated', 'owner-b117@exemple.test', 'x', now(), now());
+insert into public.admin_users (id, user_id, tenant_id, email, role, is_active) values
+  ('d1170000-0000-0000-0000-00000000000a', 'e1170000-0000-0000-0000-00000000000a',
+   'b1170000-0000-0000-0000-00000000000a', 'owner-b117@exemple.test', 'owner', true);
+
+set local role authenticated;
+set local "request.jwt.claims" = '{"sub":"e1170000-0000-0000-0000-00000000000a","role":"authenticated"}';
+
+select throws_ok(
+  $$update public.tenants set slug = 'login' where id = 'b1170000-0000-0000-0000-00000000000a'$$,
+  '42501', NULL,
+  'un proprietaire ne peut pas changer l adresse (slug) de son restaurant');
+
+select lives_ok(
+  $$update public.tenants set name = 'Resto B117 renomme' where id = 'b1170000-0000-0000-0000-00000000000a'$$,
+  'temoin: le proprietaire peut toujours renommer son restaurant');
+
+reset role;
 
 select * from finish();
 rollback;

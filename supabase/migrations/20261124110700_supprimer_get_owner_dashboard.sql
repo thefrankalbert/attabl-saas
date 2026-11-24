@@ -1,0 +1,24 @@
+-- ============================================================================
+-- Audit B112 (Basse): suppression de la fonction `get_owner_dashboard`.
+--
+-- CE QUI NE TENAIT PAS. Fonction SECURITY DEFINER ouverte a `authenticated`
+-- (ACL de production lue le 2026-11-23), sans aucun appelant, et au calcul
+-- faux: elle additionne le total des commandes annulees dans le chiffre
+-- d'affaires du jour et du mois. Une surface d'attaque sans usage.
+--
+-- PREUVE D'ABSENCE D'APPELANT (2026-11-24): `rg get_owner_dashboard` sur tout
+-- le depot (src, tests, scripts, supabase) ne trouve que sa definition dans
+-- `supabase/schema.sql`, sa mention dans
+-- `20260622140000_secdef_function_grants_hardening.sql` et deux documents
+-- d'audit. Temoin positif: la meme recherche sur `get_stock_status` trouve bien
+-- son appelant `src/services/inventory.service.ts`. Elle n'apparait pas dans
+-- `src/types/database.generated.ts`.
+--
+-- ORDRE DE DEPLOIEMENT: peut passer AVANT le code en ligne (aucun code ne
+-- l'appelle).
+--
+-- ROLLBACK: recreer la fonction depuis `supabase/schema.sql` (definition et
+-- droits), deconseille.
+-- ============================================================================
+
+DROP FUNCTION IF EXISTS public.get_owner_dashboard(uuid);

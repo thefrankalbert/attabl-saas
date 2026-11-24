@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
-import { subDays, startOfDay, endOfDay, startOfMonth, subMonths, startOfYear } from 'date-fns';
+import { getDayStartInZone } from '@/lib/timezones';
 import { logger } from '@/lib/logger';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
@@ -33,6 +33,14 @@ interface ServerStats {
   orders: number;
   revenue: number;
   avgOrder: number;
+  tips: number;
+}
+
+interface ReportSummaryShape {
+  revenue: number;
+  orders: number;
+  avgBasket: number;
+  tips: number;
 }
 
 interface ReportData {
@@ -40,43 +48,64 @@ interface ReportData {
   topItems: TopItem[];
   categories: CategoryBreakdown[];
   serverStats: ServerStats[];
-  summary: { revenue: number; orders: number; avgBasket: number };
-  previousSummary: { revenue: number; orders: number; avgBasket: number };
+  summary: ReportSummaryShape;
+  previousSummary: ReportSummaryShape;
 }
 
-export function getDateRange(p: Period) {
+/** Annee, mois (1-12) et jour du calendrier du restaurant a l'instant `at`. */
+function localYmd(timezone: string, at: Date): { y: number; m: number; d: number } {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(at);
+  const get = (type: string) => Number(parts.find((x) => x.type === type)?.value);
+  return { y: get('year'), m: get('month'), d: get('day') };
+}
+
+/**
+ * Bornes d'une periode de rapport, au calendrier du RESTAURANT (fuseau
+ * `timezone`, resolu par resolveTenantTimezone), jamais a celui de l'appareil:
+ * un gerant dont le telephone est regle sur un autre fuseau voyait une
+ * "journee" decalee (contre-audit du lot 4). Les bornes sont des instants
+ * absolus (ISO avec Z). La periode precedente est contigue (prevEnd = start - 1 ms).
+ */
+export function getDateRange(p: Period, timezone: string) {
   const now = new Date();
+  const dayStart = (daysAgo: number, at: Date = now) => getDayStartInZone(timezone, daysAgo, at);
   let start: Date;
   let end: Date = now;
 
   switch (p) {
     case 'today':
-      start = startOfDay(now);
-      break;
-    case '7d':
-      start = startOfDay(subDays(now, 6));
+      start = dayStart(0);
       break;
     case '30d':
-      start = startOfDay(subDays(now, 29));
+      start = dayStart(29);
       break;
     case '90d':
-      start = startOfDay(subDays(now, 89));
+      start = dayStart(89);
       break;
     case 'thisMonth':
-      start = startOfMonth(now);
+      start = dayStart(localYmd(timezone, now).d - 1);
       break;
     case 'lastMonth': {
-      const lastM = subMonths(now, 1);
-      start = startOfMonth(lastM);
-      // Whole last day of last month, up to 23:59:59.999 local.
-      end = endOfDay(subDays(startOfMonth(now), 1));
+      // Toute la journee du dernier jour du mois precedent, jusqu'a la
+      // derniere milliseconde avant minuit (heure du restaurant).
+      const monthStart = dayStart(localYmd(timezone, now).d - 1);
+      end = new Date(monthStart.getTime() - 1);
+      start = dayStart(localYmd(timezone, end).d - 1, end);
       break;
     }
-    case 'thisYear':
-      start = startOfYear(now);
+    case 'thisYear': {
+      const { y, m, d } = localYmd(timezone, now);
+      start = dayStart(Math.round((Date.UTC(y, m - 1, d) - Date.UTC(y, 0, 1)) / 86_400_000));
       break;
+    }
+    case '7d':
     default:
-      start = startOfDay(subDays(now, 6));
+      start = dayStart(6);
   }
 
   const daysDiff = Math.max(
@@ -84,15 +113,8 @@ export function getDateRange(p: Period) {
     1,
   );
   const prevEnd = new Date(start.getTime() - 1);
-  const prevStart = startOfDay(subDays(prevEnd, daysDiff - 1));
+  const prevStart = dayStart(daysDiff - 1, prevEnd);
 
-  // Serialize as absolute UTC instants. The boundaries are computed in the
-  // browser's local timezone - which is the restaurant's timezone - so the
-  // instant is correct. Previously we emitted offset-less 'yyyy-MM-ddT00:00:00'
-  // strings, which Postgres (TIMESTAMPTZ, UTC session) read as UTC - shifting
-  // every window by the local offset (e.g. ~1h in Cameroon UTC+1), so "today"
-  // dropped 00:00-01:00 local orders and leaked the next day's early orders,
-  // and daily totals never reconciled against a drawer closed at local midnight.
   return {
     startDate: start.toISOString(),
     endDate: end.toISOString(),
@@ -108,43 +130,68 @@ export function getDateRange(p: Period) {
  * yields undefined for every field and silently zeroes the KPI cards. Read the
  * first row; tolerate a bare object in case a caller ever uses .single().
  */
-export function parseOrderSummary(data: unknown): {
-  revenue: number;
-  orders: number;
-  avgBasket: number;
-} {
+export function parseOrderSummary(data: unknown): ReportSummaryShape {
   const row = (Array.isArray(data) ? data[0] : data) as {
     total_revenue?: number;
     total_orders?: number;
     avg_basket?: number;
+    total_tips?: number;
   } | null;
   return {
     revenue: Number(row?.total_revenue) || 0,
     orders: Number(row?.total_orders) || 0,
     avgBasket: Math.round(Number(row?.avg_basket) || 0),
+    // Pourboires des commandes soldees sur la periode (orders.paid_at). Ce n'est
+    // pas une part de `revenue`, qui suit la date de chaque ligne du registre.
+    tips: Number(row?.total_tips) || 0,
   };
+}
+
+/**
+ * Normalize get_server_performance rows (server_id, server_name, orders,
+ * revenue, tips - ordered by orders desc). avgOrder is cheap client-side math.
+ * `tips` defaults to 0 so an older function without the column still renders.
+ */
+export function parseServerPerformance(data: unknown): ServerStats[] {
+  if (!Array.isArray(data)) return [];
+  return (data as { server_name: string; orders: number; revenue: number; tips?: number }[]).map(
+    (s) => {
+      const orders = Number(s.orders) || 0;
+      const revenue = Number(s.revenue) || 0;
+      return {
+        serverName: s.server_name,
+        orders,
+        revenue,
+        avgOrder: orders > 0 ? Math.round(revenue / orders) : 0,
+        tips: Number(s.tips) || 0,
+      };
+    },
+  );
 }
 
 /**
  * Fetch report data using Supabase RPCs.
  * Matches the queries in ReportsClient loadData().
  */
-export function useReportData(tenantId: string, period: Period) {
+export function useReportData(tenantId: string, period: Period, timezone: string) {
   const queryClient = useQueryClient();
 
   const query = useQuery<ReportData>({
-    queryKey: ['report-data', tenantId, period],
+    queryKey: ['report-data', tenantId, period, timezone],
     queryFn: async () => {
       const supabase = createClient();
-      const { startDate, endDate, prevStartDate, prevEndDate } = getDateRange(period);
+      const { startDate, endDate, prevStartDate, prevEndDate } = getDateRange(period, timezone);
 
       let dailyRes, topRes, summaryRes, prevSummaryRes;
       try {
         [dailyRes, topRes, summaryRes, prevSummaryRes] = await Promise.all([
+          // Jours au calendrier du restaurant (pas en UTC): une vente a 0 h 30
+          // heure locale tombe sur la bonne barre.
           supabase.rpc('get_daily_revenue', {
             p_tenant_id: tenantId,
             p_start_date: startDate,
             p_end_date: endDate,
+            p_timezone: timezone,
           }),
           supabase.rpc('get_top_items', {
             p_tenant_id: tenantId,
@@ -239,27 +286,8 @@ export function useReportData(tenantId: string, period: Period) {
         });
       }
 
-      // Server performance (RPC returns: server_id, server_name, orders, revenue
-      // - ordered by orders desc). avgOrder is cheap client-side math.
-      let serverStats: ServerStats[] = [];
-      if (!serverRes.error && serverRes.data) {
-        const rows = serverRes.data as {
-          server_id: string;
-          server_name: string;
-          orders: number;
-          revenue: number;
-        }[];
-        serverStats = rows.map((s) => {
-          const orders = Number(s.orders) || 0;
-          const revenue = Number(s.revenue) || 0;
-          return {
-            serverName: s.server_name,
-            orders,
-            revenue,
-            avgOrder: orders > 0 ? Math.round(revenue / orders) : 0,
-          };
-        });
-      }
+      // Server performance: rows ordered by orders desc (see parseServerPerformance).
+      const serverStats = serverRes.error ? [] : parseServerPerformance(serverRes.data);
 
       return { dailyStats, topItems, categories, serverStats, summary, previousSummary };
     },

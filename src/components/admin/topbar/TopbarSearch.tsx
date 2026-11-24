@@ -30,13 +30,18 @@ export function TopbarSearch({ className }: { className?: string }) {
       type="button"
       variant="ghost"
       onClick={openPalette}
+      // Le libelle est coupe en ellipsis sur tablette: l'infobulle le donne entier.
+      // (pas d'aria-label: le texte visible, raccourci compris, sert deja de nom)
+      title={tc('placeholder')}
       className={cn(
         'hidden h-8 min-w-0 max-w-[380px] flex-1 items-center justify-start gap-2 rounded-[0.625rem] border border-[var(--border)] bg-[var(--background)] px-2.5 text-[13px] font-normal text-[var(--muted-foreground)] shadow-none hover:bg-[var(--accent)] hover:text-[var(--foreground)] md:inline-flex',
         className,
       )}
     >
       <Search className="size-[15px] shrink-0" />
-      <span className="flex-1 truncate text-left">{tc('placeholder')}</span>
+      <span className="flex-1 truncate text-left" data-troncature-voulue="">
+        {tc('placeholder')}
+      </span>
       <span className="rounded-[5px] border border-[var(--border)] px-[5px] py-px font-mono text-[11px] text-[var(--muted-foreground)]">
         ⌘K
       </span>

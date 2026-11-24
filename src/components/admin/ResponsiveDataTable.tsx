@@ -1,8 +1,15 @@
 'use client';
 
+import { useSyncExternalStore } from 'react';
 import { useDevice } from '@/hooks/useDevice';
+import { createMediaStore } from '@/contexts/DeviceContext';
+import { MEDIA_QUERIES } from '@/lib/layout/breakpoints';
 import { DataTable, SortableHeader } from '@/components/admin/DataTable';
 import type { ColumnDef, VisibilityState } from '@tanstack/react-table';
+
+// Tableaux trop larges pour une tablette (inventaire: 900 px pour 660 de
+// place a 1024): cartes jusqu'a xl au lieu d'un tableau coupe a droite.
+const belowXlStore = createMediaStore(MEDIA_QUERIES.belowXl);
 
 // --- Types ----------------------------------------------
 
@@ -24,6 +31,8 @@ interface ResponsiveDataTableProps<TData> {
   storageKey?: string;
   /** Column visibility map - hide specific columns on certain screen sizes */
   columnVisibility?: VisibilityState;
+  /** Cartes aussi sur tablette et petit ordinateur (< 1280 px), pour un tableau trop large. */
+  cardsBelowXl?: boolean;
 }
 
 // --- Component ------------------------------------------
@@ -38,11 +47,17 @@ export function ResponsiveDataTable<TData>({
   mobileConfig,
   storageKey,
   columnVisibility,
+  cardsBelowXl = false,
 }: ResponsiveDataTableProps<TData>) {
   const { isMobile } = useDevice();
+  const belowXl = useSyncExternalStore(
+    belowXlStore.subscribe,
+    belowXlStore.getSnapshot,
+    belowXlStore.getServerSnapshot,
+  );
 
   // Mobile card view
-  if (isMobile && mobileConfig) {
+  if ((isMobile || (cardsBelowXl && belowXl)) && mobileConfig) {
     if (isLoading) {
       return (
         <div className="space-y-3">
@@ -58,7 +73,7 @@ export function ResponsiveDataTable<TData>({
     }
 
     return (
-      <div className="space-y-3">
+      <div className="space-y-3" data-testid="responsive-cards">
         {data.map((row, i) => (
           <div
             key={i}

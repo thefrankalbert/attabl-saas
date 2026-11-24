@@ -268,6 +268,12 @@
     "statusButtonReady": "Prêt à servir",
     "statusButtonCheckout": "Encaisser",
     "statusButtonServed": "Marquer servie",
+    "cancelOrderButton": "Annuler la commande",
+    "cancelOrderTitle": "Annuler cette commande ?",
+    "cancelOrderDescription": "La commande passe en annulée. Les paiements déjà reçus restent au registre.",
+    "cancelOrderKeep": "Garder la commande",
+    "cancelOrderDone": "Commande annulée",
+    "cancelOrderFailed": "Annulation impossible",
     "statusLabel": "Statut",
     "printLabel": "Impression",
     "printKitchenTicket": "Ticket Cuisine",
@@ -307,10 +313,10 @@
   "marketing": {
     "pricing": {
       "metaTitle": "Attabl - Tarifs simples pour la restauration",
-      "metaDescription": "Des prix clairs pour chaque établissement. Starter, Pro, Business ou Enterprise. Essai gratuit 14 jours sur le plan Pro.",
+      "metaDescription": "Des prix clairs pour chaque établissement. Starter, Pro, Business ou Enterprise. Essai gratuit 14 jours avec toutes les fonctionnalités.",
       "hero": {
         "title": "Un prix clair. Pas de surprise.",
-        "subtitle": "14 jours d'essai gratuit sur tous les plans. Vous testez tout avant de payer.",
+        "subtitle": "14 jours d'essai gratuit, quel que soit le plan choisi. Pendant l'essai, vous avez tout : caisse, écran cuisine, stock, tables, rapports, livraison, service en chambre.",
         "eyebrow": "Tarifs"
       },
       "billing": {
@@ -328,18 +334,12 @@
           "subtitle": "Pour les restaurateurs qui veulent digitaliser sans se compliquer la vie.",
           "button": "Essayer gratuitement",
           "featuresTitle": "Inclus dans STARTER",
-          "benefits": {
-            "b1": "Menu QR bilingue (FR/EN)",
-            "b2": "POS basique (cash + carte)",
-            "b3": "1 admin, 3 staff",
-            "b4": "Support email"
-          },
           "features": {
             "f1": "Menu QR digital bilingue",
             "f2": "Commandes sur place et à emporter",
             "f3": "POS cash et carte bancaire",
             "f4": "Dashboard (CA, commandes)",
-            "f5": "1 établissement, 2 menus"
+            "f5": "1 établissement, 1 admin, 3 employés"
           }
         },
         "pro": {
@@ -348,12 +348,6 @@
           "subtitle": "Pour ceux qui servent plus de 50 couverts par jour et veulent tout contrôler.",
           "button": "Essayer gratuitement",
           "featuresTitle": "Inclus dans PRO",
-          "benefits": {
-            "b1": "Tout STARTER + KDS, tables, stock",
-            "b2": "Multi-devises (XAF, EUR, USD)",
-            "b3": "Essai gratuit 14 jours sans CB",
-            "b4": "Support WhatsApp 24h"
-          },
           "features": {
             "f1": "Tout ce qui est dans STARTER",
             "f2": "KDS (écran cuisine)",
@@ -361,33 +355,25 @@
             "f4": "Gestion de stock et alertes",
             "f5": "Fiches techniques (coût matière)",
             "f6": "Suivi fournisseurs",
-            "f7": "Mobile money et pourboires",
+            "f7": "Pourboires et multi-devises",
             "f8": "Rapports de vente et best-sellers",
             "f9": "Gestion équipe (rôles, permissions)",
-            "f10": "10 menus, 10 staff"
+            "f10": "2 établissements, 2 admins, 15 employés"
           }
         },
         "business": {
           "badge": "Multi-sites",
           "title": "BUSINESS",
-          "subtitle": "Hôtel, chaîne ou multi-sites : un seul dashboard pour tout piloter.",
+          "subtitle": "Hôtel, livraison, plusieurs établissements : tout est inclus.",
           "primaryButton": "Essayer gratuitement",
           "secondaryButton": "Demander une démo",
           "featuresTitle": "Inclus dans BUSINESS",
-          "benefits": {
-            "b1": "Tout PRO + jusqu'à 10 sites",
-            "b2": "Room service et delivery",
-            "b3": "Rapports avancés et multi-sites",
-            "b4": "Support prioritaire 4h"
-          },
           "features": {
             "f1": "Tout ce qui est dans PRO",
             "f2": "Room service digital",
             "f3": "Commandes delivery",
-            "f4": "Rapports avancés",
-            "f5": "Rapports multi-sites",
-            "f6": "Jusqu'à 10 établissements",
-            "f7": "99 admins, 999 staff, 99 menus"
+            "f4": "Jusqu'à 10 établissements",
+            "f5": "Admins et employés illimités"
           }
         },
         "enterprise": {
@@ -396,12 +382,6 @@
           "subtitle": "Pour les groupes, franchises et chaînes qui gèrent plusieurs sites.",
           "button": "Contactez-nous",
           "featuresTitle": "Inclus dans ENTERPRISE",
-          "benefits": {
-            "b1": "Tout BUSINESS + sites illimités",
-            "b2": "SLA 99.9% garanti",
-            "b3": "Account manager dédié",
-            "b4": "Support téléphone 1h + API sur mesure"
-          },
           "features": {
             "f1": "Tout ce qui est dans BUSINESS",
             "f2": "Établissements illimités",
@@ -432,7 +412,6 @@
             "title": "Encaissement",
             "features": {
               "pos": "POS (cash + carte)",
-              "mobileMoney": "Mobile money",
               "multiCurrency": "Multi-devises (XAF, EUR, USD)",
               "tips": "Pourboires intégrés"
             }
@@ -460,8 +439,9 @@
               "dashboard": "Dashboard (CA, commandes)",
               "salesReports": "Rapports de vente",
               "bestSellers": "Best-sellers",
-              "advancedReports": "Rapports avancés",
-              "multiSiteReports": "Rapports multi-sites"
+              "advancedReports": "Rapports avancés (marge par plat, heures fortes, comparaison, paiements, pertes)",
+              "venueReports": "Rapports par espace (terrasse, bar, bord de piscine...)",
+              "aiSuggestions": "Suggestions automatiques (IA)"
             }
           },
           "team": {
@@ -487,7 +467,6 @@
           "volumes": {
             "title": "Volumes",
             "features": {
-              "monthlyOrders": "Commandes / mois",
               "menus": "Menus",
               "items": "Articles"
             }
@@ -499,11 +478,11 @@
         "items": {
           "q1": {
             "question": "Comment fonctionne l'essai gratuit ?",
-            "answer": "14 jours d'accès complet au plan PRO. Sans carte bancaire. Vous testez tout : KDS, POS, stock, tables."
+            "answer": "Pendant 14 jours, vous testez tout, sans carte bancaire : caisse, écran cuisine, stock, tables, rapports, livraison, service en chambre et analyses IA. Ensuite, vous choisissez votre plan ou vous arrêtez."
           },
           "q2": {
             "question": "Que se passe-t-il après les 14 jours ?",
-            "answer": "Votre menu reste visible pour vos clients. Votre dashboard passe en lecture seule. Choisissez un plan pour reprendre le contrôle."
+            "answer": "Les nouvelles commandes s'arrêtent. Votre espace de gestion se ferme et vous mène au choix d'un plan. Vos clients voient encore votre carte pendant 7 jours, sans pouvoir commander. Vos données restent intactes : choisissez un plan et tout repart."
           },
           "q3": {
             "question": "Puis-je changer de plan ?",
@@ -515,7 +494,7 @@
           },
           "q5": {
             "question": "Comment je paie ?",
-            "answer": "Par carte bancaire (Visa, Mastercard) via Stripe. Paiement sécurisé."
+            "answer": "Par mobile money (Orange Money, MTN MoMo, Moov, Wave) ou par carte bancaire (Visa, Mastercard). Paiement sécurisé."
           },
           "q6": {
             "question": "Je dois acheter du matériel ?",
@@ -554,8 +533,8 @@
       "billedTotal": "{total} FCFA au total",
       "perDay": "soit ~{amount} FCFA par jour",
       "essai": {
-        "title": "Pendant les 14 jours, vous testez tout.",
-        "body": "L'essai donne un accès complet à l'offre Pro, sans carte bancaire. Vous jugez sur votre propre service.",
+        "title": "Pendant 14 jours, vous testez tout.",
+        "body": "Toutes les fonctionnalités sont ouvertes, sans carte bancaire. Vous jugez sur votre propre service.",
         "f1": "Écran cuisine",
         "f2": "Caisse",
         "f3": "Stock et recettes",
@@ -605,7 +584,7 @@
         "p2cta": "Prenez Pro",
         "p3tag": "Vous grandissez",
         "p3title": "Hôtel, plusieurs établissements",
-        "p3body": "Service en chambre, livraison, rapports multi-sites et support prioritaire. Une console pour tout.",
+        "p3body": "Service en chambre, livraison, jusqu'à 10 établissements et support prioritaire.",
         "p3cta": "Passez en Business",
         "help": "Un doute sur le bon choix ?",
         "helpLink": "On vous aide à décider"
@@ -690,7 +669,6 @@
       "cookieAuth": "Cookies de connexion (Supabase) : gardent votre session ouverte. Indispensables.",
       "cookieLocale": "NEXT_LOCALE : retient la langue choisie, un an.",
       "cookieRecovery": "attabl_recovery : sécurise le changement de mot de passe, 15 minutes, invisible pour les scripts du site.",
-      "cookieAb": "attabl_ab_id et attabl_ab_trial : une seule fois, pour tester la durée de l'essai gratuit (7 ou 14 jours) sur les pages d'inscription, 60 jours. Aucune information sur vous n'est associée.",
       "cookieStorage": "Stockage local du navigateur : thème clair ou sombre, préférences d'affichage, devise, panier d'un client. Ces données restent sur votre appareil.",
       "cookieSentry": "Si une erreur survient, Sentry peut enregistrer la session en cours pour nous aider à la corriger.",
       "section8Title": "8. Combien de temps nous gardons vos données",
@@ -880,60 +858,166 @@
     "home": {
       "hero": {
         "title": "Votre restaurant,\nsous contrôle.",
-        "subtitle": "Votre caisse, vos commandes, vos stocks. Une seule application.",
-        "ctaPrimary": "Essayer gratuitement",
-        "ctaDemo": "Demander une démo",
-        "trust": "14 jours gratuits - Aucune carte bancaire requise",
-        "imageAlt": "Le tableau de bord Attabl : ticket moyen, tables actives, codes QR et revenus par canal de vente"
+        "subtitle": "Caisse, commandes, cuisine et stock dans une seule application. Même quand internet coupe.",
+        "ctaPrimary": "Essai gratuit",
+        "ctaWhatsapp": "Nous contacter",
+        "proof": "Ils tiennent leur service avec Attabl",
+        "clientLogoAlt": "Radisson Blu N'Djamena"
       },
-      "stock": {
-        "badge": "Stock & inventaire",
-        "title": "Le stock ne vous surprend plus.",
-        "body": "Chaque produit, son niveau, son coût. Une alerte tombe avant la rupture, et le coût matière reste sous vos yeux, recette par recette.",
-        "link": "Voir la gestion de stock",
-        "browserLabel": "Inventaire",
-        "imageAlt": "Tableau de l'inventaire : stock actuel, seuil d'alerte, coût unitaire et statut de chaque produit"
+      "mosaic": {
+        "title": "Du premier couvert au dernier ticket, Attabl suit le rythme.",
+        "images": {
+          "patron": "Patron d'un restaurant dans sa salle",
+          "poisson": "Filet de capitaine dressé",
+          "bar": "Barmaid au bar d'un hôtel",
+          "douceurs": "Vitrine de pâtisseries fines",
+          "dressage": "Chef qui dresse une assiette",
+          "chef": "Chef en veste blanche au passe",
+          "associes": "Une cheffe et un gérant associés",
+          "verres": "Verrerie d'un bar d'hôtel",
+          "accueil": "Hôtesse à l'accueil d'un restaurant",
+          "serveuse": "Serveuse, sa tablette en main",
+          "comptoir": "Tablette Attabl au comptoir",
+          "gerante": "Gérante d'une pâtisserie",
+          "bureau": "Gérante devant le tableau de bord Attabl",
+          "pintade": "Suprême de pintade dressé",
+          "rire": "Serveuse qui rit avec une cliente",
+          "laiton": "Lampe en laiton au-dessus du passe",
+          "tasses": "Cafés servis au comptoir"
+        }
       },
-      "showcase": {
-        "title": "Un seul écran pour tout le service.",
-        "subtitle": "De la commande à la caisse, de la cuisine au fournisseur. Pensé pour le rythme d'un vrai restaurant.",
-        "tabs": {
-          "dashboard": {
-            "title": "Tableau de bord",
-            "desc": "Chiffre du jour, ticket moyen, tables actives, revenus par canal."
+      "range": {
+        "eyebrow": "La gamme Attabl",
+        "title": "Une installation à votre mesure.",
+        "intro": "Une tablette au comptoir, une dans la main de chaque serveur, une en cuisine, et le bureau du patron. Tout reste synchronisé, même hors ligne.",
+        "cards": {
+          "comptoir": {
+            "name": "Attabl Comptoir",
+            "title": "La caisse qui tient le rush.",
+            "body": "Prise de commande, encaissement en espèces ou par carte, ticket imprimé. Sur l'iPad ou la tablette que vous avez déjà.",
+            "points": {
+              "p1": "Commandes sur place, à emporter, livraison et chambre dans une seule file",
+              "p2": "Ticket de caisse et addition imprimés au comptoir",
+              "p3": "Continue de vendre quand internet coupe"
+            },
+            "cta": "Découvrir Attabl Comptoir",
+            "imageAlt": "Une main encaisse une commande sur la tablette Attabl posée au comptoir, à côté de l'imprimante à tickets"
           },
-          "orders": {
-            "title": "Commandes",
-            "desc": "Sur place, à emporter, livraison ou chambre. Tout dans une file."
+          "service": {
+            "name": "Attabl Service",
+            "title": "La commande part de la table.",
+            "body": "Chaque serveur prend la commande sur sa petite tablette. Elle arrive en cuisine et en caisse au même instant. Personne ne recopie rien.",
+            "points": {
+              "p1": "Plan de salle et tables assignées à chaque serveur",
+              "p2": "La commande part en cuisine dès qu'elle est prise",
+              "p3": "Le statut de chaque commande en direct : en attente, en préparation, prête"
+            },
+            "cta": "Découvrir Attabl Service",
+            "imageAlt": "Serveuse souriante qui tient sa tablette Attabl"
           },
-          "kitchen": {
-            "title": "Écran cuisine",
-            "desc": "Les tickets arrivent à la cuisine, dans le bon ordre, sans papier."
+          "cuisine": {
+            "name": "Attabl Cuisine",
+            "title": "Fini les tickets perdus.",
+            "body": "Une tablette au passe. Chaque commande s'affiche avec son heure et sa table. Le chef voit ce qui attend, ce qui cuit, ce qui part.",
+            "points": {
+              "p1": "Tickets classés par statut : en attente, en préparation, prêt",
+              "p2": "Temps écoulé visible sur chaque commande",
+              "p3": "La salle est prévenue quand le plat est prêt"
+            },
+            "cta": "Découvrir Attabl Cuisine",
+            "imageAlt": "Chef qui nappe un capitaine sur attiéké, la tablette Attabl Cuisine au passe"
           },
-          "stock": {
-            "title": "Stock & inventaire",
-            "desc": "Niveaux, seuils d'alerte et coût matière, toujours à jour."
+          "bureau": {
+            "name": "Attabl Bureau",
+            "title": "Votre activité, d'un coup d'œil.",
+            "body": "Le chiffre du jour, le ticket moyen, le stock et les fournisseurs. Sur l'ordinateur du bureau, pour un ou plusieurs établissements.",
+            "points": {
+              "p1": "Rapports de vente et meilleurs plats",
+              "p2": "Stock, fiches techniques et coût matière par plat",
+              "p3": "Équipe, rôles et accès de chacun"
+            },
+            "cta": "Découvrir Attabl Bureau",
+            "imageAlt": "Gérante d'hôtel qui consulte le tableau de bord Attabl sur son ordinateur"
+          }
+        },
+        "menu": {
+          "name": "Attabl Menu",
+          "title": "Vos clients commandent depuis leur table.",
+          "body": "Ils scannent le QR code, consultent votre carte en français ou en anglais, et commandent. La commande arrive directement en cuisine.",
+          "cta": "Découvrir Attabl Menu"
+        }
+      },
+      "local": {
+        "eyebrow": "Fait pour ici",
+        "title": "La caisse qui tient le service, même quand internet lâche.",
+        "items": {
+          "offline": {
+            "title": "Hors ligne",
+            "body": "La caisse continue en local et se remet à jour toute seule au retour du réseau. Vous ne perdez rien."
+          },
+          "fcfa": {
+            "title": "En FCFA",
+            "body": "Du menu au rapport de fin de journée, tout est pensé pour votre monnaie et vos habitudes."
+          },
+          "whatsapp": {
+            "title": "Sur WhatsApp",
+            "body": "Une vraie personne vous répond et forme votre équipe, sur place ou à distance."
+          },
+          "ready": {
+            "title": "Prêt en 2 minutes",
+            "body": "Votre compte est créé en 2 minutes et votre menu est en ligne le jour même."
           }
         }
       },
-      "allInOne": {
-        "title": "Tout ce qu'il faut, dans une seule application.",
-        "subtitle": "Six familles de fonctionnalités, du menu en ligne aux rapports multi-établissements.",
-        "chips": {
-          "menu": "Menu & commandes",
-          "register": "Caisse & encaissement",
-          "kitchen": "Cuisine & production",
-          "stock": "Stock & fournisseurs",
-          "reports": "Rapports & statistiques",
-          "team": "Équipe & organisation"
-        },
-        "link": "Toutes les fonctionnalités"
+      "audience": {
+        "eyebrow": "Pour qui",
+        "title": "Restaurants, hôtels, bars et cafés.",
+        "items": {
+          "restaurants": {
+            "title": "Restaurants",
+            "body": "Salle, emporter et livraison dans une seule file. La cuisine et la caisse voient la même chose.",
+            "imageAlt": "Hôtesse qui encaisse un client à l'accueil du restaurant"
+          },
+          "hotels": {
+            "title": "Hôtels",
+            "body": "Restaurant, bar et room service. Chaque point de vente a sa caisse, un seul tableau de bord pour tout piloter.",
+            "imageAlt": "Barmaid au bar d'un grand hôtel"
+          },
+          "bars": {
+            "title": "Bars et cafés",
+            "body": "Des commandes rapides au comptoir et un stock de boissons qui tombe juste à la fin de la soirée.",
+            "imageAlt": "Serveuse et cliente au bar à café"
+          }
+        }
       },
       "pricing": {
+        "eyebrow": "Tarifs",
         "title": "Un prix clair. Sans engagement.",
-        "body": "À partir de {price} par mois, soit environ {perDay} par jour. Essai 14 jours, sans carte bancaire.",
-        "ctaPrimary": "Voir les tarifs",
-        "ctaSecondary": "Comparer les offres"
+        "trial": "14 jours d'essai gratuit. Sans carte bancaire.",
+        "perMonth": "FCFA / mois",
+        "perDay": "soit environ {perDay} par jour",
+        "cta": "Essayer gratuitement",
+        "plans": {
+          "starter": {
+            "name": "Starter",
+            "desc": "Pour digitaliser sans se compliquer la vie."
+          },
+          "pro": {
+            "name": "Pro",
+            "badge": "Essai 14 jours",
+            "desc": "Pour plus de 50 couverts par jour."
+          },
+          "business": {
+            "name": "Business",
+            "desc": "Hôtel, chaîne ou plusieurs sites.",
+            "note": "un seul tableau de bord pour tout piloter"
+          }
+        },
+        "enterprise": {
+          "title": "Enterprise.",
+          "body": "Groupes, franchises et chaînes : un tarif sur mesure."
+        },
+        "compare": "Comparer les offres"
       },
       "faq": {
         "title": "Ce qu'on nous demande avant de signer.",
@@ -959,9 +1043,8 @@
       "finalCta": {
         "title": "Votre commerce mérite mieux qu'un carnet et une calculette.",
         "subtitle": "Compte créé en 2 minutes. Votre menu en ligne aujourd'hui.",
-        "ctaPrimary": "Lancer mon restaurant, gratuitement",
-        "whatsapp": "Écrire sur WhatsApp",
-        "trust": "14 jours gratuits - Aucune carte bancaire requise"
+        "ctaPrimary": "Essai gratuit",
+        "whatsapp": "Nous contacter"
       }
     },
     "header": {
@@ -1191,7 +1274,7 @@
           "points": {
             "p1": "Service en chambre depuis la chambre",
             "p2": "Plusieurs points de vente (resto, bar)",
-            "p3": "Rapports avancés multi-établissements",
+            "p3": "Jusqu'à 10 établissements dans un seul compte",
             "p4": "Livraison intégrée"
           },
           "offerWhy": "Service en chambre, livraison et multi-établissements arrivent avec l'offre Business."
@@ -1249,7 +1332,7 @@
         "subtitle": "Compte créé en 2 minutes. Votre menu en ligne aujourd'hui.",
         "s1": {
           "title": "Créez votre compte",
-          "body": "2 minutes, sans carte bancaire. 14 jours d'accès complet à l'offre Pro."
+          "body": "2 minutes, sans carte bancaire. 14 jours pour tout tester."
         },
         "s2": {
           "title": "Montez votre carte",
@@ -1501,7 +1584,7 @@
           },
           "q6": {
             "q": "Y a-t-il un engagement ?",
-            "a": "Non. Vous testez 14 jours gratuitement, puis vous payez au mois. Sans contrat sur le matériel."
+            "a": "Non. Vous testez 14 jours gratuitement, puis vous payez au mois ou à l'année. Sans contrat sur le matériel."
           }
         }
       },
@@ -2218,9 +2301,11 @@
     },
     "upgradeWall": {
       "planRequired": "Fonctionnalité Pro",
-      "upgradeCta": "Passer au Pro - 14j gratuits",
+      "upgradeCta": "Passer au Pro",
+      "planRequiredBusiness": "Fonctionnalité Business",
+      "upgradeCtaBusiness": "Passer au Business",
       "askOwner": "Le propriétaire du restaurant peut activer cette fonction.",
-      "trialNote": "Disponible gratuitement pendant votre essai Pro",
+      "back": "Retour au tableau de bord",
       "kds": {
         "title": "Écran cuisine (KDS)",
         "desc": "Les commandes arrivent directement sur l'écran de votre cuisine. Vos cuisiniers ne lisent plus les tickets. Moins d'erreurs, service plus rapide."
@@ -2244,6 +2329,14 @@
       "tables": {
         "title": "Gestion des tables",
         "desc": "Créez vos zones, numérotez vos tables, un QR par table. Chaque commande arrive avec le bon numéro."
+      },
+      "advancedReports": {
+        "title": "Rapports avancés",
+        "desc": "Marge de chaque plat, heures fortes, comparaison avec la semaine ou le mois d'avant, moyens de paiement et pertes. Tout ce qu'il faut pour décider."
+      },
+      "venueReports": {
+        "title": "Rapports par espace",
+        "desc": "Terrasse, bar, piscine: voyez ce que chaque espace rapporte. Chiffre d'affaires, commandes, ticket moyen et meilleures ventes, côte à côte."
       }
     }
   },
@@ -2333,6 +2426,7 @@
     "recipeSaveError": "Erreur lors de l'enregistrement de la recette",
     "recipeQtyRequired": "Indiquez une quantité supérieure à 0 pour chaque ingrédient",
     "recipeDuplicateIngredient": "Chaque ingrédient ne peut apparaitre qu'une fois",
+    "recipeIngredientLabel": "Ingrédient",
     "recipeAllIngredientsUsed": "Tous vos produits sont déjà dans cette fiche",
     "recipeReadOnlyHint": "Vous pouvez consulter les fiches. Seuls les responsables stock peuvent les modifier.",
     "goToInventory": "Gérer les produits en stock",
@@ -2675,7 +2769,6 @@
     "reactivate": "Réactiver",
     "required": "Requis",
     "principal": "Principal",
-    "limitReached": "Limite du plan atteinte. Passer au plan supérieur",
     "newSpace": "Nouvel espace",
     "renameSpace": "Renommer l'espace",
     "nameLabel": "Nom de l'espace",
@@ -2693,7 +2786,9 @@
     "newSpaceHint": "Donnez un nom clair à ce lieu de service.",
     "renameHint": "Choisissez un nouveau nom pour cet espace.",
     "reactivateLimit": "Limite du plan atteinte",
-    "empty": "Aucun espace pour le moment."
+    "empty": "Aucun espace pour le moment.",
+    "limitBanner": "Votre plan inclut {max, plural, one {# espace actif} other {# espaces actifs}}, et vous en avez {count}. Ceux qui existent continuent de fonctionner normalement. Pour en ajouter un, passez au plan supérieur.",
+    "limitBannerCta": "Voir les plans"
   },
   "commandPalette": {
     "placeholder": "Rechercher une page ou une action...",
@@ -2707,11 +2802,127 @@
     "users": "Utilisateurs"
   },
   "adminSupport": {
-    "whatsappTitle": "Un souci ? Écrivez-nous ou appelez-nous",
-    "whatsappBody": "Une personne de l'équipe ATTABL vous répond au {phone}. Dites-nous ce qui bloque, on s'en occupe.",
+    "heading": "Comment peut-on vous aider ?",
+    "intro": "Un guide pour chaque tâche courante. Et si ça bloque, une personne de l'équipe vous répond.",
+    "contactTitle": "Parlez à quelqu'un de l'équipe",
+    "contactBodyPhone": "Écrivez-nous sur WhatsApp au {phone}. On répond en général sous 24 heures, du lundi au vendredi.",
+    "contactBodyEmail": "Écrivez-nous à support@attabl.com. On répond en général sous 24 heures, du lundi au vendredi.",
     "whatsappCta": "Écrire sur WhatsApp",
     "whatsappMessage": "Bonjour ATTABL, j'ai besoin d'aide pour mon restaurant {restaurant}.",
-    "callCta": "Appeler"
+    "copyNumber": "Copier le numéro",
+    "numberCopied": "Numéro copié",
+    "copyFailed": "Copie impossible. Le numéro est {phone}.",
+    "callCta": "Appeler",
+    "emailCta": "Écrire un e-mail",
+    "noWhatsappHint": "WhatsApp n'est pas installé sur cet appareil ? Copiez le numéro pour l'utiliser sur votre téléphone, ou écrivez-nous par e-mail.",
+    "guidesTitle": "Guides",
+    "openPage": "Ouvrir {page}",
+    "faqTitle": "Questions fréquentes",
+    "guides": {
+      "menu": {
+        "title": "Créer votre carte",
+        "page": "Cartes & Menus",
+        "steps": {
+          "s1": "Dans le menu de gauche, ouvrez \"Cartes & Menus\", puis \"Nouvelle carte\".",
+          "s2": "Donnez un nom à la carte (par exemple \"Carte du midi\") et enregistrez.",
+          "s3": "Ajoutez vos catégories : Entrées, Plats, Boissons. Bouton \"Nouvelle catégorie\".",
+          "s4": "Ouvrez \"Plats\" et créez chaque plat avec son prix et sa photo.",
+          "s5": "Vous avez déjà votre carte dans Excel ? Utilisez \"Importer Excel\" et partez du modèle proposé."
+        }
+      },
+      "orders": {
+        "title": "Recevoir et préparer les commandes",
+        "page": "Cuisine (KDS)",
+        "steps": {
+          "s1": "Chaque commande arrive dans \"Commandes\" et sur l'écran \"Cuisine (KDS)\", en temps réel.",
+          "s2": "En cuisine, touchez \"Démarrer\" sur le ticket quand vous lancez le plat.",
+          "s3": "Quand c'est prêt, touchez \"Terminer\" : la salle le voit tout de suite.",
+          "s4": "Besoin d'un papier ? Depuis la commande, imprimez le ticket cuisine ou le reçu client."
+        }
+      },
+      "pos": {
+        "title": "Encaisser à la caisse",
+        "page": "Caisse (POS)",
+        "steps": {
+          "s1": "Ouvrez \"Caisse (POS)\" dans le menu de gauche.",
+          "s2": "Touchez les plats commandés : ils s'ajoutent au panier.",
+          "s3": "Touchez \"Encaisser\", choisissez comment le client paie, puis validez.",
+          "s4": "Plus de réseau ? Le paiement est gardé sur l'appareil et part dès que la connexion revient."
+        }
+      },
+      "qr": {
+        "title": "Imprimer les QR codes des tables",
+        "page": "QR Codes",
+        "steps": {
+          "s1": "Ouvrez \"QR Codes\" dans le menu de gauche.",
+          "s2": "Choisissez les tables, puis le style du QR code.",
+          "s3": "Téléchargez le PDF ou imprimez directement. Un QR code par table.",
+          "s4": "Le client scanne, voit votre carte et commande depuis sa table."
+        }
+      },
+      "stock": {
+        "title": "Suivre le stock et les fournisseurs",
+        "page": "Inventaire",
+        "steps": {
+          "s1": "Ouvrez \"Inventaire\", puis \"Ajouter un produit\" pour chaque ingrédient.",
+          "s2": "Dans \"Fournisseurs\", ajoutez ceux qui vous livrent.",
+          "s3": "Dans \"Fiches techniques\", dites ce que contient chaque plat. Le stock baisse alors à chaque vente.",
+          "s4": "Faites un inventaire physique de temps en temps pour corriger les écarts."
+        }
+      },
+      "team": {
+        "title": "Ajouter votre équipe",
+        "page": "Utilisateurs",
+        "steps": {
+          "s1": "En bas du menu de gauche, touchez votre nom, puis \"Paramètres\".",
+          "s2": "Onglet \"Personnel\", puis \"Gérer l'équipe\".",
+          "s3": "Touchez \"Nouveau Membre\", entrez son e-mail et choisissez son rôle (serveur, caissier, cuisine...).",
+          "s4": "La personne reçoit une invitation par e-mail. Le menu \"...\" d'un membre permet d'ajuster ce qu'il peut faire."
+        }
+      },
+      "reports": {
+        "title": "Voir vos ventes",
+        "page": "Rapports",
+        "steps": {
+          "s1": "Ouvrez \"Rapports\" dans le menu de gauche.",
+          "s2": "Choisissez la période en haut de l'écran : aujourd'hui, la semaine, le mois.",
+          "s3": "Vous voyez le chiffre d'affaires, le nombre de commandes et les plats qui marchent le mieux.",
+          "s4": "Besoin de le partager ? Boutons \"CSV\" ou \"PDF\" en haut de la page."
+        }
+      },
+      "subscription": {
+        "title": "Gérer votre abonnement",
+        "page": "Abonnement",
+        "steps": {
+          "s1": "En bas du menu de gauche, touchez votre nom, puis \"Abonnement\".",
+          "s2": "Vous voyez votre formule, et la date de fin d'essai ou du prochain paiement.",
+          "s3": "Pour changer de formule, choisissez-la. Mensuel ou annuel : l'annuel coûte 15 % de moins.",
+          "s4": "En cours de mois, vous ne payez que la différence pour les jours restants."
+        }
+      }
+    },
+    "faq": {
+      "f1": {
+        "q": "Comment changer le prix d'un plat ?",
+        "a": "Ouvrez \"Plats\", touchez le plat, changez le prix et enregistrez. Le menu de vos clients est à jour tout de suite."
+      },
+      "f2": {
+        "q": "J'ai plusieurs établissements. Comment passer de l'un à l'autre ?",
+        "a": "Touchez le nom de votre établissement en haut du menu de gauche, puis choisissez l'autre. Chacun garde sa carte, ses tables et ses ventes."
+      },
+      "f3": {
+        "q": "Que se passe-t-il si internet coupe ?",
+        "a": "La caisse continue de fonctionner. Les encaissements sont gardés sur l'appareil et partent dès que la connexion revient."
+      },
+      "f4": {
+        "q": "Mes clients doivent-ils installer une application ?",
+        "a": "Non. Ils scannent le QR code de la table avec l'appareil photo de leur téléphone et la carte s'ouvre."
+      },
+      "f5": {
+        "q": "Comment contacter le support ?",
+        "a": "Par WhatsApp ou par e-mail à support@attabl.com, avec les boutons en haut de cette page. On répond en général sous 24 heures, du lundi au vendredi."
+      }
+    }
   },
   "notifications": {
     "muteError": "Impossible de modifier ce rappel",
@@ -2773,6 +2984,8 @@
     "navSuppliers": "Fournisseurs",
     "navStockHistory": "Historique stock",
     "navStockLosses": "Pertes",
+    "navAdvancedReports": "Rapports avancés",
+    "navVenueReports": "Par espace",
     "navStockCounts": "Inventaires physiques",
     "navAnnouncements": "Annonces",
     "navCoupons": "Coupons",
@@ -2812,13 +3025,14 @@
     "newOrder": "Nouvelle commande",
     "secCatalogue": "Catalogue",
     "secGestion": "Gestion",
-    "usageMonthlyOrders": "Commandes / mois",
     "accountMenu": "Mon compte",
     "planLabel": "Plan {plan}",
-    "planFree": "Gratuit",
     "planCardTitle": "Plan actuel",
     "planCardCta": "Passer au {plan}",
     "planCardUpsellPro": "Débloquez le point de vente complet, la cuisine et le stock.",
+    "planTrial": "Essai",
+    "planCardTrial": "Pendant l'essai, tout est ouvert. Choisissez votre plan avant la fin.",
+    "planCardTrialCta": "Choisir mon plan",
     "navSupports": "Supports",
     "navInventoryCounts": "Inventaires physiques",
     "supports": {
@@ -2899,7 +3113,6 @@
     "footerCooking": "Cuisson",
     "footerPacking": "Prêt",
     "footerDelayed": "Retard",
-    "footerPage": "Page",
     "orderedAt": "Commande {time}",
     "serviceDineIn": "Sur place",
     "statusQueue": "FILE",
@@ -3086,9 +3299,95 @@
     "durationLessThanHour": "moins d'une heure",
     "durationHours": "{count, plural, one {# heure} other {# heures}}",
     "durationDays": "{count, plural, one {# jour} other {# jours}}",
-    "invitationExpired": "Invitation expirée"
+    "invitationExpired": "Invitation expirée",
+    "limitBannerCta": "Voir les plans"
   },
   "reports": {
+    "advanced": {
+      "title": "Rapports avancés",
+      "loadError": "Impossible de charger ce rapport.",
+      "comparisonTitle": "Par rapport à la période précédente",
+      "modeWeek": "Semaine",
+      "modeMonth": "Mois",
+      "colMetric": "Indicateur",
+      "thisWeek": "Cette semaine",
+      "lastWeek": "Semaine dernière",
+      "thisMonth": "Ce mois",
+      "lastMonth": "Mois dernier",
+      "colDiff": "Écart",
+      "colDiffPct": "Écart en %",
+      "metricRevenue": "Chiffre d'affaires",
+      "metricOrders": "Commandes",
+      "metricAvgBasket": "Ticket moyen",
+      "metricTips": "Pourboires",
+      "comparisonHintWeek": "Semaine en cours depuis lundi, comparée au même nombre de jours et d'heures de la semaine dernière.",
+      "comparisonHintMonth": "Mois en cours depuis le 1er, comparé à la même durée du mois dernier (ou au mois dernier entier, s'il est plus court).",
+      "heatmapTitle": "Heures fortes",
+      "noSales": "Aucune vente sur la période.",
+      "peakRank": "Créneau n°{rank}",
+      "slot": "{day} à {hour} h",
+      "ordersCount": "{count, plural, one {# commande} other {# commandes}}",
+      "day1": "Lundi",
+      "day2": "Mardi",
+      "day3": "Mercredi",
+      "day4": "Jeudi",
+      "day5": "Vendredi",
+      "day6": "Samedi",
+      "day7": "Dimanche",
+      "dayShort1": "Lun",
+      "dayShort2": "Mar",
+      "dayShort3": "Mer",
+      "dayShort4": "Jeu",
+      "dayShort5": "Ven",
+      "dayShort6": "Sam",
+      "dayShort7": "Dim",
+      "heatmapHint": "Chiffre d'affaires encaissé par jour et par heure, à l'heure de votre restaurant. Plus la case est foncée, plus vous avez encaissé.",
+      "methodsTitle": "Moyens de paiement",
+      "methodDetail": "{share} % du total, {count, plural, one {# paiement} other {# paiements}}",
+      "methodRefunded": "{amount} remboursés",
+      "marginsTitle": "Marge par plat",
+      "marginsTotal": "Marge : {margin} sur {coverage} % des ventes",
+      "marginsHint": "Ventes = prix x quantité, remise de la commande déduite au prorata des plats. Un remboursement partiel n'est pas réparti sur les plats (on ne sait pas lesquels il concerne) : il reste visible dans le chiffre d'affaires. Coût matière = quantités de la fiche technique x coût actuel des ingrédients. Un plat sans fiche, ou dont un ingrédient n'a pas de coût, n'a pas de marge calculée : complétez ses fiches dans Fiches techniques et Inventaire.",
+      "noRecipe": "Pas de fiche technique",
+      "costIncomplete": "Coût incomplet",
+      "colDish": "Plat",
+      "colSold": "Vendus",
+      "colSales": "Ventes",
+      "colCost": "Coût matière",
+      "colMargin": "Marge",
+      "colMarginPct": "Marge en %",
+      "costMissing": "Coût manquant",
+      "lossCount": "{count, plural, one {# perte} other {# pertes}}",
+      "lossesTitle": "Pertes et gaspillage",
+      "colIngredient": "Ingrédient",
+      "colQuantity": "Quantité perdue",
+      "colValue": "Valeur",
+      "colMovements": "Pertes",
+      "colReason": "Motif principal",
+      "lossesTotal": "Total perdu : {amount}",
+      "lossesHint": "Pertes déclarées dans l'inventaire (péremption, casse, vol...), valorisées au coût actuel des ingrédients. Un ingrédient sans coût porte le badge Coût manquant : sa valeur n'est pas comptée.",
+      "noLosses": "Aucune perte déclarée sur la période."
+    },
+    "venueReport": {
+      "title": "Rapports par espace",
+      "venueFilter": "Espace",
+      "allVenues": "Tous les espaces",
+      "unassigned": "Sans espace",
+      "unassignedHint": "Commandes sans table : à emporter, caisse sans table, chambre.",
+      "comparisonTitle": "Comparaison des espaces",
+      "colVenue": "Espace",
+      "colRevenue": "Chiffre d'affaires",
+      "colShare": "Part du CA",
+      "colOrders": "Commandes",
+      "colAvgTicket": "Ticket moyen",
+      "colBestSeller": "Meilleure vente",
+      "topTitle": "Meilleures ventes : {venue}",
+      "noSales": "Aucune vente sur la période.",
+      "singleVenue": "Vous n'avez qu'un espace pour l'instant. Ajoutez un deuxième espace (terrasse, bar, bord de piscine...) pour comparer ce que chacun rapporte.",
+      "manageVenues": "Gérer mes espaces",
+      "noVenues": "Aucun espace. Créez vos espaces dans Paramètres > Espaces.",
+      "salesCount": "{count, plural, one {# vendu} other {# vendus}}"
+    },
     "title": "Rapports",
     "reportModel": "Modèle de fiche",
     "model_simple": "État des stocks - simple",
@@ -3131,6 +3430,8 @@
     "tabReports": "Rapports",
     "tabStockHistory": "Historique stock",
     "tabStockLosses": "Pertes",
+    "tabAdvancedReports": "Avancé",
+    "tabVenueReports": "Par espace",
     "tabInvoices": "Factures",
     "tabAuditLogs": "Journal d'audit",
     "subtitleClient": "Analysez la performance de votre restaurant.",
@@ -3168,6 +3469,8 @@
     "serverPerformance": "Performance par serveur",
     "serverName": "Serveur",
     "ordersCount": "Commandes",
+    "tipsLabel": "Pourboires",
+    "tipsLine": "Pourboires des commandes soldées sur la période : {amount}",
     "avgOrderValue": "Panier moyen",
     "noServerData": "Aucune donnée serveur pour cette période",
     "noDataTitle": "Aucun rapport disponible",
@@ -3477,6 +3780,8 @@
     "title": "Plats & Articles",
     "newItem": "Nouveau plat",
     "allCategories": "Toutes les catégories",
+    "filterCategoryLabel": "Filtrer par catégorie",
+    "filterAvailabilityLabel": "Filtrer par disponibilité",
     "all": "Tous",
     "inStock": "En stock",
     "outOfStock": "Épuisé",
@@ -3699,6 +4004,8 @@
     "totalWithTip": "Total avec pourboire",
     "amountDue": "Montant dû",
     "received": "Reçu",
+    "tipFromCustomer": "Pourboire laissé par le client : {amount}",
+    "tipAddMore": "Ajouter un pourboire",
     "customTip": "Personnalisé",
     "numpadClear": "Effacer",
     "numpadBackspace": "Retour arrière",
@@ -3748,8 +4055,8 @@
     "description": "Note",
     "descriptionPlaceholder": "Pourquoi c'est impayé",
     "attach": "Mettre sur l'ardoise",
+    "choose": "Choisir une ardoise",
     "attached": "Commande portée sur l'ardoise",
-    "detach": "Retirer de l'ardoise",
     "onTab": "Sur l'ardoise",
     "openOrders": "Commandes ouvertes",
     "outstanding": "Reste du",
@@ -3802,18 +4109,24 @@
     "tabAssign": "Assigner",
     "tabDownload": "Télécharger",
     "guideButton": "Guide",
-    "guideTitle": "Comment utiliser vos QR codes",
+    "guideTitle": "Vos QR codes en 4 étapes",
     "guideIntro": "Un QR par table. Le client scanne, votre carte s'ouvre sur son téléphone. Voici les 4 étapes.",
     "guideStep1Title": "Choisir la table et la carte",
     "guideStep1Body": "Sélectionnez une table et la carte à afficher. Le QR pointera vers cette carte, pour cette table.",
     "guideStep2Title": "Personnaliser le QR",
     "guideStep2Body": "Mettez vos couleurs et votre logo au centre. Le QR reste scannable.",
     "guideStep3Title": "Assigner un design",
-    "guideStep3Body": "Appliquez un design à une zone entiere ou table par table, d'un coup.",
+    "guideStep3Body": "Appliquez un design à une zone entière ou table par table, d'un coup.",
     "guideStep4Title": "Télécharger et imprimer",
     "guideStep4Body": "Téléchargez en PNG, SVG ou PDF. Une table ou toutes d'un coup pour l'impression.",
     "guideTipTitle": "Sur chaque table",
     "guideTipBody": "Imprimez, plastifiez, posez sur la table. Testez avec votre téléphone avant le service.",
+    "guideStart": "Suivre le guide",
+    "guideSkip": "Passer",
+    "guideNext": "Suivant",
+    "guidePrevious": "Précédent",
+    "guideDone": "Terminer",
+    "guideStepOf": "Étape {current} sur {total}",
     "formatA4": "Format A4",
     "assignIntro": "Sauvegardez un design puis assignez-le à une zone ou à une table. Chaque table peut avoir son propre code.",
     "savedDesigns": "Designs sauvegardes",
@@ -3905,7 +4218,8 @@
     "dashCardTitle": "Codes QR",
     "dashCardDesc": "Créez et assignez un QR par table ou par zone",
     "dashCardDescCount": "{count} tables - créez et assignez leurs QR codes",
-    "dashCardCta": "Gérer"
+    "dashCardCta": "Gérer",
+    "qrColorsUnreadable": "Ces couleurs se scannent mal avec un téléphone. Le QR sera imprimé en noir pour rester lisible. Choisissez des points foncés sur un fond clair."
   },
   "service": {
     "readyAlertTable": "Commande prête - Table {table}",
@@ -4057,6 +4371,7 @@
     "staffReportPeriod7": "7 derniers jours",
     "staffReportPeriod30": "30 derniers jours",
     "staffReportPeriodMonth": "Mois en cours",
+    "staffReportPeriodLabel": "Période",
     "staffReportColAuthor": "Employé",
     "staffReportColOut": "Sorties",
     "staffReportColIn": "Entrées",
@@ -4219,6 +4534,11 @@
     "quantityLabel": "Quantité",
     "downloadReceipt": "Télécharger le reçu",
     "receiptDownloaded": "Reçu téléchargé",
+    "receiptTitle": "Reçu",
+    "receiptOrder": "Commande",
+    "receiptPhone": "Tél.",
+    "receiptAdjustments": "Taxes et remises",
+    "receiptThanks": "Merci de votre visite !",
     "receiptError": "Impossible de générer le reçu",
     "trackLive": "Suivre en temps réel",
     "reorderShort": "Recommander",
@@ -4841,6 +5161,8 @@
     "placeQR": "Placez le QR code dans le cadre",
     "cameraUnavailable": "Caméra non disponible",
     "cameraHint": "Vérifiez les permissions dans les réglages",
+    "cameraDeniedTitle": "Accès à la caméra refusé",
+    "cameraDeniedHint": "Autorisez la caméra pour ce site dans les réglages de votre navigateur. Sur iPhone : Réglages > Safari (ou Chrome) > Caméra. Ouvert depuis WhatsApp ? Ouvrez le lien dans votre navigateur. Puis touchez Réessayer.",
     "tableMatched": "Table {table}",
     "tableDetected": "Table détectée",
     "confirmTableCta": "Confirmer la table",
@@ -4952,7 +5274,7 @@
       "ouaga": {
         "name": "Ouagadougou",
         "country": "Burkina Faso",
-        "phone": "+226 65 56 54 11"
+        "phone": "+226 55 21 22 93"
       },
       "ndjamena": {
         "name": "N'Djamena",
@@ -4993,8 +5315,7 @@
     "contactSuccess": "Votre demande a été enregistrée. Notre équipe vous contactera bientôt.",
     "contactSendFailed": "Votre message n'a pas pu être envoyé. Écrivez-nous sur WhatsApp ou à contact@attabl.com.",
     "settingsUpdateError": "Une erreur est survenue lors de la mise à jour.",
-    "newsletterSuccess": "Merci pour votre inscription !",
-    "newsletterError": "Une erreur est survenue. Veuillez réessayer.",
+    "settingsForbidden": "Vous n'avez pas le droit de modifier ces réglages. Demandez au propriétaire du restaurant.",
     "tenantNotIdentified": "Tenant non identifié",
     "invalidRequestBody": "Corps de requête invalide",
     "invalidOrderData": "Données de commande invalides",
@@ -5165,7 +5486,20 @@
     "chooseFile": "Choisir un fichier"
   },
   "authShell": {
-    "secure": "Connexion sécurisée"
+    "secure": "Connexion sécurisée",
+    "photoLabel": "Attabl en situation",
+    "pause": "Mettre en pause le diaporama",
+    "play": "Relancer le diaporama",
+    "phrases": {
+      "login": "Le service reprend là où vous l'avez laissé.",
+      "signup": "Votre restaurant, sous contrôle.",
+      "confirm": "Plus qu'un clic avant votre premier service.",
+      "forgot": "Ça arrive même aux meilleurs.",
+      "reset": "Un mot de passe neuf, et on reprend.",
+      "invite": "Votre équipe vous attend en salle.",
+      "unauthorized": "Chaque établissement a ses clés.",
+      "emailChange": "Une adresse à jour, et on continue."
+    }
   },
   "accountDeletion": {
     "openButton": "Supprimer mon compte",

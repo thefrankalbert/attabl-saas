@@ -11,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { CHART_PALETTE } from '@/lib/design-tokens';
 import type { CurrencyFormatter, ServerStats } from './reports.types';
 
 interface ServerPerformanceCardProps {
@@ -65,7 +66,7 @@ export function ServerPerformanceCard({ serverStats, fmt }: ServerPerformanceCar
                   return [`${Number.isFinite(numericValue) ? numericValue : 0}`, t('ordersCount')];
                 }}
               />
-              <Bar dataKey="orders" fill="var(--accent)" radius={[0, 4, 4, 0]} maxBarSize={28} />
+              <Bar dataKey="orders" fill={CHART_PALETTE[3]} radius={[0, 4, 4, 0]} maxBarSize={28} />
             </BarChart>
           </ResponsiveContainer>
 
@@ -82,8 +83,14 @@ export function ServerPerformanceCard({ serverStats, fmt }: ServerPerformanceCar
                 <TableHead className="text-right py-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
                   {t('revenueLabel')}
                 </TableHead>
-                <TableHead className="text-right py-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+                {/* Below sm, and between lg and xl (two cards side by side),
+                    average and tips move under the server name: the 5 columns
+                    overflowed the card (measured at 375 and 1024 px). */}
+                <TableHead className="hidden sm:table-cell lg:hidden xl:table-cell text-right py-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
                   {t('avgOrderValue')}
+                </TableHead>
+                <TableHead className="hidden sm:table-cell lg:hidden xl:table-cell text-right py-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+                  {t('tipsLabel')}
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -95,6 +102,12 @@ export function ServerPerformanceCard({ serverStats, fmt }: ServerPerformanceCar
                 >
                   <TableCell className="py-2 px-2 font-medium text-app-text text-sm">
                     {s.serverName}
+                    <span className="block text-xs font-normal text-app-text-muted sm:hidden lg:block xl:hidden">
+                      {t('avgOrderValue')} : {fmt(s.avgOrder)}
+                    </span>
+                    <span className="block text-xs font-normal text-app-text-muted sm:hidden lg:block xl:hidden">
+                      {t('tipsLabel')} : {fmt(s.tips)}
+                    </span>
                   </TableCell>
                   <TableCell className="py-2 px-2 text-right tabular-nums text-app-text-secondary">
                     {s.orders}
@@ -102,8 +115,11 @@ export function ServerPerformanceCard({ serverStats, fmt }: ServerPerformanceCar
                   <TableCell className="py-2 px-2 text-right tabular-nums text-app-text font-semibold">
                     {fmt(s.revenue)}
                   </TableCell>
-                  <TableCell className="py-2 px-2 text-right tabular-nums text-app-text-secondary">
+                  <TableCell className="hidden sm:table-cell lg:hidden xl:table-cell py-2 px-2 text-right tabular-nums text-app-text-secondary">
                     {fmt(s.avgOrder)}
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell lg:hidden xl:table-cell py-2 px-2 text-right tabular-nums text-app-text-secondary">
+                    {fmt(s.tips)}
                   </TableCell>
                 </TableRow>
               ))}

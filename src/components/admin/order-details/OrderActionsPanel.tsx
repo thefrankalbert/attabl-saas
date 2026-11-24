@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import type { Order, OrderStatus, CurrencyCode } from '@/types/admin.types';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import OrderPaymentPanel from '../OrderPaymentPanel';
+import { CancelOrderButton } from './CancelOrderButton';
 
 interface OrderActionsPanelProps {
   order: Order;
@@ -49,7 +50,9 @@ export function OrderActionsPanel({
     !isComp && canPay && order.status !== 'cancelled' && paymentStatus === 'pending';
 
   return (
-    <div className="lg:w-56 shrink-0 space-y-3">
+    // lg: la colonne d'actions defile seule; sans cela le bas du panneau
+    // (selecteur Especes / Carte, saisie du paiement) etait coupe a 1024 px.
+    <div className="lg:w-56 shrink-0 space-y-3 lg:min-h-0 lg:overflow-y-auto">
       {/* Status Actions */}
       {(showStatusButtons || showCheckout) && (
         <div className="rounded-xl border border-app-border p-3 space-y-2">
@@ -120,7 +123,9 @@ export function OrderActionsPanel({
             )}
           </div>
 
-          {showStatusButtons && canPay && order.status !== 'ready' && (
+          {/* Pour tout le personnel (avant cette PR, un second encadre l'affichait
+              aussi a qui ne peut pas encaisser): rien ne se perd. */}
+          {showStatusButtons && order.status !== 'ready' && (
             <p className="text-[10px] text-status-warning flex items-start gap-1">
               <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
               {t('warningReadyBeforeCheckout')}
@@ -166,6 +171,17 @@ export function OrderActionsPanel({
         currency={currency}
         canComp={canComp}
         onUpdate={onUpdate}
+        orderCancelled={order.status === 'cancelled'}
+      />
+
+      {/* Annuler depuis la fiche: seul chemin pour une commande ancienne (une
+          commande d'ardoise remboursee, par exemple). Masque si l'annulation
+          n'est pas permise. */}
+      <CancelOrderButton
+        order={order}
+        canPay={canPay}
+        canManageMoney={canComp}
+        onCancelled={onUpdate}
       />
     </div>
   );

@@ -48,7 +48,7 @@ export function OrdersTableFooter({
               setPage(0);
             }}
           >
-            <SelectTrigger className="h-[30px] w-[72px] text-[13px]">
+            <SelectTrigger aria-label={t('rowsPerPage')} className="h-[30px] w-[72px] text-[13px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

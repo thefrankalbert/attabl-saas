@@ -49,6 +49,8 @@ vi.mock('@/lib/auth/get-session', () => ({
 }));
 
 import { actionUpdateTenantSettings } from '../tenant-settings';
+import { ServiceError } from '@/services/errors';
+import { logger } from '@/lib/logger';
 
 function form(entries: Record<string, string>): FormData {
   const f = new FormData();
@@ -96,5 +98,24 @@ describe('actionUpdateTenantSettings - establishmentDetails', () => {
     );
     expect(r.success).toBe(false);
     expect(updateSettings).not.toHaveBeenCalled();
+  });
+});
+
+describe('actionUpdateTenantSettings - refus de la base (B103)', () => {
+  it('dit clairement que le role ne permet pas, sans journaliser une erreur', async () => {
+    updateSettings.mockRejectedValue(
+      new ServiceError('Votre role ne permet pas de modifier les parametres', 'UNAUTHORIZED'),
+    );
+    const r = await actionUpdateTenantSettings(form({ name: 'Resto' }));
+    expect(r).toEqual({ success: false, error: 'settingsForbidden' });
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(logger.error).not.toHaveBeenCalled();
+  });
+
+  it('temoin: une vraie panne garde le message generique et le journal d erreur', async () => {
+    updateSettings.mockRejectedValue(new ServiceError('boom', 'INTERNAL'));
+    const r = await actionUpdateTenantSettings(form({ name: 'Resto' }));
+    expect(r).toEqual({ success: false, error: 'settingsUpdateError' });
+    expect(logger.error).toHaveBeenCalledTimes(1);
   });
 });

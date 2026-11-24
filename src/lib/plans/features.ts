@@ -17,11 +17,6 @@ export interface PlanLimits {
   maxMenus: number;
   maxItems: number;
   maxCategories: number;
-  /**
-   * Monthly orders quota. Drives the sidebar usage bar.
-   * Use `-1` for unlimited (rendered as 0% in the UI).
-   */
-  maxMonthlyOrders: number;
   // Feature flags
   canAccessPOS: boolean;
   canAccessKDS: boolean;
@@ -36,6 +31,10 @@ export interface PlanLimits {
   canAccessRoomService: boolean;
   canAccessDelivery: boolean;
   canAccessAIAnalytics: boolean;
+  /** Rapports par espace (terrasse, bar...) d'un meme restaurant. Business et plus. */
+  canAccessVenueReports: boolean;
+  /** Rapports avances: marge par plat, heures fortes, comparaison, paiements, pertes. Business et plus. */
+  canAccessAdvancedReports: boolean;
 }
 
 export type FeatureKey = keyof PlanLimits;
@@ -48,7 +47,6 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     maxMenus: -1,
     maxItems: -1,
     maxCategories: -1,
-    maxMonthlyOrders: 500,
     canAccessPOS: true,
     canAccessKDS: false,
     canAccessTables: false,
@@ -62,6 +60,8 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     canAccessRoomService: false,
     canAccessDelivery: false,
     canAccessAIAnalytics: false,
+    canAccessVenueReports: false,
+    canAccessAdvancedReports: false,
   },
   pro: {
     maxVenues: 2,
@@ -70,7 +70,6 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     maxMenus: -1,
     maxItems: -1,
     maxCategories: -1,
-    maxMonthlyOrders: 3000,
     canAccessPOS: true,
     canAccessKDS: true,
     canAccessTables: true,
@@ -84,6 +83,8 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     canAccessRoomService: false,
     canAccessDelivery: false,
     canAccessAIAnalytics: false,
+    canAccessVenueReports: false,
+    canAccessAdvancedReports: false,
   },
   business: {
     maxVenues: 10,
@@ -92,7 +93,6 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     maxMenus: -1,
     maxItems: -1,
     maxCategories: -1,
-    maxMonthlyOrders: 20000,
     canAccessPOS: true,
     canAccessKDS: true,
     canAccessTables: true,
@@ -106,6 +106,8 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     canAccessRoomService: true,
     canAccessDelivery: true,
     canAccessAIAnalytics: true,
+    canAccessVenueReports: true,
+    canAccessAdvancedReports: true,
   },
   enterprise: {
     maxVenues: -1,
@@ -114,7 +116,6 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     maxMenus: -1,
     maxItems: -1,
     maxCategories: -1,
-    maxMonthlyOrders: -1,
     canAccessPOS: true,
     canAccessKDS: true,
     canAccessTables: true,
@@ -128,6 +129,8 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     canAccessRoomService: true,
     canAccessDelivery: true,
     canAccessAIAnalytics: true,
+    canAccessVenueReports: true,
+    canAccessAdvancedReports: true,
   },
 };
 
@@ -155,16 +158,27 @@ export function isTrialActive(
 }
 
 /**
- * Get the effective plan (trial users get Pro access)
+ * Get the effective plan.
+ *
+ * Pendant l'essai de 14 jours, le restaurant a TOUTES les fonctionnalites
+ * (offre Business), decision du proprietaire du 2026-11-20: il teste tout, puis
+ * il s'abonne ou il s'arrete. Copie SQL: public.tenant_effective_plan
+ * (migration 20261121100000), gardee par le test pgTAP
+ * plan_effectif_essai_business.test.sql.
  */
 export function getEffectivePlan(
   plan?: SubscriptionPlan | null,
   status?: SubscriptionStatus | null,
   trialEndsAt?: string | null,
 ): SubscriptionPlan {
-  // During active trial - Pro access
   if (isTrialActive(status, trialEndsAt)) {
-    return 'pro';
+    return 'business';
+  }
+
+  // Essai expire (statut encore 'trial' en attendant le gel de la nuit): il ne
+  // garde pas le plan choisi a l'inscription. Sans abonnement, rien de payant.
+  if (status === 'trial') {
+    return 'starter';
   }
 
   // F3 + audit: l'entitlement DERIVE du statut, il ne le duplique pas.
@@ -218,6 +232,8 @@ export function canAccessFeature(
     | 'canAccessRoomService'
     | 'canAccessDelivery'
     | 'canAccessAIAnalytics'
+    | 'canAccessVenueReports'
+    | 'canAccessAdvancedReports'
   >,
   plan?: SubscriptionPlan | null,
   status?: SubscriptionStatus | null,

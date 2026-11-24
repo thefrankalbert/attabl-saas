@@ -720,3 +720,67 @@ describe('POST /api/orders - auto-destock wiring', () => {
     });
   });
 });
+
+// Constat E (audit pourboires 2026-11-20): le refus du pourboire selon le
+// plan n'etait verifie par aucun test de route. La vraie garde de plan est
+// branchee ici (getPlanLimits n'est pas simule); Pro sert de temoin positif.
+describe('POST /api/orders - pourboire de la vitrine selon le plan', () => {
+  const tenantOnPlan = (subscription_plan: string) => ({
+    id: 'tenant-abc',
+    currency: 'XAF',
+    tax_rate: 0,
+    service_charge_rate: 0,
+    enable_tax: false,
+    enable_service_charge: false,
+    subscription_plan,
+    subscription_status: 'active',
+    trial_ends_at: null,
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRateLimitCheck.mockResolvedValue({ success: true });
+    mockUntrustedRateLimitCheck.mockResolvedValue({ success: true });
+    mockCouponClaimCheck.mockResolvedValue({ success: true });
+    mockHeaders.mockResolvedValue(new Headers({ 'x-tenant-slug': 'test-restaurant' }));
+    mockValidateOrderItems.mockResolvedValue({
+      validatedTotal: 10000,
+      verifiedPrices: new Map(),
+      categoryIds: [],
+      itemCategoryMap: new Map(),
+    });
+    mockDeterminePreparationZone.mockResolvedValue({
+      orderZone: 'kitchen',
+      categoryZoneMap: new Map(),
+    });
+    mockCalculateOrderTotal.mockReturnValue({
+      subtotal: 10000,
+      taxAmount: 0,
+      serviceChargeAmount: 0,
+      discountAmount: 0,
+      total: 10000,
+    });
+    mockCreateOrderWithItems.mockResolvedValue({
+      orderId: 'order-123',
+      orderNumber: 'CMD-20260220-001',
+      total: 10000,
+    });
+  });
+
+  it('Starter: une commande avec pourboire est refusee (401) et rien n est cree', async () => {
+    mockValidateTenant.mockResolvedValue(tenantOnPlan('starter'));
+    const { POST } = await import('@/app/api/orders/route');
+    const res = await POST(createMockRequest({ ...validOrderBody(), tip_amount: 500 }));
+    expect(res.status).toBe(401);
+    expect((await res.json()).error).toBe('Les pourboires ne sont pas inclus dans votre plan.');
+    expect(mockCreateOrderWithItems).not.toHaveBeenCalled();
+  });
+
+  it('Pro: la meme commande avec pourboire passe', async () => {
+    mockValidateTenant.mockResolvedValue(tenantOnPlan('pro'));
+    const { POST } = await import('@/app/api/orders/route');
+    const res = await POST(createMockRequest({ ...validOrderBody(), tip_amount: 500 }));
+    expect(res.status).toBe(200);
+    expect(mockCreateOrderWithItems).toHaveBeenCalled();
+  });
+});

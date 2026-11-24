@@ -51,10 +51,17 @@
   --color-allergen: #ffb800;
 
   /* Status text colors (same in both themes) */
-  --color-status-success: #059669;
-  --color-status-warning: #d97706;
-  --color-status-error: #dc2626;
-  --color-status-info: #2563eb;
+  --color-status-success: #065f46; /* 6:1 sur son fond pale (etait 3.2) */
+  --color-status-warning: #92400e; /* texte: 5.9:1 sur son fond pale (etait 2.6) */
+  --color-status-error: #b91c1c; /* texte: 5.4:1 sur son fond pale (etait 4.0) */
+  --color-status-info: #1d4ed8; /* texte: 5.5:1 sur son fond pale (etait 4.2) */
+  /* Fonds PLEINS sous du texte blanc (boutons, bannieres, badges): memes en
+     clair et en sombre, au moins 5:1 avec le blanc. Les jetons ci-dessus sont
+     pour le TEXTE et suivent le theme. */
+  --color-status-success-solid: #047857;
+  --color-status-warning-solid: #b45309;
+  --color-status-error-solid: #b91c1c;
+  --color-status-info-solid: #1d4ed8;
 
   /* Status background colors (reference CSS vars for theme switching) */
   --color-status-success-bg: var(--app-status-success-bg);
@@ -118,7 +125,7 @@
   /* ===== CLIENT UI TOKENS (refonte 2026-05) ===== */
   /* Brand */
   --color-brand: #06c167;
-  --color-brand-dark: #05a557;
+  --color-brand-dark: #047857; /* texte sur brand-light: 5.0:1 (etait 2.9) */
   --color-brand-light: #e6f9f0;
 
   /* Surfaces */
@@ -129,8 +136,8 @@
   /* Text */
   --color-ink: #1a1a1a;
   --color-ink-2: #404040;
-  --color-ink-muted: #737373;
-  --color-ink-soft: #b0b0b0;
+  --color-ink-muted: #6b6b6b; /* 4.9:1 sur les surfaces grises */
+  --color-ink-soft: #8c8c8c; /* icones, bordures, puces: 3.3:1 (WCAG 1.4.11); jamais pour du texte, qui prend ink-muted */
 
   /* Status */
   --color-rating: #ffb800;
@@ -150,6 +157,32 @@
   --radius-modal: 16px;
   --radius-tag: 8px;
   --radius-button-round: 50px;
+
+  /* ===== MARKETING HOME TOKENS (refonte accueil 2026-11) ===== */
+  --color-encre: #111111;
+  --color-gris: #f7f6f5;
+  --color-trait: #e4e2df;
+  --color-nuit: #0b0b0b;
+  --color-service: #2f7a36;
+  --ease-attabl: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* inline : la variable de police est posee sur <body> par next/font, pas sur
+   :root ; la classe font-titre doit donc la lire la ou elle est utilisee. */
+@theme inline {
+  --font-titre: var(--font-dm-serif-display);
+}
+
+/* Surtitre des sections marketing (Geist Mono 13 px, majuscules). En couche
+   components pour qu'une classe utilitaire (text-[11px]) puisse l'ajuster. */
+@layer components {
+  .surtitre {
+    font-family: var(--font-geist-mono);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
 }
 
 @keyframes accordion-down {
@@ -282,7 +315,7 @@
   --app-border-hover: oklch(0.87 0 0);
   --app-text: oklch(0.145 0 0);
   --app-text-secondary: oklch(0.47 0 0);
-  --app-text-muted: oklch(0.556 0 0);
+  --app-text-muted: oklch(0.52 0 0); /* 5.0:1 sur le fond eleve (axe, WCAG AA) */
   --app-accent: oklch(0.205 0 0);
   --app-accent-hover: oklch(0.3 0 0);
   --app-accent-muted: oklch(0.97 0 0);
@@ -321,8 +354,8 @@
      (oklch 0.70 0.15, hues espacees) - pas de vert en admin, cf regle 09. */
   --c-surplace: oklch(0.7 0.15 308);
   --c-emporter: #2563eb;
-  --success: oklch(0.63 0.17 149);
-  --warning: oklch(0.7 0.16 70);
+  --success: oklch(0.52 0.16 149); /* texte vert 5.1:1 sur blanc (etait 3.3) */
+  --warning: oklch(0.56 0.15 65); /* texte orange 4.8:1 sur blanc (etait 2.8) */
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -407,6 +440,12 @@
   --c-surplace: oklch(0.7 0.15 308);
   --c-emporter: #60a5fa;
   --success: oklch(0.7 0.15 150);
+  /* Texte de statut "Paye" etc.: le vert fonce du theme clair tombait a 3:1
+     sur fond sombre. Ici il suit --success, clair sur sombre. */
+  --color-status-success: var(--success);
+  --color-status-warning: #fbbf24; /* 9:1 sur fond sombre */
+  --color-status-error: #f87171; /* 6:1 sur fond sombre */
+  --color-status-info: #60a5fa; /* 6.5:1 sur fond sombre */
   --warning: oklch(0.75 0.15 75);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
@@ -482,8 +521,8 @@
   --app-border-hover: #dddddd !important;
 
   --app-text: #1a1a1a !important;
-  --app-text-secondary: #737373 !important;
-  --app-text-muted: #b0b0b0 !important;
+  --app-text-secondary: #6b6b6b !important;
+  --app-text-muted: #707070 !important;
 
   --app-accent: #006aff !important;
   --app-accent-hover: #0055cc !important;
@@ -513,8 +552,8 @@
   --color-app-border: #eeeeee !important;
   --color-app-border-hover: #dddddd !important;
   --color-app-text: #1a1a1a !important;
-  --color-app-text-secondary: #737373 !important;
-  --color-app-text-muted: #b0b0b0 !important;
+  --color-app-text-secondary: #6b6b6b !important;
+  --color-app-text-muted: #707070 !important;
   --color-accent: #006aff !important;
   --color-accent-hover: #0055cc !important;
   --color-accent-muted: rgba(0, 106, 255, 0.1) !important;
@@ -548,8 +587,8 @@
     --app-border: #eeeeee !important;
     --app-border-hover: #dddddd !important;
     --app-text: #1a1a1a !important;
-    --app-text-secondary: #737373 !important;
-    --app-text-muted: #b0b0b0 !important;
+    --app-text-secondary: #6b6b6b !important;
+    --app-text-muted: #707070 !important;
     --app-accent: #006aff !important;
     --app-accent-hover: #0055cc !important;
     --app-accent-muted: #e6f9f0 !important;
@@ -561,8 +600,8 @@
     --color-app-border: #eeeeee !important;
     --color-app-border-hover: #dddddd !important;
     --color-app-text: #1a1a1a !important;
-    --color-app-text-secondary: #737373 !important;
-    --color-app-text-muted: #b0b0b0 !important;
+    --color-app-text-secondary: #6b6b6b !important;
+    --color-app-text-muted: #707070 !important;
     --color-accent: #006aff !important;
     --color-accent-hover: #0055cc !important;
     --color-accent-muted: rgba(0, 106, 255, 0.1) !important;
@@ -577,6 +616,22 @@ html,
 body {
   height: 100%;
   overflow: hidden;
+}
+
+/* Pages marketing uniquement : la fenetre defile (position sticky, useScroll,
+   barre d'adresse mobile et restauration du scroll se calent sur elle). Le
+   contrat ci-dessus reste intact pour l'application. */
+html:has(.marketing-shell),
+html:has(.marketing-shell) body {
+  height: auto;
+  overflow: visible;
+}
+
+/* Mode sombre du marketing : les sections claires s'inversent (encre <-> blanc
+   via les classes dark:, gris et trait ici). Les sections sombres ne changent pas. */
+.dark .marketing-shell {
+  --color-gris: #161616;
+  --color-trait: #2a2a2a;
 }
 
 body {

@@ -100,6 +100,17 @@ describe('POST /api/upload - choix de l etablissement', () => {
     );
   });
 
+  it('ne cree jamais d etablissement par effet de bord d un envoi (audit B16)', async () => {
+    resolve
+      .mockResolvedValueOnce({ ok: false, status: 403, error: 'x' })
+      .mockResolvedValueOnce(ok('defaut'));
+    await POST(req('http://localhost/api/upload', { 'x-tenant-slug-hint': 'autre' }));
+    expect(resolve).toHaveBeenCalledTimes(2);
+    for (const [options] of resolve.mock.calls) {
+      expect(options).toMatchObject({ provisionIfMissing: false });
+    }
+  });
+
   it('refuse un membre sans la permission (intrusion P-04)', async () => {
     resolve.mockResolvedValue(ok('tenant-a'));
     resolveAdminPermission.mockResolvedValueOnce({ allowed: false });

@@ -130,6 +130,30 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
       }
       if (!takenOver) {
+        // Audit B64: "rien a reprendre" veut dire abouti OU recent. Une ligne
+        // recente sans `completed_at` peut etre celle d'une fonction tuee en
+        // plein traitement: un 200 arretait les rejeux de Stripe et
+        // l'evenement etait perdu. 409: pas de double traitement, et Stripe
+        // rejoue plus tard (ligne alors aboutie ou reprenable).
+        const { data: current, error: readError } = await supabase
+          .from('stripe_events')
+          .select('completed_at')
+          .eq('id', event.id)
+          .maybeSingle();
+        if (readError) {
+          logger.error('Failed to read Stripe event completion', readError, {
+            eventId: event.id,
+            eventType: event.type,
+          });
+          return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        }
+        if (current && current.completed_at === null) {
+          logger.warn('Stripe event still in progress or interrupted, asking for a retry', {
+            eventId: event.id,
+            eventType: event.type,
+          });
+          return NextResponse.json({ error: 'Event in progress' }, { status: 409 });
+        }
         logger.info('Stripe event already processed, skipping', {
           eventId: event.id,
           eventType: event.type,

@@ -37,7 +37,7 @@ export function WhichPlan() {
     <section className="border-t border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/40">
       <div className="mx-auto max-w-[1080px] px-5 py-[88px] sm:px-7">
         <div className="mx-auto mb-11 max-w-[560px] text-center">
-          <h2 className="text-[32px] font-semibold tracking-[-0.025em] text-zinc-950 dark:text-zinc-50">
+          <h2 className="text-balance text-[32px] font-semibold tracking-[-0.025em] text-zinc-950 dark:text-zinc-50">
             {t('title')}
           </h2>
           <p className="mt-3 text-base leading-[1.5] text-zinc-500 dark:text-zinc-400">

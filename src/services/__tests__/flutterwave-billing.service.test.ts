@@ -561,6 +561,9 @@ describe('processTransaction: appel de la fonction SQL atomique', () => {
     ['rejected_expired', 'EXPIRED_UNDERPAID'],
     ['rejected_conflict', 'STRIPE_CONFLICT'],
     ['rejected_blocked', 'TENANT_BLOCKED'],
+    // Course (B148): la ligne lue `pending` a ete reglee entre-temps par une
+    // AUTRE transaction; la fonction SQL ne repond plus `duplicate`.
+    ['already_settled_by_other_transaction', 'ALREADY_SETTLED_BY_OTHER_TRANSACTION'],
   ])('issue SQL %s: rejet %s, journalise en ERREUR pour remboursement', async (outcome, reason) => {
     vi.mocked(logger.error).mockClear();
     const { service, client } = setup({

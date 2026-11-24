@@ -53,8 +53,10 @@ export function InventoryReportSheet({
     >
       <div className="report-body p-6 sm:p-10">
         {/* Header: restaurant identity left, document meta right */}
-        <div className="flex items-start justify-between gap-6 border-b border-zinc-200 pb-5">
-          <div className="flex min-w-0 items-center gap-3">
+        {/* flex-wrap: a 375 px le bloc de droite ecrasait le nom du restaurant
+            (une lettre par ligne). */}
+        <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3 border-b border-zinc-200 pb-5">
+          <div className="flex min-w-[12rem] flex-1 items-center gap-3">
             {tenant.logoUrl && (
               <Image
                 src={tenant.logoUrl}
@@ -84,11 +86,14 @@ export function InventoryReportSheet({
           </div>
         </div>
 
-        {/* Table */}
-        <Table className="mt-7 w-full table-fixed text-xs">
+        {/* Table - mise en page automatique et nombres sur une ligne: en
+            table-fixed + break-words, "4 500 FCFA" se cassait en "450 / 0 /
+            FCFA" meme a 1440 px. Sur telephone le tableau defile de cote dans
+            l'enveloppe overflow-auto du composant Table. */}
+
+        <Table className="mt-7 w-full text-xs">
           {/* Proportional column widths: the ingredient name gets the most room,
-              other text columns a medium share, numeric columns the least. Takes
-              effect at print (table-layout: fixed); a readable hint on screen. */}
+              other text columns a medium share, numeric columns the least. */}
           <colgroup>
             {(() => {
               const weights = table.columns.map((c, i) =>
@@ -118,11 +123,13 @@ export function InventoryReportSheet({
                 {row.map((cell, ci) => (
                   <TableCell
                     key={ci}
-                    className={`break-words py-2 align-top text-zinc-700 tabular-nums ${alignClass(
-                      table.columns[ci]?.align ?? 'left',
-                    )}`}
+                    className={`py-2 align-top text-zinc-700 tabular-nums ${
+                      table.columns[ci]?.align === 'right'
+                        ? 'whitespace-nowrap text-right'
+                        : 'break-words text-left'
+                    }`}
                   >
-                    {cell || ' '}
+                    {cell || '\u00a0'}
                   </TableCell>
                 ))}
               </TableRow>
@@ -134,11 +141,11 @@ export function InventoryReportSheet({
                 {table.totals.map((cell, ci) => (
                   <TableCell
                     key={ci}
-                    className={`py-2 font-bold text-zinc-900 tabular-nums ${alignClass(
+                    className={`whitespace-nowrap py-2 font-bold text-zinc-900 tabular-nums ${alignClass(
                       table.columns[ci]?.align ?? 'left',
                     )}`}
                   >
-                    {cell || ' '}
+                    {cell || '\u00a0'}
                   </TableCell>
                 ))}
               </TableRow>

@@ -15,6 +15,11 @@ export interface EmailResult {
 export interface WelcomeEmailData {
   confirmationUrl: string;
 }
+/** Envoye une fois l'adresse confirmee: le compte est actif, l'essai commence. */
+export interface WelcomeOnboardingEmailData {
+  dashboardUrl: string;
+  restaurantName?: string;
+}
 export interface PasswordResetEmailData {
   resetUrl: string;
 }
@@ -68,6 +73,7 @@ export interface RenewalReminderEmailData {
 
 export interface EmailService {
   sendWelcomeEmail(to: string, data: WelcomeEmailData): Promise<EmailResult>;
+  sendWelcomeOnboardingEmail(to: string, data: WelcomeOnboardingEmailData): Promise<EmailResult>;
   sendPasswordResetEmail(to: string, data: PasswordResetEmailData): Promise<EmailResult>;
   sendEmailChangeEmail(to: string, data: EmailChangeEmailData): Promise<EmailResult>;
   sendEmailChangeApprovalEmail(

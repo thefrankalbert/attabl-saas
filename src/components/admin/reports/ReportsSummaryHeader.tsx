@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { TrendBadge } from './TrendBadge';
-import { PERIOD_PILLS } from './reports.types';
+import { PeriodPills } from './PeriodPills';
 import type { CurrencyFormatter, Period, ReportSummary } from './reports.types';
 
 interface ReportsSummaryHeaderProps {
@@ -53,6 +53,10 @@ export function ReportsSummaryHeader({
       label: t('revenueLabel'),
       value: fmt(summary.revenue) as string | number,
       trend: revenueTrend,
+      // Pourboires: une ligne a part. Ce n'est PAS une part du chiffre au-dessus:
+      // le chiffre d'affaires suit la date de chaque versement au registre, les
+      // pourboires la date ou la commande est soldee (paid_at). Le libelle le dit.
+      note: t('tipsLine', { amount: fmt(summary.tips) }),
     },
     {
       key: 'orders',
@@ -61,6 +65,7 @@ export function ReportsSummaryHeader({
       label: t('orders'),
       value: summary.orders as string | number,
       trend: ordersTrend,
+      note: null,
     },
     {
       key: 'basket',
@@ -69,6 +74,7 @@ export function ReportsSummaryHeader({
       label: t('averageBasket'),
       value: fmt(summary.avgBasket) as string | number,
       trend: basketTrend,
+      note: null,
     },
   ];
 
@@ -110,29 +116,11 @@ export function ReportsSummaryHeader({
         }
       />
 
-      {/* -- Period pills -- */}
-      <div className="flex items-center gap-1.5 md:gap-2.5 lg:gap-3 overflow-x-auto pb-0.5">
-        {PERIOD_PILLS.map((pill) => (
-          <Button
-            key={pill.value}
-            type="button"
-            variant="outline"
-            onClick={() => setPeriod(pill.value)}
-            className={cn(
-              'px-3 py-1.5 text-[11px] font-semibold rounded-lg whitespace-nowrap h-auto',
-              period === pill.value
-                ? 'bg-app-text text-app-bg border-app-text shadow-sm'
-                : 'bg-app-card text-app-text-secondary border-app-border/50 hover:border-app-border hover:bg-app-elevated',
-            )}
-          >
-            {t(pill.labelKey)}
-          </Button>
-        ))}
-      </div>
+      <PeriodPills period={period} setPeriod={setPeriod} />
 
       {/* -- KPI Cards -- */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {kpis.map(({ key, Icon, accent, label, value, trend }) => (
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
+        {kpis.map(({ key, Icon, accent, label, value, trend, note }) => (
           <div
             key={key}
             className="bg-app-card border border-app-border/60 rounded-xl p-4 flex items-center gap-3"
@@ -149,12 +137,13 @@ export function ReportsSummaryHeader({
               <p className="text-xs font-medium text-app-text-muted uppercase tracking-wide">
                 {label}
               </p>
-              <div className="flex items-end gap-2 mt-0.5">
-                <p className="text-xl font-bold text-app-text tabular-nums leading-tight truncate">
+              <div className="flex flex-wrap items-end gap-x-2 mt-0.5">
+                <p className="text-xl font-bold text-app-text tabular-nums leading-tight whitespace-nowrap">
                   {value}
                 </p>
                 <TrendBadge value={trend} />
               </div>
+              {note && <p className="mt-0.5 text-xs text-app-text-muted tabular-nums">{note}</p>}
             </div>
           </div>
         ))}

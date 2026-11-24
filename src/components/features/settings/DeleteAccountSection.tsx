@@ -145,7 +145,7 @@ export default function DeleteAccountSection({
               variant="destructive"
               onClick={handleDelete}
               disabled={!isConfirmed || loading}
-              className="min-h-[44px] bg-status-error hover:bg-status-error/90 text-white"
+              className="min-h-[44px] bg-status-error-solid hover:bg-status-error-solid/90 text-white"
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {loading ? t('inProgress') : t(`${variant}_confirmButton`)}

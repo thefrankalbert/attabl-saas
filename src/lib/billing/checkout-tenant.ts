@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
+import { refusDEtat } from './tenant-billing-state';
 
 type CheckoutTenantRow = {
   tenant_id: string;
@@ -38,32 +39,6 @@ function refusDeRole(role: unknown): ResolveCheckoutTenantResult | null {
     status: 403,
     error: 'Seuls les proprietaires et administrateurs peuvent souscrire un abonnement.',
   };
-}
-
-/**
- * Refus si un paiement n'ouvrirait rien. UNE seule definition pour les deux
- * branches, comme `refusDeRole`.
- *   - restaurant ferme (`deleted_at`): la branche sans cible ne le filtrait pas,
- *     et un restaurant ferme redevenait abonnable;
- *   - restaurant suspendu par la plateforme (`suspended_at`): le webhook ne leve
- *     pas cette suspension, l'argent serait pris pour un acces qui reste ferme.
- *     Meme regle que la voie Flutterwave (flutterwave-billing.service.ts).
- */
-function refusDEtat(
-  tenant: CheckoutTenantRow['tenants'],
-  allowSuspended: boolean,
-): ResolveCheckoutTenantResult | null {
-  if (!tenant || tenant.deleted_at) {
-    return { ok: false, status: 404, error: 'Restaurant non trouve' };
-  }
-  if (tenant.suspended_at && !allowSuspended) {
-    return {
-      ok: false,
-      status: 409,
-      error: 'Ce restaurant est suspendu. Contactez le support ATTABL pour le reactiver.',
-    };
-  }
-  return null;
 }
 
 function aplatirTenant(brut: unknown): CheckoutTenantRow['tenants'] {

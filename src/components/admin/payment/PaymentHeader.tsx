@@ -1,11 +1,11 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface PaymentHeaderProps {
-  titleId: string;
   orderNumber?: string | number;
   table?: string;
   onBack: () => void;
@@ -14,7 +14,7 @@ interface PaymentHeaderProps {
 }
 
 /** Top bar of the payment screen, kept below the notch of an installed PWA. */
-export function PaymentHeader({ titleId, orderNumber, table, onBack, busy }: PaymentHeaderProps) {
+export function PaymentHeader({ orderNumber, table, onBack, busy }: PaymentHeaderProps) {
   const t = useTranslations('payment');
   const tc = useTranslations('common');
 
@@ -31,9 +31,10 @@ export function PaymentHeader({ titleId, orderNumber, table, onBack, busy }: Pay
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h2 id={titleId} className="font-bold text-sm sm:text-base">
+        {/* Title of the payment dialog (Radix names the dialog after it). */}
+        <DialogPrimitive.Title className="font-bold text-sm sm:text-base">
           {t('title')}
-        </h2>
+        </DialogPrimitive.Title>
         {orderNumber && (
           <span className="text-xs font-mono text-app-text-muted">#{orderNumber}</span>
         )}

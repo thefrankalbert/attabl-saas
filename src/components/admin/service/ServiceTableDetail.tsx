@@ -221,7 +221,7 @@ export function ServiceTableDetail({
                 </div>
                 {canAssign && (
                   <Select onValueChange={(val) => onAssignServer(table.id, val)}>
-                    <SelectTrigger className="h-9 text-xs">
+                    <SelectTrigger aria-label={labels.selectServer} className="h-9 text-xs">
                       <SelectValue placeholder={labels.selectServer} />
                     </SelectTrigger>
                     <SelectContent>
