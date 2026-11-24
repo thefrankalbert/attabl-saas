@@ -521,6 +521,15 @@ describe('getPendingInvitations', () => {
     expect(journal.filtresListing).toContainEqual({ col: 'status', val: 'pending' });
   });
 
+  it('B66: une erreur de lecture ne renvoie pas le message Postgres', async () => {
+    const { service } = creerSimulation({
+      erreurListing: { message: 'relation "invitations_x" permission denied' },
+    });
+    const err = await service.getPendingInvitations('tenant-du-resto').catch((e: unknown) => e);
+    expect(err).toMatchObject({ code: 'INTERNAL' });
+    expect((err as Error).message).not.toContain('invitations_x');
+  });
+
   it('pagine par 25 par defaut', async () => {
     const { service, journal } = creerSimulation({ lignes: [], total: 0 });
 

@@ -38,13 +38,19 @@ import { keepsExistingFreezeCause } from './status';
  *    voir handleDisputeCreated).
  *
  * REVERSIBLE: souscrire a nouveau remet le statut, l'acces et efface la cause
- * (`checkout.session.completed`). Verifie avant d'ecrire ce gestionnaire:
- * `invoice.paid` exclut volontairement `frozen`, donc la facture du mois
- * suivant ne leve pas ce gel - c'est une nouvelle souscription qui le leve.
- * Sans ce chemin de sortie, geler ici aurait condamne le client.
+ * (`checkout.session.completed`). Une facture payee APRES le remboursement
+ * (`invoice.paid`) leve aussi ce gel: c'est pourquoi la date du gel
+ * (`refund_frozen_at`) est gardee, et qu'une facture anterieure ne le leve pas
+ * (B93: l'ancien commentaire disait le contraire, voir invoice.ts).
  */
 const UN_JOUR_S = 86_400;
 const DEUX_MOIS_S = 60 * UN_JOUR_S;
+
+/** La plus recente de deux dates ISO (une date absente ou illisible perd). */
+function plusRecente(existante: string | null | undefined, nouvelle: string): string {
+  const t = existante ? Date.parse(existante) : NaN;
+  return Number.isFinite(t) && t > Date.parse(nouvelle) ? (existante as string) : nouvelle;
+}
 
 function estIntrouvable(err: unknown): boolean {
   return (
@@ -219,13 +225,14 @@ export async function handleChargeRefunded(
   }
 
   const { data: tenant, error: readError } = await selectTolerantToMissingFreezeReason(
-    'id, subscription_status, stripe_subscription_id, freeze_reason',
+    'id, subscription_status, stripe_subscription_id, freeze_reason, refund_frozen_at',
     (columns) =>
       supabase.from('tenants').select(columns).eq('stripe_customer_id', customerId).maybeSingle<{
         id: string;
         subscription_status: string | null;
         stripe_subscription_id?: string | null;
         freeze_reason?: string | null;
+        refund_frozen_at?: string | null;
       }>(),
     { customerId, chargeId: charge.id, handler: 'charge.refunded' },
   );
@@ -281,9 +288,11 @@ export async function handleChargeRefunded(
     // Un second remboursement sur un gel deja `refund` REDATE le gel: sinon une
     // facture payee entre les deux remboursements (puis remboursee) leverait le
     // gel au rejeu de son `invoice.paid`, sa date etant posterieure a l'ancien.
+    // B93: la plus RECENTE des deux dates gagne. Un rejeu tardif d'un ancien
+    // remboursement faisait reculer la date, et rouvrait la porte ci-dessus.
     payload =
       tenant.freeze_reason === FREEZE_REASONS.REFUND
-        ? { is_active: false, refund_frozen_at: geleLe }
+        ? { is_active: false, refund_frozen_at: plusRecente(tenant.refund_frozen_at, geleLe) }
         : { is_active: false };
     appliquer = (p) => supabase.from('tenants').update(p).eq('id', tenant.id);
   } else {

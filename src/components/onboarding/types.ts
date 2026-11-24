@@ -1,3 +1,5 @@
+import type { ZoneData } from './tables/types';
+
 // --- Exported data interface (used by child components) ------------------------
 
 export interface OnboardingData {
@@ -20,7 +22,7 @@ export interface OnboardingData {
   totalCapacity?: number;
   // Step 2: Tables
   tableConfigMode: 'complete' | 'minimum' | 'skip';
-  tableZones: Array<{ name: string; prefix: string; tableCount: number; defaultCapacity?: number }>;
+  tableZones: ZoneData[];
   // Step 3: Branding
   logoUrl: string;
   primaryColor: string;

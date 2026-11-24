@@ -366,6 +366,22 @@ describe('POST /api/invitations', () => {
     expect(json.error).toContain('invalide');
   });
 
+  it('B3: un corps qui n est pas du JSON repond 400, pas 500', async () => {
+    mockRateLimit(true);
+    const mock = createMockSupabase();
+    vi.mocked(createClient).mockResolvedValue(mock as never);
+
+    const res = await POST(
+      new Request('http://localhost:3000/api/invitations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: 'pas du json{',
+      }),
+    );
+
+    expect(res.status).toBe(400);
+  });
+
   it('names the email field in the error when the address is invalid', async () => {
     mockRateLimit(true);
     vi.mocked(createClient).mockResolvedValue(createMockSupabase() as never);

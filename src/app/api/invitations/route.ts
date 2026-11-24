@@ -151,7 +151,8 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Non autorise' }, { status: 401 });
       }
 
-      const body: unknown = await request.json();
+      // B3: un corps illisible est une requete invalide (400), pas une panne (500).
+      const body: unknown = await request.json().catch(() => null);
       const parsed = createInvitationSchema.safeParse(body);
       if (!parsed.success) {
         return NextResponse.json(

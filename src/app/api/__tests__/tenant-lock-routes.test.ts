@@ -277,6 +277,8 @@ describe('classement de toutes les routes API', () => {
     'cron/reconcile-payments',
     // Ne lit que les restaurants actifs (is_active, suspended_at), n'ecrit que ses rappels.
     'cron/reminders',
+    // Ne lit que les essais actifs non suspendus; n'ecrit que le creneau de relance.
+    'cron/trial-idle-emails',
     'dev/simulate-subscription',
     // Publiques / authentification / convive.
     'auth/[...supabase]',

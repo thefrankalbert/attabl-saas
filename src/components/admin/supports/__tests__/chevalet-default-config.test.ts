@@ -22,12 +22,7 @@ const tenant = {
 };
 
 function exportOf(config: unknown) {
-  return exportRequestSchema.safeParse({
-    config,
-    format: 'pdf',
-    menuUrl: 'https://resto.attabl.com',
-    tenantSlug: 'resto',
-  });
+  return exportRequestSchema.safeParse({ config });
 }
 
 describe('chevalet: configuration par defaut exportable (B11)', () => {
@@ -53,5 +48,17 @@ describe('chevalet: configuration par defaut exportable (B11)', () => {
     const parsed = exportOf(cfg);
     expect(parsed.success).toBe(false);
     if (!parsed.success) expect(parsed.error.issues[0].path).toEqual(['config', 'background']);
+  });
+});
+
+describe('chevalet: demande d export (B29)', () => {
+  it('ne porte que la configuration: format, menuUrl et tenantSlug ne sont plus lus', () => {
+    const parsed = exportRequestSchema.safeParse({
+      config: buildDefaultConfig(tenant),
+      format: 'png',
+      tenantSlug: 'autre-resto',
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(Object.keys(parsed.data)).toEqual(['config']);
   });
 });

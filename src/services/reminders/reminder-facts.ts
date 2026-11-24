@@ -7,6 +7,12 @@ import type { StockFacts } from './messages';
 
 const DAY_MS = 24 * 60 * 60_000;
 
+interface HiddenDishRow {
+  name: string;
+  is_available: boolean;
+  deleted_at: string | null;
+}
+
 export async function loadStockFacts(
   supabase: SupabaseClient,
   tenantId: string,
@@ -30,7 +36,7 @@ export async function loadStockFacts(
   if (out.length) {
     const { data: recipes, error: rErr } = await supabase
       .from('recipes')
-      .select('menu_item:menu_items(name, is_available)')
+      .select('menu_item:menu_items(name, is_available, deleted_at)')
       .eq('tenant_id', tenantId)
       .in(
         'ingredient_id',
@@ -40,8 +46,10 @@ export async function loadStockFacts(
     hiddenDishes = [
       ...new Set(
         (recipes ?? [])
-          .map((r) => r.menu_item as unknown as { name: string; is_available: boolean } | null)
-          .filter((m): m is { name: string; is_available: boolean } => !!m && !m.is_available)
+          .map((r) => r.menu_item as unknown as HiddenDishRow | null)
+          // B87: un plat SUPPRIME (suppression douce, recette conservee) n'est
+          // pas "retire de la carte": il etait liste chaque jour.
+          .filter((m): m is HiddenDishRow => !!m && !m.deleted_at && !m.is_available)
           .map((m) => m.name),
       ),
     ];

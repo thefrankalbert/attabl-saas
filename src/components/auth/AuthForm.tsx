@@ -13,21 +13,10 @@ import { GoogleIcon } from './GoogleIcon';
 import { AuthCard } from './AuthCard';
 import { ConfirmationSentScreen } from './ConfirmationSentScreen';
 import { useAuthForm } from './useAuthForm';
+import { PasswordStrengthLine } from './PasswordRules';
 
 interface AuthFormProps {
   mode: 'login' | 'signup';
-}
-
-// ponytail: 4-level strength meter matching the prototype's 3-segment bar
-// (0 = empty, 1-2 = weak/medium, 3 = strong). Pure heuristic, no lib needed.
-function getPasswordStrength(password: string): 0 | 1 | 2 | 3 {
-  if (!password) return 0;
-  let score = 0;
-  if (password.length >= 8) score++;
-  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++;
-  if (/[0-9]/.test(password) || /[^A-Za-z0-9]/.test(password)) score++;
-  if (score >= 3 && password.length >= 12) return 3;
-  return score === 0 ? 1 : (score as 1 | 2);
 }
 
 // Hauteurs et marges resserrees sur ecran court (tablette paysage): la regle 12
@@ -81,8 +70,6 @@ function AuthForm({ mode }: AuthFormProps) {
       />
     );
   }
-
-  const strength = getPasswordStrength(password);
 
   return (
     <div className="w-full">
@@ -247,7 +234,7 @@ function AuthForm({ mode }: AuthFormProps) {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 aria-required="true"
-                minLength={isLogin ? undefined : 8}
+                aria-describedby={isLogin || !password ? undefined : 'password-rules'}
                 className={`${inputClass} pr-10`}
               />
               <Button
@@ -273,28 +260,11 @@ function AuthForm({ mode }: AuthFormProps) {
               )}
             </div>
 
+            {/* Contre-audit 4 (regle 12): une seule ligne, comme la jauge d'avant,
+                qui nomme TOUTES les regles manquantes; rien tant que le champ est
+                vide, pour que la page tienne sur ecran court. */}
             {!isLogin && password.length > 0 && (
-              <div className="flex items-center gap-1.5 pt-0.5">
-                {[1, 2, 3].map((segment) => (
-                  <span
-                    key={segment}
-                    className={`h-1 flex-1 rounded-full ${
-                      segment > strength
-                        ? 'bg-[var(--border)]'
-                        : strength === 3
-                          ? 'bg-[var(--ok-fg)]'
-                          : 'bg-amber-500'
-                    }`}
-                  />
-                ))}
-                <span className="ml-1 text-[11px] text-[var(--muted)]">
-                  {strength === 3
-                    ? tForm('strengthStrong')
-                    : strength === 2
-                      ? tForm('strengthMedium')
-                      : tForm('strengthWeak')}
-                </span>
-              </div>
+              <PasswordStrengthLine id="password-rules" password={password} />
             )}
           </div>
 

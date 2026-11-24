@@ -35,7 +35,8 @@ export function OnboardingTopNav({
         <Link
           href="/"
           className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-app-hover transition-colors shrink-0"
-          title="Accueil"
+          title={t('home')}
+          aria-label={t('home')}
         >
           <LayoutGrid className="w-4 h-4 text-app-text-muted" />
         </Link>
@@ -69,6 +70,7 @@ export function OnboardingTopNav({
                     : 'text-app-text-muted opacity-40 cursor-default'
               }`}
               disabled={isFuture}
+              aria-label={t(phaseDef.labelKey)}
             >
               {isCompleted ? <Check className="w-3.5 h-3.5" /> : <Icon className="w-3.5 h-3.5" />}
               <span className="hidden sm:inline">{t(phaseDef.labelKey)}</span>
@@ -85,7 +87,7 @@ export function OnboardingTopNav({
       {/* Right: auto-save status + theme toggle */}
       <div className="flex items-center gap-2 shrink-0">
         {autoSaveStatus === 'saving' && (
-          <span className="text-[10px] text-app-text-muted flex items-center gap-1">
+          <span className="text-[10px] text-app-text-secondary flex items-center gap-1">
             <Loader2 className="w-3 h-3 animate-spin" />
             <span className="hidden sm:inline">{t('autoSaving')}</span>
           </span>

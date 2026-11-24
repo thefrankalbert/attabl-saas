@@ -421,6 +421,59 @@ describe('createPlatformAdminService', () => {
     expect(inserts.find((i) => i.table === 'platform_audit_log')).toBeUndefined();
   });
 
+  // B78: un UPDATE qui ne touche aucune ligne (restaurant ou compte supprime
+  // entre-temps) n'est ni annonce reussi ni journalise, et ne coupe aucune session.
+  it.each([
+    [
+      'suspendTenant',
+      'tenants',
+      (svc: ReturnType<typeof createPlatformAdminService>) => svc.suspendTenant('t-1', actor),
+    ],
+    [
+      'unsuspendTenant',
+      'tenants',
+      (svc: ReturnType<typeof createPlatformAdminService>) => svc.unsuspendTenant('t-1', actor),
+    ],
+    [
+      'setCustomDomain',
+      'tenants',
+      (svc: ReturnType<typeof createPlatformAdminService>) =>
+        svc.setCustomDomain('t-1', actor, 'menu.resto.com'),
+    ],
+    [
+      'softDeleteTenant',
+      'tenants',
+      (svc: ReturnType<typeof createPlatformAdminService>) => svc.softDeleteTenant('t-1', actor),
+    ],
+    [
+      'banAdminUser',
+      'admin_users',
+      (svc: ReturnType<typeof createPlatformAdminService>) => svc.banAdminUser('u-1', actor),
+    ],
+    [
+      'softDeleteAdminUser',
+      'admin_users',
+      (svc: ReturnType<typeof createPlatformAdminService>) => svc.softDeleteAdminUser('u-1', actor),
+    ],
+    [
+      'restoreAdminUser',
+      'admin_users',
+      (svc: ReturnType<typeof createPlatformAdminService>) => svc.restoreAdminUser('u-1', actor),
+    ],
+  ] as const)('B78: %s sans ligne touchee -> CONFLICT, aucun audit', async (_name, table, act) => {
+    mockRevoke.mockClear();
+    const row =
+      table === 'tenants'
+        ? { name: 'Resto', slug: 'resto', subscription_status: 'active', freeze_reason: null }
+        : { email: 'staff@resto.com', tenant_id: 't-1', role: 'waiter', user_id: 'auth-1' };
+    const { client, inserts } = makeAdmin({ [table]: { row, count: 0 } });
+    await expect(act(createPlatformAdminService(client))).rejects.toMatchObject({
+      code: 'CONFLICT',
+    });
+    expect(inserts.find((i) => i.table === 'platform_audit_log')).toBeUndefined();
+    expect(mockRevoke).not.toHaveBeenCalled();
+  });
+
   it('restoreAdminUser clears BOTH delete and ban metadata (no contradictory state)', async () => {
     const { client, updates, inserts } = makeAdmin({
       admin_users: { row: { email: 'staff@resto.com', tenant_id: 't-1', role: 'waiter' } },

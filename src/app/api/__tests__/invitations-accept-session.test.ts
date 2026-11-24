@@ -128,7 +128,7 @@ describe('POST /api/invitations/accept - session du titulaire', () => {
     getUser.mockResolvedValue({ data: { user: null }, error: null });
 
     const res = await POST(
-      buildRequest({ token: TOKEN, full_name: 'Awa Traore', password: 'motdepasse-solide' }),
+      buildRequest({ token: TOKEN, full_name: 'Awa Traore', password: 'Motdepasse-Solide-7' }),
     );
 
     expect(res.status).toBe(200);
@@ -152,12 +152,12 @@ describe('POST /api/invitations/accept - session du titulaire', () => {
   it('connecte le nouvel employe avec le mot de passe choisi', async () => {
     getUser.mockResolvedValue({ data: { user: null }, error: null });
     const res = await POST(
-      buildRequest({ token: TOKEN, full_name: 'Awa Traore', password: 'motdepasse-solide' }),
+      buildRequest({ token: TOKEN, full_name: 'Awa Traore', password: 'Motdepasse-Solide-7' }),
     );
     expect(res.status).toBe(200);
     expect(signInWithPassword).toHaveBeenCalledWith({
       email: 'equipier@resto.test',
-      password: 'motdepasse-solide',
+      password: 'Motdepasse-Solide-7',
     });
   });
 
@@ -174,7 +174,7 @@ describe('POST /api/invitations/accept - session du titulaire', () => {
     getUser.mockResolvedValue({ data: { user: null }, error: null });
     signInWithPassword.mockResolvedValue({ data: {}, error: { code: 'x' } });
     const res = await POST(
-      buildRequest({ token: TOKEN, full_name: 'Awa Traore', password: 'motdepasse-solide' }),
+      buildRequest({ token: TOKEN, full_name: 'Awa Traore', password: 'Motdepasse-Solide-7' }),
     );
     expect(res.status).toBe(200);
   });

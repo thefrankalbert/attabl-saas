@@ -99,7 +99,7 @@ export function PhoneHeader({ logoUrl, initial }: PhoneHeaderProps) {
           <span
             style={{
               fontSize: '8px',
-              color: C.textMuted,
+              color: C.searchPlaceholder,
               fontWeight: 500,
             }}
           >

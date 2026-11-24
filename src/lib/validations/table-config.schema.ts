@@ -41,10 +41,6 @@ export const zoneSchema = z.object({
     .default(2),
 });
 
-export const tableConfigSchema = z.object({
-  zones: z.array(zoneSchema).min(1, 'Au moins une zone est requise').max(20, 'Maximum 20 zones'),
-});
-
 export const addTablesSchema = z.object({
   zone_id: z.string().uuid('ID de zone invalide'),
   count: z

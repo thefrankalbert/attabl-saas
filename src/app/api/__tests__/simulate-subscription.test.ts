@@ -68,3 +68,25 @@ describe('dev/simulate-subscription - invariant de la cause du gel', () => {
     expect(chain.updatePayloads[0].freeze_reason).toBeNull();
   });
 });
+
+// B152: le 404 est la SEULE protection de cette route, qui ecrit un abonnement
+// actif avec service_role. Chaque condition manquante doit suffire a fermer.
+describe('dev/simulate-subscription - garde 404 (B152)', () => {
+  it.each([
+    ['production', 'true'],
+    ['test', 'true'],
+    ['development', 'false'],
+    ['development', ''],
+  ])('NODE_ENV=%s, ALLOW_DEV_PAYMENT_SIM=%s: 404 sans aucune ecriture', async (env, allow) => {
+    vi.stubEnv('NODE_ENV', env);
+    vi.stubEnv('ALLOW_DEV_PAYMENT_SIM', allow);
+    try {
+      const response = await POST(makeRequest());
+      expect(response.status).toBe(404);
+      expect(mockFrom).not.toHaveBeenCalled();
+    } finally {
+      vi.stubEnv('NODE_ENV', 'development');
+      vi.stubEnv('ALLOW_DEV_PAYMENT_SIM', 'true');
+    }
+  });
+});

@@ -24,7 +24,6 @@ function createMockSupabase() {
     if (!chains[table]) {
       chains[table] = {
         single: vi.fn(),
-        maybeSingle: vi.fn(),
         update: vi.fn(),
         resolve: vi.fn(), // for chains that resolve directly (e.g. update...is())
       };
@@ -60,24 +59,10 @@ function createMockSupabase() {
 
     return {
       // select().eq().eq().single()  - used by admin_users lookup
-      // select().eq().eq().is().order().limit().maybeSingle() - used by getActiveServerForTable
-      // select().eq().is().order() - used by getActiveAssignments (resolves directly)
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             single: chain.single,
-            is: vi.fn().mockReturnValue({
-              order: vi.fn().mockReturnValue({
-                limit: vi.fn().mockReturnValue({
-                  maybeSingle: chain.maybeSingle,
-                }),
-              }),
-            }),
-          }),
-          is: vi.fn().mockReturnValue({
-            order: vi.fn().mockReturnValue({
-              range: chain.resolve,
-            }),
           }),
         }),
       }),
@@ -224,55 +209,6 @@ describe('AssignmentService', () => {
       const service = createAssignmentService(asSupabase(supabase));
 
       await expect(service.releaseAllForServer(TENANT_ID, SERVER_ID)).resolves.toBeUndefined();
-    });
-  });
-
-  describe('getActiveServerForTable', () => {
-    it('should return the server when an active assignment exists', async () => {
-      const supabase = createMockSupabase();
-
-      // select().eq().eq().is().order().limit().maybeSingle()
-      supabase._getChain('table_assignments').maybeSingle.mockResolvedValue({
-        data: { server: mockServer },
-        error: null,
-      });
-
-      const service = createAssignmentService(asSupabase(supabase));
-      const result = await service.getActiveServerForTable(TENANT_ID, TABLE_ID);
-
-      expect(result).toEqual(mockServer);
-    });
-
-    it('should return null when no active assignment exists', async () => {
-      const supabase = createMockSupabase();
-
-      supabase._getChain('table_assignments').maybeSingle.mockResolvedValue({
-        data: null,
-        error: null,
-      });
-
-      const service = createAssignmentService(asSupabase(supabase));
-      const result = await service.getActiveServerForTable(TENANT_ID, TABLE_ID);
-
-      expect(result).toBeNull();
-    });
-  });
-
-  describe('getActiveAssignments', () => {
-    it('should return the list of active assignments', async () => {
-      const supabase = createMockSupabase();
-
-      // select().eq().is().order() resolves directly
-      supabase._getChain('table_assignments').resolve.mockResolvedValue({
-        data: [mockAssignment],
-        error: null,
-        count: 1,
-      });
-
-      const service = createAssignmentService(asSupabase(supabase));
-      const result = await service.getActiveAssignments(TENANT_ID);
-
-      expect(result.assignments).toEqual([mockAssignment]);
     });
   });
 

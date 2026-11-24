@@ -8,7 +8,8 @@ import type { OnboardingData } from '@/app/onboarding/page';
 interface LaunchSummaryCardProps {
   data: OnboardingData;
   accentColor: string;
-  completedItems: Array<{ label: string; done: boolean }>;
+  /** `blocked`: le lancement sera refuse tant que ce point n'est pas corrige. */
+  completedItems: Array<{ label: string; done: boolean; blocked?: boolean }>;
 }
 
 export function LaunchSummaryCard({ data, accentColor, completedItems }: LaunchSummaryCardProps) {
@@ -48,7 +49,17 @@ export function LaunchSummaryCard({ data, accentColor, completedItems }: LaunchS
             >
               <Check className="h-3 w-3" />
             </div>
-            <span className={`text-sm ${item.done ? 'text-app-text' : 'text-app-text-muted'}`}>
+            {/* Contre-audit 4: un point non fait porte une information, il garde un
+                contraste AA (text-app-text-secondary, plus text-app-text-muted). */}
+            <span
+              className={`text-sm ${
+                item.done
+                  ? 'text-app-text'
+                  : item.blocked
+                    ? 'text-status-error'
+                    : 'text-app-text-secondary'
+              }`}
+            >
               {item.label}
             </span>
           </div>

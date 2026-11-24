@@ -252,7 +252,13 @@ export async function proxy(request: NextRequest) {
         return response;
       }
 
-      url.pathname = `/sites/${tenantSlug}${pathname}`;
+      // B19: un chemin deja sous /sites/<ce slug>/ (lien du manifest, start_url)
+      // n'est pas prefixe une seconde fois (sinon 404). Un autre slug l'est.
+      const sitePrefix = `/sites/${tenantSlug}`;
+      url.pathname =
+        pathname === sitePrefix || pathname.startsWith(`${sitePrefix}/`)
+          ? pathname
+          : `${sitePrefix}${pathname}`;
       const response = NextResponse.rewrite(url, {
         request: { headers: request.headers },
       });
