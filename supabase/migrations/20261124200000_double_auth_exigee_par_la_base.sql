@@ -40,7 +40,7 @@
 --
 -- RETOUR ARRIERE: rejouer les definitions des quatre fonctions depuis
 -- supabase/schema.sql (sans `public.mfa_satisfait()`), supprimer la politique
--- "Membres: lecture de leurs restaurants (avant double authentification)",
+-- "Membres: leurs restaurants avant double authentification",
 -- puis `DROP FUNCTION public.mfa_satisfait();`.
 
 BEGIN;
@@ -158,8 +158,8 @@ $function$;
 
 -- Lecture de ses propres restaurants AVANT la double authentification (voir
 -- l'en-tete): seulement les restaurants dont on est membre vivant.
-DROP POLICY IF EXISTS "Membres: lecture de leurs restaurants (avant double authentification)" ON public.tenants;
-CREATE POLICY "Membres: lecture de leurs restaurants (avant double authentification)"
+DROP POLICY IF EXISTS "Membres: leurs restaurants avant double authentification" ON public.tenants;
+CREATE POLICY "Membres: leurs restaurants avant double authentification"
   ON public.tenants
   FOR SELECT
   TO authenticated
