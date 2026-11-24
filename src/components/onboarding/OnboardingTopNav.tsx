@@ -1,6 +1,7 @@
 'use client';
 
-import { Loader2, LayoutGrid, Check, CloudOff } from 'lucide-react';
+import { useState } from 'react';
+import { Loader2, LayoutGrid, Check, CloudOff, LogOut } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
@@ -29,6 +30,19 @@ export function OnboardingTopNav({
   goToPhase,
 }: OnboardingTopNavProps) {
   const tc = useTranslations('common');
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  // Se deconnecter ou changer de compte sans finir le parcours: le brouillon
+  // est deja enregistre cote serveur, la reprise se fera a la prochaine
+  // connexion. Rechargement complet voulu pour vider l'etat du navigateur.
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    await fetch('/api/auth/signout', { method: 'POST' }).catch(() => undefined);
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- rechargement complet voulu a la deconnexion, comme ShellAccountMenu (2026-11-24)
+    window.location.assign('/login');
+  };
+
   return (
     /* --- Floating top navigation strip --- */
     <header className="shrink-0 h-14 bg-app-card border-b border-app-border flex items-center px-4 sm:px-6 z-10">
@@ -105,6 +119,18 @@ export function OnboardingTopNav({
           </span>
         )}
         <ThemeToggle />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={handleLogout}
+          disabled={loggingOut}
+          aria-label={tc('logout')}
+          title={tc('logout')}
+          className="text-app-text-muted hover:text-app-text"
+        >
+          {loggingOut ? <Loader2 className="animate-spin" /> : <LogOut />}
+        </Button>
       </div>
     </header>
   );

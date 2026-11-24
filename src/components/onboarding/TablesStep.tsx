@@ -21,7 +21,16 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
   const [zones, setZones] = useState<ZoneData[]>(
     data.tableZones && data.tableZones.length > 0
       ? data.tableZones
-      : [{ name: '', prefix: '', tableCount: 10, defaultCapacity: 2 }],
+      : // La premiere zone reprend le nombre de tables deja donne a l'ecran
+        // Adresse: la meme question ne doit pas recevoir deux reponses.
+        [
+          {
+            name: '',
+            prefix: '',
+            tableCount: Math.min(MAX_TABLES_PER_ZONE, Math.max(1, data.tableCount || 10)),
+            defaultCapacity: 2,
+          },
+        ],
   );
 
   const syncToParent = useCallback(

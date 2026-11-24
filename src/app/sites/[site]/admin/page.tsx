@@ -9,7 +9,6 @@ import type {
   DashboardBucketSeries,
   DashboardChannelSeries,
   TopDishRecord,
-  StockAlertRecord,
 } from '@/types/dashboard.types';
 import type { ServiceType } from '@/types/admin.types';
 import TenantNotFound from '@/components/admin/TenantNotFound';
@@ -134,7 +133,6 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
   let initialBuckets: DashboardBucketSeries = { week: [], month: [], quarter: [] };
   let initialChannelBuckets: DashboardChannelSeries = { week: [], month: [], quarter: [] };
   let initialTopDishes: TopDishRecord[] = [];
-  let initialStockAlerts: StockAlertRecord[] = [];
   let activeTablesTotal = 0;
   let activeTablesUsed = 0;
 
@@ -154,7 +152,6 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       yesterdayRes,
       quarterRes,
       topDishesRes,
-      lowStockRes,
       tablesRes,
       openSessionsRes,
       adminUserRes,
@@ -223,13 +220,6 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
         .eq('orders.tenant_id', tenant.id)
         .in('orders.payment_status', [...PAYMENT_STATUSES_WITH_MONEY])
         .gte('orders.created_at', sevenDaysAgo.toISOString()),
-
-      // Low stock alerts
-      supabase
-        .from('ingredients')
-        .select('id, name, current_stock, min_stock_alert, unit')
-        .eq('tenant_id', tenant.id)
-        .limit(60),
 
       // Active tables total. The `tables` table has no `status` column
       // (occupancy is derived, see components/admin/service/service-status.ts),
@@ -399,20 +389,6 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       .sort((a, b) => b.portions - a.portions)
       .slice(0, 5);
 
-    // --- Stock alerts -----------------------------------
-    const rawAlerts: StockAlertRecord[] = [];
-    for (const row of (lowStockRes.data || []) as Array<Record<string, unknown>>) {
-      const name = (row.name as string) || '';
-      const current = Number(row.current_stock || 0);
-      const threshold = Number(row.min_stock_alert || 0);
-      const unit = (row.unit as string) || '';
-      if (threshold <= 0) continue;
-      if (current > threshold) continue;
-      const level: StockAlertRecord['level'] = current <= 0 ? 'err' : 'warn';
-      rawAlerts.push({ id: row.id as string, level, title: name, current, threshold, unit });
-    }
-    initialStockAlerts = rawAlerts.sort((a, b) => a.current - b.current).slice(0, 3);
-
     // --- Tables ----------------------------------------
     activeTablesTotal = tablesRes.count ?? 0;
     const openSessions = (openSessionsRes.data || []) as Array<{ table_number: string | null }>;
@@ -466,7 +442,6 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
         initialBuckets={initialBuckets}
         initialChannelBuckets={initialChannelBuckets}
         initialTopDishes={initialTopDishes}
-        initialStockAlerts={initialStockAlerts}
         initialActiveTables={{ used: activeTablesUsed, total: activeTablesTotal }}
         currency={tenant.currency}
         timeZone={resolveTenantTimezone(tenant)}

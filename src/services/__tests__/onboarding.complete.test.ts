@@ -29,7 +29,7 @@ vi.mock('../table-config.service', () => ({
   createTableConfigService: () => ({ createZonesAndTables, createDefaultConfig }),
 }));
 
-import { completeOnboarding } from '../onboarding.complete';
+import { completeOnboarding, effectiveTableCount } from '../onboarding.complete';
 import { ServiceError } from '../errors';
 import type { OnboardingCompleteData } from '../onboarding.types';
 
@@ -883,5 +883,27 @@ describe('verrou: proprietaire et droits (contre-audit 2026-11-08)', () => {
     await expect(completeOnboarding(fakeSupabase(), 't1', donnees())).rejects.toMatchObject({
       code: 'CONFLICT',
     });
+  });
+});
+
+describe('nombre de tables enregistre (une seule reponse)', () => {
+  it('vaut le total des zones quand des zones creent les tables', () => {
+    expect(
+      effectiveTableCount({
+        tableCount: 13,
+        tableConfigMode: 'minimum',
+        tableZones: [
+          { name: 'Salle', prefix: 'S', tableCount: 4, defaultCapacity: 2 },
+          { name: 'Terrasse', prefix: 'T', tableCount: 3, defaultCapacity: 2 },
+        ],
+      }),
+    ).toBe(7);
+  });
+
+  it('temoin: sans zones, garde le chiffre de l ecran Adresse', () => {
+    expect(effectiveTableCount({ tableCount: 13, tableConfigMode: 'skip', tableZones: [] })).toBe(
+      13,
+    );
+    expect(effectiveTableCount({ tableCount: 13 })).toBe(13);
   });
 });

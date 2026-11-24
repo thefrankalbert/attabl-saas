@@ -274,6 +274,12 @@ export interface RecipeImportResult {
   /** Lines identical to the stored recipe: not rewritten. */
   recipesUnchanged: number;
   ingredientsCreated: number;
+  /**
+   * Noms des produits crees par l'import, tels qu'ecrits dans le fichier. Un
+   * nom mal orthographie cree un doublon: l'ecran les nomme pour que la faute
+   * se voie tout de suite.
+   */
+  ingredientsCreatedNames: string[];
   itemsSkipped: number;
   errors: ImportRowError[];
 }

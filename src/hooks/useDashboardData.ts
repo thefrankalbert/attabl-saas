@@ -22,14 +22,6 @@ import type {
 
 // --- Types -------------------------------------------------
 
-interface StockItem {
-  id: string;
-  name: string;
-  unit: string;
-  current_stock: number;
-  min_stock_alert: number;
-}
-
 export interface UseDashboardDataParams {
   tenantId: string;
   tenantSlug: string;
@@ -48,7 +40,6 @@ export interface UseDashboardDataParams {
 export interface UseDashboardDataReturn {
   stats: DashboardStats;
   recentOrders: Order[];
-  stockItems: StockItem[];
   categoryBreakdown: CategoryBreakdown[];
   hourlyOrders: HourlyOrderCount[];
   revenueSparkline: SparklinePoint[];
@@ -93,7 +84,6 @@ export function useDashboardData({
     {
       stats: initialStats,
       recentOrders: initialRecentOrders,
-      stockItems: [],
       categoryBreakdown: [],
       hourlyOrders: [],
       revenueSparkline: initialRevenueSparkline,
@@ -105,7 +95,6 @@ export function useDashboardData({
 
   const stats = dashboardData?.stats ?? initialStats;
   const recentOrders = dashboardData?.recentOrders ?? initialRecentOrders;
-  const stockItems = dashboardData?.stockItems ?? [];
   const categoryBreakdown = dashboardData?.categoryBreakdown ?? [];
   const hourlyOrders = dashboardData?.hourlyOrders ?? [];
   const revenueSparkline = dashboardData?.revenueSparkline ?? [];
@@ -190,25 +179,9 @@ export function useDashboardData({
           },
         )
         .subscribe(),
-      // Realtime for stock changes
-      supabase
-        .channel(`dashboard-stock-${tenantId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'ingredients',
-            filter: `tenant_id=eq.${tenantId}`,
-          },
-          () => {
-            scheduleRefetch();
-          },
-        )
-        .subscribe(),
     ]);
 
-    // On network recovery the two channels above are dead; rebuild them (bump
+    // On network recovery the channel above is dead; rebuild it (bump
     // the tick to re-run this effect) and refetch the data missed during the
     // outage. Without this the dashboard silently stops updating after a blip.
     const onOnline = () => {
@@ -230,7 +203,6 @@ export function useDashboardData({
   return {
     stats,
     recentOrders,
-    stockItems,
     categoryBreakdown,
     hourlyOrders,
     revenueSparkline,
