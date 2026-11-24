@@ -2296,7 +2296,7 @@
       "paymentMethodsSaved": "Payment methods saved",
       "paymentMethodsAtLeastOne": "Keep at least one payment method on.",
       "paymentMethodsError": "Error saving payment methods",
-      "savePaymentMethods": "Save",
+      "savePaymentMethods": "Save payment methods",
       "paymentMethod": {
         "cash": {
           "label": "Cash",
@@ -3472,6 +3472,9 @@
     "revenueEvolution": "Revenue Trends",
     "topProducts": "Top Products",
     "salesCount": "{count} sales",
+    "colName": "Name",
+    "colDate": "Date",
+    "colSales": "Sales",
     "noDataLabel": "No data available",
     "viewFullRanking": "View full ranking",
     "loadingReports": "Loading reports...",

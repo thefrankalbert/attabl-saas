@@ -2296,7 +2296,7 @@
       "paymentMethodsSaved": "Modes de paiement enregistrés",
       "paymentMethodsAtLeastOne": "Gardez au moins un moyen de paiement actif.",
       "paymentMethodsError": "Erreur lors de l'enregistrement des modes de paiement",
-      "savePaymentMethods": "Enregistrer",
+      "savePaymentMethods": "Enregistrer les modes de paiement",
       "paymentMethod": {
         "cash": {
           "label": "Espèces",
@@ -3472,6 +3472,9 @@
     "revenueEvolution": "Évolution des Revenus",
     "topProducts": "Top Produits",
     "salesCount": "{count} ventes",
+    "colName": "Nom",
+    "colDate": "Date",
+    "colSales": "Ventes",
     "noDataLabel": "Aucune donnée disponible",
     "viewFullRanking": "Voir tout le classement",
     "loadingReports": "Chargement des rapports...",

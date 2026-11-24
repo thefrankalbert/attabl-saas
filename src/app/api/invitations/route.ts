@@ -12,6 +12,7 @@ import {
 } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createInvitationService } from '@/services/invitation.service';
+import { createAuditService } from '@/services/audit.service';
 import { canGrantRole } from '@/lib/auth/role-hierarchy';
 import { createInvitationSchema } from '@/lib/validations/invitation.schema';
 import { sendInvitationEmail } from '@/services/email.service';
@@ -283,6 +284,21 @@ export async function POST(request: Request) {
         // user.id is the auth user id; use the actor's membership-row PK.
         invitedBy: adminUser.id,
         customPermissions: parsed.data.custom_permissions,
+      });
+
+      // Journal d'audit: l'auteur est le membre qui invite, dans CE restaurant.
+      // Le jeton d'invitation n'y figure jamais.
+      await createAuditService(adminClient, {
+        tenantId,
+        userId: user.id,
+        userEmail: user.email ?? undefined,
+        userRole: adminUser.role,
+      }).log({
+        action: 'create',
+        entityType: 'user',
+        entityId: invitation.id,
+        newData: { email: invitation.email, role: invitation.role, status: invitation.status },
+        metadata: { event: 'invitation_created', invitation_id: invitation.id },
       });
 
       // Send invitation email only if the invitation is pending (not direct-add).
