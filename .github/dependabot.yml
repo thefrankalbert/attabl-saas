@@ -17,6 +17,19 @@ updates:
     cooldown:
       default-days: 7
     open-pull-requests-limit: 3
+    # zxing-wasm ne se monte JAMAIS seul. QRScanner.tsx l'importe en direct
+    # pour que le bundler serve le .wasm sous /_next/static, depuis notre
+    # domaine: la CSP refuse fastly.jsdelivr.net, et sans cet import le client
+    # voyait "camera non disponible" sur iPhone (incident du 2026-11-17). La
+    # version doit donc rester EXACTEMENT celle que resout
+    # @yudiel/react-qr-scanner via barcode-detector/ponyfill, sinon le binaire
+    # servi n'est pas celui qu'attend le scanner. Le test
+    # src/lib/__tests__/qr-scanner-wasm.test.ts compare les deux empreintes et
+    # refuse tout decalage, donc une proposition de Dependabot sur ce paquet
+    # seul ne peut pas passer la CI. La montee se fait a la main, en meme temps
+    # que @yudiel/react-qr-scanner, les deux etant epingles au patch pres.
+    ignore:
+      - dependency-name: zxing-wasm
     groups:
       mineures-et-correctifs:
         update-types:
