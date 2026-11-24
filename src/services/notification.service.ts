@@ -233,9 +233,10 @@ export async function checkAndNotifyLowStock(tenantId: string): Promise<void> {
  * deducted.
  *
  * Why this exists: the destock is deliberately non-blocking (an order must never
- * be refused because the stock engine stumbled), and `destock_order` aborts the
- * WHOLE call as soon as one recipe line is short. Until this function existed,
- * that outcome was written to the logs and to Sentry only - nobody in the
+ * be refused because the stock engine stumbled): when the call fails (database
+ * or network error - since 20261112150000 a short ingredient no longer refuses
+ * it, the stock goes below zero instead), nothing is deducted. Until this
+ * function existed, that outcome was written to the logs and to Sentry only - nobody in the
  * restaurant was told. The dish went out, the stock screen kept showing the old
  * figure, and the gap was discovered at the next physical count, with no way to
  * tell which order caused it. Written with `user_id: null`, so it reaches every
@@ -250,10 +251,8 @@ const DESTOCK_FAILED_TITLE_PREFIX = 'Stock non deduit - commande';
 export async function notifyDestockFailed(params: {
   tenantId: string;
   orderId: string;
-  /** True when the deduction was refused for lack of stock (the usual cause). */
-  outOfStock: boolean;
 }): Promise<void> {
-  const { tenantId, orderId, outOfStock } = params;
+  const { tenantId, orderId } = params;
   try {
     const supabase = createAdminClient();
     const { data: order } = await supabase
@@ -300,9 +299,7 @@ export async function notifyDestockFailed(params: {
       user_id: null,
       type: 'stock_alert',
       title: `${DESTOCK_FAILED_TITLE_PREFIX} ${label}`,
-      body: outOfStock
-        ? "Le stock d'un ingredient de cette commande etait insuffisant: aucun ingredient n'a ete deduit. Reapprovisionnez, puis corrigez le stock a la main."
-        : "Les ingredients de cette commande n'ont pas pu etre deduits. Verifiez le stock a la main.",
+      body: "Les ingredients de cette commande n'ont pas pu etre deduits. Verifiez le stock a la main.",
       // /inventory, NOT /stock-history: a deduction that FAILED has, by
       // definition, no line in the history - sending the owner there would show
       // them nothing. The actionable screen is the stock itself.

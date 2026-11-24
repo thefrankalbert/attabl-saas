@@ -60,8 +60,8 @@ export function createPaymentService(supabase: SupabaseClient) {
       // Une commande OFFERTE est close et sans solde: `summarize` la court-circuite
       // a 'comp' mais laisse net a 0, donc le plafond calculait un solde restant
       // egal au total et acceptait un encaissement plein. Le registre aurait
-      // enregistre de l'argent sur une addition offerte, et le rapport des
-      // gratuites (get_daily_comps) aurait cesse de correspondre a la caisse.
+      // enregistre de l'argent sur une addition offerte, et les colonnes de
+      // l'offert (comp_amount) auraient cesse de correspondre a la caisse.
       // Le message dit ce que le code fait vraiment: il n'existe aucun chemin
       // d'annulation de l'offert dans l'application, donc envoyer l'utilisateur
       // "annuler l'offert avant d'encaisser" le ferait chercher un bouton qui
@@ -225,7 +225,7 @@ export function createPaymentService(supabase: SupabaseClient) {
      * comp ledger row would inflate net revenue. Because payment_status becomes
      * 'comp' (not 'paid'), the order is auto-excluded from get_daily_revenue /
      * get_order_summary / get_top_items (all filter payment_status='paid') and
-     * surfaces only in get_daily_comps.
+     * is traced only by the comp columns above.
      *
      * Destock already ran at order creation - a comped order still consumed its
      * ingredients, so this does NOT touch stock (order.service is never called for

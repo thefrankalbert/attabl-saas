@@ -83,29 +83,10 @@ describe('scheduleDestock', () => {
     expect(mockDestockOrder).toHaveBeenCalledWith('order-2', 'tenant-1', 'user-9');
   });
 
-  it('warns the restaurant, and says it is a shortage, on the error destockOrder really throws', async () => {
-    // Exactly what src/services/inventory.service.ts throws when the RPC raises
-    // INSUFFICIENT_STOCK: a CONFLICT ServiceError whose message is in French.
-    // Reading the message instead of the code is why the shortage wording used
-    // to be unreachable, so the error is reproduced here in full.
-    mockDestockOrder.mockRejectedValue(
-      new ServiceError('Stock insuffisant pour cette commande', 'CONFLICT', {
-        message: 'INSUFFICIENT_STOCK',
-      }),
-    );
-
-    const { scheduleDestock } = await import('../schedule-destock');
-    scheduleDestock(supabase, { orderId: 'order-3', tenantId: 'tenant-1', channel: 'convive' });
-    await runScheduled();
-
-    expect(mockNotifyDestockFailed).toHaveBeenCalledWith({
-      tenantId: 'tenant-1',
-      orderId: 'order-3',
-      outOfStock: true,
-    });
-  });
-
-  it('warns without claiming a shortage when the cause is something else', async () => {
+  it('warns the restaurant when the deduction fails', async () => {
+    // Since 20261112150000 destock_order no longer refuses a short ingredient
+    // (audit B146): the only failures left are database or network errors,
+    // which destockOrder turns into an INTERNAL ServiceError.
     mockDestockOrder.mockRejectedValue(
       new ServiceError('Erreur destockage commande', 'INTERNAL', { message: 'network down' }),
     );
@@ -117,7 +98,6 @@ describe('scheduleDestock', () => {
     expect(mockNotifyDestockFailed).toHaveBeenCalledWith({
       tenantId: 'tenant-1',
       orderId: 'order-5',
-      outOfStock: false,
     });
   });
 

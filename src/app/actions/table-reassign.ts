@@ -31,6 +31,7 @@ const RPC_MESSAGES: Record<string, string> = {
   'Only dine-in orders can be reassigned': 'Seule une commande sur place peut changer de table.',
   'Cannot reassign a cancelled order': 'Une commande annulee ne change pas de table.',
   'Destination table number is required': 'Choisissez la table de destination.',
+  'Destination table not found': "Cette table n'existe pas dans votre restaurant.",
 };
 
 function reassignErrorMessage(error: { code?: string; message?: string }): string {

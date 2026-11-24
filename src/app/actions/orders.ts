@@ -12,6 +12,7 @@ import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
 import { createOrderService } from '@/services/order.service';
 import { createPaymentService, type PaymentSummary } from '@/services/payment.service';
 import { createInventoryService } from '@/services/inventory.service';
+import { createCouponService } from '@/services/coupon.service';
 import { createOrderReadyService } from '@/services/order-ready.service';
 import { createOrderAnnotationService, type OrderNote } from '@/services/order-annotation.service';
 import type { PaymentStatus } from '@/types/admin.types';
@@ -366,12 +367,21 @@ export async function actionUpdateOrderStatus(
     const service = createOrderService(supabase);
     if (parsed.data.status === 'cancelled') {
       // Cancellation reverses side-effects (audit C7), in two halves by design:
-      //  - cancelOrder (authenticated): refuse a paid order, release the coupon,
-      //    set status='cancelled'.
-      //  - stock restock via the canonical service_role path (main's stock-integrity
-      //    feature): restock_order is service_role-only, so it runs via the admin
-      //    client + inventory.service, gated by the inventory plan feature. Non-blocking.
-      await service.cancelOrder(parsed.data.orderId, parsed.data.tenantId);
+      //  - cancelOrder (authenticated): refuse a paid order, set
+      //    status='cancelled' by a guarded update.
+      //  - coupon given back with the service role by a database function
+      //    that starts from the ORDER (cancelled, same restaurant, not given
+      //    back yet): idempotent, so it also runs when the order was already
+      //    cancelled, which retries a release that failed (audit B67).
+      //  - stock given back only by the call that really cancelled (audit
+      //    B123). Neither `unclaim_coupon_usage` nor `restock_order` is
+      //    callable by a staff session.
+      const cancelledNow = await service.cancelOrder(parsed.data.orderId, parsed.data.tenantId);
+      // Never throws: a failure is logged, the cancellation itself stands.
+      await createCouponService(createAdminClient()).releaseForCancelledOrder(
+        parsed.data.orderId,
+        parsed.data.tenantId,
+      );
       // A cancelled order no longer holds its table.
       releaseTableWhenDone(parsed.data.tenantId, parsed.data.orderId);
 
@@ -379,9 +389,12 @@ export async function actionUpdateOrderStatus(
       // stock), mais la commande a ete destockee pendant l'essai. Sans ce cas,
       // l'annuler laisserait le stock faux a vie. `restock_order` ne rend que
       // ce qui a ete deduit pour cette commande: sans destockage, rien ne bouge.
+      // Only the call that really cancelled restocks (audit B123): a second tap
+      // on an order already cancelled used to schedule a second restock.
       const hasInventory =
-        finishingAfterTrial ||
-        (await isFeatureEntitled(supabase, parsed.data.tenantId, 'canAccessInventory'));
+        cancelledNow &&
+        (finishingAfterTrial ||
+          (await isFeatureEntitled(supabase, parsed.data.tenantId, 'canAccessInventory')));
 
       if (hasInventory) {
         const { orderId: cancelledOrderId, tenantId: cancelledTenantId } = parsed.data;

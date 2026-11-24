@@ -75,6 +75,11 @@ vi.mock('@/services/order.service', () => ({
   })),
 }));
 
+const mockReleaseForCancelledOrder = vi.fn<() => Promise<boolean>>();
+vi.mock('@/services/coupon.service', () => ({
+  createCouponService: vi.fn(() => ({ releaseForCancelledOrder: mockReleaseForCancelledOrder })),
+}));
+
 const mockRestockOrder = vi.fn<() => Promise<number>>();
 vi.mock('@/services/inventory.service', () => ({
   createInventoryService: vi.fn(() => ({ restockOrder: mockRestockOrder })),
@@ -129,7 +134,7 @@ describe('actionUpdateOrderStatus - cancel auto-restock wiring', () => {
         },
       }),
     );
-    mockCancelOrder.mockResolvedValue(undefined);
+    mockCancelOrder.mockResolvedValue(true);
     mockUpdateStatus.mockResolvedValue(undefined);
     afterCallbacks.length = 0;
   });
@@ -185,6 +190,43 @@ describe('actionUpdateOrderStatus - cancel auto-restock wiring', () => {
     await runScheduled();
 
     expect(mockRestockOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID, 'user-9');
+  });
+
+  it('B67: asks the database to give back the coupon FROM THE ORDER (service role)', async () => {
+    vi.mocked(canAccessFeature).mockReturnValue(false);
+    mockCancelOrder.mockResolvedValue(true);
+
+    const { actionUpdateOrderStatus } = await import('@/app/actions/orders');
+    const result = await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, 'cancelled');
+
+    expect(result.success).toBe(true);
+    // Only the order and the tenant: the coupon is read by the database on the
+    // order, never taken from the client or from a column the staff can write.
+    expect(mockReleaseForCancelledOrder).toHaveBeenCalledTimes(1);
+    expect(mockReleaseForCancelledOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID);
+  });
+
+  it('B67: retries the release on an order already cancelled (the database gives back at most once)', async () => {
+    vi.mocked(canAccessFeature).mockReturnValue(false);
+    mockCancelOrder.mockResolvedValue(false);
+
+    const { actionUpdateOrderStatus } = await import('@/app/actions/orders');
+    await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, 'cancelled');
+
+    expect(mockReleaseForCancelledOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID);
+  });
+
+  it('B123: does NOT restock again when the order was already cancelled', async () => {
+    vi.mocked(canAccessFeature).mockReturnValue(true);
+    mockCancelOrder.mockResolvedValue(false);
+
+    const { actionUpdateOrderStatus } = await import('@/app/actions/orders');
+    const result = await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, 'cancelled');
+    await runScheduled();
+
+    expect(result.success).toBe(true);
+    expect(mockCancelOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID);
+    expect(mockRestockOrder).not.toHaveBeenCalled();
   });
 
   it('does NOT restock when the plan lacks inventory', async () => {
@@ -402,7 +444,7 @@ describe("actions de cuisine - fin d'essai", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUpdateStatus.mockResolvedValue(undefined);
-    mockCancelOrder.mockResolvedValue(undefined);
+    mockCancelOrder.mockResolvedValue(true);
     mockSetCourseHeld.mockResolvedValue(undefined);
     afterCallbacks.length = 0;
   });

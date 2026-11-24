@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Coupon } from '@/types/admin.types';
+import type { Database } from '@/types/database.generated';
 import type { CurrencyCode } from '@/lib/constants';
 import { roundForCurrency } from '@/lib/utils/money';
 import { ServiceError } from './errors';
@@ -21,6 +22,7 @@ export interface CouponService {
   ): Promise<CouponValidationResult>;
   claimUsage(couponId: string): Promise<boolean>;
   unclaimUsage(couponId: string): Promise<void>;
+  releaseForCancelledOrder(orderId: string, tenantId: string): Promise<boolean>;
   recordRedemption(input: {
     tenantId: string;
     couponId: string;
@@ -173,6 +175,32 @@ export function createCouponService(supabase: SupabaseClient): CouponService {
       if (error) {
         logger.error('Failed to unclaim coupon usage', { couponId, error });
       }
+    },
+
+    /**
+     * Give back the coupon of a CANCELLED order, once (audit B67). The
+     * database function starts from the order: it locks it, checks it is
+     * cancelled, that its coupon belongs to the same restaurant, and that it
+     * was not given back yet (`orders.coupon_rendu_at`). Calling it again is
+     * a no-op, so a failed attempt can safely be retried. Service role only:
+     * pass the admin client. Never throws (logs), returns whether a use was
+     * given back.
+     */
+    async releaseForCancelledOrder(orderId: string, tenantId: string): Promise<boolean> {
+      // Typed against the generated schema: the call no longer compiles if the
+      // function or its arguments change.
+      type RendreCoupon = Database['public']['Functions']['rendre_coupon_commande'];
+      const args: RendreCoupon['Args'] = { p_order_id: orderId, p_tenant_id: tenantId };
+      const { data, error } = await supabase.rpc('rendre_coupon_commande', args);
+      if (error) {
+        logger.error('Coupon of a cancelled order NOT given back (retry is safe)', {
+          orderId,
+          tenantId,
+          error,
+        });
+        return false;
+      }
+      return (data as RendreCoupon['Returns'] | null) === true;
     },
 
     /**
