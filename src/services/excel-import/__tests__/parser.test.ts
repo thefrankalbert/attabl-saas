@@ -132,7 +132,7 @@ describe('parseExcelBuffer - separateur de milliers (defaut corrige)', () => {
     const { rows, errors } = await parseExcelBuffer(tampon);
 
     expect(rows).toHaveLength(0);
-    expect(errors[0].message).toMatch(/nul ou negatif/i);
+    expect(errors[0].message).toMatch(/nul ou négatif/i);
   });
 });
 
@@ -171,7 +171,7 @@ describe('parseExcelBuffer - ligne par ligne', () => {
     const { rows, errors } = await parseExcelBuffer(tampon);
 
     expect(rows).toHaveLength(0);
-    expect(errors[0].message).toMatch(/plat non importe : prix illisible/i);
+    expect(errors[0].message).toMatch(/plat non importé : prix illisible/i);
   });
 
   it('saute les lignes entierement vides sans les compter en erreur', async () => {

@@ -65,16 +65,16 @@ describe('import Excel de la carte: lecture des prix par devise', () => {
     ['XOF', '1.50', 'centimes'],
     ['XAF', '1500 / 2500', 'illisible'],
     ['XOF', 1.5, 'centimes'],
-    ['XOF', '0', 'nul ou negatif'],
-    ['EUR', 0, 'nul ou negatif'],
-    ['EUR', '-12', 'nul ou negatif'],
+    ['XOF', '0', 'nul ou négatif'],
+    ['EUR', 0, 'nul ou négatif'],
+    ['EUR', '-12', 'nul ou négatif'],
     ['EUR', '1500 / 2500', 'illisible'],
-    ['XOF', 999999999999, 'trop eleve'],
+    ['XOF', 999999999999, 'trop élevé'],
   ])('%s: cellule %j refusee, plat non importe', async (currency, cell, raison) => {
     const { prices, errors } = await prix(cell, currency);
     expect(prices).toEqual([]);
     expect(errors).toHaveLength(1);
-    expect(errors[0].message).toContain('Plat non importe');
+    expect(errors[0].message).toContain('Plat non importé');
     expect(errors[0].message).toContain(raison);
   });
 });

@@ -118,7 +118,11 @@ export function ChevaletEditor({ tenant, savedConfig }: ChevaletEditorProps) {
         }),
       });
       if (!res.ok) {
-        toast({ title: t('exportPdfError'), variant: 'destructive' });
+        // 429: limite d'exports par minute, le dire au lieu d'une erreur vague.
+        toast({
+          title: res.status === 429 ? t('exportRateLimited') : t('exportPdfError'),
+          variant: 'destructive',
+        });
         return;
       }
       const blob = await res.blob();

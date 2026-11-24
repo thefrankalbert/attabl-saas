@@ -121,8 +121,12 @@ export function PlatformConsole({
     return <Badge variant="success">{t('userActive')}</Badge>;
   }
 
+  // La console vit hors du shell admin: le theme sombre vient de `.dark` sur
+  // <html> (next-themes), qui ne redefinit que les FONDS de statut. Les couleurs
+  // de TEXTE de statut restaient celles du theme clair (2 a 2,4:1 sur fond
+  // sombre). On reprend ici, en sombre seulement, les valeurs du shell admin.
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-app-bg text-app-text">
+    <div className="flex h-dvh flex-col overflow-hidden bg-app-bg text-app-text dark:[--color-status-success:oklch(0.7_0.15_150)] dark:[--color-status-warning:#fbbf24] dark:[--color-status-error:#f87171] dark:[--color-status-info:#60a5fa]">
       <header className="flex flex-col gap-3 border-b border-app-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div className="flex flex-col gap-0.5">
           <h1 className="text-lg font-semibold sm:text-xl">{t('title')}</h1>

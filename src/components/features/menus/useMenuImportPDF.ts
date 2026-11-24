@@ -28,6 +28,9 @@ export function useMenuImportPDF({ menus, onImportComplete }: UseMenuImportPDFPa
   const [extractedItems, setExtractedItems] = useState<PdfExtractedItem[]>([]);
   // B72: plats dont le prix est refuse, jamais envoyes a l'import.
   const [notImported, setNotImported] = useState<PdfNotImportedItem[]>([]);
+  // B71: carte lue en partie seulement. Affiche DANS l'apercu (encadre
+  // persistant), pas en toast: a 375 px le toast couvrait la liste.
+  const [truncated, setTruncated] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -49,6 +52,7 @@ export function useMenuImportPDF({ menus, onImportComplete }: UseMenuImportPDFPa
     setFile(selectedFile);
     setExtractedItems([]);
     setNotImported([]);
+    setTruncated(false);
     setImportResult(null);
     setStep('upload');
   };
@@ -110,9 +114,7 @@ export function useMenuImportPDF({ menus, onImportComplete }: UseMenuImportPDFPa
 
       // B71: au-dela de la limite de lecture, seule la premiere partie de la
       // carte a ete lue. Le restaurateur le sait avant d'importer.
-      if (data.truncated === true) {
-        toast({ title: t('pdfTruncatedWarning') });
-      }
+      setTruncated(data.truncated === true);
       setExtractedItems(items);
       setNotImported(refused);
       setStep('preview');
@@ -176,6 +178,7 @@ export function useMenuImportPDF({ menus, onImportComplete }: UseMenuImportPDFPa
     setStep('upload');
     setExtractedItems([]);
     setNotImported([]);
+    setTruncated(false);
   };
 
   return {
@@ -186,6 +189,7 @@ export function useMenuImportPDF({ menus, onImportComplete }: UseMenuImportPDFPa
     isDragOver,
     extractedItems,
     notImported,
+    truncated,
     importResult,
     fileInputRef,
     handleFileSelect,

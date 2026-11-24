@@ -30,8 +30,8 @@ const pdfItemSchema = z.object({
   price: z
     .number()
     .finite()
-    .positive('Un plat sans prix ne peut pas etre importe : ajoutez-le a la main avec son prix.')
-    .max(MENU_PRICE_MAX, 'Prix trop eleve (99 999 999 au plus).'),
+    .positive('Un plat sans prix ne peut pas être importé : ajoutez-le à la main avec son prix.')
+    .max(MENU_PRICE_MAX, 'Prix trop élevé (99 999 999 au plus).'),
   description: z.string().max(1000).nullish(),
 });
 
@@ -49,7 +49,7 @@ function invalidPriceMessage(
   for (const item of items) {
     const reading = readMenuPrice(item.price, currency);
     if (!reading.ok) {
-      return `${item.name} : ${MENU_PRICE_REJECTION_LABEL[reading.reason]} (${item.price}). Corrigez le prix avant d importer.`;
+      return `${item.name} : ${MENU_PRICE_REJECTION_LABEL[reading.reason]} (${item.price}). Corrigez le prix avant d'importer.`;
     }
   }
   return null;
@@ -201,7 +201,10 @@ export async function POST(request: Request) {
       const extraction = await importService.extractFromPdf(Buffer.from(buffer), tenant.currency);
 
       if (extraction.items.length === 0) {
-        return NextResponse.json({ error: 'Aucune donnee extraite du PDF.' }, { status: 400 });
+        return NextResponse.json(
+          { error: "Aucune donnée n'a pu être extraite de ce PDF." },
+          { status: 400 },
+        );
       }
       // B72: sans apercu, des plats manqueraient a la carte sans que personne
       // le sache. On refuse tout et on dit lesquels.
@@ -212,7 +215,7 @@ export async function POST(request: Request) {
           .join(', ');
         return NextResponse.json(
           {
-            error: `Rien n a ete importe. Ces plats ont un prix que nous ne pouvons pas lire : ${noms}. Corrigez le PDF, ou passez par l apercu et ajoutez-les ensuite a la main.`,
+            error: `Rien n'a été importé. Ces plats ont un prix que nous ne pouvons pas lire : ${noms}. Corrigez le PDF, ou passez par l'aperçu et ajoutez-les ensuite à la main.`,
           },
           { status: 400 },
         );
@@ -222,7 +225,7 @@ export async function POST(request: Request) {
         return NextResponse.json(
           {
             error:
-              'Ce PDF est trop long pour etre importe en une fois. Coupez-le en plusieurs fichiers, ou passez par l apercu.',
+              "Ce PDF est trop long pour être importé en une fois. Coupez-le en plusieurs fichiers, ou passez par l'aperçu.",
           },
           { status: 400 },
         );

@@ -29,7 +29,7 @@ export function DatePickerField({
 }: DatePickerFieldProps) {
   const [open, setOpen] = useState(false);
   const locale = useLocale();
-  const dateFnsLocale = localeMap[locale] || enUS;
+  const dateFnsLocale = localeMap[locale] || localeMap[locale.split('-')[0]] || enUS;
 
   const selected = value ? parse(value, 'yyyy-MM-dd', new Date()) : undefined;
   const isSelectedValid = selected && isValid(selected);

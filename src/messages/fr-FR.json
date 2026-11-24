@@ -1680,7 +1680,7 @@
       "resendGeneric": "Erreur lors de l'envoi",
       "loginGeneric": "Erreur de connexion",
       "oauthGeneric": "Erreur de connexion. Veuillez réessayer.",
-      "oauthFailed": "La connexion OAuth a échoué. Veuillez réessayer.",
+      "oauthFailed": "La connexion avec Google n'a pas abouti. Réessayez.",
       "authFailed": "Erreur d'authentification. Veuillez réessayer.",
       "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
       "emailNotConfirmedUrl": "Veuillez confirmer votre email avant de vous connecter.",
@@ -3057,6 +3057,7 @@
       "rectoLabel": "RECTO",
       "versoLabel": "VERSO",
       "exportPdfError": "Erreur lors de l'export PDF",
+      "exportRateLimited": "Trop d'exports d'un coup. Attendez une minute, puis réessayez.",
       "exportPngError": "Erreur lors de l'export PNG",
       "tenantNotFound": "Restaurant introuvable"
     },
@@ -3136,7 +3137,9 @@
     "courseDrink": "Boissons",
     "fireCourse": "Envoyer",
     "holdCourse": "Retenir",
-    "staleScreen": "Écran non synchronisé depuis {time}"
+    "staleScreen": "Écran non synchronisé depuis {time}",
+    "loadFailedTitle": "Impossible de charger les commandes",
+    "loadFailedDesc": "Vérifiez la connexion. L'écran réessaie tout seul toutes les 15 secondes."
   },
   "pos": {
     "title": "Caisse",
@@ -3932,6 +3935,7 @@
     "pdfConfirmImport": "Confirmer l'import",
     "pdfExtracted": "{count} plat(s) extrait(s) du PDF",
     "pdfNoData": "Aucune donnée n'a pu être extraite de ce PDF",
+    "pdfAllRefused": "Nous avons lu les plats de ce PDF, mais aucun prix n'est utilisable. Rien ne sera importé.",
     "pdfExtractionError": "Erreur lors de l'extraction du PDF",
     "pdfTruncatedWarning": "Ce PDF est long : seule la première partie de la carte a été lue. Vérifiez la liste, puis importez le reste dans un second fichier.",
     "pdfNotImportedTitle": "{count} plat(s) ne seront pas importés",

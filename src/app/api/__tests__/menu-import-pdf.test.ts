@@ -87,7 +87,7 @@ describe('POST /api/menu-import-pdf - liste JSON de l apercu', () => {
   it('refuse un plat a 0 (400, message clair) sans rien importer', async () => {
     const res = await post([plat, { ...plat, name: 'Poulet DG', price: 0 }]);
     expect(res.status).toBe(400);
-    expect(((await res.json()) as { error: string }).error).toContain('ajoutez-le a la main');
+    expect(((await res.json()) as { error: string }).error).toContain('ajoutez-le à la main');
     expect(importItems).not.toHaveBeenCalled();
   });
 

@@ -76,8 +76,8 @@ export type MenuPriceReading =
 export const MENU_PRICE_REJECTION_LABEL: Record<MenuPriceRejection, string> = {
   illisible: 'prix illisible',
   decimale: 'centimes impossibles en francs CFA',
-  negatif_ou_nul: 'prix nul ou negatif',
-  trop_eleve: 'prix trop eleve (99 999 999 au plus)',
+  negatif_ou_nul: 'prix nul ou négatif',
+  trop_eleve: 'prix trop élevé (99 999 999 au plus)',
 };
 
 /**

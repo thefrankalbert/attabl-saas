@@ -77,7 +77,7 @@ export async function parseExcelBuffer(
       const lu = rawRow.price == null ? '' : String(rawRow.price).trim();
       errors.push({
         row: rowNumber,
-        message: `Plat non importe : ${MENU_PRICE_REJECTION_LABEL[priceReading.reason]}${lu ? ` ("${lu}")` : ''}. Corrigez le prix dans le fichier.`,
+        message: `Plat non importé : ${MENU_PRICE_REJECTION_LABEL[priceReading.reason]}${lu ? ` ("${lu}")` : ''}. Corrigez le prix dans le fichier.`,
       });
       continue;
     }

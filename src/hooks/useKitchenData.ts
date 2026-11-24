@@ -91,6 +91,11 @@ export interface UseKitchenDataReturn {
    * reste alors l'heure du dernier succes reel, pas celle du dernier essai.
    */
   stale: boolean;
+  /**
+   * true des le premier chargement reussi. Faux + `stale`: aucune commande n'a
+   * jamais pu etre lue, la liste vide ne veut PAS dire "rien a preparer".
+   */
+  hasLoaded: boolean;
   isFullscreen: boolean;
   activeTab: ColumnKey;
   setActiveTab: (tab: ColumnKey) => void;
@@ -157,6 +162,7 @@ export function useKitchenData({
   const [showMockData, setShowMockData] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [stale, setStale] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const { isFullscreen, toggleFullscreen } = useFullscreen();
   const [activeTab, setActiveTab] = useSessionState<ColumnKey>('kitchen:activeTab', 'pending');
 
@@ -244,6 +250,7 @@ export function useKitchenData({
       setOrders(mapped as Order[]);
       setLastUpdate(new Date());
       setStale(false);
+      setHasLoaded(true);
     } catch (error) {
       logger.error('KDS loading error', error);
       // OFF-04. NE PAS toucher a lastUpdate ici. Auparavant le chargement ne
@@ -536,6 +543,7 @@ export function useKitchenData({
     setShowMockData,
     lastUpdate,
     stale,
+    hasLoaded,
     isFullscreen,
     activeTab,
     setActiveTab,

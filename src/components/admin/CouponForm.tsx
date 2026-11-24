@@ -116,7 +116,7 @@ export default function CouponForm({
       return;
     }
 
-    toast({ title: t('couponCreated') });
+    toast({ title: initialData ? t('couponUpdated') : t('couponCreated') });
     onSuccess();
   };
 
