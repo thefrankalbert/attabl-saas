@@ -3,12 +3,13 @@
 import { useRef, useCallback, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { logger } from '@/lib/logger';
+import { getSoundFile } from '@/lib/sounds/sound-library';
 
 /**
- * Client-side notification sound file.
- * Uses gentle-chime to differentiate from the admin kitchen bell.
+ * Client-side notification sound file (versioned URL from the sound library).
+ * Uses gentle-chime to differentiate from the admin kitchen sound.
  */
-const CLIENT_NOTIFICATION_SOUND = '/sounds/gentle-chime.wav';
+const CLIENT_NOTIFICATION_SOUND = getSoundFile('gentle-chime');
 
 interface UseClientOrderNotificationReturn {
   /** Request browser notification permission (call on user gesture) */
