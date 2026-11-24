@@ -42,7 +42,14 @@
       "select": "Sélectionner",
       "remove": "Retirer",
       "scanQr": "Scanner QR",
-      "addItem": "Ajouter un élément"
+      "addItem": "Ajouter un élément",
+      "dragToReorder": "Glisser pour réorganiser",
+      "reset": "Réinitialiser",
+      "closeSearch": "Fermer la recherche",
+      "selectPage": "Sélectionner la page",
+      "selectOrder": "Sélectionner la commande",
+      "previewImage": "Aperçu",
+      "removeImage": "Retirer l'image"
     },
     "back": "Retour",
     "add": "Ajouter",
@@ -130,7 +137,11 @@
     "next": "Suivant",
     "notFoundSearch": "Rechercher",
     "notFoundPopular": "Pages les plus consultées",
-    "teamMember": "Membre de l'équipe"
+    "teamMember": "Membre de l'équipe",
+    "later": "Plus tard",
+    "dropImagePrompt": "Cliquez ou glissez une image",
+    "dropImageHint": "JPG, PNG, WebP - Max 10 Mo",
+    "pastDueBanner": "Votre paiement a échoué. Mettez à jour votre carte."
   },
   "checkout": {
     "successTitle": "Paiement réussi !",
@@ -274,6 +285,7 @@
     "cancelOrderKeep": "Garder la commande",
     "cancelOrderDone": "Commande annulée",
     "cancelOrderFailed": "Annulation impossible",
+    "cancelNeedsMoneyAuthority": "Un acompte est au registre. Seul un gérant, un administrateur ou le propriétaire peut annuler cette commande.",
     "statusLabel": "Statut",
     "printLabel": "Impression",
     "printKitchenTicket": "Ticket Cuisine",
@@ -326,7 +338,7 @@
         "noCommitment": "Sans carte bancaire. Sans engagement."
       },
       "priceSuffix": "FCFA/mois",
-      "customPrice": "Sur mesure",
+      "customPrice": "Sur devis",
       "plans": {
         "starter": {
           "badge": "Pour démarrer",
@@ -377,7 +389,7 @@
           }
         },
         "enterprise": {
-          "badge": "Sur mesure",
+          "badge": "Sur devis",
           "title": "ENTERPRISE",
           "subtitle": "Pour les groupes, franchises et chaînes qui gèrent plusieurs sites.",
           "button": "Contactez-nous",
@@ -386,8 +398,8 @@
             "f1": "Tout ce qui est dans BUSINESS",
             "f2": "Établissements illimités",
             "f3": "SLA 99.9%",
-            "f4": "Account manager",
-            "f5": "Intégrations API sur mesure",
+            "f4": "Un interlocuteur dédié",
+            "f5": "Intégrations API selon vos besoins",
             "f6": "Support téléphone prioritaire 1h"
           }
         }
@@ -460,7 +472,7 @@
               "whatsappPro": "24h",
               "whatsappBusiness": "4h prioritaire",
               "whatsappEnterprise": "1h téléphone prioritaire",
-              "manager": "Account manager",
+              "manager": "Un interlocuteur dédié",
               "sla": "SLA garanti"
             }
           },
@@ -471,7 +483,8 @@
               "items": "Articles"
             }
           }
-        }
+        },
+        "regionLabel": "Tableau comparatif des plans, à faire défiler"
       },
       "faq": {
         "title": "Questions fréquentes",
@@ -502,32 +515,6 @@
           }
         }
       },
-      "testimonials": {
-        "t1": {
-          "name": "Amadou K.",
-          "role": "Gérant",
-          "company": "Le Jardin, N'Djamena",
-          "content": "On a réduit les erreurs de commande de 40% en 2 mois. La cuisine reçoit tout sur l'écran, plus de tickets perdus."
-        },
-        "t2": {
-          "name": "Grace M.",
-          "role": "Propriétaire",
-          "company": "Chez Mama, Douala",
-          "content": "200 commandes par jour, zéro stress. Le KDS fait le tri, on prépare, on envoie."
-        },
-        "t3": {
-          "name": "Ibrahim D.",
-          "role": "Directeur",
-          "company": "Hôtel Prestige, Abidjan",
-          "content": "Le room service digital a changé notre classement Booking. Les clients commandent depuis le lit, en anglais ou en français."
-        },
-        "t4": {
-          "name": "Fatou S.",
-          "role": "Gérante",
-          "company": "La Terrasse, Dakar",
-          "content": "En 3 mois, notre chiffre d'affaires a augmenté de 25%. Le menu digital pousse les clients à commander plus."
-        }
-      },
       "priceNote": "Prix par mois, en FCFA. Le montant total est prélevé en une fois selon la période choisie.",
       "billedMonthly": "facturé au mois",
       "billedTotal": "{total} FCFA au total",
@@ -544,7 +531,7 @@
         "t3": "Support e-mail sur toutes les offres"
       },
       "cost3y": {
-        "title": "Sur trois ans, environ 30 % de moins.",
+        "title": "Sur trois ans, Attabl Pro annuel coûte environ 2,4 M FCFA.",
         "body": "Fait ici, facturé en francs CFA. Pas de licence importée ni de taux de change qui gonfle la note.",
         "attablLabel": "Attabl Pro - annuel",
         "attablPrice": "~ 2,4 M",
@@ -552,13 +539,13 @@
         "attablP1": "Mises à jour incluses",
         "attablP2": "Support en français inclus",
         "attablP3": "Aucun frais de change",
-        "rivalLabel": "Solution importée type",
-        "rivalPrice": "~ 3,5 M",
-        "rivalSub": "FCFA sur 3 ans, hors options.",
+        "rivalLabel": "Caisse importée type",
+        "rivalPrice": "En $ ou en €",
+        "rivalSub": "Un devis en devise étrangère, à convertir en FCFA.",
         "rivalP1": "Prix en devise étrangère",
         "rivalP2": "Support à l'étranger",
         "rivalP3": "Pensé pour un autre marché",
-        "disclaimer": "Estimation à titre indicatif, pour un établissement en offre Pro annuelle comparée à une solution de caisse importée équivalente. Votre cas peut varier."
+        "disclaimer": "Prix Attabl : 804 000 FCFA par an en offre Pro annuelle, soit 2 412 000 FCFA sur 3 ans. Le prix d'une caisse importée dépend de l'offre et du taux de change : demandez un devis."
       },
       "included": {
         "title": "Compris dans toutes les offres.",
@@ -580,7 +567,7 @@
         "p1cta": "Commencez en Starter",
         "p2tag": "Le plus choisi",
         "p2title": "Restaurant à table, 50+ couverts",
-        "p2body": "Écran cuisine, plan de tables, stock, pourboires, rapports. Le bistrot complet, pensé pour le rush.",
+        "p2body": "Écran cuisine, plan de tables, stock, pourboires, rapports. Pensé pour le rush du bistrot.",
         "p2cta": "Prenez Pro",
         "p3tag": "Vous grandissez",
         "p3title": "Hôtel, plusieurs établissements",
@@ -596,7 +583,7 @@
       "metaTitle": "Politique de Confidentialité",
       "metaDescription": "Quelles données ATTABL collecte, qui les héberge, combien de temps on les garde et comment exercer vos droits.",
       "heading": "Politique de Confidentialité",
-      "lastUpdate": "Dernière mise à jour : 15 novembre 2026",
+      "lastUpdate": "Dernière mise à jour : 24 novembre 2026",
       "section1Title": "1. Qui est responsable de vos données",
       "section1Body": "ATTABL est responsable du traitement des données de son site et des comptes des restaurateurs et hôteliers (compte, abonnement, connexion). Pour les clients d'un restaurant (nom, téléphone, adresse de livraison d'une commande) et pour l'équipe d'un restaurant, c'est le restaurant qui décide de l'usage des données. ATTABL agit alors pour son compte, comme sous-traitant.",
       "companyHeading": "Identité de l'entreprise",
@@ -611,7 +598,7 @@
       "section3Title": "3. Pourquoi nous les utilisons",
       "section3Body": "Pour créer et protéger votre compte, faire fonctionner le menu, les commandes et la caisse, facturer l'abonnement, répondre à vos messages, détecter les abus et corriger les erreurs. Nous n'utilisons pas vos données pour de la publicité et nous ne les vendons pas.",
       "section4Title": "4. Qui héberge ou traite vos données",
-      "section4Intro": "Ces prestataires touchent des données personnelles pour notre compte. Chacun est limité à la tâche indiquée.",
+      "section4Intro": "Ces prestataires interviennent pour notre compte. Chacun est limité à la tâche indiquée.",
       "section4Transfers": "Certains prestataires sont situés hors du Cameroun et du Burkina Faso, notamment dans l'Union européenne et aux États-Unis. Ces transferts reposent sur les engagements contractuels que ces prestataires prennent dans leurs conditions de traitement des données (clauses contractuelles types de l'Union européenne ou équivalent), sur le chiffrement des échanges (HTTPS) et sur le fait que nous ne leur transmettons que ce qui est nécessaire à leur tâche. Les données de la base sont stockées en Irlande, dans l'Union européenne. Vous pouvez nous demander la liste à jour des garanties applicables à chaque prestataire.",
       "processors": {
         "supabase": {
@@ -631,7 +618,7 @@
         },
         "sentry": {
           "name": "Sentry",
-          "role": "Détection des erreurs et relecture de session (10 % des sessions, 100 % de celles en erreur)",
+          "role": "Détection des erreurs et mesure de performance (10 % des pages). Pas de relecture de session.",
           "country": "Union européenne ou États-Unis selon la région de collecte"
         },
         "upstash": {
@@ -658,6 +645,21 @@
           "name": "ImprovMX",
           "role": "Réception du courrier envoyé aux adresses @attabl.com",
           "country": "Selon le prestataire"
+        },
+        "anthropic": {
+          "name": "Anthropic",
+          "role": "Lecture par IA du PDF que vous choisissez d'importer pour créer une carte. Le texte du document lui est envoyé au moment de l'import, à votre demande.",
+          "country": "États-Unis"
+        },
+        "exchangerate": {
+          "name": "ExchangeRate-API",
+          "role": "Taux de change dollar et FCFA, interrogé par nos serveurs. Aucune donnée personnelle ne lui est transmise.",
+          "country": "Selon le prestataire"
+        },
+        "flutterwave": {
+          "name": "Flutterwave",
+          "role": "Paiement de l'abonnement par mobile money, au moment où ce moyen de paiement sera activé. Il n'est pas encore actif.",
+          "country": "Selon le prestataire"
         }
       },
       "section5Title": "5. Les lois qui s'appliquent",
@@ -670,7 +672,7 @@
       "cookieLocale": "NEXT_LOCALE : retient la langue choisie, un an.",
       "cookieRecovery": "attabl_recovery : sécurise le changement de mot de passe, 15 minutes, invisible pour les scripts du site.",
       "cookieStorage": "Stockage local du navigateur : thème clair ou sombre, préférences d'affichage, devise, panier d'un client. Ces données restent sur votre appareil.",
-      "cookieSentry": "Si une erreur survient, Sentry peut enregistrer la session en cours pour nous aider à la corriger.",
+      "cookieSentry": "Sentry : si une erreur survient, un rapport technique (page, navigateur, message d'erreur) lui est envoyé. La session n'est pas enregistrée.",
       "section8Title": "8. Combien de temps nous gardons vos données",
       "section8Intro": "Des purges automatiques tournent chaque nuit. Voici les durées appliquées.",
       "retentionGuests": "Nom, téléphone, adresse de livraison et notes libres d'un client (sur la commande et sur ses articles, annotations des managers sur la commande) : effacés {days} jours après la commande. La commande et ses montants sont conservés, sans l'identité du client, car le droit commercial impose de garder les pièces comptables.",
@@ -682,7 +684,6 @@
       "retentionAccount": "Compte et établissement actifs : conservés pendant l'abonnement.",
       "retentionAccounting": "Paiements, factures et événements de paiement : jamais effacés avant la fin de la durée légale de conservation des pièces comptables.",
       "retentionContact": "Messages envoyés par le formulaire de contact : ils nous arrivent par e-mail, nous ne les enregistrons pas dans notre base et nous les supprimons de notre messagerie après {months} mois.",
-      "retentionNewsletter": "Lettre d'information : jusqu'à votre désinscription.",
       "section9Title": "9. Application mobile Atfood",
       "section9Body": "Atfood est l'application iPhone d'ATTABL pour le personnel du restaurant. Elle utilise l'appareil photo uniquement pour photographier les plats. Les photos sont envoyées dans l'espace de stockage du menu du restaurant (Supabase) et s'affichent publiquement sur le menu du restaurant. Le détourage, optionnel, et les contrôles de qualité des photos se font sur le téléphone (Apple Vision) : rien n'est envoyé à un tiers. L'application utilise les données de votre compte : adresse email, identifiant utilisateur et restaurant auquel vous êtes rattaché. En cas de plantage, un rapport anonyme, sans aucune donnée personnelle, peut être envoyé à Sentry pour corriger le problème. Vous pouvez demander la suppression de votre compte depuis l'application : Profil > Supprimer mon compte.",
       "cookieCc": "attabl-cc-theme : retient le thème de la console d'administration d'ATTABL, un an. Réservé à l'équipe ATTABL."
@@ -1015,7 +1016,7 @@
         },
         "enterprise": {
           "title": "Enterprise.",
-          "body": "Groupes, franchises et chaînes : un tarif sur mesure."
+          "body": "Groupes, franchises et chaînes : un tarif fixé avec vous."
         },
         "compare": "Comparer les offres"
       },
@@ -1509,8 +1510,8 @@
           "description": "Protection des données personnelles, cookies et vos droits sur vos données."
         },
         "blogStock": {
-          "title": "Gestion de stock en Afrique : le guide complet",
-          "description": "Digitaliser la gestion de vos stocks pour eviter les ruptures et optimiser vos commandes fournisseurs. Inventaire et pertes."
+          "title": "Gestion de stock en Afrique : le guide",
+          "description": "Suivez votre stock pour éviter les ruptures et commander au bon moment. Inventaire, pertes, fournisseurs."
         },
         "blogQrCode": {
           "title": "Menu QR code : pourquoi chaque restaurant devrait en avoir un",
@@ -1663,7 +1664,7 @@
       "strengthWeak": "Faible",
       "strengthMedium": "Moyen",
       "strengthStrong": "Fort",
-      "trialNote": "14 jours gratuits - aucun engagement",
+      "termsNote": "En créant un compte, vous acceptez les <terms>conditions d'utilisation</terms> et la <privacy>politique de confidentialité</privacy>.",
       "accountDeletedSuccess": "C'est fait : votre compte est supprimé. Merci d'avoir travaillé avec ATTABL."
     },
     "confirm": {
@@ -1740,6 +1741,35 @@
       "strengthLength": "8 caractères minimum",
       "strengthMatch": "Les mots de passe correspondent",
       "submit": "Mettre à jour le mot de passe"
+    },
+    "acceptInvite": {
+      "srTitle": "Invitation",
+      "invalidLink": "Lien d'invitation invalide. Vérifiez le lien dans votre e-mail.",
+      "backToLogin": "Retour à la connexion",
+      "expiredLink": "Ce lien d'invitation a expiré. Demandez à l'administrateur de vous renvoyer une invitation.",
+      "accepted": "Invitation acceptée !",
+      "redirecting": "Redirection vers le tableau de bord...",
+      "errorAccept": "Erreur lors de l'acceptation",
+      "errorServer": "Erreur de connexion au serveur",
+      "passwordMismatch": "Les mots de passe ne correspondent pas",
+      "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères",
+      "title": "Vous avez été invité !",
+      "subtitle": "Rejoignez l'équipe sur ATTABL en créant votre compte.",
+      "joining": "Adhésion en cours...",
+      "joinExisting": "J'ai déjà un compte ATTABL - rejoindre l'équipe",
+      "needsLoginHint": "Connectez-vous avec l'adresse qui a reçu cette invitation, puis rouvrez le lien de votre e-mail.",
+      "fullName": "Nom complet",
+      "fullNamePlaceholder": "Jean Dupont",
+      "password": "Mot de passe",
+      "passwordPlaceholder": "8 caractères minimum",
+      "confirmPassword": "Confirmer le mot de passe",
+      "confirmPasswordPlaceholder": "Retapez votre mot de passe",
+      "accepting": "Acceptation en cours...",
+      "accept": "Accepter l'invitation",
+      "or": "ou",
+      "haveAccount": "Vous avez déjà un compte ?",
+      "signIn": "Se connecter",
+      "helpText": "Si vous avez déjà un compte ATTABL, connectez-vous pour accepter automatiquement l'invitation."
     }
   },
   "admin": {
@@ -1908,7 +1938,7 @@
         "topbar": {
           "toggleTheme": "Basculer le thème",
           "logout": "Se déconnecter",
-          "refresh": "Rafraichir les données",
+          "refresh": "Rafraîchir les données",
           "account": "Compte"
         },
         "micro": {
@@ -2079,7 +2109,7 @@
     "agoMin": "il y a {n} min",
     "agoHour": "il y a {n} h",
     "colPayment": "Paiement",
-    "payPaid": "Paye",
+    "payPaid": "Payé",
     "payPending": "À encaisser",
     "payPartial": "Partiel",
     "payRefunded": "Remboursé",
@@ -2171,7 +2201,7 @@
       "perMonth": "F/mois",
       "perYear": "F/an",
       "enterpriseTitle": "Besoin de plus ?",
-      "enterpriseDesc": "Plusieurs établissements, gros volumes, besoins sur mesure. On construit l'offre avec vous.",
+      "enterpriseDesc": "Plusieurs établissements, gros volumes, besoins particuliers. On construit l'offre avec vous.",
       "enterpriseCta": "Parlons-en",
       "billedYearly": "Facturé {total} F/an",
       "feature1Space": "1 espace restaurant",
@@ -2316,7 +2346,7 @@
       },
       "recipes": {
         "title": "Fiches techniques",
-        "desc": "Calculez le coût réel de chaque plat, suivez vos marges et optimisez vos achats en fonction de votre activité réelle."
+        "desc": "Calculez le coût réel de chaque plat, suivez vos marges et achetez au bon prix selon ce que vous vendez vraiment."
       },
       "reports": {
         "title": "Statistiques avancées",
@@ -2324,7 +2354,7 @@
       },
       "service": {
         "title": "Plan de salle et service",
-        "desc": "Placez vos serveurs par zone. Suivez qui gere quelle table. Toute la salle en un coup d'oeil."
+        "desc": "Placez vos serveurs par zone. Suivez qui gère quelle table. Toute la salle en un coup d'oeil."
       },
       "tables": {
         "title": "Gestion des tables",
@@ -2425,7 +2455,7 @@
     "recipeSaved": "Recette enregistrée",
     "recipeSaveError": "Erreur lors de l'enregistrement de la recette",
     "recipeQtyRequired": "Indiquez une quantité supérieure à 0 pour chaque ingrédient",
-    "recipeDuplicateIngredient": "Chaque ingrédient ne peut apparaitre qu'une fois",
+    "recipeDuplicateIngredient": "Chaque ingrédient ne peut apparaître qu'une fois",
     "recipeIngredientLabel": "Ingrédient",
     "recipeAllIngredientsUsed": "Tous vos produits sont déjà dans cette fiche",
     "recipeReadOnlyHint": "Vous pouvez consulter les fiches. Seuls les responsables stock peuvent les modifier.",
@@ -2485,7 +2515,7 @@
     "countStatusCommitted": "Validé",
     "countStatusCancelled": "Annulé",
     "cancelCount": "Annuler l'inventaire",
-    "noVariance": "Aucun écart detecte",
+    "noVariance": "Aucun écart détecté",
     "countsEmptyTitle": "Aucun inventaire",
     "countsEmptyBody": "Lancez votre premier inventaire physique pour pointer votre stock.",
     "itemsWithVariance": "{count} produit(s) avec écart",
@@ -2504,7 +2534,8 @@
     "lossError": "Erreur lors de l'enregistrement de la perte",
     "importTechnicalSheets": "Importer fiches techniques",
     "unitChangeWarning": "Attention: changer l'unité ne convertit rien. Le stock enregistré et toutes les recettes qui utilisent cet ingrédient gardent leurs nombres tels quels: 2 en {from} devient 2 en {to}. Corrigez le stock et les recettes après l'enregistrement.",
-    "unitChangeAcknowledge": "Je comprends: je corrigerai moi-même le stock et les recettes"
+    "unitChangeAcknowledge": "Je comprends: je corrigerai moi-même le stock et les recettes",
+    "stockReportLabel": "Rapport de stock"
   },
   "losses": {
     "title": "Pertes par motif",
@@ -2954,7 +2985,7 @@
       "developpement": "Les notifications push ne fonctionnent pas en mode developpement. Lancez un build de production pour les tester.",
       "cle-absente": "Les notifications push ne sont pas encore configurées sur le serveur. Contactez le support.",
       "ios-a-installer": "Sur iPhone et iPad, ajoutez d'abord ATTABL à votre écran d'accueil (bouton Partager, puis Sur l'écran d'accueil). Les notifications seront alors disponibles.",
-      "navigateur": "Ce navigateur ne gere pas les notifications push. Essayez Chrome, Edge ou Firefox.",
+      "navigateur": "Ce navigateur ne gère pas les notifications push. Essayez Chrome, Edge ou Firefox.",
       "service-worker": "Les notifications n'ont pas pu démarrer sur cet appareil. Rechargez la page, et si cela persiste contactez le support."
     },
     "test": "Tester l'alerte",
@@ -3029,7 +3060,7 @@
     "planLabel": "Plan {plan}",
     "planCardTitle": "Plan actuel",
     "planCardCta": "Passer au {plan}",
-    "planCardUpsellPro": "Débloquez le point de vente complet, la cuisine et le stock.",
+    "planCardUpsellPro": "Débloquez la caisse, la cuisine et le stock.",
     "planTrial": "Essai",
     "planCardTrial": "Pendant l'essai, tout est ouvert. Choisissez votre plan avant la fin.",
     "planCardTrialCta": "Choisir mon plan",
@@ -3062,7 +3093,8 @@
       "versoLabel": "VERSO",
       "exportPdfError": "Erreur lors de l'export PDF",
       "exportPngError": "Erreur lors de l'export PNG",
-      "tenantNotFound": "Restaurant introuvable"
+      "tenantNotFound": "Restaurant introuvable",
+      "previewRegionLabel": "Aperçu du chevalet, à faire défiler"
     },
     "logoutBlocked": "Déconnexion impossible",
     "logoutBlockedDesc": "{count} commande(s) pas encore envoyée(s). Reconnectez le réseau et attendez que le compteur retombe à zéro.",
@@ -3447,7 +3479,6 @@
     "salesCount": "{count} ventes",
     "noDataLabel": "Aucune donnée disponible",
     "viewFullRanking": "Voir tout le classement",
-    "comingSoon": "Voir plus bientôt disponible",
     "loadingReports": "Chargement des rapports...",
     "activityReport": "Rapport d'activité",
     "generatedOn": "Généré le {date}",
@@ -3558,7 +3589,7 @@
     "couponAdded": "Coupon ajouté",
     "couponUpdated": "Coupon mis à jour",
     "couponDeleted": "Coupon supprimé",
-    "confirmDelete": "Êtes-vous sur de vouloir supprimer ce coupon ?",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer ce coupon ?",
     "cancel": "Annuler",
     "noCoupons": "Aucun coupon",
     "subtitleClient": "Gérez vos codes de réduction",
@@ -3772,7 +3803,9 @@
     "isActive": "Catégorie active",
     "isActiveDesc": "Masquer cette catégorie sur le menu client sans la supprimer.",
     "categoryLinkedToMenu": "Cette catégorie est liée à un menu et ne peut pas être supprimée.",
-    "icon": "Icône"
+    "icon": "Icône",
+    "iconSearchPlaceholder": "Rechercher une icône...",
+    "noIcon": "Aucune icône"
   },
   "items": {
     "selectedCount": "{count} sélectionné(s)",
@@ -3931,6 +3964,7 @@
     "pdfDragAndDrop": "Glissez-déposez un fichier PDF ici ou cliquez pour parcourir",
     "pdfMaxFileSize": "Taille max : 10 Mo",
     "pdfImporting": "Extraction en cours (IA)...",
+    "pdfAiNotice": "Pour lire votre PDF, son texte est transmis à un prestataire d'IA (Anthropic). Importez une carte, pas un document avec des données personnelles.",
     "pdfPreview": "Prévisualisation",
     "pdfPreviewDesc": "Vérifiez les données extraites avant de valider",
     "pdfConfirmImport": "Confirmer l'import",
@@ -3957,7 +3991,7 @@
     "sharedMenuBadge": "Partagé",
     "sharedMenuHint": "Ce menu sera visible dans tous vos espaces (ex : Carte des Boissons)",
     "transversalMenu": "Carte transversale (disponible partout)",
-    "transversalMenuHint": "Cette carte apparaitra comme sous-onglet sur toutes les autres cartes (ex : Boissons disponibles depuis n'importe quelle carte).",
+    "transversalMenuHint": "Cette carte apparaîtra comme sous-onglet sur toutes les autres cartes (ex : Boissons disponibles depuis n'importe quelle carte).",
     "wizardMenuCreatedMessage": "Carte \"{name}\" créée",
     "wizardAddCategoriesPrompt": "Souhaitez-vous ajouter des catégories maintenant ?",
     "wizardAddCategories": "Ajouter des catégories",
@@ -4138,7 +4172,7 @@
     "noSavedDesigns": "Aucun design sauvegardé pour l'instant.",
     "default": "Défaut",
     "designSaved": "Design \"{name}\" sauvegardé",
-    "assignmentSaved": "Assignation mise a jour",
+    "assignmentSaved": "Assignation mise à jour",
     "assignByZoneTable": "Assigner par zone et par table",
     "assignHint": "Une table sans design spécifique hérite du design de sa zone, sinon du design par défaut.",
     "noZonesTables": "Ajoutez des zones et des tables pour assigner un design.",
@@ -4167,7 +4201,7 @@
     "exportSvgOnly": "SVG (QR seul)",
     "template_minimal_name": "Minimal",
     "template_minimal_desc": "Le QR seul, épuré",
-    "template_carte_name": "Carte bordee",
+    "template_carte_name": "Carte bordée",
     "template_carte_desc": "Nom, filet fin, QR centre",
     "template_chevalet_name": "Chevalet",
     "template_chevalet_desc": "A6 vertical pour les tables",
@@ -4263,8 +4297,6 @@
     "planMode": "Plan 2D",
     "newReservation": "Réservation",
     "newOrder": "Nouvelle commande",
-    "comingSoon": "À venir",
-    "plan2DComingSoon": "Vue Plan 2D à venir. Utilisez la vue Grille.",
     "noTablesMatch": "Aucune table ne correspond aux filtres.",
     "seatsShort": "couv.",
     "dropServerHint": "Déposer un serveur ici",
@@ -4301,7 +4333,6 @@
     "ordersActiveTitle": "Commandes prêtes à servir",
     "ordersEmpty": "Aucune commande prête.",
     "waitingTitle": "En attente",
-    "waitingComingSoon": "File d'attente à venir.",
     "dragHint": "Glissez un serveur sur une table pour l'assigner.",
     "tableShort": "T.",
     "minutesAgoShort": "il y a {min} min",
@@ -4477,7 +4508,7 @@
     "suspendedTitle": "Restaurant momentanément indisponible",
     "suspendedDesc": "Ce restaurant ne prend pas de commandes pour le moment. Revenez bientôt.",
     "viewOfferAriaLabel": "Voir l'offre",
-    "goToSlideAriaLabel": "Go to slide {n}",
+    "goToSlideAriaLabel": "Aller à la diapositive {n}",
     "bannerAlt": "Bannière {index}",
     "goToSlide": "Aller au slide {index}",
     "notConfiguredTitle": "Restaurant non configuré",
@@ -4696,15 +4727,15 @@
     "aboutLabel": "À propos",
     "privacyTitle": "Confidentialité",
     "dataCollectionTitle": "Collecte des données",
-    "dataCollectionDesc": "ATTABL collecte uniquement les informations nécessaires au traitement de vos commandes : numéro de table, articles commandés et préférences.",
+    "dataCollectionDesc": "ATTABL enregistre ce qu'il faut pour traiter votre commande : numéro de table, articles commandés et préférences. Si le restaurant le demande, votre nom, votre téléphone et votre adresse de livraison sont aussi enregistrés.",
     "usageTitle": "Utilisation",
-    "usageDesc": "Vos données servent exclusivement à la commande. Nous ne partageons jamais vos informations avec des tiers.",
+    "usageDesc": "Ces données servent à préparer et livrer votre commande, pour le compte du restaurant. Elles sont confiées à des prestataires techniques (hébergement, base de données, envoi d'e-mails, suivi des erreurs), listés dans la politique de confidentialité d'ATTABL sur attabl.com/privacy. Nous ne les vendons pas.",
     "storageTitle": "Stockage",
-    "storageDesc": "Les données de commande sont conservées 12 mois après votre dernière commande, puis supprimées automatiquement.",
+    "storageDesc": "Votre nom, votre téléphone, votre adresse de livraison et vos notes sont effacés {days} jours après la commande. La commande et son montant sont conservés sans votre identité, car ce sont des pièces comptables.",
     "rightsTitle": "Vos droits",
-    "rightsDesc": "Vous pouvez accéder, rectifier ou supprimer vos données à tout moment. Contactez-nous à support@attabl.com. Conforme RGPD.",
+    "rightsDesc": "Vous pouvez demander l'accès à vos données, leur correction ou leur suppression. Écrivez à {email} ou au restaurant : nous répondons sous 30 jours.",
     "aboutTitle": "À propos",
-    "aboutAppDesc": "ATTABL est la plateforme de menu digital et de commande en ligne pour les restaurants et hôtels en Afrique.",
+    "aboutAppDesc": "ATTABL, c'est le menu digital et la commande en ligne pour les restaurants et les hôtels d'Afrique.",
     "aboutAppSubtext": "Explorez notre carte et commandez directement depuis votre table.",
     "orderBeingPrepared": "Merci ! On transmet votre commande en cuisine.",
     "orderStatusSent": "Votre commande a été envoyée",
@@ -4740,7 +4771,6 @@
     "helpEmailLabel": "Envoyer un mail au support",
     "helpEmailSubtitle": "Réponse sous 24h",
     "helpCallBurkinaLabel": "Appeler (Burkina Faso)",
-    "helpCallBurkinaSubtitle": "+226 65 56 54 11",
     "helpCallChadLabel": "Appeler (Tchad)",
     "helpCallChadSubtitle": "+235 64 94 03 72",
     "privacySubtitle": "Vos données",
@@ -4999,7 +5029,7 @@
     "completeError": "Erreur lors du lancement",
     "nameTaken": "Ce nom est déjà utilisé par un autre compte. Choisissez un autre nom.",
     "welcomeTitle": "On lance {name}.",
-    "welcomeSubtitle": "Configurons votre espace en quelques minutes",
+    "welcomeSubtitle": "On prépare votre restaurant en quelques minutes",
     "welcomeCTA": "C'est parti",
     "autoSaving": "Sauvegarde...",
     "autoSaved": "Sauvegardé",
@@ -5048,7 +5078,11 @@
     "cropUploading": "Envoi...",
     "previewHighlights": "À ne pas manquer",
     "previewViewMenu": "Voir le menu complet",
-    "previewCart": "Votre panier"
+    "previewCart": "Votre panier",
+    "styleTemplateLabel": "Modèle",
+    "phoneSearchDish": "Chercher un plat...",
+    "currencyXofOption": "XOF - FCFA (Afrique de l'Ouest)",
+    "currencyXafOption": "XAF - FCFA (Afrique centrale)"
   },
   "auditLog": {
     "title": "Journal d'audit",
@@ -5290,7 +5324,7 @@
       },
       "q2": {
         "q": "Je peux tester avant de parler à quelqu'un ?",
-        "a": "Oui. 14 jours d'essai complet, sans carte bancaire. Vous nous écrivez quand vous voulez."
+        "a": "Oui. 14 jours d'essai avec toutes les fonctions, sans carte bancaire. Vous nous écrivez quand vous voulez."
       },
       "q3": {
         "q": "Vous êtes où exactement ?",
@@ -5528,5 +5562,11 @@
     "error_failed": "Ça n'a pas marché. Réessayez dans un instant.",
     "staff_confirmWord": "SUPPRIMER",
     "error_ownerMustClose": "Vous êtes propriétaire d'un restaurant ouvert. Fermez-le d'abord depuis Mon compte, dans ce restaurant."
+  },
+  "unauthorized": {
+    "title": "Accès non autorisé",
+    "body": "Vous n'avez pas les permissions nécessaires pour accéder à cet établissement.",
+    "myEstablishments": "Mes établissements",
+    "signInAgain": "Se reconnecter"
   }
 }

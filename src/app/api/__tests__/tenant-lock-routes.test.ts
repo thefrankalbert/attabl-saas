@@ -292,6 +292,8 @@ describe('classement de toutes les routes API', () => {
     'orders/preview',
     'health',
     'version',
+    // Taux de change public, aucune donnee de restaurant.
+    'exchange-rate',
   ];
 
   function routes(dir: string, base = ''): string[] {

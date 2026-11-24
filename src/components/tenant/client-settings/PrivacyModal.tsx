@@ -3,6 +3,8 @@
 import { useTranslations } from 'next-intl';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { PRIVACY_EMAIL } from '@/lib/legal/company';
+import { RETENTION } from '@/lib/legal/retention';
 
 export function PrivacyModal({ onClose }: { onClose: () => void }) {
   const t = useTranslations('tenant');
@@ -59,7 +61,7 @@ export function PrivacyModal({ onClose }: { onClose: () => void }) {
               {t('storageTitle')}
             </h3>
             <p className="text-[13px] leading-relaxed" style={{ color: 'rgb(115, 115, 115)' }}>
-              {t('storageDesc')}
+              {t('storageDesc', { days: RETENTION.guestDataDays })}
             </p>
           </section>
           <section>
@@ -67,7 +69,7 @@ export function PrivacyModal({ onClose }: { onClose: () => void }) {
               {t('rightsTitle')}
             </h3>
             <p className="text-[13px] leading-relaxed" style={{ color: 'rgb(115, 115, 115)' }}>
-              {t('rightsDesc')}
+              {t('rightsDesc', { email: PRIVACY_EMAIL })}
             </p>
           </section>
         </div>

@@ -14,6 +14,7 @@ import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session
 import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-tenant-serving';
 import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 import { renderableImageUrlSchema } from '@/lib/validations/image-url.schema';
+import { categoryNameSchema, categoryNameEnSchema } from '@/lib/validations/category.schema';
 
 // A category cover is rendered by next/image on the client menu: a foreign host
 // would throw at render and take the whole storefront down (image-url.schema.ts).
@@ -139,6 +140,14 @@ export async function actionCreateCategory(
   if (!parsedImage.success) {
     return { error: parsedImage.error.issues[0]?.message ?? 'Invalid input' };
   }
+  const parsedName = categoryNameSchema.safeParse(input.name);
+  if (!parsedName.success) {
+    return { error: parsedName.error.issues[0]?.message ?? 'Invalid input' };
+  }
+  const parsedNameEn = categoryNameEnSchema.safeParse(input.name_en);
+  if (!parsedNameEn.success) {
+    return { error: parsedNameEn.error.issues[0]?.message ?? 'Invalid input' };
+  }
 
   const { error: permError } = await checkCategoryPermissions(tenantId);
   if (permError) return { error: permError };
@@ -187,6 +196,14 @@ export async function actionUpdateCategory(
   const parsedImage = categoryImageSchema.safeParse(data.image_url);
   if (!parsedImage.success) {
     return { error: parsedImage.error.issues[0]?.message ?? 'Invalid input' };
+  }
+  const parsedName = categoryNameSchema.safeParse(data.name);
+  if (!parsedName.success) {
+    return { error: parsedName.error.issues[0]?.message ?? 'Invalid input' };
+  }
+  const parsedNameEn = categoryNameEnSchema.safeParse(data.name_en);
+  if (!parsedNameEn.success) {
+    return { error: parsedNameEn.error.issues[0]?.message ?? 'Invalid input' };
   }
 
   const { error: permError } = await checkCategoryPermissions(tenantId);

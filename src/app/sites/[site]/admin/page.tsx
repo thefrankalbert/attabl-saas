@@ -22,6 +22,11 @@ import {
 } from '@/lib/orders/revenue';
 import { getTranslations } from 'next-intl/server';
 import AdminSrTitle from '@/components/admin/AdminSrTitle';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('sidebar', 'navDashboard');
+}
 
 export const dynamic = 'force-dynamic';
 

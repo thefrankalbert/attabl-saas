@@ -182,8 +182,8 @@ export function DetailsSection({
                   (Burkina, Senegal, Cote d'Ivoire), XAF en Afrique centrale
                   (Cameroun, Tchad).
                 */}
-                <SelectItem value="XOF">XOF - FCFA (Afrique de l&apos;Ouest)</SelectItem>
-                <SelectItem value="XAF">XAF - FCFA (Afrique centrale)</SelectItem>
+                <SelectItem value="XOF">{t('currencyXofOption')}</SelectItem>
+                <SelectItem value="XAF">{t('currencyXafOption')}</SelectItem>
                 <SelectItem value="EUR">EUR ({'\u20ac'})</SelectItem>
                 <SelectItem value="USD">USD ($)</SelectItem>
               </SelectContent>

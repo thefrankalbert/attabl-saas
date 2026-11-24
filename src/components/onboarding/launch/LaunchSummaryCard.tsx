@@ -1,6 +1,6 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { Check, Layout } from 'lucide-react';
 import type { OnboardingData } from '@/app/onboarding/page';
@@ -22,7 +22,15 @@ export function LaunchSummaryCard({ data, accentColor, completedItems }: LaunchS
           style={{ backgroundColor: accentColor }}
         >
           {data.logoUrl ? (
-            <img src={data.logoUrl} alt="Logo" className="h-full w-full rounded-xl object-cover" />
+            <Image
+              src={data.logoUrl}
+              alt="Logo"
+              width={56}
+              height={56}
+              // Apercu local (blob:, data:) ou hote de developpement http: pas d'optimiseur.
+              unoptimized={!data.logoUrl.startsWith('https://')}
+              className="h-full w-full rounded-xl object-cover"
+            />
           ) : (
             <Layout className="h-7 w-7 text-white" />
           )}

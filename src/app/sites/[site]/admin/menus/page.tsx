@@ -3,6 +3,11 @@ import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import MenusClient from '@/components/admin/MenusClient';
 import { redirectToLogin } from '@/lib/auth/redirect-to-main';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('sidebar', 'navMenus');
+}
 
 export const dynamic = 'force-dynamic';
 

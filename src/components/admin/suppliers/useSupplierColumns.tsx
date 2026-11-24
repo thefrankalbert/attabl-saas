@@ -26,6 +26,7 @@ export function useSupplierColumns({
   setDeleteConfirm,
 }: UseSupplierColumnsArgs): ColumnDef<Supplier, unknown>[] {
   const t = useTranslations('suppliers');
+  const tc = useTranslations('common');
 
   return useMemo<ColumnDef<Supplier, unknown>[]>(
     () => [
@@ -154,7 +155,7 @@ export function useSupplierColumns({
                   variant="ghost"
                   size="sm"
                   onClick={() => setDeleteConfirm(supplier.id)}
-                  title="Supprimer"
+                  title={tc('delete')}
                   className="text-xs text-status-error hover:text-status-error"
                 >
                   <Trash2 className="w-3 h-3" />
@@ -167,6 +168,6 @@ export function useSupplierColumns({
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: openEdit/handleToggleActive/handleDelete are stable action handlers; the reactive values (t, deleteConfirm) are listed, and adding the handler identities would rebuild columns each render with no behavior change (2026-06-18)
-    [t, deleteConfirm],
+    [t, tc, deleteConfirm],
   );
 }

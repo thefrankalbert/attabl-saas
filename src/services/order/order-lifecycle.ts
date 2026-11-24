@@ -27,6 +27,13 @@ const ORDER_STATUS_RANK: Record<string, number> = {
 // (migration 20261115200000): change both together.
 export const STALE_PAID_ORDER_MS = 2 * 60 * 60 * 1000;
 
+/**
+ * Marqueur (ServiceError.details.reason) d'une annulation refusee parce que de
+ * l'argent reste au registre et que la personne n'a pas l'autorite sur l'argent
+ * (owner, admin, manager). L'action le traduit au lieu de montrer le texte brut.
+ */
+export const CANCEL_NEEDS_MONEY_AUTHORITY = 'cancel_needs_money_authority';
+
 export function createLifecycleMethods(supabase: SupabaseClient) {
   /**
    * Close a table session once everything on it is settled: paid (a 'partial'
@@ -287,8 +294,18 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
      * the financial record is preserved; we throw CONFLICT instead of silently
      * reversing money. restock/unclaim are themselves idempotent, so a partial
      * failure can be safely retried.
+     *
+     * A 'partial' order still holds money in the ledger (a deposit): cancelling
+     * it is a decision on money kept in the till, reserved to the money
+     * authority (owner, admin, manager; migration 20261124120000). Without it we
+     * refuse here, with a clear message, instead of letting the database answer
+     * a generic error.
      */
-    async cancelOrder(orderId: string, tenantId: string): Promise<void> {
+    async cancelOrder(
+      orderId: string,
+      tenantId: string,
+      options: { canManageMoney?: boolean } = {},
+    ): Promise<void> {
       const { data: order, error: fetchError } = await supabase
         .from('orders')
         .select('id, status, payment_status, coupon_id')
@@ -309,6 +326,13 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
         throw new ServiceError(
           'Une commande payee ne peut pas etre annulee - utiliser un remboursement',
           'CONFLICT',
+        );
+      }
+      if (order.payment_status === 'partial' && !options.canManageMoney) {
+        throw new ServiceError(
+          "Cette commande a un acompte au registre : l'annuler revient a un gerant, un administrateur ou le proprietaire",
+          'CONFLICT',
+          { reason: CANCEL_NEEDS_MONEY_AUTHORITY },
         );
       }
 

@@ -134,7 +134,7 @@ export default function ItemModifierEditor({
                 size="sm"
                 onClick={() => handleDelete(mod.id)}
                 disabled={deletingId === mod.id}
-                title="Supprimer"
+                title={tc('delete')}
                 className="h-8 w-8 p-0 text-app-text-muted hover:text-[var(--destructive)] opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 {deletingId === mod.id ? (

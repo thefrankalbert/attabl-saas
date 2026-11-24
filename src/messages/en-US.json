@@ -42,7 +42,14 @@
       "select": "Select",
       "remove": "Remove",
       "scanQr": "Scan QR",
-      "addItem": "Add item"
+      "addItem": "Add item",
+      "dragToReorder": "Drag to reorder",
+      "reset": "Reset",
+      "closeSearch": "Close search",
+      "selectPage": "Select page",
+      "selectOrder": "Select order",
+      "previewImage": "Preview",
+      "removeImage": "Remove image"
     },
     "back": "Back",
     "add": "Add",
@@ -130,7 +137,11 @@
     "next": "Next",
     "notFoundSearch": "Search",
     "notFoundPopular": "Most visited pages",
-    "teamMember": "Team member"
+    "teamMember": "Team member",
+    "later": "Later",
+    "dropImagePrompt": "Click or drag an image",
+    "dropImageHint": "JPG, PNG, WebP - Max 10 MB",
+    "pastDueBanner": "Your payment failed. Update your card."
   },
   "checkout": {
     "successTitle": "Payment successful!",
@@ -274,6 +285,7 @@
     "cancelOrderKeep": "Keep the order",
     "cancelOrderDone": "Order cancelled",
     "cancelOrderFailed": "Could not cancel",
+    "cancelNeedsMoneyAuthority": "A deposit is in the register. Only a manager, an admin or the owner can cancel this order.",
     "statusLabel": "Status",
     "printLabel": "Print",
     "printKitchenTicket": "Kitchen Ticket",
@@ -387,7 +399,7 @@
             "f2": "Unlimited establishments",
             "f3": "99.9% SLA",
             "f4": "Account manager",
-            "f5": "Custom API integrations",
+            "f5": "API integrations to fit your needs",
             "f6": "Priority 1h phone support"
           }
         }
@@ -471,7 +483,8 @@
               "items": "Items"
             }
           }
-        }
+        },
+        "regionLabel": "Plan comparison table, scrollable"
       },
       "faq": {
         "title": "Frequently asked questions",
@@ -502,32 +515,6 @@
           }
         }
       },
-      "testimonials": {
-        "t1": {
-          "name": "Amadou K.",
-          "role": "Manager",
-          "company": "Le Jardin, N'Djamena",
-          "content": "We cut order mistakes by 40% in 2 months. The kitchen gets everything on screen - no more lost tickets."
-        },
-        "t2": {
-          "name": "Grace M.",
-          "role": "Owner",
-          "company": "Chez Mama, Douala",
-          "content": "200 orders a day, zero stress. The KDS sorts, we prep, we ship."
-        },
-        "t3": {
-          "name": "Ibrahim D.",
-          "role": "Director",
-          "company": "Hotel Prestige, Abidjan",
-          "content": "Digital room service changed our Booking ranking. Guests order from bed, in English or French."
-        },
-        "t4": {
-          "name": "Fatou S.",
-          "role": "Manager",
-          "company": "La Terrasse, Dakar",
-          "content": "In 3 months, our revenue grew 25%. The digital menu pushes customers to order more."
-        }
-      },
       "priceNote": "Price per month, in FCFA. The total is charged once, based on the chosen period.",
       "billedMonthly": "billed monthly",
       "billedTotal": "{total} FCFA total",
@@ -544,7 +531,7 @@
         "t3": "Email support on all plans"
       },
       "cost3y": {
-        "title": "Over three years, about 30% less.",
+        "title": "Over three years, Attabl Pro (yearly) costs about 2.4M FCFA.",
         "body": "Built here, billed in CFA francs. No imported license, no exchange rate inflating the bill.",
         "attablLabel": "Attabl Pro - yearly",
         "attablPrice": "~ 2.4M",
@@ -552,13 +539,13 @@
         "attablP1": "Updates included",
         "attablP2": "French-speaking support included",
         "attablP3": "No exchange fees",
-        "rivalLabel": "Typical imported solution",
-        "rivalPrice": "~ 3.5M",
-        "rivalSub": "FCFA over 3 years, options excluded.",
+        "rivalLabel": "Typical imported register",
+        "rivalPrice": "In $ or €",
+        "rivalSub": "A quote in a foreign currency, to convert into FCFA.",
         "rivalP1": "Priced in foreign currency",
         "rivalP2": "Support abroad",
         "rivalP3": "Built for another market",
-        "disclaimer": "Indicative estimate, for a venue on the yearly Pro plan compared to an equivalent imported register solution. Your case may vary."
+        "disclaimer": "Attabl price: 804,000 FCFA per year on the yearly Pro plan, or 2,412,000 FCFA over 3 years. The price of an imported register depends on the offer and the exchange rate: ask for a quote."
       },
       "included": {
         "title": "Included in every plan.",
@@ -580,7 +567,7 @@
         "p1cta": "Start on Starter",
         "p2tag": "Most chosen",
         "p2title": "Table restaurant, 50+ covers",
-        "p2body": "Kitchen display, table plan, stock, tips, reports. The full bistro, built for the rush.",
+        "p2body": "Kitchen display, table plan, stock, tips, reports. Built for the bistro rush.",
         "p2cta": "Take Pro",
         "p3tag": "Growing",
         "p3title": "Hotel, several venues",
@@ -596,7 +583,7 @@
       "metaTitle": "Privacy Policy",
       "metaDescription": "What data ATTABL collects, who hosts it, how long we keep it and how to exercise your rights.",
       "heading": "Privacy Policy",
-      "lastUpdate": "Last updated: November 15, 2026",
+      "lastUpdate": "Last updated: November 24, 2026",
       "section1Title": "1. Who is responsible for your data",
       "section1Body": "ATTABL is the data controller for its website and for the accounts of restaurant and hotel owners (account, subscription, login). For a restaurant's customers (name, phone, delivery address on an order) and for a restaurant's team, the restaurant decides how the data is used. ATTABL then acts on its behalf, as a processor.",
       "companyHeading": "Company details",
@@ -611,7 +598,7 @@
       "section3Title": "3. Why we use it",
       "section3Body": "To create and protect your account, run the menu, orders and till, bill the subscription, answer your messages, detect abuse and fix errors. We do not use your data for advertising and we do not sell it.",
       "section4Title": "4. Who hosts or processes your data",
-      "section4Intro": "These providers handle personal data on our behalf. Each is limited to the task listed.",
+      "section4Intro": "These providers act on our behalf. Each is limited to the task listed.",
       "section4Transfers": "Some providers are located outside Cameroon and Burkina Faso, notably in the European Union and the United States. These transfers rely on the contractual commitments the providers make in their data processing terms (European Union standard contractual clauses or equivalent), on encryption in transit (HTTPS) and on sending them only what their task requires. Database content is stored in Ireland, in the European Union. You can ask us for the current list of safeguards that apply to each provider.",
       "processors": {
         "supabase": {
@@ -631,7 +618,7 @@
         },
         "sentry": {
           "name": "Sentry",
-          "role": "Error detection and session replay (10% of sessions, 100% of those with errors)",
+          "role": "Error detection and performance measurement (10% of pages). No session replay.",
           "country": "European Union or United States depending on the collection region"
         },
         "upstash": {
@@ -658,6 +645,21 @@
           "name": "ImprovMX",
           "role": "Receiving mail sent to @attabl.com addresses",
           "country": "Depends on the provider"
+        },
+        "anthropic": {
+          "name": "Anthropic",
+          "role": "AI reading of the PDF you choose to import to build a menu. The text of the document is sent to it at import time, at your request.",
+          "country": "United States"
+        },
+        "exchangerate": {
+          "name": "ExchangeRate-API",
+          "role": "Dollar to CFA franc exchange rate, queried by our servers. No personal data is sent to it.",
+          "country": "Depends on the provider"
+        },
+        "flutterwave": {
+          "name": "Flutterwave",
+          "role": "Subscription payment by mobile money, once this payment method is turned on. It is not active yet.",
+          "country": "Depends on the provider"
         }
       },
       "section5Title": "5. Applicable laws",
@@ -670,7 +672,7 @@
       "cookieLocale": "NEXT_LOCALE: remembers the language you chose, one year.",
       "cookieRecovery": "attabl_recovery: secures the password change, 15 minutes, hidden from the site's scripts.",
       "cookieStorage": "Browser local storage: light or dark theme, display preferences, currency, a customer's cart. This data stays on your device.",
-      "cookieSentry": "If an error occurs, Sentry may record the current session to help us fix it.",
+      "cookieSentry": "Sentry: if an error occurs, a technical report (page, browser, error message) is sent to it. The session is not recorded.",
       "section8Title": "8. How long we keep your data",
       "section8Intro": "Automatic purges run every night. These are the periods we apply.",
       "retentionGuests": "A customer's name, phone, delivery address and free-text notes (on the order and on its items, managers' annotations on the order): erased {days} days after the order. The order and its amounts are kept without the customer's identity, because commercial law requires accounting records to be retained.",
@@ -682,7 +684,6 @@
       "retentionAccount": "Active account and venue: kept for the duration of the subscription.",
       "retentionAccounting": "Payments, invoices and payment events: never erased before the legal retention period for accounting records ends.",
       "retentionContact": "Messages sent through the contact form: they reach us by email, we do not store them in our database and we delete them from our mailbox after {months} months.",
-      "retentionNewsletter": "Newsletter: until you unsubscribe.",
       "section9Title": "9. Atfood mobile app",
       "section9Body": "Atfood is the ATTABL iPhone app for restaurant staff. It uses the camera only to photograph dishes. Photos are uploaded to the restaurant's menu storage (Supabase) and shown publicly on the restaurant's menu. Optional background removal and photo quality checks run on the phone (Apple Vision): nothing is sent to third parties. The app uses your account data: email address, user ID and the restaurant you belong to. If the app crashes, an anonymous crash report with no personal data may be sent to Sentry so we can fix the problem. You can request the deletion of your account from the app: Profil > Supprimer mon compte (Profile > Delete my account).",
       "cookieCc": "attabl-cc-theme: remembers the theme of the ATTABL administration console, one year. Reserved for the ATTABL team."
@@ -1015,7 +1016,7 @@
         },
         "enterprise": {
           "title": "Enterprise.",
-          "body": "Groups, franchises and chains: custom pricing."
+          "body": "Groups, franchises and chains: pricing set with you."
         },
         "compare": "Compare plans"
       },
@@ -1130,9 +1131,9 @@
       "metaTitle": "About",
       "metaDescription": "ATTABL helps restaurants, hotels and bars across Africa digitise their menu, orders and management. Our story.",
       "heading": "About ATTABL",
-      "intro": "ATTABL is a SaaS platform designed to digitize the management of restaurants, hotels and dining venues. Our mission: simplify operators' daily work with modern, intuitive tools.",
+      "intro": "ATTABL is a tool that digitizes the management of restaurants, hotels and dining venues. Our mission: simplify operators' daily work with modern, intuitive tools.",
       "visionTitle": "Our vision",
-      "visionBody": "We believe every venue, from the small bistro to the large hotel, deserves high-performance digital tools. ATTABL provides a QR code menu, a real-time order system, a touch POS, a kitchen display (KDS), and advanced analytics - all in one platform.",
+      "visionBody": "We believe every venue, from the small bistro to the large hotel, deserves digital tools that really work. ATTABL brings together a QR code menu, real-time orders, a touch POS, a kitchen display (KDS) and analytics - all in one place.",
       "techTitle": "Technology",
       "techBody": "Built on the latest technologies (Next.js, React, Supabase, Tailwind CSS), ATTABL is fast, secure and available as a Progressive Web App (PWA) across all devices.",
       "contactButton": "Contact us",
@@ -1509,16 +1510,16 @@
           "description": "Personal data protection, cookies and your rights over your data."
         },
         "blogStock": {
-          "title": "Gestion de stock en Afrique : le guide complet",
-          "description": "Digitaliser la gestion de vos stocks pour eviter les ruptures et optimiser vos commandes fournisseurs. Inventaire et pertes."
+          "title": "Stock management in Africa: the guide",
+          "description": "Track your stock to avoid running out and order at the right time. Inventory, losses, suppliers."
         },
         "blogQrCode": {
-          "title": "Menu QR code : pourquoi chaque restaurant devrait en avoir un",
-          "description": "Du papier au digital : le menu QR transforme l'experience client et simplifie la gestion de la carte."
+          "title": "QR code menu: why every restaurant should have one",
+          "description": "From paper to digital: the QR menu improves the guest experience and makes the menu easier to manage."
         },
         "blogMobileMoney": {
-          "title": "POS et Mobile Money : encaisser sans friction en Afrique",
-          "description": "Cash, carte, mobile money : proposer tous les moyens de paiement a vos clients avec un seul outil."
+          "title": "POS and Mobile Money: take payments without friction in Africa",
+          "description": "Cash, card, mobile money: accept every payment method from your guests with a single tool."
         }
       }
     },
@@ -1663,7 +1664,7 @@
       "strengthWeak": "Weak",
       "strengthMedium": "Medium",
       "strengthStrong": "Strong",
-      "trialNote": "14 days free - no commitment",
+      "termsNote": "By creating an account, you accept the <terms>terms of use</terms> and the <privacy>privacy policy</privacy>.",
       "accountDeletedSuccess": "Done: your account is deleted. Thank you for working with ATTABL."
     },
     "confirm": {
@@ -1740,6 +1741,35 @@
       "strengthLength": "At least 8 characters",
       "strengthMatch": "Passwords match",
       "submit": "Update password"
+    },
+    "acceptInvite": {
+      "srTitle": "Invitation",
+      "invalidLink": "Invalid invitation link. Check the link in your email.",
+      "backToLogin": "Back to sign in",
+      "expiredLink": "This invitation link has expired. Ask the administrator to send you a new invitation.",
+      "accepted": "Invitation accepted!",
+      "redirecting": "Redirecting to the dashboard...",
+      "errorAccept": "Could not accept the invitation",
+      "errorServer": "Could not reach the server",
+      "passwordMismatch": "The passwords do not match",
+      "passwordTooShort": "The password must be at least 8 characters long",
+      "title": "You have been invited!",
+      "subtitle": "Join the team on ATTABL by creating your account.",
+      "joining": "Joining...",
+      "joinExisting": "I already have an ATTABL account - join the team",
+      "needsLoginHint": "Sign in with the address that received this invitation, then open the link in your email again.",
+      "fullName": "Full name",
+      "fullNamePlaceholder": "Jane Smith",
+      "password": "Password",
+      "passwordPlaceholder": "At least 8 characters",
+      "confirmPassword": "Confirm password",
+      "confirmPasswordPlaceholder": "Type your password again",
+      "accepting": "Accepting...",
+      "accept": "Accept the invitation",
+      "or": "or",
+      "haveAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "helpText": "If you already have an ATTABL account, sign in to accept the invitation automatically."
     }
   },
   "admin": {
@@ -2504,7 +2534,8 @@
     "lossError": "Failed to record the loss",
     "importTechnicalSheets": "Import technical sheets",
     "unitChangeWarning": "Careful: changing the unit converts nothing. The recorded stock and every recipe using this ingredient keep their numbers as they are: 2 in {from} becomes 2 in {to}. Fix the stock and the recipes after saving.",
-    "unitChangeAcknowledge": "I understand: I will fix the stock and the recipes myself"
+    "unitChangeAcknowledge": "I understand: I will fix the stock and the recipes myself",
+    "stockReportLabel": "Stock report"
   },
   "losses": {
     "title": "Losses by reason",
@@ -3029,7 +3060,7 @@
     "planLabel": "{plan} plan",
     "planCardTitle": "Current plan",
     "planCardCta": "Upgrade to {plan}",
-    "planCardUpsellPro": "Unlock the full POS, kitchen display and inventory.",
+    "planCardUpsellPro": "Unlock the POS, kitchen display and inventory.",
     "planTrial": "Trial",
     "planCardTrial": "During the trial, everything is open. Pick your plan before it ends.",
     "planCardTrialCta": "Choose my plan",
@@ -3062,7 +3093,8 @@
       "versoLabel": "BACK",
       "exportPdfError": "PDF export failed",
       "exportPngError": "PNG export failed",
-      "tenantNotFound": "Restaurant not found"
+      "tenantNotFound": "Restaurant not found",
+      "previewRegionLabel": "Easel preview, scrollable"
     },
     "logoutBlocked": "Cannot sign out yet",
     "logoutBlockedDesc": "{count} order(s) not sent yet. Reconnect the network and wait for the counter to reach zero.",
@@ -3447,7 +3479,6 @@
     "salesCount": "{count} sales",
     "noDataLabel": "No data available",
     "viewFullRanking": "View full ranking",
-    "comingSoon": "More coming soon",
     "loadingReports": "Loading reports...",
     "activityReport": "Activity Report",
     "generatedOn": "Generated on {date}",
@@ -3772,7 +3803,9 @@
     "isActive": "Category active",
     "isActiveDesc": "Hide this category on the client menu without deleting it.",
     "categoryLinkedToMenu": "This category is linked to a menu and cannot be deleted.",
-    "icon": "Icon"
+    "icon": "Icon",
+    "iconSearchPlaceholder": "Search for an icon...",
+    "noIcon": "No icon"
   },
   "items": {
     "selectedCount": "{count} selected",
@@ -3931,6 +3964,7 @@
     "pdfDragAndDrop": "Drag and drop a PDF file here or click to browse",
     "pdfMaxFileSize": "Max size: 10 MB",
     "pdfImporting": "Extracting (AI)...",
+    "pdfAiNotice": "To read your PDF, its text is sent to an AI provider (Anthropic). Import a menu, not a document with personal data.",
     "pdfPreview": "Preview",
     "pdfPreviewDesc": "Review extracted data before confirming",
     "pdfConfirmImport": "Confirm import",
@@ -4263,8 +4297,6 @@
     "planMode": "2D Plan",
     "newReservation": "Reservation",
     "newOrder": "New order",
-    "comingSoon": "Coming soon",
-    "plan2DComingSoon": "2D Plan view coming soon. Use the Grid view.",
     "noTablesMatch": "No table matches filters.",
     "seatsShort": "seats",
     "dropServerHint": "Drop a server here",
@@ -4301,7 +4333,6 @@
     "ordersActiveTitle": "Orders ready to serve",
     "ordersEmpty": "No ready orders.",
     "waitingTitle": "Waiting",
-    "waitingComingSoon": "Waiting list coming soon.",
     "dragHint": "Drag a server onto a table to assign.",
     "tableShort": "T.",
     "minutesAgoShort": "{min} min ago",
@@ -4696,15 +4727,15 @@
     "aboutLabel": "About",
     "privacyTitle": "Privacy",
     "dataCollectionTitle": "Data Collection",
-    "dataCollectionDesc": "ATTABL only collects information necessary for processing your orders: table number, ordered items, and preferences.",
+    "dataCollectionDesc": "ATTABL records what it takes to process your order: table number, ordered items and preferences. If the restaurant asks for them, your name, phone and delivery address are recorded too.",
     "usageTitle": "Usage",
-    "usageDesc": "Your data is used exclusively for ordering. We never share your information with third parties.",
+    "usageDesc": "This data is used to prepare and deliver your order, on behalf of the restaurant. It is entrusted to technical providers (hosting, database, email sending, error tracking) listed in the ATTABL privacy policy at attabl.com/privacy. We do not sell it.",
     "storageTitle": "Storage",
-    "storageDesc": "Order data is retained for 12 months after your last order, then automatically deleted.",
+    "storageDesc": "Your name, phone, delivery address and notes are erased {days} days after the order. The order and its amount are kept without your identity, because they are accounting records.",
     "rightsTitle": "Your rights",
-    "rightsDesc": "You can access, rectify or delete your data at any time. Contact us at support@attabl.com. GDPR compliant.",
+    "rightsDesc": "You can ask for access to your data, its correction or its deletion. Write to {email} or to the restaurant: we answer within 30 days.",
     "aboutTitle": "About",
-    "aboutAppDesc": "ATTABL is the digital menu and online ordering platform for restaurants and hotels in Africa.",
+    "aboutAppDesc": "ATTABL is the digital menu and online ordering for restaurants and hotels in Africa.",
     "aboutAppSubtext": "Explore our menu and order directly from your table.",
     "orderBeingPrepared": "Thank you! We're sending it to the kitchen.",
     "orderStatusSent": "Your order has been sent",
@@ -4736,7 +4767,6 @@
     "helpEmailLabel": "Email support",
     "helpEmailSubtitle": "Reply within 24h",
     "helpCallBurkinaLabel": "Call (Burkina Faso)",
-    "helpCallBurkinaSubtitle": "+226 65 56 54 11",
     "helpCallChadLabel": "Call (Chad)",
     "helpCallChadSubtitle": "+235 64 94 03 72",
     "privacySubtitle": "Your data",
@@ -4999,7 +5029,7 @@
     "completeError": "Error during launch",
     "nameTaken": "This name is already used by another account. Please choose a different name.",
     "welcomeTitle": "Let's launch {name}.",
-    "welcomeSubtitle": "Let's set up your space in a few minutes",
+    "welcomeSubtitle": "Let's get your restaurant ready in a few minutes",
     "welcomeCTA": "Let's go",
     "autoSaving": "Saving...",
     "autoSaved": "Saved",
@@ -5048,7 +5078,11 @@
     "cropUploading": "Uploading...",
     "previewHighlights": "Not to miss",
     "previewViewMenu": "View full menu",
-    "previewCart": "Your cart"
+    "previewCart": "Your cart",
+    "styleTemplateLabel": "Template",
+    "phoneSearchDish": "Search for a dish...",
+    "currencyXofOption": "XOF - FCFA (West Africa)",
+    "currencyXafOption": "XAF - FCFA (Central Africa)"
   },
   "auditLog": {
     "title": "Audit Log",
@@ -5290,7 +5324,7 @@
       },
       "q2": {
         "q": "Can I try before talking to anyone?",
-        "a": "Yes. A full 14-day trial, no credit card. Write to us whenever you want."
+        "a": "Yes. 14 days of trial with every feature, no credit card. Write to us whenever you want."
       },
       "q3": {
         "q": "Where are you exactly?",
@@ -5528,5 +5562,11 @@
     "error_failed": "That didn't work. Try again in a moment.",
     "staff_confirmWord": "DELETE",
     "error_ownerMustClose": "You own an open restaurant. Close it first from My account, in that restaurant."
+  },
+  "unauthorized": {
+    "title": "Access denied",
+    "body": "You do not have the permissions needed to open this venue.",
+    "myEstablishments": "My venues",
+    "signInAgain": "Sign in again"
   }
 }

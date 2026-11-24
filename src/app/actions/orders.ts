@@ -1,6 +1,7 @@
 'use server';
 
 import { after } from 'next/server';
+import { getTranslations } from 'next-intl/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -10,6 +11,7 @@ import { createAuditService } from '@/services/audit.service';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
 import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
 import { createOrderService } from '@/services/order.service';
+import { CANCEL_NEEDS_MONEY_AUTHORITY } from '@/services/order/order-lifecycle';
 import { createPaymentService, type PaymentSummary } from '@/services/payment.service';
 import { createInventoryService } from '@/services/inventory.service';
 import { createOrderReadyService } from '@/services/order-ready.service';
@@ -25,7 +27,12 @@ import {
   assertTenantServingForKitchen,
   TenantLockedError,
 } from '@/lib/billing/assert-tenant-serving';
-import { ALL_ADMIN_ROLES, ORDER_MONEY_ROLES, ORDER_PAY_PERMISSIONS } from '@/lib/admin-roles';
+import {
+  ALL_ADMIN_ROLES,
+  ORDER_MONEY_ROLES,
+  ORDER_PAY_PERMISSIONS,
+  isRoleAllowed,
+} from '@/lib/admin-roles';
 
 const deleteOrdersSchema = z.array(z.string().uuid()).min(1).max(200);
 
@@ -348,7 +355,7 @@ export async function actionUpdateOrderStatus(
     // L'ANNULER annule une note impayee: prendre l'argent puis annuler la
     // commande est le detournement classique. L'annulation exige donc en plus
     // le droit d'argent `orders.pay` (decision du proprietaire du 2026-11-09).
-    const { supabase, user } = await getAuthenticatedUserForTenant(
+    const { supabase, user, role } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
       ALL_ADMIN_ROLES,
       parsed.data.status === 'cancelled' ? ORDER_PAY_PERMISSIONS : 'orders.manage',
@@ -371,7 +378,9 @@ export async function actionUpdateOrderStatus(
       //  - stock restock via the canonical service_role path (main's stock-integrity
       //    feature): restock_order is service_role-only, so it runs via the admin
       //    client + inventory.service, gated by the inventory plan feature. Non-blocking.
-      await service.cancelOrder(parsed.data.orderId, parsed.data.tenantId);
+      await service.cancelOrder(parsed.data.orderId, parsed.data.tenantId, {
+        canManageMoney: isRoleAllowed(role, ORDER_MONEY_ROLES),
+      });
       // A cancelled order no longer holds its table.
       releaseTableWhenDone(parsed.data.tenantId, parsed.data.orderId);
 
@@ -442,6 +451,12 @@ export async function actionUpdateOrderStatus(
       return { error: err.message };
     }
     if (err instanceof ServiceError) {
+      if (
+        (err.details as { reason?: string } | undefined)?.reason === CANCEL_NEEDS_MONEY_AUTHORITY
+      ) {
+        const t = await getTranslations('orders');
+        return { error: t('cancelNeedsMoneyAuthority') };
+      }
       return { error: err.message };
     }
     logger.error('actionUpdateOrderStatus: unexpected error', { err, tenantId, orderId });

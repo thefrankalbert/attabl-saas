@@ -12,7 +12,7 @@ const PILL =
   'h-auto rounded-full px-2.5 py-2 text-[13px] font-medium shadow-none transition-colors hover:bg-transparent sm:px-[18px]';
 const PILL_ON =
   'bg-white text-zinc-950 shadow-[0_1px_2px_rgba(0,0,0,0.06)] dark:bg-zinc-950 dark:text-zinc-50';
-const PILL_OFF = 'bg-transparent text-zinc-500 dark:text-zinc-400';
+const PILL_OFF = 'bg-transparent text-zinc-600 dark:text-zinc-400';
 
 export function PricingHero({
   effectivePeriod,
@@ -57,7 +57,7 @@ export function PricingHero({
             className={cn(PILL, effectivePeriod === 'yearly' ? PILL_ON : PILL_OFF)}
           >
             {t('billing.yearly')}
-            <span className="ml-1.5 text-xs font-semibold text-green-600 dark:text-green-500">
+            <span className="ml-1.5 text-xs font-semibold text-green-800 dark:text-green-500">
               {t('billing.yearlyDiscount')}
             </span>
           </Button>

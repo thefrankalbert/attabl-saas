@@ -6,7 +6,7 @@ import type { StaffMember } from './rules';
 import type { ReminderMessage } from './messages';
 
 /** Une personne ne recoit pas deux rappels de la meme regle a moins de 2 min: on groupe. */
-export const BATCH_INTERVAL_MIN = 2;
+const BATCH_INTERVAL_MIN = 2;
 const MINUTE = 60_000;
 
 export interface ReminderGroup {

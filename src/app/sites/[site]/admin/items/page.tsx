@@ -11,6 +11,11 @@ import {
 import { logger } from '@/lib/logger';
 import { paginationQuerySchema, type ServerListPagination } from '@/lib/pagination';
 import type { MenuItem, Category, CurrencyCode } from '@/types/admin.types';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('sidebar', 'navDishes');
+}
 
 export const dynamic = 'force-dynamic';
 

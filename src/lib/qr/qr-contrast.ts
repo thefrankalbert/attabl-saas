@@ -10,7 +10,7 @@
  */
 
 /** Contraste minimal (ratio WCAG) entre les points et le fond. */
-export const MIN_QR_CONTRAST = 3;
+const MIN_QR_CONTRAST = 3;
 
 const HEX = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i;
 

@@ -24,7 +24,7 @@ export { replayOrderEntry };
 export const OUTBOX_CHANGED_EVENT = 'attabl:outbox-changed';
 
 /** Longest wait for the order POST before it is queued for a later replay. */
-export const SUBMIT_TIMEOUT_MS = 15_000;
+const SUBMIT_TIMEOUT_MS = 15_000;
 
 /**
  * Best-effort registration of a Background Sync so the service worker replays

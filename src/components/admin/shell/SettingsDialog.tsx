@@ -57,6 +57,7 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   const t = useTranslations('admin');
   const tSidebar = useTranslations('sidebar');
+  const tc = useTranslations('common');
   const clientUrl = getTenantUrl(tenant.slug);
   // Aucun plan gratuit: sans plan enregistre, c'est Starter (repli de getEffectivePlan).
   // Essai actif: le layout transmet 'trial'.
@@ -111,7 +112,7 @@ export function SettingsDialog({
             variant="ghost"
             size="icon"
             onClick={() => onOpenChange(false)}
-            aria-label="Fermer"
+            aria-label={tc('aria.close')}
             className="ml-auto size-[30px] rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--accent)] hover:text-[var(--foreground)]"
           >
             <X className="size-4" />

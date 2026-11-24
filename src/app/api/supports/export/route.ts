@@ -39,7 +39,10 @@ async function fetchImageAsDataUrl(url: string): Promise<string | null> {
       });
       return null;
     }
-    const res = await fetch(url);
+    // Hote deja borne par la liste ci-dessus; 'error' refuse toute redirection (un
+    // hote autorise ne doit pas pouvoir renvoyer le serveur vers un autre), et le
+    // delai empeche une reponse lente de bloquer la generation du PDF.
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000), redirect: 'error' });
     if (!res.ok) return null;
     const buffer = await res.arrayBuffer();
     const base64 = Buffer.from(buffer).toString('base64');

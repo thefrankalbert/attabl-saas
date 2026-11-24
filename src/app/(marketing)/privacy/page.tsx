@@ -14,6 +14,9 @@ const PROCESSOR_IDS = [
   'stripe',
   'push',
   'improvmx',
+  'anthropic',
+  'exchangerate',
+  'flutterwave',
 ] as const;
 
 const COOKIE_KEYS = [
@@ -83,7 +86,6 @@ export default async function PrivacyPage() {
     t('retentionClosed', { days: RETENTION.closedTenantAnonymizeDays }),
     t('retentionAccounting'),
     t('retentionContact', { months: daysToMonths(RETENTION.contactMailDays) }),
-    t('retentionNewsletter'),
   ];
 
   return (
@@ -92,7 +94,7 @@ export default async function PrivacyPage() {
         <h1 className="text-[36px] font-semibold leading-[1.05] tracking-[-0.03em] text-zinc-950 dark:text-zinc-50">
           {t('heading')}
         </h1>
-        <p className="mt-3 text-sm text-zinc-400 dark:text-zinc-500">{t('lastUpdate')}</p>
+        <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">{t('lastUpdate')}</p>
 
         <Section title={t('section1Title')}>
           <Body>{t('section1Body')}</Body>
@@ -132,7 +134,7 @@ export default async function PrivacyPage() {
                 <p className="mt-1 text-zinc-600 dark:text-zinc-400">
                   {t(`processors.${id}.role`)}
                 </p>
-                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-500">
+                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                   {t(`processors.${id}.country`)}
                 </p>
               </li>
@@ -150,7 +152,7 @@ export default async function PrivacyPage() {
             {t('section6Body')}{' '}
             <a
               href={`mailto:${PRIVACY_EMAIL}`}
-              className="font-medium text-orange-600 hover:underline dark:text-orange-400"
+              className="font-medium text-orange-700 hover:underline dark:text-orange-400"
             >
               {PRIVACY_EMAIL}
             </a>

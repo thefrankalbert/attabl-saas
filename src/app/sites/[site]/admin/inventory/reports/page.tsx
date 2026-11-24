@@ -11,6 +11,11 @@ import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import type { CurrencyCode } from '@/types/admin.types';
 import { getTranslations } from 'next-intl/server';
 import AdminSrTitle from '@/components/admin/AdminSrTitle';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('inventory', 'stockReportLabel');
+}
 
 export const dynamic = 'force-dynamic';
 

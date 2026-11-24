@@ -1353,5 +1353,48 @@ describe('OrderService', () => {
         code: 'NOT_FOUND',
       });
     });
+
+    // Acompte au registre (partial): annulable par l'autorite sur l'argent
+    // (gerant, admin, proprietaire), refuse au caissier (migration 20261124120000).
+    it('cancels a partial order when the caller holds the money authority (manager)', async () => {
+      const m = makeSupabase({
+        order: { id: 'o1', status: 'preparing', payment_status: 'partial', coupon_id: null },
+      });
+      const service = createOrderService(m.client);
+
+      await service.cancelOrder('o1', 'tenant-123', { canManageMoney: true });
+
+      expect(m.update).toHaveBeenCalledWith({ status: 'cancelled' });
+    });
+
+    it('refuses a partial order without the money authority (cashier)', async () => {
+      const m = makeSupabase({
+        order: { id: 'o1', status: 'preparing', payment_status: 'partial', coupon_id: 'c1' },
+      });
+      const service = createOrderService(m.client);
+
+      await expect(
+        service.cancelOrder('o1', 'tenant-123', { canManageMoney: false }),
+      ).rejects.toMatchObject({
+        code: 'CONFLICT',
+        details: { reason: 'cancel_needs_money_authority' },
+      });
+      await expect(service.cancelOrder('o1', 'tenant-123')).rejects.toMatchObject({
+        code: 'CONFLICT',
+      });
+      expect(m.rpc).not.toHaveBeenCalled();
+      expect(m.update).not.toHaveBeenCalled();
+    });
+
+    it('a cashier can still cancel an unpaid order', async () => {
+      const m = makeSupabase({
+        order: { id: 'o1', status: 'preparing', payment_status: 'pending', coupon_id: null },
+      });
+      const service = createOrderService(m.client);
+
+      await service.cancelOrder('o1', 'tenant-123', { canManageMoney: false });
+
+      expect(m.update).toHaveBeenCalledWith({ status: 'cancelled' });
+    });
   });
 });

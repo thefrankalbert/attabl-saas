@@ -1,6 +1,6 @@
 /** Donnees et statuts de la page de suivi d'une commande (vitrine). */
 
-export interface DetailItem {
+interface DetailItem {
   name: string;
   quantity: number;
   price: number;

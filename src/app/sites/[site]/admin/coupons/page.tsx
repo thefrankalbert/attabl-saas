@@ -4,6 +4,11 @@ import { headers } from 'next/headers';
 import CouponsClient from '@/components/admin/CouponsClient';
 import TenantNotFound from '@/components/admin/TenantNotFound';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('sidebar', 'navCoupons');
+}
 
 export const dynamic = 'force-dynamic';
 

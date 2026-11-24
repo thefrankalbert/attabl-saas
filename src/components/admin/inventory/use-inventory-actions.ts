@@ -170,8 +170,12 @@ export function useInventoryActions(tenantId: string) {
       setModalMode(null);
       resetForm();
       queryClient.invalidateQueries({ queryKey: ['ingredients', tenantId] });
-    } catch {
-      toast({ title: tc('error'), variant: 'destructive' });
+    } catch (err) {
+      toast({
+        title: tc('error'),
+        description: err instanceof Error ? err.message : undefined,
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -190,8 +194,12 @@ export function useInventoryActions(tenantId: string) {
       setModalMode(null);
       resetForm();
       queryClient.invalidateQueries({ queryKey: ['ingredients', tenantId] });
-    } catch {
-      toast({ title: tc('error'), variant: 'destructive' });
+    } catch (err) {
+      toast({
+        title: tc('error'),
+        description: err instanceof Error ? err.message : undefined,
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -236,8 +244,12 @@ export function useInventoryActions(tenantId: string) {
       setModalMode(null);
       resetForm();
       queryClient.invalidateQueries({ queryKey: ['ingredients', tenantId] });
-    } catch {
-      toast({ title: tc('error'), variant: 'destructive' });
+    } catch (err) {
+      toast({
+        title: tc('error'),
+        description: err instanceof Error ? err.message : undefined,
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }

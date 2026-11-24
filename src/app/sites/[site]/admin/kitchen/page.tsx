@@ -8,6 +8,11 @@ import { kitchenMayFinishForTenant } from '@/lib/billing/lapsed-trial';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import { getTranslations } from 'next-intl/server';
 import AdminSrTitle from '@/components/admin/AdminSrTitle';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('sidebar', 'navKitchen');
+}
 
 export const dynamic = 'force-dynamic';
 

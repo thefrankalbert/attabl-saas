@@ -1,6 +1,7 @@
 'use client';
 
 import { Loader2, LayoutGrid, Check, CloudOff } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
@@ -27,6 +28,7 @@ export function OnboardingTopNav({
   phaseIsComplete,
   goToPhase,
 }: OnboardingTopNavProps) {
+  const tc = useTranslations('common');
   return (
     /* --- Floating top navigation strip --- */
     <header className="shrink-0 h-14 bg-app-card border-b border-app-border flex items-center px-4 sm:px-6 z-10">
@@ -35,7 +37,7 @@ export function OnboardingTopNav({
         <Link
           href="/"
           className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-app-hover transition-colors shrink-0"
-          title="Accueil"
+          title={tc('home')}
         >
           <LayoutGrid className="w-4 h-4 text-app-text-muted" />
         </Link>

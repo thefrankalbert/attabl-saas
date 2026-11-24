@@ -7,16 +7,19 @@ import { createInvitationService } from '@/services/invitation.service';
 import { validateInvitationSchema } from '@/lib/validations/invitation.schema';
 
 /**
- * GET /api/invitations/validate?token=...
+ * POST /api/invitations/validate  { token }
+ *
+ * Le jeton voyage dans le corps et non dans l'adresse: une adresse se retrouve dans
+ * les journaux d'acces, l'historique et les en-tetes Referer.
  *
  * Read-only check used by the accept-invite page on mount. It NEVER creates an
  * account, sends an email, or runs plan enforcement - so it has its own
  * fail-open, token-keyed rate limiter and cannot drain the acceptance budget.
  */
-export async function GET(request: Request) {
+export async function POST(request: Request) {
   try {
-    const url = new URL(request.url);
-    const parsed = validateInvitationSchema.safeParse({ token: url.searchParams.get('token') });
+    const body: unknown = await request.json().catch(() => null);
+    const parsed = validateInvitationSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ valid: false }, { status: 400 });
     }

@@ -123,7 +123,7 @@ export function PlatformConsole({
       <header className="flex flex-col gap-3 border-b border-app-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div className="flex flex-col gap-0.5">
           <h1 className="text-lg font-semibold sm:text-xl">{t('title')}</h1>
-          <p className="text-sm text-app-text-muted">{t('subtitle')}</p>
+          <p className="text-sm text-app-text-secondary">{t('subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           {appVersion && <UpdateAvailableBanner currentVersion={appVersion} collapsed />}
@@ -188,7 +188,7 @@ export function PlatformConsole({
                               <span className="shrink-0">{statusBadge(tn)}</span>
                             </div>
                             <span
-                              className="truncate text-xs text-app-text-muted"
+                              className="truncate text-xs text-app-text-secondary"
                               title={`${tn.slug} - ${tn.subscription_plan ?? '-'}`}
                             >
                               {tn.slug} - {tn.subscription_plan ?? '-'}
@@ -258,7 +258,7 @@ export function PlatformConsole({
                             <Button
                               variant="destructive"
                               size="sm"
-                              className="min-h-[44px]"
+                              className="min-h-[44px] bg-status-error-solid hover:bg-status-error-solid/90"
                               disabled={isPending}
                               onClick={() =>
                                 setConfirm({
@@ -352,7 +352,7 @@ export function PlatformConsole({
                                       <Button
                                         variant="destructive"
                                         size="sm"
-                                        className="min-h-[44px]"
+                                        className="min-h-[44px] bg-status-error-solid hover:bg-status-error-solid/90"
                                         disabled={isPending}
                                         onClick={() =>
                                           setConfirm({
@@ -401,7 +401,7 @@ export function PlatformConsole({
                           </span>
                           <span className="shrink-0">{statusBadge(tn)}</span>
                         </div>
-                        <span className="truncate text-xs text-app-text-muted" title={tn.slug}>
+                        <span className="truncate text-xs text-app-text-secondary" title={tn.slug}>
                           {tn.slug}
                         </span>
                       </div>

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /** Plafond de places par table, le meme partout (formulaire et actions serveur). */
-export const MAX_TABLE_CAPACITY = 20;
+const MAX_TABLE_CAPACITY = 20;
 /** Plafond de tables ajoutees en une fois, le meme partout. */
 export const MAX_TABLES_PER_BATCH = 50;
 

@@ -1,6 +1,6 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -33,6 +33,7 @@ export function MenuItemRow({
   handleItemPhotoUpload,
 }: MenuItemRowProps) {
   const t = useTranslations('onboarding');
+  const tc = useTranslations('common');
 
   return (
     <div className="flex items-center gap-2.5 rounded-lg border border-app-border bg-app-elevated p-2 shadow-sm transition-colors hover:bg-app-hover">
@@ -57,12 +58,20 @@ export function MenuItemRow({
           </div>
         ) : item.imageUrl ? (
           <div className="relative h-9 w-9">
-            <img src={item.imageUrl} alt="" className="h-9 w-9 rounded-lg object-cover" />
+            <Image
+              src={item.imageUrl}
+              alt=""
+              width={36}
+              height={36}
+              // Apercu local (blob:, data:) ou hote de developpement http: pas d'optimiseur.
+              unoptimized={!item.imageUrl.startsWith('https://')}
+              className="h-9 w-9 rounded-lg object-cover"
+            />
             <Button
               type="button"
               variant="destructive"
               size="icon"
-              aria-label="Remove image"
+              aria-label={tc('aria.removeImage')}
               onClick={() => updateArticle(categoryId, item.id, 'imageUrl', '')}
               className="absolute -right-1 -top-1 h-4 w-4 min-h-0 min-w-0 rounded-full p-0"
             >

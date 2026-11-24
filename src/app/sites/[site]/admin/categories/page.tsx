@@ -9,6 +9,11 @@ import {
   type ServerListPagination,
 } from '@/lib/pagination';
 import type { Category, Menu } from '@/types/admin.types';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('sidebar', 'navCategories');
+}
 
 export const dynamic = 'force-dynamic';
 

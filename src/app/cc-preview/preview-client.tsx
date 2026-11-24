@@ -298,7 +298,7 @@ export function PreviewClient() {
               onClick={noop}
               className="min-h-[44px] min-w-[44px] rounded-md"
               style={{ color: 'var(--cc-text-3)' }}
-              aria-label="Ajouter un etablissement"
+              aria-label="Ajouter un établissement"
             >
               <Plus className="size-4" strokeWidth={2} />
             </Button>

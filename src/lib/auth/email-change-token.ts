@@ -20,7 +20,7 @@ import { signPayload, verifyPayload } from './signed-payload';
 const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 const LABEL = 'attabl:email-change:v2:';
 
-export type EmailChangeStep = 'current' | 'new';
+type EmailChangeStep = 'current' | 'new';
 
 export interface EmailChangeClaims {
   userId: string;

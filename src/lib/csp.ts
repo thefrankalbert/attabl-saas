@@ -26,12 +26,12 @@ export function buildCspHeader(nonce: string): string {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com https://cdn.jsdelivr.net",
     "font-src 'self'",
-    `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.stripe.com https://*.sentry.io https://api.exchangerate-api.com${devConnectExtras}`,
+    `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.stripe.com https://*.sentry.io${devConnectExtras}`,
     'frame-src https://*.stripe.com https://challenges.cloudflare.com',
     "worker-src 'self' blob:",
     "manifest-src 'self'",
     "object-src 'none'",
-    "base-uri 'self'",
+    "base-uri 'none'",
     "form-action 'self'",
     // No fallback to default-src for this one: without it any site could frame
     // the app (clickjacking). X-Frame-Options DENY says the same for older

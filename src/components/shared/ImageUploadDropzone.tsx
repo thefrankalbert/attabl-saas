@@ -1,6 +1,7 @@
 'use client';
 
 import type { ChangeEvent, DragEvent, RefObject } from 'react';
+import { useTranslations } from 'next-intl';
 import { ImagePlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +28,7 @@ export default function ImageUploadDropzone({
   onDragLeave,
   onDrop,
 }: ImageUploadDropzoneProps) {
+  const tc = useTranslations('common');
   return (
     <div>
       <div
@@ -63,10 +65,8 @@ export default function ImageUploadDropzone({
         </div>
 
         <div className="text-center px-4">
-          <p className="text-sm font-medium text-app-text-secondary">
-            Cliquez ou glissez une image
-          </p>
-          <p className="text-xs text-app-text-muted mt-0.5">JPG, PNG, WebP - Max 10Mo</p>
+          <p className="text-sm font-medium text-app-text-secondary">{tc('dropImagePrompt')}</p>
+          <p className="text-xs text-app-text-muted mt-0.5">{tc('dropImageHint')}</p>
         </div>
       </div>
       {error && <p className="mt-2 text-sm text-red-500">{error}</p>}

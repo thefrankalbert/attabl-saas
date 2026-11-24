@@ -10,6 +10,11 @@ import { createClient } from '@/lib/supabase/server';
 import { createInventoryService } from '@/services/inventory.service';
 import { logger } from '@/lib/logger';
 import type { LossByReason } from '@/types/inventory.types';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('sidebar', 'navStockLosses');
+}
 
 export const dynamic = 'force-dynamic';
 

@@ -176,7 +176,7 @@ describe('actionUpdateOrderStatus - cancel auto-restock wiring', () => {
     const result = await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, 'cancelled');
 
     expect(result.success).toBe(true);
-    expect(mockCancelOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID);
+    expect(mockCancelOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID, { canManageMoney: false });
     // Queued, not raced: nothing has run when the action returns. Two jobs:
     // the table release (audit caisse 2026-11-15) and the restock.
     expect(mockRestockOrder).not.toHaveBeenCalled();
@@ -194,7 +194,7 @@ describe('actionUpdateOrderStatus - cancel auto-restock wiring', () => {
     const result = await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, 'cancelled');
 
     expect(result.success).toBe(true);
-    expect(mockCancelOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID);
+    expect(mockCancelOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID, { canManageMoney: false });
     expect(mockRestockOrder).not.toHaveBeenCalled();
   });
 
@@ -426,7 +426,7 @@ describe("actions de cuisine - fin d'essai", () => {
     const result = await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, 'cancelled');
 
     expect(result).toEqual({ success: true });
-    expect(mockCancelOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID);
+    expect(mockCancelOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID, { canManageMoney: false });
     await runScheduled();
     expect(mockRestockOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID, 'user-9');
   });

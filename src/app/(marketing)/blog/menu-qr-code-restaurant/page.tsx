@@ -20,14 +20,14 @@ export default function ArticleMenuQrPage() {
         <div className="mb-12">
           <Link
             href="/blog"
-            className="text-sm text-neutral-400 dark:text-neutral-500 transition-colors hover:text-neutral-600 dark:hover:text-neutral-300"
+            className="text-sm text-neutral-500 dark:text-neutral-400 transition-colors hover:text-neutral-600 dark:hover:text-neutral-300"
           >
             &larr; Retour au blog
           </Link>
         </div>
 
         <header className="mb-12">
-          <div className="mb-4 flex items-center gap-3 text-sm text-neutral-400 dark:text-neutral-500">
+          <div className="mb-4 flex items-center gap-3 text-sm text-neutral-500 dark:text-neutral-400">
             <span className="rounded-full bg-neutral-100 dark:bg-neutral-800 px-2.5 py-0.5 text-xs font-medium text-neutral-900 dark:text-white">
               Restauration
             </span>
@@ -65,8 +65,8 @@ export default function ArticleMenuQrPage() {
             </li>
             <li>
               <strong>Expérience client moderne</strong> - Vos clients accèdent au menu
-              instantanément. Les photos haute qualité des plats augmentent le panier moyen de 15 à
-              30%.
+              instantanément. Les belles photos de plats donnent envie et peuvent faire monter le
+              panier moyen.
             </li>
             <li>
               <strong>Commandes directes</strong> - Le client commande depuis sa table. Moins
@@ -97,8 +97,8 @@ export default function ArticleMenuQrPage() {
           <p>
             Le coût d&apos;un menu QR code est dérisoire comparé aux impressions régulières de menus
             papier. Mais le vrai gain est ailleurs : les restaurants qui passent au menu digital
-            constatent une augmentation moyenne de 20% du panier moyen grâce aux photos de plats,
-            aux suggestions automatiques et à la facilité de commande.
+            peuvent voir leur panier moyen monter grâce aux photos de plats, aux suggestions
+            automatiques et à la facilité de commande.
           </p>
           <p>
             Pour les hôtels, le menu QR simplifie le room service. Le client scanne le code dans sa

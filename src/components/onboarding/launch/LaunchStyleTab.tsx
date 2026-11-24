@@ -33,7 +33,9 @@ export function LaunchStyleTab({ data, updateData }: LaunchStyleTabProps) {
     <div className="space-y-6">
       {/* Templates */}
       <div>
-        <p className="mb-2 block text-xs font-medium text-app-text-secondary">Template</p>
+        <p className="mb-2 block text-xs font-medium text-app-text-secondary">
+          {t('styleTemplateLabel')}
+        </p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {TEMPLATES.map((tmpl) => {
             const isSelected = data.qrTemplate === tmpl.id;

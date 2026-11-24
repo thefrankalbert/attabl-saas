@@ -5,6 +5,11 @@ import { QRCodePage } from './QRCodePage';
 import { getTenantUrl } from '@/lib/constants';
 import TenantNotFound from '@/components/admin/TenantNotFound';
 import { redirectToLogin, redirectToUnauthorized } from '@/lib/auth/redirect-to-main';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('sidebar', 'navQrCodes');
+}
 
 export const dynamic = 'force-dynamic';
 

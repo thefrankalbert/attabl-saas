@@ -52,6 +52,7 @@ export function OrdersTable({
 }: OrdersTableProps) {
   const t = useTranslations('admin');
   const to = useTranslations('orders');
+  const tc = useTranslations('common');
   const searchParams = useSearchParams();
   const range = searchParams.get('range') || 'today';
 
@@ -262,7 +263,7 @@ export function OrdersTable({
                 <Checkbox
                   checked={allPageSelected}
                   onCheckedChange={togglePage}
-                  aria-label="Select page"
+                  aria-label={tc('aria.selectPage')}
                 />
                 {sortButton('id', t('colOrder'))}
                 {sortButton('time', t('colTime'))}
@@ -290,7 +291,7 @@ export function OrdersTable({
                     <Checkbox
                       checked={allPageSelected}
                       onCheckedChange={togglePage}
-                      aria-label="Select page"
+                      aria-label={tc('aria.selectPage')}
                     />
                   </TableHead>
                   <TableHead className={HEAD_CLS}>{sortButton('id', t('colOrder'))}</TableHead>

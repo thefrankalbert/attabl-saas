@@ -103,7 +103,7 @@ export function PhoneHeader({ logoUrl, initial }: PhoneHeaderProps) {
               fontWeight: 500,
             }}
           >
-            Chercher un plat...
+            {t('phoneSearchDish')}
           </span>
         </div>
       </div>

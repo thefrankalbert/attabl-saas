@@ -212,7 +212,6 @@ function ResetPasswordContent() {
                             type="email"
                             autoComplete="email"
                             placeholder={t('accountEmailPlaceholder')}
-                            autoFocus
                             className={inputClass}
                             {...field}
                           />
@@ -233,6 +232,7 @@ function ResetPasswordContent() {
                           <div className="relative">
                             <Input
                               type={showPassword ? 'text' : 'password'}
+                              autoComplete="new-password"
                               placeholder={t('newPasswordPlaceholder')}
                               className={`${inputClass} pr-10`}
                               {...field}
@@ -270,6 +270,7 @@ function ResetPasswordContent() {
                         <FormControl>
                           <Input
                             type={showPassword ? 'text' : 'password'}
+                            autoComplete="new-password"
                             placeholder={t('confirmPasswordPlaceholder')}
                             className={inputClass}
                             {...field}

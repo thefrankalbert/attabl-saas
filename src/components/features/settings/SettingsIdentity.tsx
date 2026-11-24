@@ -135,7 +135,7 @@ export default function SettingsIdentity({
 
             <div className="space-y-2">
               <Label htmlFor="settings-establishment-type">
-                {t('establishmentType') ?? "Type d'etablissement"}
+                {t('establishmentType') ?? "Type d'établissement"}
               </Label>
               <Select
                 value={watchedEstablishmentType || 'restaurant'}

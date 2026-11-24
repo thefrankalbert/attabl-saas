@@ -18,7 +18,7 @@ export default async function LegalPage() {
         <h1 className="text-[36px] font-semibold leading-[1.05] tracking-[-0.03em] text-zinc-950 dark:text-zinc-50">
           {t('heading')}
         </h1>
-        <p className="mt-3 text-sm text-zinc-400 dark:text-zinc-500">{t('lastUpdate')}</p>
+        <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">{t('lastUpdate')}</p>
 
         <h2 className="mt-10 text-xl font-semibold tracking-[-0.015em] text-zinc-950 dark:text-zinc-50">
           {t('section1Title')}
@@ -41,7 +41,7 @@ export default async function LegalPage() {
           {t('section3Body')}{' '}
           <Link
             href="/pricing"
-            className="font-medium text-orange-600 hover:underline dark:text-orange-400"
+            className="font-medium text-orange-700 hover:underline dark:text-orange-400"
           >
             {t('section3Link')}
           </Link>
@@ -62,7 +62,7 @@ export default async function LegalPage() {
           {t('section5Body')}{' '}
           <a
             href="mailto:contact@attabl.com"
-            className="font-medium text-orange-600 hover:underline dark:text-orange-400"
+            className="font-medium text-orange-700 hover:underline dark:text-orange-400"
           >
             contact@attabl.com
           </a>
