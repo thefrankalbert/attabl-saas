@@ -302,11 +302,24 @@ export function createValidationMethods(supabase: SupabaseClient) {
 
       if (categoryIds.length === 0) return { orderZone: 'kitchen', categoryZoneMap };
 
-      const { data: categories } = await supabase
+      const { data: categories, error } = await supabase
         .from('categories')
         .select('id, preparation_zone')
         .eq('tenant_id', tenantId)
         .in('id', categoryIds);
+
+      // Audit B70: une lecture en echec classait la commande "cuisine" sans
+      // trace, et une commande de boissons disparaissait de l'ecran bar.
+      // `mixed` (et chaque rubrique en `both`, pour les lignes) l'affiche sur
+      // les deux ecrans: rien ne se perd.
+      if (error) {
+        logger.error('determinePreparationZone: categories read failed', {
+          tenantId,
+          error: error.message,
+        });
+        for (const id of categoryIds) categoryZoneMap.set(id, 'both');
+        return { orderZone: 'mixed', categoryZoneMap };
+      }
 
       if (!categories || categories.length === 0) return { orderZone: 'kitchen', categoryZoneMap };
 

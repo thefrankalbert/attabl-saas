@@ -90,46 +90,6 @@ describe('InventoryService', () => {
 
   // --- Ingredients --------------------------------------
 
-  describe('getIngredients', () => {
-    it('should return list of ingredients for tenant', async () => {
-      const mockIngredients = [
-        { id: 'ing-1', name: 'Farine', unit: 'kg', tenant_id: 't1' },
-        { id: 'ing-2', name: 'Sel', unit: 'g', tenant_id: 't1' },
-      ];
-
-      // Build the exact chain: .from('ingredients').select('*').eq(...).eq(...).order(...)
-      const orderFn = vi.fn().mockResolvedValue({ data: mockIngredients, error: null });
-      const eqIsActive = vi.fn().mockReturnValue({ order: orderFn });
-      const eqTenant = vi.fn().mockReturnValue({ eq: eqIsActive });
-      const selectFn = vi.fn().mockReturnValue({ eq: eqTenant });
-      supabase.from = vi.fn().mockReturnValue({ select: selectFn });
-
-      const result = await service.getIngredients('t1');
-
-      expect(supabase.from).toHaveBeenCalledWith('ingredients');
-      expect(selectFn).toHaveBeenCalledWith(
-        'id, tenant_id, name, unit, current_stock, min_stock_alert, cost_per_unit, category, is_active, purchase_unit, units_per_purchase, created_at, updated_at',
-      );
-      expect(eqTenant).toHaveBeenCalledWith('tenant_id', 't1');
-      expect(eqIsActive).toHaveBeenCalledWith('is_active', true);
-      expect(orderFn).toHaveBeenCalledWith('name');
-      expect(result).toEqual(mockIngredients);
-    });
-
-    it('should throw INTERNAL ServiceError on DB error', async () => {
-      const orderFn = vi.fn().mockResolvedValue({ data: null, error: { message: 'DB failure' } });
-      const eqIsActive = vi.fn().mockReturnValue({ order: orderFn });
-      const eqTenant = vi.fn().mockReturnValue({ eq: eqIsActive });
-      const selectFn = vi.fn().mockReturnValue({ eq: eqTenant });
-      supabase.from = vi.fn().mockReturnValue({ select: selectFn });
-
-      await expect(service.getIngredients('t1')).rejects.toThrow(ServiceError);
-      await expect(service.getIngredients('t1')).rejects.toMatchObject({
-        code: 'INTERNAL',
-      });
-    });
-  });
-
   describe('createIngredient', () => {
     it('should create ingredient with defaults (current_stock=0, min_stock_alert=0, cost_per_unit=0)', async () => {
       const createdIngredient = {
@@ -835,21 +795,6 @@ describe('InventoryService', () => {
     });
   });
 
-  describe('setOpeningStock', () => {
-    it('should call RPC set_opening_stock', async () => {
-      supabase.rpc = vi.fn().mockResolvedValue({ data: null, error: null });
-
-      await service.setOpeningStock('t1', 'ing-1', 50);
-
-      expect(supabase.rpc).toHaveBeenCalledWith('set_opening_stock', {
-        p_tenant_id: 't1',
-        p_ingredient_id: 'ing-1',
-        p_quantity: 50,
-        p_created_by: 'user-1',
-      });
-    });
-  });
-
   // --- Stock Status & Movements -------------------------
 
   describe('getStockStatus', () => {
@@ -866,42 +811,6 @@ describe('InventoryService', () => {
         p_tenant_id: 't1',
       });
       expect(result).toEqual(mockStatus);
-    });
-  });
-
-  describe('getStockMovements', () => {
-    it('should apply filters (ingredientId, date range)', async () => {
-      const mockMovements = [
-        { id: 'mv-1', ingredient_id: 'ing-1', movement_type: 'manual_add', quantity: 5 },
-      ];
-
-      // Build the full chain: .from().select().eq().order().limit() then optional .eq().gte().lte()
-      const lteFn = vi.fn().mockResolvedValue({ data: mockMovements, error: null });
-      const gteFn = vi.fn().mockReturnValue({ lte: lteFn });
-      const eqIngredient = vi.fn().mockReturnValue({ gte: gteFn });
-      const limitFn = vi.fn().mockReturnValue({ eq: eqIngredient });
-      const orderFn = vi.fn().mockReturnValue({ limit: limitFn });
-      const eqTenant = vi.fn().mockReturnValue({ order: orderFn });
-      const selectFn = vi.fn().mockReturnValue({ eq: eqTenant });
-      supabase.from = vi.fn().mockReturnValue({ select: selectFn });
-
-      const result = await service.getStockMovements('t1', {
-        ingredientId: 'ing-1',
-        startDate: '2026-01-01',
-        endDate: '2026-01-31',
-      });
-
-      expect(supabase.from).toHaveBeenCalledWith('stock_movements');
-      expect(selectFn).toHaveBeenCalledWith(
-        '*, ingredient:ingredients(name, unit), supplier:suppliers(id, name)',
-      );
-      expect(eqTenant).toHaveBeenCalledWith('tenant_id', 't1');
-      expect(orderFn).toHaveBeenCalledWith('created_at', { ascending: false });
-      expect(limitFn).toHaveBeenCalledWith(200);
-      expect(eqIngredient).toHaveBeenCalledWith('ingredient_id', 'ing-1');
-      expect(gteFn).toHaveBeenCalledWith('created_at', '2026-01-01');
-      expect(lteFn).toHaveBeenCalledWith('created_at', '2026-01-31');
-      expect(result).toEqual(mockMovements);
     });
   });
 

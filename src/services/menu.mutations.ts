@@ -160,6 +160,16 @@ export async function updateMenu(
 ): Promise<MenuRow> {
   const { id, ...updates } = input;
   await assertMenuLinksInTenant(supabase, tenantId, updates, id);
+  if (updates.name !== undefined) {
+    // Audit B33: un renommage refuse le doublon comme la creation.
+    await assertNameAvailable(supabase, {
+      table: 'menus',
+      tenantId,
+      name: updates.name,
+      message: 'Une carte porte déjà ce nom.',
+      excludeId: id,
+    });
+  }
 
   // The slug is fixed at creation and never follows a rename: printed QR codes
   // and shared links carry it (audit C-059, renaming broke every printed QR).
@@ -234,23 +244,31 @@ export async function deleteMenu(
 }
 
 /**
- * Reorder menus by updating display_order.
+ * Reorder menus by updating display_order (rang = position dans la liste).
+ *
+ * Audit B56: une ecriture par carte en parallele laissait un ordre a moitie
+ * applique quand l'une echouait, et une carte absente repondait succes. La
+ * fonction SQL `reorder_menus` fait un seul UPDATE filtre par tenant et
+ * l'annule si une carte manque.
  */
 export async function reorderMenus(
   supabase: SupabaseClient,
   tenantId: string,
   orderedIds: string[],
 ): Promise<void> {
-  // N parallel UPDATEs via Promise.all - intentional trade-off for simplicity.
-  // Supabase JS client has no multi-row UPDATE with varying values.
-  // Acceptable because menu count is small (typically < 20) and calls are parallel.
-  const updates = orderedIds.map((id, index) =>
-    supabase.from('menus').update({ display_order: index }).eq('id', id).eq('tenant_id', tenantId),
-  );
-
-  const results = await Promise.all(updates);
-  const failed = results.find((r) => r.error);
-  if (failed?.error) {
+  if (orderedIds.length === 0) return;
+  const { error } = await supabase.rpc('reorder_menus', {
+    p_tenant_id: tenantId,
+    p_ordered_ids: orderedIds,
+  });
+  if (error) {
+    if (error.code === 'P0002') {
+      throw new ServiceError(
+        'Une carte a été modifiée ou supprimée entre-temps. Rechargez la page.',
+        'CONFLICT',
+      );
+    }
+    logger.error('Failed to reorder menus', { error: error.message });
     throw new ServiceError('Erreur lors du réordonnancement', 'INTERNAL');
   }
 }

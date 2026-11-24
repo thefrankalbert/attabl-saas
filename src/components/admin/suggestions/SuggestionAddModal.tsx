@@ -30,6 +30,8 @@ interface SuggestionAddModalProps {
   description: string;
   onDescriptionChange: (value: string) => void;
   onSubmit: () => void;
+  /** Envoi en cours: le bouton est desactive pour qu'un double clic ne cree pas deux lignes. */
+  submitting?: boolean;
 }
 
 export default function SuggestionAddModal({
@@ -46,6 +48,7 @@ export default function SuggestionAddModal({
   description,
   onDescriptionChange,
   onSubmit,
+  submitting = false,
 }: SuggestionAddModalProps) {
   const t = useTranslations('inventory');
   const tc = useTranslations('common');
@@ -138,7 +141,7 @@ export default function SuggestionAddModal({
         <Button variant="ghost" onClick={onClose}>
           {tc('cancel')}
         </Button>
-        <Button onClick={onSubmit} variant="default">
+        <Button onClick={onSubmit} variant="default" disabled={submitting}>
           {tc('add')}
         </Button>
       </div>

@@ -52,12 +52,16 @@ export function createQueryMethods(supabase: SupabaseClient) {
     },
 
     /**
-     * List orders in 'ready' status created since midnight for a tenant.
+     * List orders in 'ready' status created in the last 24 hours for a tenant.
      * Used by the ServiceManager dashboard.
+     *
+     * Audit B69: the window used to start at midnight (server clock, UTC on
+     * Vercel). An order ready at 23:50 vanished from "a servir" at 00:00 while
+     * still waiting on the pass. A sliding 24 h window keeps it; anything older
+     * is a forgotten order, not a dish to serve.
      */
     async listReadyOrdersToday(tenantId: string): Promise<unknown[]> {
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
       // The ready-to-serve cards read `order.items[].name` (OrderItem). Selecting
       // the raw relation (`order_items`, column `item_name`) left both undefined:
       // every card showed "0 article" and no dish (measured 2026-11-14).
@@ -66,7 +70,7 @@ export function createQueryMethods(supabase: SupabaseClient) {
         .select('*, items:order_items(id, quantity, name:item_name)')
         .eq('tenant_id', tenantId)
         .eq('status', 'ready')
-        .gte('created_at', todayStart.toISOString())
+        .gte('created_at', since.toISOString())
         .order('created_at', { ascending: true });
       if (error) {
         throw new ServiceError('Erreur chargement commandes pretes', 'INTERNAL', error);

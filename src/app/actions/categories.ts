@@ -13,11 +13,12 @@ import { createClient } from '@/lib/supabase/server';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
 import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-tenant-serving';
 import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
-import { renderableImageUrlSchema } from '@/lib/validations/image-url.schema';
-
-// A category cover is rendered by next/image on the client menu: a foreign host
-// would throw at render and take the whole storefront down (image-url.schema.ts).
-const categoryImageSchema = renderableImageUrlSchema.nullish().or(z.literal(''));
+import { logger } from '@/lib/logger';
+import {
+  categoryCreateSchema,
+  categoryReorderSchema,
+  categoryUpdateSchema,
+} from '@/lib/validations/category.schema';
 
 const toggleCategoryActiveSchema = z.object({
   tenantId: z.string().uuid(),
@@ -87,7 +88,13 @@ export async function actionToggleCategoryActive(
     .eq('tenant_id', tenantId);
 
   if (error) {
-    return { error: error.message };
+    // Audit B66: jamais de message Postgres brut vers le navigateur.
+    logger.error('actionToggleCategoryActive failed', {
+      tenantId,
+      categoryId,
+      error: error.message,
+    });
+    return { error: 'Erreur lors de la mise a jour de la categorie' };
   }
 
   // Fire-and-forget audit log
@@ -135,9 +142,10 @@ export async function actionCreateCategory(
   if (!parsedTenant.success) {
     return { error: 'Invalid tenant ID' };
   }
-  const parsedImage = categoryImageSchema.safeParse(input.image_url);
-  if (!parsedImage.success) {
-    return { error: parsedImage.error.issues[0]?.message ?? 'Invalid input' };
+  // Audit B41: tout le formulaire passe par Zod (avant: l'image seule).
+  const parsedInput = categoryCreateSchema.safeParse(input);
+  if (!parsedInput.success) {
+    return { error: parsedInput.error.issues[0]?.message ?? 'Invalid input' };
   }
 
   const { error: permError } = await checkCategoryPermissions(tenantId);
@@ -146,7 +154,10 @@ export async function actionCreateCategory(
   try {
     const supabase = await createClient();
     const categoryService = createCategoryService(supabase);
-    const data = await categoryService.createCategory({ ...input, tenant_id: tenantId }, options);
+    const data = await categoryService.createCategory(
+      { ...parsedInput.data, tenant_id: tenantId },
+      options,
+    );
     revalidateTag(CACHE_TAG_MENUS, 'max');
     return { success: true, data };
   } catch (err) {
@@ -184,10 +195,11 @@ export async function actionUpdateCategory(
   if (!parsedTenant.success || !parsedCategory.success) {
     return { error: 'Invalid input' };
   }
-  const parsedImage = categoryImageSchema.safeParse(data.image_url);
-  if (!parsedImage.success) {
-    return { error: parsedImage.error.issues[0]?.message ?? 'Invalid input' };
+  const parsedData = categoryUpdateSchema.safeParse(data);
+  if (!parsedData.success) {
+    return { error: parsedData.error.issues[0]?.message ?? 'Invalid input' };
   }
+  const fields = parsedData.data;
 
   const { error: permError } = await checkCategoryPermissions(tenantId);
   if (permError) return { error: permError };
@@ -197,11 +209,11 @@ export async function actionUpdateCategory(
     const categoryService = createCategoryService(supabase);
     const cleanup = getStorageCleanup();
     const previousImages =
-      data.image_url !== undefined
+      fields.image_url !== undefined
         ? await cleanup.imageUrlsOf('categories', categoryId, tenantId)
         : [];
-    await categoryService.updateCategory(categoryId, { ...data, tenant_id: tenantId });
-    if (data.image_url !== undefined) await cleanup.release(tenantId, previousImages);
+    await categoryService.updateCategory(categoryId, { ...fields, tenant_id: tenantId });
+    if (fields.image_url !== undefined) await cleanup.release(tenantId, previousImages);
     revalidateTag(CACHE_TAG_MENUS, 'max');
     return { success: true };
   } catch (err) {
@@ -248,7 +260,7 @@ export async function actionDeleteCategory(
 
 /**
  * SECURITY: Verifies user belongs to tenant before reordering categories.
- * reorderCategories already filters by tenant_id in each update.
+ * reorderCategories writes in one atomic, tenant-filtered SQL call.
  */
 export async function actionReorderCategories(
   tenantId: string,
@@ -258,6 +270,10 @@ export async function actionReorderCategories(
   if (!parsedTenant.success) {
     return { error: 'Invalid tenant ID' };
   }
+  const parsedUpdates = categoryReorderSchema.safeParse(updates);
+  if (!parsedUpdates.success) {
+    return { error: 'Invalid input' };
+  }
 
   const { error: permError } = await checkCategoryPermissions(tenantId);
   if (permError) return { error: permError };
@@ -265,7 +281,7 @@ export async function actionReorderCategories(
   try {
     const supabase = await createClient();
     const categoryService = createCategoryService(supabase);
-    await categoryService.reorderCategories(tenantId, updates);
+    await categoryService.reorderCategories(tenantId, parsedUpdates.data);
     revalidateTag(CACHE_TAG_MENUS, 'max');
     return { success: true };
   } catch (err) {

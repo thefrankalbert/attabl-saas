@@ -50,9 +50,10 @@ export function OrderActionsPanel({
     !isComp && canPay && order.status !== 'cancelled' && paymentStatus === 'pending';
 
   return (
-    // lg: la colonne d'actions defile seule; sans cela le bas du panneau
-    // (selecteur Especes / Carte, saisie du paiement) etait coupe a 1024 px.
-    <div className="lg:w-56 shrink-0 space-y-3 lg:min-h-0 lg:overflow-y-auto">
+    // Audit B129: la colonne ne defile plus seule. Elle suit le defilement de
+    // la page (main#main-content), le bas du panneau (paiement, annulation)
+    // reste atteignable a 1024x768 sans second conteneur qui defile.
+    <div data-testid="order-actions-panel" className="lg:w-56 shrink-0 space-y-3">
       {/* Status Actions */}
       {(showStatusButtons || showCheckout) && (
         <div className="rounded-xl border border-app-border p-3 space-y-2">

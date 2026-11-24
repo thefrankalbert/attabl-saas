@@ -38,6 +38,18 @@ function pickMenuItemColumns(payload: Record<string, unknown>): Record<string, u
   return out;
 }
 
+const ITEM_NOT_FOUND = 'Plat introuvable (supprime entre-temps ?)';
+
+/**
+ * Audit B56: un UPDATE qui ne touche aucune ligne ne rend aucune erreur. Sans
+ * ce controle, modifier un plat supprime entre-temps affichait "Plat
+ * enregistre" alors que rien n'avait ete ecrit.
+ */
+function assertTouched(result: { error: unknown | null; count: number | null }, message: string) {
+  if (result.error) throw new ServiceError(message, 'INTERNAL', result.error);
+  if (result.count === 0) throw new ServiceError(ITEM_NOT_FOUND, 'NOT_FOUND');
+}
+
 export interface MenuItemService {
   createMenuItem(tenantId: string, payload: Record<string, unknown>): Promise<string>;
   updateMenuItem(itemId: string, tenantId: string, payload: Record<string, unknown>): Promise<void>;
@@ -93,64 +105,82 @@ export function createMenuItemService(supabase: SupabaseClient): MenuItemService
       tenantId: string,
       payload: Record<string, unknown>,
     ): Promise<void> {
-      const { error } = await updateMenuItemScoped(
-        supabase,
-        itemId,
-        tenantId,
-        pickMenuItemColumns(payload),
-      );
-
-      if (error) {
-        throw new ServiceError('Erreur lors de la mise a jour du plat', 'INTERNAL', error);
+      if (typeof payload.name === 'string') {
+        // Audit B33: un renommage refuse le doublon comme la creation. La
+        // categorie de comparaison est celle envoyee, sinon celle du plat.
+        let categoryId = typeof payload.category_id === 'string' ? payload.category_id : null;
+        if (!categoryId) {
+          const { data: current, error: readError } = await supabase
+            .from('menu_items')
+            .select('category_id')
+            .eq('id', itemId)
+            .eq('tenant_id', tenantId)
+            .is('deleted_at', null)
+            .maybeSingle();
+          if (readError) {
+            throw new ServiceError('Erreur lors de la mise a jour du plat', 'INTERNAL', readError);
+          }
+          if (!current) throw new ServiceError(ITEM_NOT_FOUND, 'NOT_FOUND');
+          categoryId = (current as { category_id: string | null }).category_id;
+        }
+        await assertNameAvailable(supabase, {
+          table: 'menu_items',
+          tenantId,
+          name: payload.name,
+          message: 'Un plat porte déjà ce nom dans cette catégorie.',
+          scope: { column: 'category_id', value: categoryId },
+          excludeSoftDeleted: true,
+          excludeId: itemId,
+        });
       }
+      assertTouched(
+        await updateMenuItemScoped(supabase, itemId, tenantId, pickMenuItemColumns(payload)),
+        'Erreur lors de la mise a jour du plat',
+      );
     },
 
     /**
      * Soft-delete a menu item (preserves order_items history).
      */
     async deleteMenuItem(itemId: string, tenantId: string): Promise<void> {
-      const { error } = await deleteMenuItemScoped(supabase, itemId, tenantId);
-
-      if (error) {
-        throw new ServiceError('Erreur lors de la suppression du plat', 'INTERNAL', error);
-      }
+      assertTouched(
+        await deleteMenuItemScoped(supabase, itemId, tenantId),
+        'Erreur lors de la suppression du plat',
+      );
     },
 
     /**
      * Toggle the is_available flag on a menu item.
      */
     async toggleAvailable(itemId: string, isAvailable: boolean, tenantId: string): Promise<void> {
-      const { error } = await updateMenuItemScoped(supabase, itemId, tenantId, {
-        is_available: isAvailable,
-      });
-
-      if (error) {
-        throw new ServiceError('Erreur lors du changement de disponibilite', 'INTERNAL', error);
-      }
+      assertTouched(
+        await updateMenuItemScoped(supabase, itemId, tenantId, {
+          is_available: isAvailable,
+        }),
+        'Erreur lors du changement de disponibilite',
+      );
     },
 
     /**
      * Toggle the is_featured flag on a menu item.
      */
     async toggleFeatured(itemId: string, isFeatured: boolean, tenantId: string): Promise<void> {
-      const { error } = await updateMenuItemScoped(supabase, itemId, tenantId, {
-        is_featured: isFeatured,
-      });
-
-      if (error) {
-        throw new ServiceError('Erreur lors du changement de mise en avant', 'INTERNAL', error);
-      }
+      assertTouched(
+        await updateMenuItemScoped(supabase, itemId, tenantId, {
+          is_featured: isFeatured,
+        }),
+        'Erreur lors du changement de mise en avant',
+      );
     },
 
     /**
      * Update the price of a menu item.
      */
     async updatePrice(itemId: string, price: number, tenantId: string): Promise<void> {
-      const { error } = await updateMenuItemScoped(supabase, itemId, tenantId, { price });
-
-      if (error) {
-        throw new ServiceError('Erreur lors de la mise a jour du prix', 'INTERNAL', error);
-      }
+      assertTouched(
+        await updateMenuItemScoped(supabase, itemId, tenantId, { price }),
+        'Erreur lors de la mise a jour du prix',
+      );
     },
   };
 }

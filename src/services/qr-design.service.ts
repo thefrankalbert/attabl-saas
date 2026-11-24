@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError } from './errors';
+import { logger } from '@/lib/logger';
 import { createDefaultQRDesignConfig, type QRDesignConfig } from '@/types/qr-design.types';
 import { qrDesignConfigSchema, type SaveQrDesignInput } from '@/lib/validations/qr-design.schema';
 
@@ -60,19 +61,29 @@ function toRow(row: {
 
 export function createQrDesignService(supabase: SupabaseClient): QrDesignService {
   async function tenantDefaultConfig(tenantId: string): Promise<QRDesignConfig> {
-    const { data: tenant } = await supabase
+    // Audit B81: une lecture en echec ne doit pas retomber en silence sur le
+    // design d'usine: les cartes seraient imprimees avec le mauvais design.
+    const { data: tenant, error: tenantErr } = await supabase
       .from('tenants')
       .select('primary_color, secondary_color')
       .eq('id', tenantId)
       .maybeSingle();
+    if (tenantErr) {
+      logger.error('QR design: tenant read failed', { tenantId, error: tenantErr.message });
+      throw new ServiceError('Erreur lors du chargement du design par defaut', 'INTERNAL');
+    }
     const factory = createDefaultQRDesignConfig(tenant?.primary_color || '#000000');
 
-    const { data: def } = await supabase
+    const { data: def, error: defErr } = await supabase
       .from('qr_designs')
       .select('config')
       .eq('tenant_id', tenantId)
       .eq('is_default', true)
       .maybeSingle();
+    if (defErr) {
+      logger.error('QR design: default design read failed', { tenantId, error: defErr.message });
+      throw new ServiceError('Erreur lors du chargement du design par defaut', 'INTERNAL');
+    }
 
     return def ? parseConfig(def.config, factory) : factory;
   }
