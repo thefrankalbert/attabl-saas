@@ -32,7 +32,11 @@ import type { AdminRole } from '@/types/admin.types';
 import type { SubscriptionStatus } from '@/types/billing';
 import type { PermissionCode, RolePermissions } from '@/types/permission.types';
 import { getEffectivePermissions } from '@/lib/permissions';
-import { determineTrialEventKey, sendTrialEmailForKey } from '@/services/trigger-emails.service';
+import {
+  determineTrialEventKey,
+  findLifecycleRecipient,
+  sendTrialEmailForKey,
+} from '@/services/trigger-emails.service';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -161,20 +165,21 @@ export default async function AdminLayout({
           .eq('tenant_id', tenant.id)
           .then((r) => ({ count: r.count ?? 0 }));
 
-        const { data: ownerUser } = await adminClient
-          .from('admin_users')
-          .select('email')
-          .eq('tenant_id', tenant.id)
-          .eq('role', 'owner')
-          .maybeSingle();
-        const ownerEmail = ownerUser?.email ?? user.email;
-
         const eventKey = determineTrialEventKey({
           trialEndsAt: tenant.trial_ends_at,
           activationEvents,
         });
 
-        if (eventKey) {
+        // R5/T9: proprietaire, sinon la personne connectee (sa propre ligne du
+        // restaurant); null si desinscrit des relances: rien n'est reserve.
+        const recipient = eventKey
+          ? await findLifecycleRecipient(adminClient, tenant.id, {
+              userId: user.id,
+              email: user.email,
+            })
+          : null;
+
+        if (eventKey && recipient) {
           // Atomic claim server-side: merges into the LIVE activation_events row
           // (jsonb || ) and sets the slot once, so a concurrent writer's key is
           // never clobbered by a stale read-merge-write snapshot.
@@ -184,7 +189,7 @@ export default async function AdminLayout({
           });
           if (claimed) {
             await sendTrialEmailForKey(eventKey, {
-              adminEmail: ownerEmail,
+              recipient,
               restaurantName: tenant.name,
               dashboardUrl,
               trialEndsAt: tenant.trial_ends_at,

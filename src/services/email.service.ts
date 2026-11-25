@@ -39,7 +39,10 @@ import type {
   TeamInvitationEmailData,
   LowStockAlertEmailData,
   RenewalReminderEmailData,
+  LifecycleEmailData,
+  TrialEndgameEmailData,
 } from './email.types';
+import type { UnsubscribeLinks } from '@/lib/email/unsubscribe-token';
 
 export type { EmailService } from './email.types';
 
@@ -58,6 +61,18 @@ async function avecDelai<T>(envoi: Promise<T>): Promise<T> {
   } finally {
     clearTimeout(minuteur);
   }
+}
+
+/**
+ * En-tetes de desinscription des relances (R5/T9): RFC 2369 (List-Unsubscribe)
+ * et RFC 8058 (desinscription en un clic par POST). Jamais poses sur un e-mail
+ * transactionnel (mot de passe, invitation, facture...).
+ */
+export function lifecycleUnsubscribeHeaders(links: UnsubscribeLinks): Record<string, string> {
+  return {
+    'List-Unsubscribe': `<${links.oneClickUrl}>`,
+    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -82,6 +97,7 @@ export function createEmailService(): EmailService {
     subject: string,
     html: string,
     text: string,
+    headers?: Record<string, string>,
   ): Promise<EmailResult> {
     if (!resend) {
       // Do NOT report success here: a missing API key means no email was sent.
@@ -99,6 +115,7 @@ export function createEmailService(): EmailService {
           subject,
           html,
           text,
+          ...(headers ? { headers } : {}),
         }),
       );
 
@@ -178,28 +195,19 @@ export function createEmailService(): EmailService {
       return send(to, subject, html, text);
     },
 
-    async sendFirstOrderTriggerEmail(
-      to: string,
-      data: { restaurantName: string; dashboardUrl: string },
-    ): Promise<EmailResult> {
+    async sendFirstOrderTriggerEmail(to: string, data: LifecycleEmailData): Promise<EmailResult> {
       const { subject, html, text } = buildFirstOrderTriggerEmail(data);
-      return send(to, subject, html, text);
+      return send(to, subject, html, text, lifecycleUnsubscribeHeaders(data.unsubscribe));
     },
 
-    async sendTenthOrderTriggerEmail(
-      to: string,
-      data: { restaurantName: string; dashboardUrl: string },
-    ): Promise<EmailResult> {
+    async sendTenthOrderTriggerEmail(to: string, data: LifecycleEmailData): Promise<EmailResult> {
       const { subject, html, text } = buildTenthOrderTriggerEmail(data);
-      return send(to, subject, html, text);
+      return send(to, subject, html, text, lifecycleUnsubscribeHeaders(data.unsubscribe));
     },
 
-    async sendTrialIdleEmail(
-      to: string,
-      data: { restaurantName: string; dashboardUrl: string },
-    ): Promise<EmailResult> {
+    async sendTrialIdleEmail(to: string, data: LifecycleEmailData): Promise<EmailResult> {
       const { subject, html, text } = buildTrialIdleEmail(data);
-      return send(to, subject, html, text);
+      return send(to, subject, html, text, lifecycleUnsubscribeHeaders(data.unsubscribe));
     },
 
     async sendRenewalReminderEmail(
@@ -210,12 +218,9 @@ export function createEmailService(): EmailService {
       return send(to, subject, html, text);
     },
 
-    async sendTrialEndgameEmail(
-      to: string,
-      data: { restaurantName: string; dashboardUrl: string; ordersCount: number; daysLeft: number },
-    ): Promise<EmailResult> {
+    async sendTrialEndgameEmail(to: string, data: TrialEndgameEmailData): Promise<EmailResult> {
       const { subject, html, text } = buildTrialEndgameEmail(data);
-      return send(to, subject, html, text);
+      return send(to, subject, html, text, lifecycleUnsubscribeHeaders(data.unsubscribe));
     },
   };
 }

@@ -108,6 +108,7 @@ vi.mock('@/lib/billing/tenant-billing-ids', () => ({
 vi.mock('@/lib/permissions', () => ({ getEffectivePermissions: () => ({}) }));
 vi.mock('@/services/trigger-emails.service', () => ({
   determineTrialEventKey: () => null,
+  findLifecycleRecipient: vi.fn(),
   sendTrialEmailForKey: vi.fn(),
 }));
 vi.mock('@/lib/logger', () => ({

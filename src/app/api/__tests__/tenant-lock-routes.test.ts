@@ -279,6 +279,9 @@ describe('classement de toutes les routes API', () => {
     'cron/reminders',
     // Ne lit que les essais actifs non suspendus; n'ecrit que le creneau de relance.
     'cron/trial-idle-emails',
+    // Desinscription des relances (R5/T9): un droit de la personne, valable
+    // meme pour un restaurant gele; n'ecrit que sa propre preference.
+    'email/unsubscribe',
     'dev/simulate-subscription',
     // Publiques / authentification / convive.
     'auth/[...supabase]',

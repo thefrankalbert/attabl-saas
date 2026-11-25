@@ -596,7 +596,7 @@
       "metaTitle": "Politique de Confidentialité",
       "metaDescription": "Quelles données ATTABL collecte, qui les héberge, combien de temps on les garde et comment exercer vos droits.",
       "heading": "Politique de Confidentialité",
-      "lastUpdate": "Dernière mise à jour : 15 novembre 2026",
+      "lastUpdate": "Dernière mise à jour : 25 novembre 2026",
       "section1Title": "1. Qui est responsable de vos données",
       "section1Body": "ATTABL est responsable du traitement des données de son site et des comptes des restaurateurs et hôteliers (compte, abonnement, connexion). Pour les clients d'un restaurant (nom, téléphone, adresse de livraison d'une commande) et pour l'équipe d'un restaurant, c'est le restaurant qui décide de l'usage des données. ATTABL agit alors pour son compte, comme sous-traitant.",
       "companyHeading": "Identité de l'entreprise",
@@ -631,7 +631,7 @@
         },
         "sentry": {
           "name": "Sentry",
-          "role": "Détection des erreurs et relecture de session (10 % des sessions, 100 % de celles en erreur)",
+          "role": "Détection des erreurs : un rapport technique (page, navigateur, message d'erreur), sans enregistrement de la session",
           "country": "Union européenne ou États-Unis selon la région de collecte"
         },
         "upstash": {
@@ -653,6 +653,26 @@
           "name": "Services de notification des navigateurs (Google, Apple, Mozilla, Microsoft)",
           "role": "Acheminer une notification push vers votre appareil si vous l'activez",
           "country": "États-Unis et réseau mondial"
+        },
+        "google": {
+          "name": "Google",
+          "role": "Connexion avec un compte Google, si vous la choisissez : Google nous transmet votre nom et votre adresse e-mail",
+          "country": "États-Unis"
+        },
+        "anthropic": {
+          "name": "Anthropic",
+          "role": "Lecture d'un menu au format PDF quand le restaurant l'importe, pour en extraire les plats et les prix. Le fichier n'est pas conservé par ce prestataire pour entraîner ses modèles",
+          "country": "États-Unis"
+        },
+        "flutterwave": {
+          "name": "Flutterwave",
+          "role": "Paiement de l'abonnement par mobile money ou carte, quand ce moyen est proposé ; responsable de ses propres données de paiement",
+          "country": "Nigeria et réseau mondial"
+        },
+        "github": {
+          "name": "GitHub",
+          "role": "Conservation des sauvegardes chiffrées de la base de données ({days} jours)",
+          "country": "États-Unis"
         }
       },
       "section5Title": "5. Les lois qui s'appliquent",
@@ -665,7 +685,7 @@
       "cookieLocale": "NEXT_LOCALE : retient la langue choisie, un an.",
       "cookieRecovery": "attabl_recovery : sécurise le changement de mot de passe, 15 minutes, invisible pour les scripts du site.",
       "cookieStorage": "Stockage local du navigateur : thème clair ou sombre, préférences d'affichage, devise, panier d'un client. Ces données restent sur votre appareil.",
-      "cookieSentry": "Si une erreur survient, Sentry peut enregistrer la session en cours pour nous aider à la corriger.",
+      "cookieSentry": "Si une erreur survient, Sentry reçoit un rapport technique (page, navigateur, message d'erreur) pour nous aider à la corriger. Aucune session n'est enregistrée.",
       "section8Title": "8. Combien de temps nous gardons vos données",
       "section8Intro": "Des purges automatiques tournent chaque nuit. Voici les durées appliquées.",
       "retentionGuests": "Nom, téléphone, adresse de livraison et notes libres d'un client (sur la commande et sur ses articles, annotations des managers sur la commande) : effacés {days} jours après la commande. La commande et ses montants sont conservés, sans l'identité du client, car le droit commercial impose de garder les pièces comptables.",
@@ -676,6 +696,7 @@
       "retentionClosed": "Restaurant supprimé, {days} jours après la suppression : adresse e-mail, nom et téléphone de l'équipe (les comptes de connexion sont supprimés, y compris la connexion Google), comptes clients à crédit, contacts des fournisseurs, journaux d'audit du restaurant, téléphone et adresse du restaurant. Passé ce délai, le restaurant ne peut plus être restauré.",
       "retentionAccount": "Compte et établissement actifs : conservés pendant l'abonnement.",
       "retentionAccounting": "Paiements, factures et événements de paiement : jamais effacés avant la fin de la durée légale de conservation des pièces comptables.",
+      "retentionBackups": "Sauvegardes de la base : chiffrées, conservées {days} jours puis effacées. Une donnée supprimée de la base disparaît des sauvegardes au plus tard {days} jours après.",
       "retentionContact": "Messages envoyés par le formulaire de contact : ils nous arrivent par e-mail, nous ne les enregistrons pas dans notre base et nous les supprimons de notre messagerie après {months} mois.",
       "retentionNewsletter": "Lettre d'information : jusqu'à votre désinscription.",
       "section9Title": "9. Application mobile Atfood",
@@ -3999,6 +4020,7 @@
     "importPdfTitle": "Importer depuis un PDF",
     "pdfDragAndDrop": "Glissez-déposez un fichier PDF ici ou cliquez pour parcourir",
     "pdfMaxFileSize": "Taille max : 10 Mo",
+    "pdfThirdPartyNotice": "Le fichier est lu par notre prestataire Anthropic (États-Unis) pour en extraire les plats et les prix. Il ne sert pas à entraîner ses modèles. <privacy>En savoir plus</privacy>",
     "pdfImporting": "Extraction en cours (IA)...",
     "pdfPreview": "Prévisualisation",
     "pdfPreviewDesc": "Vérifiez les données extraites avant de valider",
@@ -5628,5 +5650,15 @@
     "error_failed": "Ça n'a pas marché. Réessayez dans un instant.",
     "staff_confirmWord": "SUPPRIMER",
     "error_ownerMustClose": "Vous êtes propriétaire d'un restaurant ouvert. Fermez-le d'abord depuis Mon compte, dans ce restaurant."
+  },
+  "unsubscribe": {
+    "metaTitle": "Se désinscrire des conseils",
+    "heading": "Ne plus recevoir nos conseils par e-mail",
+    "intro": "Vous ne recevrez plus nos e-mails de conseils pour ce restaurant : première commande, essai qui se termine, rappel si vous ne venez plus. Les e-mails importants (mot de passe, invitations, factures) continuent d'arriver.",
+    "confirm": "Me désinscrire",
+    "pending": "Un instant...",
+    "success": "C'est fait. Vous ne recevrez plus ces e-mails de conseils.",
+    "error": "Ça n'a pas marché. Réessayez dans un instant.",
+    "invalidLink": "Ce lien de désinscription est incomplet. Ouvrez à nouveau le lien en bas de l'e-mail reçu."
   }
 }

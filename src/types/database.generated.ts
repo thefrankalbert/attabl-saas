@@ -74,6 +74,7 @@ export type Database = {
           is_super_admin: boolean | null;
           last_login: string | null;
           last_login_at: string | null;
+          lifecycle_emails_opt_out_at: string | null;
           login_count: number | null;
           phone: string | null;
           role: string;
@@ -96,6 +97,7 @@ export type Database = {
           is_super_admin?: boolean | null;
           last_login?: string | null;
           last_login_at?: string | null;
+          lifecycle_emails_opt_out_at?: string | null;
           login_count?: number | null;
           phone?: string | null;
           role?: string;
@@ -118,6 +120,7 @@ export type Database = {
           is_super_admin?: boolean | null;
           last_login?: string | null;
           last_login_at?: string | null;
+          lifecycle_emails_opt_out_at?: string | null;
           login_count?: number | null;
           phone?: string | null;
           role?: string;
