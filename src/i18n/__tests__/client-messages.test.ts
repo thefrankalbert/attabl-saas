@@ -47,7 +47,27 @@ function resolveImport(from: string, spec: string): string | null {
 // avant `from`, ce qui exposait l'expression a un retour arriere couteux).
 const IMPORT_RE =
   /\bfrom\s*['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)|^\s*import\s+['"]([^'"]+)['"]/gm;
-const USE_CLIENT_RE = /^\s*(?:\/\/[^\n]*\n|\/\*[\s\S]*?\*\/\s*)*['"]use client['"]/;
+/**
+ * Vrai si le module commence par la directive 'use client', apres d'eventuels
+ * commentaires. Parcours lineaire (une expression a quantificateurs imbriques
+ * exposait le test a un retour arriere couteux, signale par CodeQL).
+ */
+function startsWithUseClient(source: string): boolean {
+  let rest = source.trimStart();
+  for (;;) {
+    if (rest.startsWith('//')) {
+      const end = rest.indexOf('\n');
+      if (end === -1) return false;
+      rest = rest.slice(end + 1).trimStart();
+    } else if (rest.startsWith('/*')) {
+      const end = rest.indexOf('*/');
+      if (end === -1) return false;
+      rest = rest.slice(end + 2).trimStart();
+    } else {
+      return rest.startsWith("'use client'") || rest.startsWith('"use client"');
+    }
+  }
+}
 
 /**
  * Espaces de noms lus par useTranslations dans les modules client atteignables
@@ -61,7 +81,7 @@ function clientNamespaces(entries: string[]): { namespaces: Set<string>; nonLite
     const known = visited.get(file);
     if (known === true || (known === false && !inherited)) continue;
     const source = readFileSync(file, 'utf8');
-    const client = inherited || USE_CLIENT_RE.test(source);
+    const client = inherited || startsWithUseClient(source);
     visited.set(file, client);
     for (const match of source.matchAll(IMPORT_RE)) {
       const spec = match[1] ?? match[2] ?? match[3];

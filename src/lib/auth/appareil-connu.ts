@@ -1,4 +1,3 @@
-import { createHmac } from 'node:crypto';
 import { signPayload, verifyPayload } from './signed-payload';
 
 /**
@@ -27,13 +26,13 @@ const APPAREIL_CONNU_TTL_SECONDS = 400 * 24 * 60 * 60;
 const LABEL = 'attabl:appareil-connu:v1:';
 const COMPTES_MAX = 5;
 
-// HMAC avec le secret serveur plutot qu'un simple hachage: la marque ne doit
-// pas pouvoir etre recalculee par quelqu'un qui connait seulement l'identifiant
-// du compte (et ce n'est pas un mot de passe: aucune derivation lente utile).
+// Marque d'un compte dans le cookie: les 16 premiers caracteres hexadecimaux de
+// son identifiant (UUID). Aucun hachage n'est utile: le cookie entier est deja
+// signe (HMAC, signed-payload.ts), donc impossible a fabriquer, il est httpOnly,
+// et il ne vit que sur le navigateur du titulaire. 16 caracteres hexadecimaux
+// suffisent a distinguer les 5 comptes au plus qu'il retient.
 function marqueDuCompte(userId: string): string {
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!secret) throw new Error('Secret de signature absent');
-  return createHmac('sha256', secret).update(`appareil:${userId}`).digest('base64url').slice(0, 16);
+  return userId.replace(/-/g, '').slice(0, 16);
 }
 
 function lireMarques(cookie: string | undefined, maintenant: number): string[] {
