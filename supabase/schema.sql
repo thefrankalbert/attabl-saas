@@ -16053,6 +16053,18 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "supabase_admin" IN SCHEMA "public" GRANT ALL 
 
 
 --
+-- Declencheurs poses sur auth.users par les migrations de ce depot
+-- (20261114120000). pg_dump --schema public --schema private ne les emporte
+-- pas, puisque la table est dans auth. Definitions relues en production avec
+-- pg_get_triggerdef le 2026-11-27, fonction qualifiee (le search_path du dump
+-- est vide).
+--
+
+CREATE TRIGGER tg_owner_trial_ledger_confirm_del BEFORE DELETE ON auth.users FOR EACH ROW EXECUTE FUNCTION "public"."owner_trial_ledger_sync_confirmation"();
+
+CREATE TRIGGER tg_owner_trial_ledger_confirm_upd AFTER UPDATE OF email_confirmed_at ON auth.users FOR EACH ROW WHEN (((old.email_confirmed_at IS NULL) AND (new.email_confirmed_at IS NOT NULL))) EXECUTE FUNCTION "public"."owner_trial_ledger_sync_confirmation"();
+
+--
 -- PostgreSQL database dump complete
 --
 
