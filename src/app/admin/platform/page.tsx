@@ -1,4 +1,4 @@
-import { redirect, notFound } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isSuperAdmin } from '@/lib/auth/require-super-admin';
@@ -31,7 +31,7 @@ export default async function PlatformConsolePage() {
   } = await supabase.auth.getUser();
 
   if (!user) redirect('/login?redirect=/admin/platform');
-  if (!(await isSuperAdmin(supabase, user.id))) notFound();
+  if (!(await isSuperAdmin(supabase, user.id))) redirect('/unauthorized');
   // Double authentification OBLIGATOIRE pour le super administrateur (K6.13):
   // sans facteur -> activation, facteur en session aal1 -> code.
   await enforceMfa(supabase, user, { next: '/admin/platform', requireEnrollment: true });

@@ -2069,6 +2069,7 @@
       "statusDeleted": "Supprimé",
       "noResults": "Aucun restaurant",
       "emptyTrash": "La corbeille est vide",
+      "noTrashMatch": "Aucun résultat dans la corbeille pour \"{query}\"",
       "actionImpersonate": "Voir le restaurant",
       "actionDomain": "Domaine",
       "domainTitle": "Domaine personnalisé de {name}",

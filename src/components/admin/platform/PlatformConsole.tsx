@@ -393,7 +393,9 @@ export function PlatformConsole({
 
             <TabsContent value="trash" className="mt-4">
               {visible.length === 0 ? (
-                <p className="py-10 text-center text-sm text-app-text-muted">{t('emptyTrash')}</p>
+                <p className="py-10 text-center text-sm text-app-text-muted">
+                  {query.trim() ? t('noTrashMatch', { query: query.trim() }) : t('emptyTrash')}
+                </p>
               ) : (
                 <ul className="flex flex-col gap-3">
                   {visible.map((tn) => (
