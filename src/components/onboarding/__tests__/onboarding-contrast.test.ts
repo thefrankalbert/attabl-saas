@@ -9,7 +9,7 @@ import { C } from '../phone/tokens';
  * sur les valeurs RESOLUES des jetons de globals.css (`:root` = sombre par
  * defaut, `.light` = clair) et de l'apercu telephone.
  */
-const css = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8');
+const css = readFileSync(join(process.cwd(), 'src/styles/attabl-base.css'), 'utf8');
 const src = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
 
 function block(selector: string): string {

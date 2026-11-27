@@ -15,7 +15,7 @@ html (height: 100%, overflow: hidden)
 
 ### Rules
 
-1. `html` and `body` MUST have `height: 100%; overflow: hidden;` in globals.css
+1. `html` and `body` MUST have `height: 100%; overflow: hidden;` in src/styles/attabl-base.css (shared base of the two stylesheets: src/app/globals.css for the public site, src/styles/app.css for the app)
 2. ONLY `<main#main-content>` is allowed to scroll (`overflow-y-auto`)
 3. Child pages MUST use `h-full` to fill their parent - NEVER `h-screen` or `100vh`
 4. `h-dvh` is the viewport anchor for top-level, non-nested shells only: AdminLayoutClient (tenant dashboard), PlatformConsole (/admin/platform), CommandCenterShell (/admin/tenants). Each is independent and owns exactly one scrolling `<main#main-content>`. No other component inside a shell may use `h-dvh` or `h-screen`

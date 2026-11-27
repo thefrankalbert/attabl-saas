@@ -36,7 +36,7 @@ function tokens(block: string): Record<string, number[]> {
   return out;
 }
 
-const css = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8');
+const css = readFileSync(join(process.cwd(), 'src/styles/attabl-base.css'), 'utf8');
 const darkStart = css.indexOf(':root:has(.admin-shell.dark) {');
 const darkBlock = css.slice(darkStart, css.indexOf('\n}', darkStart));
 const lightStart = css.indexOf(':root:has(.admin-shell:not(.dark)) {');

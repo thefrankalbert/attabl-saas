@@ -1,0 +1,8 @@
+/*
+ * Feuille de l'APPLICATION (admin, menu client, caisse, onboarding, paiement).
+ * Toutes les classes du projet. Chargee par les layouts de ces zones, apres
+ * src/app/globals.css (feuille publique): ses regles reprennent et completent
+ * celles de la feuille publique, dans le meme ordre.
+ */
+@import 'tailwindcss';
+@import './attabl-base.css';

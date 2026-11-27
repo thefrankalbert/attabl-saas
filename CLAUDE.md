@@ -439,7 +439,9 @@ Ces fichiers contiennent des logiques critiques qui ont ete debuggees et stabili
 | Fichier                                | Raison de la protection                                                        |
 | -------------------------------------- | ------------------------------------------------------------------------------ |
 | `src/proxy.ts`                         | Middleware central : routing multi-tenant, auth guards, anti-spoofing header   |
-| `src/app/globals.css`                  | Theme Tailwind v4, contrat viewport (html/body overflow:hidden), design tokens |
+| `src/styles/attabl-base.css`           | Theme Tailwind v4, contrat viewport (html/body overflow:hidden), design tokens |
+| `src/app/globals.css`                  | Feuille du site public: perimetre `@source` (test zones-css)                   |
+| `src/styles/app.css`                   | Feuille de l'application (admin, sites, onboarding, checkout)                  |
 | `src/lib/supabase/admin.ts`            | Client service_role, desactive autoRefresh et persistSession                   |
 | `src/lib/supabase/middleware.ts`       | Refresh session, cookies auth                                                  |
 | `src/lib/rate-limit.ts`                | 24 limiters, fail-closed/fail-open, protection anti-brute-force                |
@@ -454,8 +456,8 @@ Ces fichiers contiennent des logiques critiques qui ont ete debuggees et stabili
 #### 1. Viewport & Scroll Chain
 
 ```
-html (height: 100%, overflow: hidden)  -- globals.css
-  body (height: 100%, overflow: hidden)  -- globals.css
+html (height: 100%, overflow: hidden)  -- src/styles/attabl-base.css
+  body (height: 100%, overflow: hidden)  -- src/styles/attabl-base.css
     AdminLayoutClient (h-dvh overflow-hidden flex)
       Sidebar + Main (h-full, flex-1)
         <main#main-content> (flex-1 overflow-y-auto)  <-- SEUL element scrollable
