@@ -67,9 +67,9 @@ export default function SecurityAccountSection() {
         toast({ title: t('signOutBlocked'), variant: 'destructive' });
         return;
       }
-      // /api/auth/signout appelle signOut() dont la portee par defaut est
-      // "global": toutes les sessions du compte sont revoquees.
-      const res = await fetch('/api/auth/signout', { method: 'POST' });
+      // scope=global: toutes les sessions du compte sont revoquees (la
+      // deconnexion du menu du compte, elle, ne ferme que cet appareil).
+      const res = await fetch('/api/auth/signout?scope=global', { method: 'POST' });
       // Succes = la route a revoque les sessions et redirige vers /login (fetch
       // suit la redirection). Un 429 ou un echec de revocation n'est PAS une
       // deconnexion: on le dit et on reste ici, plutot que de faire croire que
