@@ -9,7 +9,7 @@ import { HONEYPOT_FIELD } from '@/lib/honeypot';
 import { prepareLogoutInBrowser } from '@/lib/offline/browser-logout-cleanup';
 import { resolvePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 import { usePasswordIssueText } from './PasswordRules';
-import { passwordSchema } from '@/lib/validations/common.schema';
+import { passwordIssueMessage } from '@/lib/validations/password-rules';
 
 type AuthMode = 'login' | 'signup';
 
@@ -95,11 +95,9 @@ export function useAuthForm(mode: AuthMode) {
         // Contre-audit 4: plus de bulle native du navigateur (dans sa langue a
         // lui); l'envoi est bloque ici, avec la phrase traduite qui nomme tout
         // ce qui manque. Memes regles que le serveur.
-        const passwordCheck = passwordSchema.safeParse(password);
-        if (!passwordCheck.success) {
-          setError(
-            passwordIssueText(passwordCheck.error.issues[0]?.message) ?? tErr('signupGeneric'),
-          );
+        const passwordIssue = passwordIssueMessage(password);
+        if (passwordIssue) {
+          setError(passwordIssueText(passwordIssue) ?? tErr('signupGeneric'));
           setLoading(false);
           return;
         }
