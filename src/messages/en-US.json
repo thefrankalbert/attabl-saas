@@ -2069,6 +2069,7 @@
       "statusDeleted": "Deleted",
       "noResults": "No restaurant",
       "emptyTrash": "Trash is empty",
+      "noTrashMatch": "No trash result for \"{query}\"",
       "actionImpersonate": "View restaurant",
       "actionDomain": "Domain",
       "domainTitle": "Custom domain for {name}",
