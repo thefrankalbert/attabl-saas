@@ -45,8 +45,8 @@ function findTsxFiles(dir: string, exclude: string[] = []): string[] {
 // -- 1. Viewport & Scroll Chain ----------------------------------
 
 describe('Viewport & Scroll Chain', () => {
-  it('la base CSS (src/styles/attabl-base.css) doit avoir html,body avec height:100% et overflow:hidden', () => {
-    const css = readFile('src/styles/attabl-base.css');
+  it('globals.css doit avoir html,body avec height:100% et overflow:hidden', () => {
+    const css = readFile('src/app/globals.css');
     // Verifie que html et body ont les contraintes de viewport
     expect(css).toContain('height: 100%');
     expect(css).toContain('overflow: hidden');
