@@ -97,6 +97,29 @@ describe('recipe-import.service importFromExcel', () => {
     expect(result.itemsSkipped).toBe(2);
   });
 
+  it('nomme les produits crees (orthographe du fichier), pas les produits existants', async () => {
+    const { rpcCalls, ...db } = makeRecipeDb({
+      menu_items: [{ id: 'm1', name: 'Poulet DG' }],
+      ingredients: [{ id: 'i1', name: 'Poulet', unit: 'kg' }],
+      rpcResult: {
+        data: { recipes_created: 3, recipes_updated: 0, ingredients_created: 2 },
+        error: null,
+      },
+    });
+    const svc = createRecipeImportService(db.supabase);
+    const buffer = await buildXlsx([
+      ['Dish', 'Ingredient', 'Unit', 'Quantity'],
+      ['Poulet DG', 'poulet', 'kg', 0.3], // existant (casse differente)
+      ['Poulet DG', 'Farinne', 'kg', 0.1], // faute de frappe -> nouveau produit
+      ['Poulet DG', 'Oignon', 'kg', 0.05],
+    ]);
+
+    const result = await svc.importFromExcel('tenant-1', buffer);
+
+    expect(rpcCalls).toHaveLength(1);
+    expect(result.ingredientsCreatedNames).toEqual(['Farinne', 'Oignon']);
+  });
+
   it('does not call the RPC when every row is invalid', async () => {
     const { supabase, rpcCalls } = makeSupabase({ menuItems: [] });
     const svc = createRecipeImportService(supabase);

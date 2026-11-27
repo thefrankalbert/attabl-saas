@@ -47,6 +47,10 @@ export default function ItemModifierEditor({
     if (!name) return;
 
     const price = parseFloat(newPrice) || 0;
+    if (price < 0) {
+      toast({ title: t('priceNegative'), variant: 'destructive' });
+      return;
+    }
     setSaving(true);
 
     const result = await actionCreateModifier(tenantId, {
@@ -134,7 +138,7 @@ export default function ItemModifierEditor({
                 size="sm"
                 onClick={() => handleDelete(mod.id)}
                 disabled={deletingId === mod.id}
-                title="Supprimer"
+                title={tc('delete')}
                 className="h-8 w-8 p-0 text-app-text-muted hover:text-[var(--destructive)] opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 {deletingId === mod.id ? (
@@ -158,12 +162,14 @@ export default function ItemModifierEditor({
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder={t('namePlaceholder')}
+            aria-label={t('namePlaceholder')}
             className="flex-1 text-base md:text-sm"
           />
           <Input
             value={newNameEn}
             onChange={(e) => setNewNameEn(e.target.value)}
             placeholder={t('nameEnPlaceholder')}
+            aria-label={t('nameEnPlaceholder')}
             className="flex-1 text-base md:text-sm"
           />
           <Input
@@ -171,10 +177,17 @@ export default function ItemModifierEditor({
             value={newPrice}
             onChange={(e) => setNewPrice(e.target.value)}
             placeholder={t('pricePlaceholder')}
+            aria-label={t('pricePlaceholder')}
             className="w-24 text-base md:text-sm"
             min={0}
           />
-          <Button onClick={handleAdd} disabled={saving || !newName.trim()} size="sm">
+          <Button
+            onClick={handleAdd}
+            disabled={saving || !newName.trim()}
+            size="sm"
+            aria-label={t('addNew')}
+            title={t('addNew')}
+          >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
           </Button>
         </div>

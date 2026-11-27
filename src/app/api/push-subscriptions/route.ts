@@ -114,6 +114,7 @@ export async function DELETE(request: NextRequest) {
 
     const auth = await resolveTenantContext();
     if (!auth.ok) return auth.response;
+    // La double authentification est verifiee par getAuthenticatedUserWithTenant.
     const { tenantId, user, supabase } = auth.ctx;
 
     const body = await request.json();

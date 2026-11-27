@@ -4,6 +4,11 @@ import InvoiceHistoryClient from '@/components/admin/InvoiceHistoryClient';
 import TenantNotFound from '@/components/admin/TenantNotFound';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 import { getTenantBillingIds } from '@/lib/billing/tenant-billing-ids';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('sidebar', 'navInvoices');
+}
 
 export const dynamic = 'force-dynamic';
 

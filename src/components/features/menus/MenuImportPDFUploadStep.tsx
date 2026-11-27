@@ -129,6 +129,8 @@ export function MenuImportPDFUploadStep({
         )}
       </div>
 
+      <p className="text-xs text-app-text-muted">{t('pdfAiNotice')}</p>
+
       {/* Action buttons */}
       <div className="flex justify-end gap-3 pt-4 border-t border-app-border">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={step === 'extracting'}>

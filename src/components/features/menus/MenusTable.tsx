@@ -124,7 +124,7 @@ function MenuRow({
           size="icon"
           ref={setActivatorNodeRef}
           className="touch-none cursor-grab active:cursor-grabbing shrink-0 h-auto w-auto p-0"
-          aria-label="Drag to reorder"
+          aria-label={tc('aria.dragToReorder')}
           {...attributes}
           {...listeners}
         >

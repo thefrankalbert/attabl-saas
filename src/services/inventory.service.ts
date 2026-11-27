@@ -78,6 +78,7 @@ export interface InventoryService {
     tenantId: string,
     filters?: { startDate?: string; endDate?: string },
   ): Promise<LossByReason[]>;
+  setOpeningStock(tenantId: string, ingredientId: string, quantity: number): Promise<void>;
   getStockStatus(tenantId: string): Promise<StockStatus[]>;
   getRecipesOverview(tenantId: string): Promise<{
     menuItems: {
@@ -103,6 +104,18 @@ export interface InventoryService {
   commitStockCount(tenantId: string, countId: string): Promise<number>;
   cancelStockCount(tenantId: string, countId: string): Promise<void>;
 }
+
+const QUANTITY_TOO_LARGE_MESSAGE =
+  'La quantité est trop grande pour le stock (9 999 999 au maximum).';
+
+// Depassement de la colonne numeric(10,3): sans ce cas, l'ecran affichait une
+// erreur generique sans dire que c'est la quantite qu'il faut reduire.
+function isNumericOverflow(error: { code?: string; message?: string }): boolean {
+  return error.code === '22003' || /numeric field overflow/i.test(error.message ?? '');
+}
+
+const INVALID_UNIT_COST_MESSAGE =
+  "Prix d'achat invalide : il doit être supérieur à 0 et se saisit seulement pour une réception.";
 
 /**
  * Set an ingredient's quantity through the canonical ledger path: the RPC writes
@@ -130,7 +143,10 @@ async function applyOpeningStock(
 
   if (error) {
     if (error.message?.includes('INGREDIENT_NOT_FOUND')) {
-      throw new ServiceError('Ingredient introuvable', 'NOT_FOUND', error);
+      throw new ServiceError('Ingrédient introuvable', 'NOT_FOUND', error);
+    }
+    if (isNumericOverflow(error)) {
+      throw new ServiceError(QUANTITY_TOO_LARGE_MESSAGE, 'VALIDATION', error);
     }
     throw new ServiceError("Erreur stock d'ouverture", 'INTERNAL', error);
   }
@@ -264,7 +280,7 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
         throw new ServiceError('Erreur chargement article', 'INTERNAL', menuItemError);
       }
       if (!menuItem) {
-        throw new ServiceError('Article non trouve dans ce restaurant', 'NOT_FOUND');
+        throw new ServiceError('Article non trouvé dans ce restaurant', 'NOT_FOUND');
       }
 
       const { data, error } = await supabase
@@ -287,20 +303,20 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
         throw new ServiceError('Erreur chargement article', 'INTERNAL', menuItemError);
       }
       if (!menuItem) {
-        throw new ServiceError('Article non trouve dans ce restaurant', 'NOT_FOUND');
+        throw new ServiceError('Article non trouvé dans ce restaurant', 'NOT_FOUND');
       }
 
       const ingredientIds = lines.map((l) => l.ingredient_id);
       if (new Set(ingredientIds).size !== ingredientIds.length) {
-        throw new ServiceError('Ingredient en double dans la fiche', 'VALIDATION');
+        throw new ServiceError('Ingrédient en double dans la fiche', 'VALIDATION');
       }
 
       for (const line of lines) {
         if (!line.ingredient_id) {
-          throw new ServiceError('Ingredient manquant', 'VALIDATION');
+          throw new ServiceError('Ingrédient manquant', 'VALIDATION');
         }
         if (!(Number(line.quantity_needed) > 0)) {
-          throw new ServiceError('Quantite invalide pour un ingredient', 'VALIDATION');
+          throw new ServiceError('Quantité invalide pour un ingrédient', 'VALIDATION');
         }
       }
 
@@ -313,10 +329,10 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
           .in('id', ingredientIds);
 
         if (ingError) {
-          throw new ServiceError('Erreur validation ingredients', 'INTERNAL', ingError);
+          throw new ServiceError('Erreur de validation des ingrédients', 'INTERNAL', ingError);
         }
         if ((ingredients?.length ?? 0) !== ingredientIds.length) {
-          throw new ServiceError('Un ou plusieurs ingredients sont invalides', 'VALIDATION');
+          throw new ServiceError('Un ou plusieurs ingrédients sont invalides', 'VALIDATION');
         }
       }
 
@@ -376,6 +392,12 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
           ? Math.abs(input.quantity)
           : -Math.abs(input.quantity);
 
+      // A purchase price only means something for a receipt: it feeds the
+      // weighted average cost computed by the RPC.
+      if (input.unit_cost !== undefined && input.movement_type !== 'manual_add') {
+        throw new ServiceError(INVALID_UNIT_COST_MESSAGE, 'VALIDATION');
+      }
+
       // Get current user for the audit trail.
       const {
         data: { user },
@@ -393,14 +415,22 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
         p_notes: input.notes || undefined,
         p_created_by: user?.id || undefined,
         p_supplier_id: input.supplier_id || undefined,
+        // Per base unit (the quantity here is already in the base unit).
+        p_unit_cost: input.unit_cost,
       });
 
       if (error) {
         if (error.message?.includes('INVALID_SUPPLIER')) {
           throw new ServiceError('Fournisseur invalide', 'VALIDATION', error);
         }
+        if (error.message?.includes('INVALID_UNIT_COST')) {
+          throw new ServiceError(INVALID_UNIT_COST_MESSAGE, 'VALIDATION', error);
+        }
         if (error.message?.includes('INGREDIENT_NOT_FOUND')) {
-          throw new ServiceError('Ingredient introuvable', 'NOT_FOUND', error);
+          throw new ServiceError('Ingrédient introuvable', 'NOT_FOUND', error);
+        }
+        if (isNumericOverflow(error)) {
+          throw new ServiceError(QUANTITY_TOO_LARGE_MESSAGE, 'VALIDATION', error);
         }
         throw new ServiceError('Erreur ajustement stock', 'INTERNAL', error);
       }
@@ -418,8 +448,8 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
         .maybeSingle();
 
       if (fetchError)
-        throw new ServiceError('Erreur chargement ingredient', 'INTERNAL', fetchError);
-      if (!ingredient) throw new ServiceError('Ingredient introuvable', 'NOT_FOUND');
+        throw new ServiceError("Erreur de chargement de l'ingrédient", 'INTERNAL', fetchError);
+      if (!ingredient) throw new ServiceError('Ingrédient introuvable', 'NOT_FOUND');
 
       const ing = ingredient as Pick<
         Ingredient,
@@ -428,6 +458,11 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
 
       let baseQty: number;
       let autoNote: string;
+      // The price is typed in the SAME unit as the quantity. The ledger and the
+      // cost are per base unit: a price per purchase unit is divided by the
+      // conversion factor (1 casier of 24 at 12000 = 500 per bouteille). The
+      // RPC rounds it to 4 decimals and computes the weighted average cost.
+      let baseUnitCost: number | undefined = input.unit_cost;
       if (input.inPurchaseUnit) {
         try {
           baseQty = convertToBaseUnit({
@@ -438,6 +473,9 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
           });
         } catch {
           throw new ServiceError('Facteur de conversion invalide', 'VALIDATION');
+        }
+        if (baseUnitCost !== undefined) {
+          baseUnitCost = baseUnitCost / Number(ing.units_per_purchase);
         }
         // ASCII-only ledger note describing the receipt, e.g. "Recu: 2 casier (48 bouteille)".
         autoNote = `Recu: ${input.quantity} ${ing.purchase_unit ?? ing.unit} (${baseQty} ${ing.unit})`;
@@ -472,16 +510,23 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
         p_notes: note,
         p_created_by: user?.id || undefined,
         p_supplier_id: input.supplier_id || undefined,
+        p_unit_cost: baseUnitCost,
       });
 
       if (error) {
         if (error.message?.includes('INVALID_SUPPLIER')) {
           throw new ServiceError('Fournisseur invalide', 'VALIDATION', error);
         }
-        if (error.message?.includes('INGREDIENT_NOT_FOUND')) {
-          throw new ServiceError('Ingredient introuvable', 'NOT_FOUND', error);
+        if (error.message?.includes('INVALID_UNIT_COST')) {
+          throw new ServiceError(INVALID_UNIT_COST_MESSAGE, 'VALIDATION', error);
         }
-        throw new ServiceError('Erreur reception stock', 'INTERNAL', error);
+        if (error.message?.includes('INGREDIENT_NOT_FOUND')) {
+          throw new ServiceError('Ingrédient introuvable', 'NOT_FOUND', error);
+        }
+        if (isNumericOverflow(error)) {
+          throw new ServiceError(QUANTITY_TOO_LARGE_MESSAGE, 'VALIDATION', error);
+        }
+        throw new ServiceError('Erreur de réception du stock', 'INTERNAL', error);
       }
     },
 
@@ -505,7 +550,7 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
 
       if (error) {
         if (error.message?.includes('INGREDIENT_NOT_FOUND')) {
-          throw new ServiceError('Ingredient introuvable', 'NOT_FOUND', error);
+          throw new ServiceError('Ingrédient introuvable', 'NOT_FOUND', error);
         }
         if (
           error.message?.includes('INVALID_REASON') ||
@@ -529,6 +574,12 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
 
       if (error) throw new ServiceError('Erreur rapport pertes', 'INTERNAL', error);
       return (data as LossByReason[]) || [];
+    },
+
+    // Stock d'ouverture saisi a l'ecran: REMPLACE le stock (ecart ecrit en
+    // mouvement `opening`), via le meme chemin que la creation.
+    async setOpeningStock(tenantId: string, ingredientId: string, quantity: number): Promise<void> {
+      await applyOpeningStock(supabase, tenantId, ingredientId, quantity);
     },
 
     // --- Stock Status & Movements -------------------------
@@ -604,12 +655,12 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
         // (uniq_stock_counts_one_open) is the real guard and raises 23505 on a
         // concurrent open. Map both to the same CONFLICT so the UI stays coherent.
         if (error.message?.includes('OPEN_COUNT_EXISTS') || error.code === '23505') {
-          throw new ServiceError('Un inventaire est deja ouvert', 'CONFLICT', error);
+          throw new ServiceError('Un inventaire est déjà ouvert', 'CONFLICT', error);
         }
         if (error.message?.includes('NO_INGREDIENTS')) {
-          throw new ServiceError('Aucun ingredient disponible', 'VALIDATION', error);
+          throw new ServiceError('Aucun ingrédient disponible', 'VALIDATION', error);
         }
-        throw new ServiceError('Erreur creation inventaire', 'INTERNAL', error);
+        throw new ServiceError("Erreur de création de l'inventaire", 'INTERNAL', error);
       }
       return data as string;
     },
@@ -676,7 +727,7 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
           throw new ServiceError('Inventaire non ouvert', 'CONFLICT', error);
         }
         if (error.message?.includes('INVALID_COUNTED_QTY')) {
-          throw new ServiceError('Quantite comptee invalide', 'VALIDATION', error);
+          throw new ServiceError('Quantité comptée invalide', 'VALIDATION', error);
         }
         throw new ServiceError('Erreur sauvegarde lignes inventaire', 'INTERNAL', error);
       }
@@ -698,7 +749,7 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
           throw new ServiceError('Inventaire introuvable', 'NOT_FOUND', error);
         }
         if (error.message?.includes('COUNT_ALREADY_CLOSED')) {
-          throw new ServiceError('Inventaire deja clos', 'CONFLICT', error);
+          throw new ServiceError('Inventaire déjà clos', 'CONFLICT', error);
         }
         throw new ServiceError('Erreur validation inventaire', 'INTERNAL', error);
       }

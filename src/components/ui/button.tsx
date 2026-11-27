@@ -10,7 +10,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: 'bg-accent text-accent-text font-semibold hover:bg-accent-hover',
-        destructive: 'bg-danger text-white hover:bg-danger-hover',
+        destructive: 'bg-status-error-solid text-white hover:bg-status-error-solid/90',
         outline:
           'border border-app-border bg-transparent text-app-text-secondary hover:bg-app-hover hover:border-app-border-hover',
         secondary: 'bg-app-elevated text-app-text hover:bg-app-hover',

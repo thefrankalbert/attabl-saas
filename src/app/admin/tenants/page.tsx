@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import TenantsPageClient from './tenants-page-client';
 import { APP_VERSION } from '@/lib/app-version';
 import { mapMembershipRows, pickHomeTenantSlug } from '@/lib/auth/post-login-destination';
+import { enforceMfa } from '@/lib/auth/mfa-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -62,6 +63,10 @@ export default async function TenantsPage() {
     const slug = pickHomeTenantSlug(mapMembershipRows(adminUsers));
     redirect(slug ? `/sites/${slug}/admin` : '/unauthorized');
   }
+
+  // Double authentification (K6.13): obligatoire pour le super administrateur;
+  // pour un proprietaire qui l'a activee, une session aal1 ne suffit pas.
+  await enforceMfa(supabase, user, { next: '/admin/tenants', requireEnrollment: isSuperAdmin });
 
   // Server-side data fetching - never let the client query tenants directly
   const userName = adminUsers?.[0]?.full_name || user.email?.split('@')[0] || '';

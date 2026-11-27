@@ -14,6 +14,11 @@ import { parseEstablishmentDetails } from '@/lib/validations/establishment-detai
 import { getTranslations } from 'next-intl/server';
 import AdminSrTitle from '@/components/admin/AdminSrTitle';
 import { parseReminderSettings } from '@/lib/validations/reminders.schema';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('sidebar', 'navSettings');
+}
 
 interface SettingsPageProps {
   params: Promise<{ site: string }>;

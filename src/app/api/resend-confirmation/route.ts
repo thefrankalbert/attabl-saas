@@ -143,11 +143,13 @@ export async function POST(request: Request) {
         });
         return NextResponse.json({ success: true, message: SAFE_MSG });
       }
+      // Toute autre erreur recoit la MEME reponse neutre. Une adresse inconnue
+      // sort de GoTrue en `validation_failed`, message que les trois mots
+      // ci-dessus ne reconnaissent pas: elle recevait un 500 la ou un compte
+      // existant recevait 200, ce qui disait quelles adresses ont un compte.
+      // L'erreur reste journalisee pour ne pas masquer une vraie panne.
       logger.error('Failed to generate confirmation link for resend', { error: linkError });
-      return NextResponse.json(
-        { error: 'Impossible de generer le lien de confirmation. Reessayez plus tard.' },
-        { status: 500 },
-      );
+      return NextResponse.json({ success: true, message: SAFE_MSG });
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';

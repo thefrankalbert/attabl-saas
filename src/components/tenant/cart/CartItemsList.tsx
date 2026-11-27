@@ -16,22 +16,31 @@ interface CartListItem {
   quantity: number;
   image_url?: string;
   selectedOption?: { name_fr: string; name_en?: string } | null;
-  selectedVariant?: { name_fr: string; name_en?: string } | null;
-  modifiers?: { name: string; price?: number }[] | null;
+  selectedVariant?: { id?: string; name_fr: string; name_en?: string } | null;
+  modifiers?: { id?: string; name: string; price?: number }[] | null;
 }
 
+/**
+ * Cle d'une ligne de panier. DOIT rester identique a celle de
+ * `src/contexts/CartContext.tsx` (fichier protege): les boutons plus, moins et
+ * retirer envoient cette cle au contexte, qui ne retrouve la ligne que si les
+ * deux calculs concordent. Ils divergeaient (identifiant de variante et
+ * d'option ici ignores au profit du nom): sur un plat avec option, les trois
+ * boutons ne faisaient rien (test d'interface du 2026-11-24).
+ */
 export function getCartItemKey(item: {
   id: string;
   selectedOption?: { name_fr: string } | null;
-  selectedVariant?: { name_fr: string } | null;
-  modifiers?: { name: string }[] | null;
+  selectedVariant?: { id?: string; name_fr: string } | null;
+  modifiers?: { id?: string; name: string }[] | null;
 }): string {
   let key = item.id;
   if (item.selectedOption) key += `-opt-${item.selectedOption.name_fr}`;
-  if (item.selectedVariant) key += `-var-${item.selectedVariant.name_fr}`;
+  if (item.selectedVariant)
+    key += `-var-${item.selectedVariant.id ?? item.selectedVariant.name_fr}`;
   if (item.modifiers && item.modifiers.length > 0) {
     const modKey = item.modifiers
-      .map((m) => m.name)
+      .map((m) => m.id ?? m.name)
       .sort()
       .join(',');
     key += `-mod-${modKey}`;

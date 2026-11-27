@@ -1,0 +1,120 @@
+# Parcours Stripe joues chaque nuit (audit V1).
+#
+# Le job "Journeys" de ci.yml ne joue jamais les parcours 01 (inscription et
+# paiement) et 06 (cycle de vie de l'abonnement) sur les pull requests: le
+# compte Stripe de test limite le nombre d'horloges de test actives, et deux PR
+# simultanees se casseraient l'une l'autre. Ils tournent donc ici, une fois par
+# nuit, contre la meme base Supabase locale et jetable que ci.yml.
+#
+# Ces parcours s'IGNORENT EUX-MEMES sans cle Stripe de test (test.skip). Un run
+# vert sans cle ne prouverait donc rien: la premiere etape echoue franchement
+# tant que le secret manque, pour que l'absence se voie.
+#
+# Secrets requis (Settings > Secrets and variables > Actions), tous en mode TEST:
+#   JOURNEY_STRIPE_SECRET_KEY                  cle sk_test_ du compte Stripe de test
+#                                              (a defaut: STRIPE_SECRET_KEY, refusee si
+#                                              ce n'est pas une cle de test)
+#   NEXT_PUBLIC_STRIPE_PRICE_STARTER_MONTHLY   identifiants price_ du compte de test
+#   NEXT_PUBLIC_STRIPE_PRICE_STARTER_YEARLY
+#   NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY
+#   NEXT_PUBLIC_STRIPE_PRICE_PRO_YEARLY
+#   NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_MONTHLY
+#   NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_YEARLY
+# Le secret de signature du webhook est fabrique localement par
+# scripts/run-journeys-local.sh: aucun webhook Stripe reel n'est appele.
+
+name: Parcours nocturnes (Stripe test)
+
+on:
+  schedule:
+    - cron: '15 2 * * *'
+  workflow_dispatch:
+
+# Un seul run a la fois: les horloges de test Stripe sont partagees.
+concurrency:
+  group: parcours-nocturnes
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  parcours-stripe:
+    name: Parcours 01 et 06 (paiement, abonnement)
+    # Meme image que le job Journeys de ci.yml (Playwright 1.58.2 ne connait
+    # pas ubuntu 26.04).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Cle Stripe de test presente
+        env:
+          JOURNEY_STRIPE_SECRET_KEY: ${{ secrets.JOURNEY_STRIPE_SECRET_KEY || secrets.STRIPE_SECRET_KEY }}
+        run: |
+          if [ -z "$JOURNEY_STRIPE_SECRET_KEY" ]; then
+            echo "::error::Secret JOURNEY_STRIPE_SECRET_KEY absent: les parcours de paiement ne peuvent pas tourner."
+            echo "Secret JOURNEY_STRIPE_SECRET_KEY absent : les parcours de paiement n'ont pas tourne." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          case "$JOURNEY_STRIPE_SECRET_KEY" in
+            sk_test_*) ;;
+            *)
+              echo "::error::JOURNEY_STRIPE_SECRET_KEY doit etre une cle de TEST (sk_test_)."
+              exit 1
+              ;;
+          esac
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+
+      - name: Cache pnpm modules
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
+        with:
+          version: 3.1.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Parcours de paiement et d'abonnement (Supabase local ephemere)
+        env:
+          JOURNEY_STRIPE_SECRET_KEY: ${{ secrets.JOURNEY_STRIPE_SECRET_KEY || secrets.STRIPE_SECRET_KEY }}
+          NEXT_PUBLIC_STRIPE_PRICE_STARTER_MONTHLY: ${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_STARTER_MONTHLY }}
+          NEXT_PUBLIC_STRIPE_PRICE_STARTER_YEARLY: ${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_STARTER_YEARLY }}
+          NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY: ${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY }}
+          NEXT_PUBLIC_STRIPE_PRICE_PRO_YEARLY: ${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_PRO_YEARLY }}
+          NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_MONTHLY: ${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_MONTHLY }}
+          NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_YEARLY: ${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_YEARLY }}
+        # Un seul argument (regex Playwright): un seul demarrage de la pile.
+        run: bash scripts/run-journeys-local.sh "01-signup|06-subscription"
+
+      - name: Rapport Playwright (en cas d echec)
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: parcours-nocturnes-report
+          path: playwright-report-journeys/
+          retention-days: 7

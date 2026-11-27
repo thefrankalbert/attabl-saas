@@ -9,7 +9,7 @@ import type { jsPDF as JsPDF } from 'jspdf';
  * lignes), la seconde dessine sur une page de cette hauteur exacte, sans blanc.
  */
 
-export interface ReceiptLine {
+interface ReceiptLine {
   name: string;
   quantity: number;
   /** Prix unitaire, unite majeure de la devise. */

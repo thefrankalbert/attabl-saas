@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { revalidateMenuCache } from '@/lib/revalidate';
 import type { Menu, Category, PreparationZone } from '@/types/admin.types';
 import { actionCreateCategory } from '@/app/actions/categories';
+import { CATEGORY_NAME_MAX } from '@/lib/validations/category.schema';
 
 interface WizardStepCategoriesProps {
   menu: Menu;
@@ -122,6 +123,7 @@ export default function WizardStepCategories({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder={t('wizardCategoryPlaceholder')}
+            maxLength={CATEGORY_NAME_MAX}
             required
             autoFocus
           />

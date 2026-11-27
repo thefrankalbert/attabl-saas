@@ -7,6 +7,11 @@ import { createSupportsService } from '@/services/supports.service';
 import { ChevaletEditor } from '@/components/admin/supports/ChevaletEditor';
 import type { TenantForEditor } from '@/types/supports.types';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('sidebar', 'navSupports');
+}
 
 export const dynamic = 'force-dynamic';
 

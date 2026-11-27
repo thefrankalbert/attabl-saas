@@ -12,6 +12,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const getUser = vi.fn();
 const signInWithPassword = vi.fn();
 const acceptInvitation = vi.fn();
+const rpc = vi.fn();
+const membershipRead = vi.fn();
+const auditLog = vi.fn();
+const createAuditService = vi.fn();
 const validateToken = vi.fn();
 const { tenantRead, canAddStaff } = vi.hoisted(() => ({
   tenantRead: { value: { data: null as unknown, error: null as unknown } },
@@ -43,11 +47,21 @@ vi.mock('@/lib/supabase/server', () => ({
         getUser: () => getUser(),
         signInWithPassword: (creds: unknown) => signInWithPassword(creds),
       },
+      from: () => ({
+        select: () => ({
+          eq: () => ({ eq: () => ({ maybeSingle: () => membershipRead() }) }),
+        }),
+      }),
+      rpc: (name: string, args: unknown) => rpc(name, args),
     }),
 }));
 
 vi.mock('@/services/invitation.service', () => ({
   createInvitationService: () => ({ validateToken, acceptInvitation }),
+}));
+
+vi.mock('@/services/audit.service', () => ({
+  createAuditService: (...args: unknown[]) => createAuditService(...args),
 }));
 
 vi.mock('@/services/plan-enforcement.service', () => ({
@@ -85,7 +99,11 @@ describe('POST /api/invitations/accept - session du titulaire', () => {
       role: 'manager',
     });
     acceptInvitation.mockResolvedValue({ tenantSlug: 'mon-resto' });
-    signInWithPassword.mockResolvedValue({ data: {}, error: null });
+    signInWithPassword.mockResolvedValue({ data: { user: { id: 'auth-new' } }, error: null });
+    membershipRead.mockResolvedValue({ data: { id: 'adm-1' }, error: null });
+    rpc.mockResolvedValue({ error: null });
+    auditLog.mockResolvedValue(undefined);
+    createAuditService.mockReturnValue({ log: auditLog });
   });
 
   it("transmet au service l'adresse de la session verifiee cote serveur", async () => {
@@ -212,5 +230,69 @@ describe('POST /api/invitations/accept - session du titulaire', () => {
       }),
     );
     expect(res.status).toBe(400);
+  });
+
+  it('premiere connexion: ecrit last_login_at du nouveau membre (plus de "Jamais connecte")', async () => {
+    getUser.mockResolvedValue({ data: { user: null }, error: null });
+    await POST(
+      buildRequest({ token: TOKEN, full_name: 'Awa Traore', password: 'Motdepasse-Solide-7' }),
+    );
+    expect(rpc).toHaveBeenCalledWith('increment_login_count', { admin_user_id: 'adm-1' });
+  });
+
+  it('temoin negatif: connexion automatique en echec, aucun compteur ecrit', async () => {
+    getUser.mockResolvedValue({ data: { user: null }, error: null });
+    signInWithPassword.mockResolvedValue({ data: {}, error: { code: 'x' } });
+    await POST(
+      buildRequest({ token: TOKEN, full_name: 'Awa Traore', password: 'Motdepasse-Solide-7' }),
+    );
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("journalise l'acceptation: auteur = le nouveau membre, restaurant de l'invitation, sans secret", async () => {
+    getUser.mockResolvedValue({ data: { user: null }, error: null });
+    const res = await POST(
+      buildRequest({ token: TOKEN, full_name: 'Awa Traore', password: 'Motdepasse-Solide-7' }),
+    );
+    expect(res.status).toBe(200);
+    expect(createAuditService).toHaveBeenCalledWith(expect.anything(), {
+      tenantId: 'tenant-1',
+      userId: 'auth-new',
+      userEmail: 'equipier@resto.test',
+      userRole: 'manager',
+    });
+    const entry = auditLog.mock.calls[0][0] as Record<string, unknown>;
+    expect(entry).toMatchObject({
+      action: 'create',
+      entityType: 'user',
+      entityId: 'inv-1',
+      metadata: { event: 'invitation_accepted', invitation_id: 'inv-1' },
+    });
+    const serialise = JSON.stringify(entry);
+    expect(serialise).not.toContain(TOKEN);
+    expect(serialise).not.toContain('Motdepasse-Solide-7');
+  });
+
+  it("titulaire deja connecte: l'auteur du journal est sa session", async () => {
+    getUser.mockResolvedValue({
+      data: { user: { id: 'auth-equipier', email: 'equipier@resto.test' } },
+      error: null,
+    });
+    await POST(buildRequest({ token: TOKEN }));
+    expect(createAuditService).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ userId: 'auth-equipier' }),
+    );
+  });
+
+  it('temoin negatif: une invitation refusee ne journalise rien', async () => {
+    getUser.mockResolvedValue({ data: { user: null }, error: null });
+    const { ServiceError } = await import('@/services/errors');
+    acceptInvitation.mockRejectedValue(new ServiceError('Expiree', 'VALIDATION'));
+    const res = await POST(
+      buildRequest({ token: TOKEN, full_name: 'Awa Traore', password: 'Motdepasse-Solide-7' }),
+    );
+    expect(res.status).toBe(400);
+    expect(auditLog).not.toHaveBeenCalled();
   });
 });

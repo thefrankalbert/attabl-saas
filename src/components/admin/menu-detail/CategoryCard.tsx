@@ -1,6 +1,7 @@
 'use client';
 
 import { Utensils, Edit2, Trash2, Eye, EyeOff, ChevronDown } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { Category } from '@/types/admin.types';
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function CategoryCard({ vm, cat }: Props) {
+  const tc = useTranslations('common');
   const {
     t,
     expandedCategories,
@@ -70,6 +72,8 @@ export function CategoryCard({ vm, cat }: Props) {
               variant="outline"
               size="sm"
               onClick={() => openEditCategoryModal(cat)}
+              aria-label={tc('edit')}
+              title={tc('edit')}
               className="text-xs h-8"
             >
               <Edit2 className="w-3.5 h-3.5" />
@@ -78,7 +82,7 @@ export function CategoryCard({ vm, cat }: Props) {
               variant="outline"
               size="sm"
               onClick={() => handleDeleteCategory(cat)}
-              title="Supprimer"
+              title={tc('delete')}
               className="text-xs h-8 text-[var(--destructive)] hover:bg-[var(--accent)]"
             >
               <Trash2 className="w-3.5 h-3.5" />

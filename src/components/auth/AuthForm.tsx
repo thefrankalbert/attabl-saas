@@ -146,7 +146,7 @@ function AuthForm({ mode }: AuthFormProps) {
         </Button>
 
         {/* Divider */}
-        <div className="relative my-5 [@media(max-height:819px)]:my-3">
+        <div className="relative my-5 [@media(max-height:939px)]:my-3">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-[var(--border)]" />
           </div>
@@ -159,7 +159,7 @@ function AuthForm({ mode }: AuthFormProps) {
         <form
           method="post"
           onSubmit={handleSubmit}
-          className="space-y-4 [@media(max-height:819px)]:space-y-3"
+          className="space-y-4 [@media(max-height:939px)]:space-y-3"
         >
           <div
             className="pointer-events-none absolute h-0 w-0 overflow-hidden opacity-0"
@@ -207,12 +207,14 @@ function AuthForm({ mode }: AuthFormProps) {
               id="email"
               type="email"
               name="email"
-              autoComplete={isLogin ? 'email' : 'off'}
+              autoComplete="email"
               placeholder={tForm('emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               aria-required="true"
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? 'auth-form-error' : undefined}
               className={inputClass}
             />
           </div>
@@ -234,7 +236,12 @@ function AuthForm({ mode }: AuthFormProps) {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 aria-required="true"
-                aria-describedby={isLogin || !password ? undefined : 'password-rules'}
+                aria-invalid={error ? true : undefined}
+                aria-describedby={
+                  [error ? 'auth-form-error' : null, isLogin || !password ? null : 'password-rules']
+                    .filter(Boolean)
+                    .join(' ') || undefined
+                }
                 className={`${inputClass} pr-10`}
               />
               <Button
@@ -270,6 +277,7 @@ function AuthForm({ mode }: AuthFormProps) {
 
           {error && (
             <Alert
+              id="auth-form-error"
               variant="destructive"
               className="rounded-lg border-[var(--err-border)] bg-[var(--err-bg)] text-[var(--err-fg)] [&>svg]:text-[var(--err-fg)]"
             >
@@ -324,10 +332,22 @@ function AuthForm({ mode }: AuthFormProps) {
             />
           )}
 
+          {/* Remplace l'ancienne ligne "14 jours gratuits": deja dit par le titre, et la
+              page doit tenir sans defilement sur ecran court (regle 12). */}
           {!isLogin && (
-            // Deja dit par le titre ("14 jours gratuits"): masque sur ecran court.
-            <p className="text-center text-xs text-[var(--muted)] [@media(max-height:719px)]:hidden">
-              {tForm('trialNote')}
+            <p className="text-center text-[11.5px] leading-snug text-[var(--muted)]">
+              {tForm.rich('termsNote', {
+                terms: (chunks) => (
+                  <Link href="/legal" className="auth-link">
+                    {chunks}
+                  </Link>
+                ),
+                privacy: (chunks) => (
+                  <Link href="/privacy" className="auth-link">
+                    {chunks}
+                  </Link>
+                ),
+              })}
             </p>
           )}
         </form>

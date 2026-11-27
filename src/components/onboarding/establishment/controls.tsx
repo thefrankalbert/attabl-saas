@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Minus, Plus } from 'lucide-react';
+import { useId } from 'react';
 import { useTranslations } from 'next-intl';
 
 export function LabeledSwitch({
@@ -14,10 +15,13 @@ export function LabeledSwitch({
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
 }) {
+  const switchId = useId();
   return (
     <div className="flex items-center justify-between py-2">
-      <Label className="text-sm font-medium text-app-text-secondary">{label}</Label>
-      <Switch checked={checked} onCheckedChange={onCheckedChange} />
+      <Label htmlFor={switchId} className="text-sm font-medium text-app-text-secondary">
+        {label}
+      </Label>
+      <Switch id={switchId} checked={checked} onCheckedChange={onCheckedChange} />
     </div>
   );
 }

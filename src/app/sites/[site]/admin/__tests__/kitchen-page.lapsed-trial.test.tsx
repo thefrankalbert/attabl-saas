@@ -14,6 +14,7 @@ const state = vi.hoisted(() => ({
 
 vi.mock('next-intl/server', () => ({ getTranslations: async () => (key: string) => key }));
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }));
+vi.mock('@/lib/auth/require-admin-permission', () => ({ requireAdminMember: vi.fn() }));
 vi.mock('@/lib/cache', () => ({ getTenant: async () => state.tenant }));
 vi.mock('@/lib/billing/tenant-billing-ids', () => ({
   getTenantBillingIds: (id: string) => state.billing(id),

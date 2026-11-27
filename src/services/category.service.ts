@@ -148,14 +148,23 @@ export function createCategoryService(supabase: SupabaseClient): CategoryService
      * Delete a category by ID, scoped to tenant.
      */
     async deleteCategory(categoryId: string, tenantId: string): Promise<void> {
-      const { error } = await supabase
+      // `count: 'exact'`: PostgREST ne leve AUCUNE erreur sur un DELETE qui ne
+      // touche rien (identifiant d'un autre restaurant, deja supprime, ligne
+      // masquee par RLS). Sans le compte, l'action annoncait un succes.
+      const { error, count } = await supabase
         .from('categories')
-        .delete()
+        .delete({ count: 'exact' })
         .eq('id', categoryId)
         .eq('tenant_id', tenantId);
 
       if (error) {
         throw new ServiceError('Erreur lors de la suppression de la categorie', 'INTERNAL', error);
+      }
+      if (count === 0) {
+        throw new ServiceError(
+          "Cette categorie n'existe plus ou n'appartient pas a votre restaurant",
+          'NOT_FOUND',
+        );
       }
     },
 

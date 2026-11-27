@@ -1,6 +1,6 @@
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { getMessages } from 'next-intl/server';
+import { getStorefrontMessages } from '@/i18n/storefront-messages';
 import { NextIntlClientProvider } from 'next-intl';
 import { getCachedTenant } from '@/lib/cache';
 import { computeOpeningState } from '@/lib/opening-hours';
@@ -15,7 +15,7 @@ export default async function WelcomePage({ params }: { params: Promise<{ site: 
   const tenant = await getCachedTenant(tenantSlug);
   if (!tenant) return notFound();
 
-  const messages = await getMessages();
+  const messages = await getStorefrontMessages();
   const { isOpen } = computeOpeningState(
     tenant.opening_hours,
     new Date(),

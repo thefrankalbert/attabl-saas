@@ -47,7 +47,11 @@ export async function POST(request: Request) {
       case 'applied':
         return redirect('/login?confirmed=true');
       case 'new_address_notified':
-        return redirect('/auth/confirm-email-change?done=current');
+        // Le jeton accompagne la redirection: la page de remerciement ne
+        // s'affiche que s'il est valide (sans lui, ?done=current seul mentait).
+        return redirect(
+          `/auth/confirm-email-change?${new URLSearchParams({ done: 'current', token: String(token) })}`,
+        );
       case 'expired':
         return redirect('/login?error=expired_link');
       default:

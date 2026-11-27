@@ -149,8 +149,11 @@ select lives_ok($$
 $$, 'Starter: une fonction SQL (proprietaire) peut toujours ecrire le stock');
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"c3000000-0000-4000-8000-0000000000a1"}';
+-- Une colonne autre que current_stock: depuis 20261124210100, current_stock
+-- est refuse a tout client (42501, registre_stock_garde_ingredients.test.sql);
+-- ici on mesure le refus de PLAN, qui vaut pour toute modification.
 select throws_ok($$
-  update ingredients set current_stock = 99 where id = 'c3000000-0000-4000-8000-000000000081'
+  update ingredients set min_stock_alert = 99 where id = 'c3000000-0000-4000-8000-000000000081'
 $$, '23514', null, 'Starter: le client ne modifie pas un ingredient en direct');
 
 -- 18-19. Rapports appeles par le client Starter.
@@ -170,7 +173,7 @@ $$, '42501', null, 'Starter: get_server_performance refuse');
 
 set local request.jwt.claims = '{"sub":"c3000000-0000-4000-8000-0000000000a2"}';
 select lives_ok($$
-  update ingredients set current_stock = 3 where id = 'c3000000-0000-4000-8000-000000000082'
+  update ingredients set min_stock_alert = 3 where id = 'c3000000-0000-4000-8000-000000000082'
 $$, 'Pro: le client modifie son ingredient');
 select lives_ok($$
   select * from get_top_items('c3000000-0000-4000-8000-000000000002', now() - interval '30 days', now())

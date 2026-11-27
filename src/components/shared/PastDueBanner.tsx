@@ -1,6 +1,7 @@
 'use client';
 
 import { CreditCard } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { billingCapabilities } from '@/lib/billing/provider';
@@ -8,6 +9,7 @@ import { logger } from '@/lib/logger';
 
 /** `showManageCard`: faux pour qui n'est ni owner ni admin (le portail le refuse). */
 export function PastDueBanner({ showManageCard = true }: { showManageCard?: boolean }) {
+  const tc = useTranslations('common');
   const [loading, setLoading] = useState(false);
   // Le portail de facturation est une CAPACITE du prestataire, pas un acquis:
   // Stripe en heberge un, un agregateur mobile money non (voir
@@ -39,7 +41,7 @@ export function PastDueBanner({ showManageCard = true }: { showManageCard?: bool
       <div className="flex items-center gap-2 min-w-0">
         <CreditCard className="w-4 h-4 text-status-warning shrink-0" />
         <p className="text-xs sm:text-sm font-medium text-status-warning truncate">
-          Votre paiement a échoué. Mettez à jour votre carte.
+          {tc('pastDueBanner')}
         </p>
       </div>
       {canOpenPortal && (

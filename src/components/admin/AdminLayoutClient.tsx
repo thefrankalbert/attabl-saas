@@ -292,7 +292,7 @@ function AdminLayoutInner({
                 ? 'bottom-[calc(3.5rem+1rem+env(safe-area-inset-bottom,0px))]'
                 : undefined
             }
-            label="Installer ATTABL sur cette tablette - marche meme sans reseau."
+            label="Installer ATTABL sur cette tablette - marche même sans réseau."
           />
         )}
       </div>

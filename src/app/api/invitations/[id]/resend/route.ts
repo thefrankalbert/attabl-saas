@@ -1,3 +1,4 @@
+import { isMfaSatisfied, MFA_REQUIRED_CODE, MFA_REQUIRED_MESSAGE } from '@/lib/auth/mfa-assurance';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
@@ -41,6 +42,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: 'Non autorise' }, { status: 401 });
     }
 
+    if (!(await isMfaSatisfied(supabase, user))) {
+      return NextResponse.json(
+        { error: MFA_REQUIRED_MESSAGE, code: MFA_REQUIRED_CODE },
+        { status: 403 },
+      );
+    }
+
     const { id: rawId } = await params;
     const parsedId = parseRouteUuid(rawId);
     if (!parsedId.ok) {
@@ -67,6 +75,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       .eq('user_id', user.id)
       .eq('tenant_id', existingInvitation.tenant_id)
       .eq('is_active', true)
+      .is('deleted_at', null)
       .maybeSingle();
 
     if (!adminUser || !['owner', 'admin'].includes(adminUser.role)) {

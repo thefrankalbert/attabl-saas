@@ -1,3 +1,4 @@
+import { isMfaSatisfied, MFA_REQUIRED_CODE, MFA_REQUIRED_MESSAGE } from '@/lib/auth/mfa-assurance';
 import { NextResponse } from 'next/server';
 import { readTenantSlug } from '@/lib/auth/tenant-header';
 import { headers } from 'next/headers';
@@ -83,6 +84,13 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
+    if (!(await isMfaSatisfied(supabase, user))) {
+      return NextResponse.json(
+        { error: MFA_REQUIRED_MESSAGE, code: MFA_REQUIRED_CODE },
+        { status: 403 },
+      );
+    }
+
     const body: unknown = await request.json();
     const parsed = updatePermissionsSchema.safeParse(body);
     if (!parsed.success) {
@@ -152,6 +160,13 @@ export async function DELETE(request: Request) {
     } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
+    if (!(await isMfaSatisfied(supabase, user))) {
+      return NextResponse.json(
+        { error: MFA_REQUIRED_MESSAGE, code: MFA_REQUIRED_CODE },
+        { status: 403 },
+      );
     }
 
     const body: unknown = await request.json();

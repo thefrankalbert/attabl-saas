@@ -21,7 +21,7 @@
    * online status, trend-up delta, delivered flux. */
   --cc-accent-soft: rgba(6, 193, 103, 0.1);
   --cc-accent-dim: rgba(6, 193, 103, 0.22);
-  --cc-accent-ink: #05a557;
+  --cc-accent-ink: #04803f;
   /* Neutral data-visualization stroke (sparklines, chart line, crosshair) -
    * data viz is neutral, not brand-colored. */
   --cc-viz: var(--cc-text-2);
@@ -33,7 +33,7 @@
   --cc-border-strong: #e2e2e2;
   --cc-text: #1a1a1a;
   --cc-text-2: #404040;
-  --cc-text-3: #737373;
+  --cc-text-3: #6b6b6b;
   --cc-soft: #b0b0b0;
   --cc-danger: #dc2626;
   --cc-warn: #d97706;
