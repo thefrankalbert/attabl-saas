@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server';
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('marketing.pricing');
   return {
+    alternates: { canonical: '/pricing' },
     title: t('metaTitle'),
     description: t('metaDescription'),
   };

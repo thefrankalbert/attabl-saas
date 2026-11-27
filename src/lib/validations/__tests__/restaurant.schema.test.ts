@@ -1,13 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import {
-  createRestaurantStep1Schema,
-  createRestaurantStep2Schema,
-  createRestaurantSchema,
-} from '../restaurant.schema';
+import { createRestaurantSchema } from '../restaurant.schema';
 
-describe('createRestaurantStep1Schema', () => {
+describe('createRestaurantSchema', () => {
   it('accepts valid step 1 input', () => {
-    const result = createRestaurantStep1Schema.safeParse({
+    const result = createRestaurantSchema.safeParse({
       name: 'Le Radisson',
       type: 'restaurant',
       slug: 'le-radisson',
@@ -16,7 +12,7 @@ describe('createRestaurantStep1Schema', () => {
   });
 
   it('rejects name shorter than 2 characters', () => {
-    const result = createRestaurantStep1Schema.safeParse({
+    const result = createRestaurantSchema.safeParse({
       name: 'A',
       type: 'restaurant',
       slug: 'a',
@@ -25,7 +21,7 @@ describe('createRestaurantStep1Schema', () => {
   });
 
   it('rejects invalid establishment type', () => {
-    const result = createRestaurantStep1Schema.safeParse({
+    const result = createRestaurantSchema.safeParse({
       name: 'Le Radisson',
       type: 'nightclub',
       slug: 'le-radisson',
@@ -34,7 +30,7 @@ describe('createRestaurantStep1Schema', () => {
   });
 
   it('rejects slug with uppercase or special characters', () => {
-    const result = createRestaurantStep1Schema.safeParse({
+    const result = createRestaurantSchema.safeParse({
       name: 'Le Radisson',
       type: 'restaurant',
       slug: 'Le Radisson!',
@@ -53,7 +49,7 @@ describe('createRestaurantStep1Schema', () => {
       'quick-service',
     ];
     for (const type of types) {
-      const result = createRestaurantStep1Schema.safeParse({
+      const result = createRestaurantSchema.safeParse({
         name: 'Test',
         type,
         slug: 'test',
@@ -63,50 +59,24 @@ describe('createRestaurantStep1Schema', () => {
   });
 });
 
-describe('createRestaurantStep2Schema', () => {
-  it('accepts trial plan', () => {
-    const result = createRestaurantStep2Schema.safeParse({ plan: 'trial' });
-    expect(result.success).toBe(true);
-  });
-
-  it('accepts starter plan', () => {
-    const result = createRestaurantStep2Schema.safeParse({ plan: 'starter' });
-    expect(result.success).toBe(true);
-  });
-
-  it('accepts pro plan', () => {
-    const result = createRestaurantStep2Schema.safeParse({ plan: 'pro' });
-    expect(result.success).toBe(true);
-  });
-
-  it('accepts business plan', () => {
-    const result = createRestaurantStep2Schema.safeParse({ plan: 'business' });
-    expect(result.success).toBe(true);
-  });
-
-  it('rejects invalid plan', () => {
-    const result = createRestaurantStep2Schema.safeParse({ plan: 'enterprise' });
-    expect(result.success).toBe(false);
-  });
-});
-
-describe('createRestaurantSchema (merged)', () => {
-  it('accepts complete valid input', () => {
-    const result = createRestaurantSchema.safeParse({
-      name: 'Le Radisson',
-      type: 'hotel',
-      slug: 'le-radisson',
-      plan: 'pro',
-    });
-    expect(result.success).toBe(true);
-  });
-
-  it('rejects input missing plan', () => {
+describe('createRestaurantSchema: pas de formule choisie par le client', () => {
+  it('accepte une demande sans formule', () => {
     const result = createRestaurantSchema.safeParse({
       name: 'Le Radisson',
       type: 'hotel',
       slug: 'le-radisson',
     });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
+  });
+
+  it('retire une formule envoyee par un ancien client au lieu de la transmettre', () => {
+    const result = createRestaurantSchema.safeParse({
+      name: 'Le Radisson',
+      type: 'hotel',
+      slug: 'le-radisson',
+      plan: 'business',
+    });
+    expect(result.success).toBe(true);
+    expect(result.success && 'plan' in result.data).toBe(false);
   });
 });

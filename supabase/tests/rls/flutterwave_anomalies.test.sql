@@ -111,7 +111,7 @@ select throws_ok(
 -- 3. Lecture: super admin seulement (6)
 -- ===========================================================================
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"f2222222-2222-2222-2222-222222222222"}';
+set local request.jwt.claims = '{"sub":"f2222222-2222-2222-2222-222222222222","aal":"aal2"}';
 select is((select count(*)::int from public.flutterwave_anomalies), 3,
   'TEMOIN: le super administrateur lit toutes les anomalies');
 reset role;
@@ -127,7 +127,7 @@ select is(
 reset role;
 
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"f3333333-3333-3333-3333-333333333333"}';
+set local request.jwt.claims = '{"sub":"f3333333-3333-3333-3333-333333333333","aal":"aal2"}';
 select is((select count(*)::int from public.flutterwave_anomalies), 0,
   'un super administrateur REVOQUE ne lit plus rien');
 reset role;
@@ -149,7 +149,7 @@ reset role;
 -- 4. Ecriture par l'API: refusee, etat relu (3)
 -- ===========================================================================
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"f2222222-2222-2222-2222-222222222222"}';
+set local request.jwt.claims = '{"sub":"f2222222-2222-2222-2222-222222222222","aal":"aal2"}';
 select throws_ok(
   $$update public.flutterwave_anomalies set resolved_at = now()$$,
   '42501', null,

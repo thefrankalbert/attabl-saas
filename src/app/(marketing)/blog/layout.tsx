@@ -3,7 +3,11 @@ import { getTranslations } from 'next-intl/server';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('marketing.blog');
-  return { title: t('metaTitle'), description: t('metaDescription') };
+  return {
+    alternates: { canonical: '/blog' },
+    title: t('metaTitle'),
+    description: t('metaDescription'),
+  };
 }
 
 export default function BlogLayout({ children }: { children: React.ReactNode }) {

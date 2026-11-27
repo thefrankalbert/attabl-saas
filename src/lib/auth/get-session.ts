@@ -1,7 +1,11 @@
 import { headers } from 'next/headers';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { readTenantSlug } from '@/lib/auth/tenant-header';
-import { isMfaSatisfied, MFA_REQUIRED_MESSAGE } from '@/lib/auth/mfa-assurance';
+import {
+  currentAssuranceLevel,
+  isMfaSatisfied,
+  MFA_REQUIRED_MESSAGE,
+} from '@/lib/auth/mfa-assurance';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { hasPermission } from '@/lib/permissions';
@@ -205,6 +209,20 @@ export async function getAuthenticatedUserWithTenant(
       ? (tenant?.id ?? (await (await import('@/lib/cache')).getTenant(tenantSlug))?.id)
       : undefined;
     if (superRow && superTenantId) {
+      // Mode dieu = session renforcee (facteur verifie ET aal2), comme
+      // `requireSuperAdmin` et comme la base (`is_super_admin()` exige aal2,
+      // migration 20261127210000). Sans ce controle, un super administrateur
+      // SANS facteur, avec son seul mot de passe, operait sur n'importe quel
+      // restaurant par les routes API et les Server Actions (audit d'equipe du
+      // 2026-11-27, contre-audit du lot 1): `assertMfaSatisfied` laisse passer
+      // un compte sans facteur, et `/api/admin/reset` appelle ensuite la base
+      // en service_role, que la RLS ne voit pas.
+      // Le jeton aal2 n'est delivre qu'apres un code TOTP verifie: il suffit a
+      // prouver le facteur (`user` ici ne porte plus `factors`).
+      const strong = (await currentAssuranceLevel(supabase)) === 'aal2';
+      if (!strong) {
+        throw new AuthError(MFA_REQUIRED_MESSAGE, 403);
+      }
       if (requiredPermission) {
         await enforceTenantPermission(supabase, superTenantId, 'owner', null, requiredPermission);
       }

@@ -14,6 +14,7 @@ import '@/components/marketing/home/home-motion.css';
 export const revalidate = 3600; // ISR: regenerate every hour
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/' },
   title: 'Attabl - Caisse, commandes et stock pour restaurants',
   description:
     "Votre caisse, vos commandes et vos stocks dans une seule application, pensee pour les restaurants et hotels d'Afrique francophone. Essai 14 jours sans carte.",

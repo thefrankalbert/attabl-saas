@@ -7,15 +7,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 //      inactif): le refus etait saute et l'ecriture partait sur l'appartenance
 //      la plus ancienne de l'utilisateur, un autre restaurant.
 
-const { mockGetUser, mockFrom, mockHeaderGet, mockGetTenant } = vi.hoisted(() => ({
+const { mockGetUser, mockGetClaims, mockFrom, mockHeaderGet, mockGetTenant } = vi.hoisted(() => ({
   mockGetUser: vi.fn(),
+  mockGetClaims: vi.fn(),
   mockFrom: vi.fn(),
   mockHeaderGet: vi.fn(),
   mockGetTenant: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn(() => Promise.resolve({ auth: { getUser: mockGetUser }, from: mockFrom })),
+  createClient: vi.fn(() =>
+    Promise.resolve({ auth: { getUser: mockGetUser, getClaims: mockGetClaims }, from: mockFrom }),
+  ),
 }));
 vi.mock('next/headers', () => ({
   headers: vi.fn(() => Promise.resolve({ get: mockHeaderGet })),
@@ -120,6 +123,12 @@ describe('B23 - slug present mais tenant invisible', () => {
   });
 
   it('super_admin: owner virtuel sur le restaurant inactif, resolu par la lecture du layout', async () => {
+    // Session renforcee (facteur verifie + aal2): seule condition du mode dieu.
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: 'u1', email: 'a@b.c', factors: [{ status: 'verified' }] } },
+      error: null,
+    });
+    mockGetClaims.mockResolvedValue({ data: { claims: { aal: 'aal2' } }, error: null });
     mockHeaderGet.mockReturnValue('client-b-suspendu');
     mockFrom.mockImplementation((t: string) =>
       t === 'tenants' ? chain({ data: null }) : chain({ data: { id: 'membership-super' } }),

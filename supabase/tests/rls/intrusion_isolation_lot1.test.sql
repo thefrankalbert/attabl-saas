@@ -108,10 +108,10 @@ select throws_ok(
 );
 
 -- ------------------------------------------------------------------ T-06
-set local request.jwt.claims = '{"sub":"e1000000-0000-0000-0000-000000000004"}';
+set local request.jwt.claims = '{"sub":"e1000000-0000-0000-0000-000000000004","aal":"aal2"}';
 select is(public.is_super_admin(), true, 'T-06 temoin: super-administrateur vivant reconnu');
 
-set local request.jwt.claims = '{"sub":"e1000000-0000-0000-0000-000000000005"}';
+set local request.jwt.claims = '{"sub":"e1000000-0000-0000-0000-000000000005","aal":"aal2"}';
 select is(public.is_super_admin(), false, 'T-06: super-administrateur revoque non reconnu');
 
 -- ------------------------------------------------------------------ T-03

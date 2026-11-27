@@ -10,9 +10,11 @@ export const ESTABLISHMENT_TYPES = [
   'quick-service',
 ] as const;
 
-export const PLAN_OPTIONS = ['trial', 'starter', 'pro', 'business'] as const;
-
-export const createRestaurantStep1Schema = z.object({
+// Pas de champ `plan`: un etablissement ajoute demarre en essai (si le compte y
+// a encore droit) ou en attente d'abonnement. Une formule payante ne s'obtient
+// que par un paiement abouti (webhook Stripe), jamais par le corps de la
+// requete. z.object ignore une cle `plan` envoyee par un ancien client.
+export const createRestaurantSchema = z.object({
   name: z.string().min(2, 'Minimum 2 caractères').max(100, 'Maximum 100 caractères'),
   type: z.enum(ESTABLISHMENT_TYPES, {
     error: "Type d'établissement invalide",
@@ -24,15 +26,4 @@ export const createRestaurantStep1Schema = z.object({
     .regex(/^[a-z0-9-]+$/, 'Slug invalide : lettres minuscules, chiffres et tirets uniquement'),
 });
 
-export const createRestaurantStep2Schema = z.object({
-  plan: z.enum(PLAN_OPTIONS, {
-    error: 'Plan invalide',
-  }),
-});
-
-export const createRestaurantSchema = createRestaurantStep1Schema.merge(
-  createRestaurantStep2Schema,
-);
-
-export type CreateRestaurantStep1Input = z.infer<typeof createRestaurantStep1Schema>;
-export type CreateRestaurantStep2Input = z.infer<typeof createRestaurantStep2Schema>;
+export type CreateRestaurantInput = z.infer<typeof createRestaurantSchema>;

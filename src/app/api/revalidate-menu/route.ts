@@ -4,6 +4,7 @@ import { getAuthenticatedUser, AuthError } from '@/lib/auth/get-session';
 import { NextResponse } from 'next/server';
 import { revalidateMenuLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
+import { currentAssuranceLevel } from '@/lib/auth/mfa-assurance';
 
 export async function POST(request: Request) {
   const originErr = verifyOrigin(request);
@@ -78,6 +79,11 @@ export async function POST(request: Request) {
       .limit(1)
       .maybeSingle();
     if (!membership) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    // Non membre = acces de super administrateur: il exige une session aal2,
+    // comme partout ailleurs (audit d'equipe du 2026-11-27).
+    if (membership.tenant_id !== tenant.id && (await currentAssuranceLevel(supabase)) !== 'aal2') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     revalidateTag(CACHE_TAG_MENUS, 'max');

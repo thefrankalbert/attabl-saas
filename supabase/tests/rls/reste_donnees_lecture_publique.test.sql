@@ -115,7 +115,7 @@ select is(
   '+22670000002',
   'T-02 temoin: le membre lit toujours la ligne de SON restaurant, colonnes sensibles comprises');
 
-set local request.jwt.claims = '{"sub":"f1000000-0000-0000-0000-000000000003"}';
+set local request.jwt.claims = '{"sub":"f1000000-0000-0000-0000-000000000003","aal":"aal2"}';
 select is(
   (select count(*)::int from public.tenants where id = 'f2000000-0000-0000-0000-00000000000b'),
   1,
@@ -186,7 +186,7 @@ select is(
   2,
   'T-04 temoin: le proprietaire du groupe lit la carte du restaurant ferme de son groupe');
 
-set local request.jwt.claims = '{"sub":"f1000000-0000-0000-0000-000000000003"}';
+set local request.jwt.claims = '{"sub":"f1000000-0000-0000-0000-000000000003","aal":"aal2"}';
 select is(
   (select count(*)::int from public.menu_items where tenant_id = 'f2000000-0000-0000-0000-00000000000c'),
   2,

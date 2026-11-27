@@ -4,14 +4,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Mocks (hoisted)
 // ---------------------------------------------------------------------------
 
-const { mockGetUser, mockFrom, mockHeaderGet } = vi.hoisted(() => ({
+const { mockGetUser, mockGetClaims, mockFrom, mockHeaderGet } = vi.hoisted(() => ({
   mockGetUser: vi.fn(),
+  mockGetClaims: vi.fn(),
   mockFrom: vi.fn(),
   mockHeaderGet: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn(() => Promise.resolve({ auth: { getUser: mockGetUser }, from: mockFrom })),
+  createClient: vi.fn(() =>
+    Promise.resolve({ auth: { getUser: mockGetUser, getClaims: mockGetClaims }, from: mockFrom }),
+  ),
 }));
 
 vi.mock('next/headers', () => ({
@@ -89,10 +92,7 @@ describe('getAuthenticatedUserWithTenant - tenant scoping', () => {
     await expect(getAuthenticatedUserWithTenant()).rejects.toMatchObject({ status: 403 });
   });
 
-  it('resout un super_admin en owner virtuel SUR LE TENANT DU HEADER', async () => {
-    // Un operateur plateforme n'a aucune ligne admin_users sur les tenants
-    // clients: le layout lui fabrique un owner virtuel sans creer de ligne.
-    // Sans cette resolution, le refus ci-dessus casserait la console plateforme.
+  function superAdminSurClientB(): void {
     mockHeaderGet.mockReturnValue('client-b');
     let adminUsersCall = 0;
     mockFrom.mockImplementation((table: string) => {
@@ -103,6 +103,38 @@ describe('getAuthenticatedUserWithTenant - tenant scoping', () => {
         ? chain({ data: null })
         : chain({ data: { id: 'membership-super' } });
     });
+  }
+
+  it('refuse le mode dieu a un super_admin SANS facteur (mot de passe seul)', async () => {
+    // Contre-audit du lot 1 (2026-11-27): `assertMfaSatisfied` laisse passer un
+    // compte sans facteur; l'owner virtuel ouvrait alors /api/admin/reset et
+    // toutes les Server Actions de n'importe quel restaurant.
+    superAdminSurClientB();
+    mockGetClaims.mockResolvedValue({ data: { claims: { aal: 'aal1' } }, error: null });
+    await expect(getAuthenticatedUserWithTenant()).rejects.toMatchObject({ status: 403 });
+  });
+
+  it('refuse le mode dieu a un super_admin avec facteur mais session aal1', async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { ...USER, factors: [{ status: 'verified' }] } },
+      error: null,
+    });
+    superAdminSurClientB();
+    mockGetClaims.mockResolvedValue({ data: { claims: { aal: 'aal1' } }, error: null });
+    await expect(getAuthenticatedUserWithTenant()).rejects.toMatchObject({ status: 403 });
+  });
+
+  it('resout un super_admin en owner virtuel SUR LE TENANT DU HEADER', async () => {
+    // Un operateur plateforme n'a aucune ligne admin_users sur les tenants
+    // clients: le layout lui fabrique un owner virtuel sans creer de ligne.
+    // Sans cette resolution, le refus ci-dessus casserait la console plateforme.
+    // Condition: session renforcee (facteur verifie + aal2).
+    mockGetUser.mockResolvedValue({
+      data: { user: { ...USER, factors: [{ status: 'verified' }] } },
+      error: null,
+    });
+    mockGetClaims.mockResolvedValue({ data: { claims: { aal: 'aal2' } }, error: null });
+    superAdminSurClientB();
 
     const res = await getAuthenticatedUserWithTenant();
 

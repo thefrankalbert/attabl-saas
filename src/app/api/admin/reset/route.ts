@@ -6,6 +6,7 @@ import { adminResetLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 import { tenantLockResponse } from '@/lib/billing/tenant-lock-response';
+import { createAuditService } from '@/services/audit.service';
 
 /**
  * Reset API - lets the OWNER wipe orders (paid ones included, with their
@@ -81,6 +82,29 @@ export async function POST(request: Request) {
       );
     }
 
+    // Trace d'audit OBLIGATOIRE, ecrite AVANT l'effacement (audit d'equipe du
+    // 2026-11-27, T360-21): si elle ne peut pas etre ecrite, rien n'est efface.
+    // La remise a zero supprime des commandes et leurs paiements: elle ne doit
+    // jamais passer sans laisser qui et quand.
+    const audit = createAuditService(adminSupabase, {
+      tenantId,
+      userId: user.id,
+      userEmail: user.email ?? undefined,
+      userRole: role,
+    });
+    try {
+      await audit.logOrThrow({
+        action: 'delete',
+        entityType: 'order',
+        metadata: { operation: 'reset_tenant_data', phase: 'demandee', resetType },
+      });
+    } catch {
+      return NextResponse.json(
+        { error: "La remise a zero n'a pas ete faite: la trace d'audit n'a pas pu etre ecrite." },
+        { status: 500 },
+      );
+    }
+
     // tenantId already derived from session above.
     // Single atomic SQL transaction via the reset_tenant_data RPC.
     // Replaces the previous 3-4 batched JS deletes that could leave the
@@ -112,6 +136,21 @@ export async function POST(request: Request) {
       resetType,
       userId: user.id,
       ...summary,
+    });
+
+    // Bilan chiffre (la demande est deja tracee ci-dessus).
+    await audit.log({
+      action: 'delete',
+      entityType: 'order',
+      metadata: {
+        operation: 'reset_tenant_data',
+        phase: 'effectuee',
+        resetType,
+        ordersDeleted: summary.orders_deleted ?? 0,
+        itemsDeleted: summary.items_deleted ?? 0,
+        movementsDeleted: summary.movements_deleted ?? 0,
+        couponsReset: summary.coupons_reset ?? 0,
+      },
     });
 
     switch (resetType) {

@@ -187,7 +187,7 @@ select ok(not has_function_privilege('authenticated',
   'le corps brut des rapports n est pas appelable par un client');
 
 -- 26-27. Contre-audit C: un super administrateur passe l'appartenance; le plan juge.
-set local request.jwt.claims = '{"sub":"c3000000-0000-4000-8000-0000000000a3"}';
+set local request.jwt.claims = '{"sub":"c3000000-0000-4000-8000-0000000000a3","aal":"aal2"}';
 select ok(mon_restaurant_a_le_stock('c3000000-0000-4000-8000-000000000002'),
   'super administrateur: un restaurant Pro dont il n est pas membre a le stock');
 select ok(not mon_restaurant_a_le_stock('c3000000-0000-4000-8000-000000000001'),
