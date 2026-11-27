@@ -80,6 +80,8 @@ function OrderConfirmedContent() {
   const orderId = searchParams.get('orderId');
   // Set by the cart when an order was queued offline (no server order id yet).
   const queued = searchParams.get('queued') === '1';
+  // Set after a timeout: the server may already hold the order, so we only say we are checking.
+  const checking = searchParams.get('check') === '1';
   const { slug: tenantSlug, tenantId, tenant } = useTenant();
   const t = useTranslations('tenant');
   const locale = useLocale();
@@ -249,10 +251,10 @@ function OrderConfirmedContent() {
             <UploadCloud className="h-11 w-11 text-white" strokeWidth={2} />
           </div>
           <h1 className="mt-[26px] text-[24px] font-semibold tracking-[-0.7px] text-[var(--color-ink)]">
-            {t('orderQueuedTitle')}
+            {checking ? t('orderCheckingTitle') : t('orderQueuedTitle')}
           </h1>
           <p className="mt-2 max-w-[280px] text-[14px] leading-[1.5] text-[var(--color-ink-2)]">
-            {t('orderQueuedSub')}
+            {checking ? t('orderCheckingSub') : t('orderQueuedSub')}
           </p>
         </div>
         <div

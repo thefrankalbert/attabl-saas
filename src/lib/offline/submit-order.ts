@@ -51,9 +51,23 @@ async function registerOutboxSync(): Promise<void> {
   }
 }
 
+/** True for the abort raised by AbortSignal.timeout (TimeoutError, or AbortError on older engines). */
+function isTimeoutError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'name' in error &&
+    ((error as { name: unknown }).name === 'TimeoutError' ||
+      (error as { name: unknown }).name === 'AbortError')
+  );
+}
+
 export type SubmitResult =
   | { status: 'sent'; data: unknown }
-  | { status: 'queued' } // accepted into the durable outbox; will sync later
+  // accepted into the durable outbox; will sync later. `unconfirmed` is true when
+  // the request timed out: the server may ALREADY hold the order, so the UI must
+  // not claim that it has not arrived.
+  | { status: 'queued'; unconfirmed?: boolean }
   | { status: 'rejected'; error: string; details?: string[]; code?: string } // server refused
   | { status: 'failed'; error: string }; // could not send AND could not queue
 
@@ -85,7 +99,7 @@ export async function submitOrder({
 }: SubmitOrderArgs): Promise<SubmitResult> {
   const fullBody = { ...body, client_request_id: clientRequestId };
 
-  const queue = async (reason: string): Promise<SubmitResult> => {
+  const queue = async (reason: string, unconfirmed = false): Promise<SubmitResult> => {
     if (!outbox) {
       // No durable store (SSR / IndexedDB blocked): cannot guarantee the write,
       // so surface a failure rather than silently dropping the order.
@@ -119,12 +133,11 @@ export async function submitOrder({
     // return must not wait on (or hang behind) SW readiness. Browsers without
     // SyncManager (e.g. Safari/iOS) fall back to the interval/online drain.
     void registerOutboxSync();
-    return { status: 'queued' };
+    return unconfirmed ? { status: 'queued', unconfirmed: true } : { status: 'queued' };
   };
 
-  let response: Response;
-  try {
-    response = await fetchImpl(endpoint, {
+  const post = () =>
+    fetchImpl(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(fullBody),
@@ -134,9 +147,23 @@ export async function submitOrder({
       // idempotency key makes the later replay safe even if the server did get it.
       signal: AbortSignal.timeout(SUBMIT_TIMEOUT_MS),
     });
-  } catch {
-    // Offline / DNS / connection refused / timeout: durable-queue it.
-    return queue('network');
+
+  let response: Response;
+  try {
+    response = await post();
+  } catch (firstError) {
+    if (!isTimeoutError(firstError)) {
+      // Offline / DNS / connection refused: durable-queue it.
+      return queue('network');
+    }
+    // Timeout under load: the server may have created the order after we gave
+    // up. Retry ONCE with the same idempotency key; if the order exists the
+    // server returns it, so the customer gets a real confirmation.
+    try {
+      response = await post();
+    } catch {
+      return queue('timeout', true);
+    }
   }
 
   const verdict = classifyStatus(response.status, endpoint);

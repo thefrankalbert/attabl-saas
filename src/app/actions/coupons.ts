@@ -6,6 +6,7 @@ import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-ten
 import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 import { createCouponService } from '@/services/coupon.service';
 import { ServiceError } from '@/services/errors';
+import { couponPayloadSchema } from '@/lib/validations/coupon.schema';
 import { createClient } from '@/lib/supabase/server';
 
 type ActionResponse<T = undefined> = {
@@ -16,17 +17,6 @@ type ActionResponse<T = undefined> = {
 
 const tenantIdSchema = z.string().uuid();
 const couponIdSchema = z.string().uuid();
-
-const couponPayloadSchema = z.object({
-  code: z.string().min(1).max(50),
-  discount_type: z.enum(['percentage', 'fixed']),
-  discount_value: z.number().positive(),
-  min_order_amount: z.number().min(0).nullable().optional(),
-  max_discount_amount: z.number().min(0).nullable().optional(),
-  valid_from: z.string().nullable().optional(),
-  valid_until: z.string().nullable().optional(),
-  max_uses: z.number().int().positive().nullable().optional(),
-});
 
 async function checkPermissions(tenantId: string): Promise<{ error: string | null }> {
   try {

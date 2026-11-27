@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+import { storefrontPageMetadata } from '@/lib/storefront-page-metadata';
 import { headers } from 'next/headers';
 import ClientSettings from '@/components/tenant/ClientSettings';
 import { getCachedTenant } from '@/lib/cache';
@@ -7,6 +9,15 @@ import { notFound } from 'next/navigation';
 import type { OpeningHoursDay } from '@/types/admin.types';
 
 const DAY_KEYS: OpeningHoursDay[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ site: string }>;
+}): Promise<Metadata> {
+  const { site } = await params;
+  return storefrontPageMetadata(site, 'settingsTitle');
+}
 
 export default async function SettingsPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
