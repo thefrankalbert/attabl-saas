@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Plus, Loader2, Trash2, Image as ImageIcon, Eye, EyeOff } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import AdminModal from '@/components/admin/AdminModal';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
+import ImageUpload from '@/components/shared/ImageUpload';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
@@ -29,61 +29,37 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
   const [loading, setLoading] = useState(false);
 
   // Form State
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState('');
   const [link, setLink] = useState('');
   const [sortOrder, setSortOrder] = useState<number | string>(1);
   const [isActive, setIsActive] = useState(true);
-  // keepExistingImage state reserved for future edit feature
 
   const t = useTranslations('ads');
   const tc = useTranslations('common');
   const { confirm, Dialog: ConfirmDialog } = useConfirmDialog();
   const { toast } = useToast();
-  const supabase = createClient();
 
   const resetForm = () => {
-    setImageFile(null);
-    setPreviewUrl(null);
+    setImageUrl('');
     setLink('');
     setSortOrder(ads.length + 1);
     setIsActive(true);
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setImageFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
-    }
-  };
-
   const handleSave = async () => {
-    if (!imageFile) {
+    if (!imageUrl) {
       toast({ title: t('imageRequired'), variant: 'destructive' });
       return;
     }
 
     setLoading(true);
     try {
-      // 1. Upload Image
-      const fileExt = imageFile.name.split('.').pop();
-      const fileName = `${tenantId}/ads/${Date.now()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage
-        .from('images') // Assumes bucket exists
-        .upload(fileName, imageFile);
-
-      if (uploadError) throw uploadError;
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('images').getPublicUrl(fileName);
-
-      // 2. Insert DB Record via server action
+      // L'image est deja envoyee par ImageUpload (route /api/upload, dossier du
+      // restaurant derive de la session): il ne reste qu'a enregistrer l'annonce.
       const result = await actionCreateAd(tenantId, {
         tenant_id: tenantId,
-        image_url: publicUrl,
-        link: link || null,
+        image_url: imageUrl,
+        link: link.trim() || null,
         sort_order: Number(sortOrder) || 1,
         is_active: isActive,
       });
@@ -106,7 +82,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
       logger.error('Failed to save ad', e);
       toast({
         title: tc('error'),
-        description: e instanceof Error ? e.message : tc('unknownError'),
+        description: t('unknownError'),
         variant: 'destructive',
       });
     } finally {
@@ -126,7 +102,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
 
     const result = await actionDeleteAd(tenantId, id);
     if (result.error) {
-      toast({ title: tc('error'), variant: 'destructive' });
+      toast({ title: tc('error'), description: result.error, variant: 'destructive' });
       return;
     }
     setAds((prev) => prev.filter((ad) => ad.id !== id));
@@ -136,7 +112,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
   const toggleActive = async (ad: Ad) => {
     const result = await actionToggleAdActive(tenantId, ad.id, !ad.is_active);
     if (result.error) {
-      toast({ title: tc('error'), variant: 'destructive' });
+      toast({ title: tc('error'), description: result.error, variant: 'destructive' });
       return;
     }
     setAds((prev) => prev.map((a) => (a.id === ad.id ? (result.data as Ad) : a)));
@@ -203,13 +179,15 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
                       : 'bg-app-bg text-app-text-secondary',
                   )}
                 >
-                  {ad.is_active ? t('enable') : t('disable')}
+                  {ad.is_active ? t('enabled') : t('disabled')}
                 </span>
                 <div className="flex items-center gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shrink-0">
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0"
+                    aria-label={ad.is_active ? t('deactivate') : t('activate')}
+                    title={ad.is_active ? t('deactivate') : t('activate')}
                     onClick={() => toggleActive(ad)}
                   >
                     {ad.is_active ? (
@@ -222,7 +200,8 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0 text-status-error hover:text-status-error hover:bg-status-error-bg"
-                    title={tc('delete')}
+                    aria-label={t('deleteAd')}
+                    title={t('deleteAd')}
                     onClick={() => handleDelete(ad.id)}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -247,47 +226,35 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
           {/* Image */}
           <div className="space-y-2">
             <Label>{t('bannerImage')}</Label>
-            <div className="border-2 border-dashed border-app-border rounded-xl p-4 text-center hover:bg-app-bg transition-colors cursor-pointer relative">
-              {/* eslint-disable-next-line react/forbid-elements -- <input type="file"> is the CLAUDE.md-documented exception (no shadcn equivalent) */}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileSelect}
-                className="absolute inset-0 opacity-0 cursor-pointer"
-              />
-              {previewUrl ? (
-                <div className="relative aspect-video rounded-lg overflow-hidden bg-app-bg">
-                  <Image
-                    src={previewUrl}
-                    alt={tc('aria.previewImage')}
-                    fill
-                    className="object-cover"
-                    unoptimized
-                  />
-                </div>
-              ) : (
-                <div className="py-8 text-app-text-muted">
-                  <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-xs">{t('clickToAddImage')}</p>
-                </div>
-              )}
-            </div>
+            <ImageUpload
+              value={imageUrl}
+              onChange={setImageUrl}
+              onRemove={() => setImageUrl('')}
+              bucket="images"
+              aspect={2}
+              maxWidth={1600}
+            />
           </div>
 
           {/* Link */}
           <div className="space-y-2">
-            <Label>{t('redirectLink')}</Label>
+            <Label htmlFor="ad-link">{t('redirectLink')}</Label>
             <Input
+              id="ad-link"
+              type="url"
+              inputMode="url"
               placeholder="https://..."
               value={link}
               onChange={(e) => setLink(e.target.value)}
             />
+            <p className="text-xs text-app-text-muted">{t('linkHint')}</p>
           </div>
 
           {/* Sort Order */}
           <div className="space-y-2">
-            <Label>{t('displayOrder')}</Label>
+            <Label htmlFor="ad-order">{t('displayOrder')}</Label>
             <Input
+              id="ad-order"
               type="number"
               min={1}
               value={sortOrder}
