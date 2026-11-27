@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 const { sendTrialIdleEmail, sendTrialEndgameEmail, emailConfigured } = vi.hoisted(() => ({
@@ -22,6 +22,17 @@ const NOW = new Date('2026-11-24T09:00:00Z');
 const HOUR = 3_600_000;
 const ago = (h: number) => new Date(NOW.getTime() - h * HOUR).toISOString();
 const inDays = (d: number) => new Date(NOW.getTime() + d * 24 * HOUR).toISOString();
+
+// determineTrialEventKey lit l'heure REELLE (getTrialDaysRemaining): sans
+// horloge figee a NOW, "fin d'essai dans 2 jours" devenait du passe des le
+// 27 novembre 2026 et le test echouait selon le jour ou il tournait.
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(NOW);
+});
+afterAll(() => {
+  vi.useRealTimers();
+});
 
 describe('isTrialIdle (B104)', () => {
   it('une date absente ou illisible n est pas une inactivite', () => {

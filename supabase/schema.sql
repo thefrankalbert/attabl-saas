@@ -31,11 +31,19 @@
 -- 42 policies. Il ne decrivait plus la base depuis des mois, ce qui faussait
 -- tout audit s'appuyant dessus.
 --
+-- 2026-11-27 : regenere apres la mise en production de la PR #473 (verification
+-- de mise en production: registre de stock, cout moyen pondere, double
+-- authentification exigee par la base, adresses e-mail bloquees, alerte de
+-- connexion). Toutes les migrations du depot jusqu'a 20261124210700 sont
+-- enregistrees en production (comparaison faite). La production porte en plus
+-- 20261124190000 (email_unsubscribes), appliquee par une autre session et
+-- absente du depot: ses objets figurent dans cet instantane.
+--
 -- MARQUEUR LU PAR scripts/run-pgtap.sh. Derniere migration DEJA comprise dans
 -- cet instantane. L'executant charge ce fichier puis applique uniquement les
 -- migrations POSTERIEURES - beaucoup des anciennes ne sont pas idempotentes et
 -- les rejouer casserait la base de test. A mettre a jour a chaque regeneration.
--- SCHEMA_SNAPSHOT_MIGRATION=20261124111000
+-- SCHEMA_SNAPSHOT_MIGRATION=20261124210700
 --
 -- A NE PAS CONFONDRE avec tests/journeys/fixtures/schema.sql, qui est FIGE au
 -- marqueur FIXTURE_MARKER=20260628000000 et sert de base aux tests de parcours :
@@ -181,14 +189,17 @@ $$;
 ALTER FUNCTION "public"."accept_invitation_membership"("p_invitation_id" "uuid", "p_user_id" "uuid", "p_full_name" "text") OWNER TO "postgres";
 
 --
--- Name: adjust_ingredient_stock_tx("uuid", "uuid", numeric, "text", "text", "uuid", "uuid"); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: adjust_ingredient_stock_tx("uuid", "uuid", numeric, "text", "text", "uuid", "uuid", numeric); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION "public"."adjust_ingredient_stock_tx"("p_tenant_id" "uuid", "p_ingredient_id" "uuid", "p_delta" numeric, "p_movement_type" "text", "p_notes" "text" DEFAULT NULL::"text", "p_created_by" "uuid" DEFAULT NULL::"uuid", "p_supplier_id" "uuid" DEFAULT NULL::"uuid") RETURNS numeric
+CREATE FUNCTION "public"."adjust_ingredient_stock_tx"("p_tenant_id" "uuid", "p_ingredient_id" "uuid", "p_delta" numeric, "p_movement_type" "text", "p_notes" "text" DEFAULT NULL::"text", "p_created_by" "uuid" DEFAULT NULL::"uuid", "p_supplier_id" "uuid" DEFAULT NULL::"uuid", "p_unit_cost" numeric DEFAULT NULL::numeric) RETURNS numeric
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
 DECLARE v_before NUMERIC(10,3); v_after NUMERIC(10,3);
+  v_cost_before NUMERIC(10,2);
+  v_price NUMERIC(12,4);
+  v_base NUMERIC;
   v_author uuid := CASE WHEN auth.role() = 'service_role' THEN p_created_by ELSE auth.uid() END;
 BEGIN
   PERFORM public.assert_inventory_edit(p_tenant_id);
@@ -198,12 +209,38 @@ BEGIN
   IF p_supplier_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM public.suppliers s WHERE s.id = p_supplier_id AND s.tenant_id = p_tenant_id) THEN
     RAISE EXCEPTION 'INVALID_SUPPLIER' USING ERRCODE = '22023';
   END IF;
-  SELECT current_stock INTO v_before FROM public.ingredients WHERE id = p_ingredient_id AND tenant_id = p_tenant_id FOR UPDATE;
+  -- CUMP: un prix d'achat n'a de sens que pour une reception, et il doit
+  -- tenir dans la colonne du cout (numeric(10,2)).
+  IF p_unit_cost IS NOT NULL THEN
+    IF p_movement_type <> 'manual_add' OR p_delta IS NULL OR p_delta <= 0 THEN
+      RAISE EXCEPTION 'INVALID_UNIT_COST: prix accepte pour une reception seulement' USING ERRCODE = '22023';
+    END IF;
+    v_price := round(p_unit_cost, 4);
+    IF v_price <= 0 OR v_price > 99999999.99 THEN
+      RAISE EXCEPTION 'INVALID_UNIT_COST: %', p_unit_cost USING ERRCODE = '22023';
+    END IF;
+  END IF;
+  SELECT current_stock, cost_per_unit INTO v_before, v_cost_before
+    FROM public.ingredients WHERE id = p_ingredient_id AND tenant_id = p_tenant_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'INGREDIENT_NOT_FOUND' USING ERRCODE = 'P0002'; END IF;
-  v_after := GREATEST(0, v_before + p_delta);
-  UPDATE public.ingredients SET current_stock = v_after, updated_at = now() WHERE id = p_ingredient_id AND tenant_id = p_tenant_id;
-  INSERT INTO public.stock_movements (tenant_id, ingredient_id, movement_type, quantity, notes, created_by, supplier_id)
-  VALUES (p_tenant_id, p_ingredient_id, p_movement_type, v_after - v_before, p_notes, v_author, p_supplier_id);
+  -- B142: une seule regle pour toutes les sorties, celle de la vente et de la
+  -- perte: le stock bouge EXACTEMENT de la quantite (-5 + 3 = -2; 8 - 9 = -1),
+  -- et le mouvement porte la quantite reelle.
+  v_after := v_before + p_delta;
+  -- Cout moyen pondere (seulement avec un prix). Un stock negatif ne fausse
+  -- pas la moyenne: il compte pour 0, et le cout devient le prix recu.
+  v_base := GREATEST(v_before, 0);
+  UPDATE public.ingredients
+    SET current_stock = v_after,
+        cost_per_unit = CASE
+          WHEN v_price IS NULL THEN cost_per_unit
+          WHEN v_base = 0 THEN round(v_price, 2)
+          ELSE round((v_base * v_cost_before + p_delta * v_price) / (v_base + p_delta), 2)
+        END,
+        updated_at = now()
+    WHERE id = p_ingredient_id AND tenant_id = p_tenant_id;
+  INSERT INTO public.stock_movements (tenant_id, ingredient_id, movement_type, quantity, notes, created_by, supplier_id, unit_cost)
+  VALUES (p_tenant_id, p_ingredient_id, p_movement_type, v_after - v_before, p_notes, v_author, p_supplier_id, v_price);
 
   PERFORM public.sync_menu_availability(p_tenant_id, p_ingredient_id, v_before, v_after);
 
@@ -211,7 +248,7 @@ BEGIN
 END; $$;
 
 
-ALTER FUNCTION "public"."adjust_ingredient_stock_tx"("p_tenant_id" "uuid", "p_ingredient_id" "uuid", "p_delta" numeric, "p_movement_type" "text", "p_notes" "text", "p_created_by" "uuid", "p_supplier_id" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "public"."adjust_ingredient_stock_tx"("p_tenant_id" "uuid", "p_ingredient_id" "uuid", "p_delta" numeric, "p_movement_type" "text", "p_notes" "text", "p_created_by" "uuid", "p_supplier_id" "uuid", "p_unit_cost" numeric) OWNER TO "postgres";
 
 --
 -- Name: anonymize_closed_tenants(timestamp with time zone); Type: FUNCTION; Schema: public; Owner: postgres
@@ -488,6 +525,32 @@ $$;
 
 
 ALTER FUNCTION "public"."assert_inventory_edit"("p_tenant_id" "uuid") OWNER TO "postgres";
+
+--
+-- Name: assert_inventory_view("uuid"); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION "public"."assert_inventory_view"("p_tenant_id" "uuid") RETURNS "void"
+    LANGUAGE "plpgsql" STABLE
+    SET "search_path" TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF auth.role() = 'service_role' THEN
+    RETURN;
+  END IF;
+  IF public.is_super_admin() THEN
+    RETURN;
+  END IF;
+  IF public.has_tenant_write_permission(p_tenant_id, 'inventory.view') THEN
+    RETURN;
+  END IF;
+  RAISE EXCEPTION 'access denied: inventory.view required on tenant %', p_tenant_id
+    USING ERRCODE = '42501';
+END;
+$$;
+
+
+ALTER FUNCTION "public"."assert_inventory_view"("p_tenant_id" "uuid") OWNER TO "postgres";
 
 --
 -- Name: assert_tenant_business_reports("uuid"); Type: FUNCTION; Schema: public; Owner: postgres
@@ -960,6 +1023,7 @@ DECLARE
   v_status text;
   v_line RECORD;
   v_before NUMERIC(10,3);
+  v_after NUMERIC(10,3);
   v_delta NUMERIC(10,3);
   v_n INT := 0;
   v_author uuid := CASE WHEN auth.role() = 'service_role' THEN p_committed_by ELSE auth.uid() END;
@@ -976,7 +1040,7 @@ BEGIN
   END IF;
 
   FOR v_line IN
-    SELECT scl.ingredient_id, scl.counted_qty
+    SELECT scl.ingredient_id, scl.counted_qty, scl.theoretical_qty
     FROM public.stock_count_lines scl
     WHERE scl.count_id = p_count_id AND scl.tenant_id = p_tenant_id
       AND scl.counted_qty IS NOT NULL
@@ -986,16 +1050,20 @@ BEGIN
       FOR UPDATE;
     IF NOT FOUND THEN CONTINUE; END IF;
 
-    v_delta := v_line.counted_qty - v_before;
+    -- Constat 6: l'ecart est celui de l'ecran (compte - theorique fige a
+    -- l'ouverture), applique au stock COURANT: les ventes, receptions et
+    -- pertes enregistrees pendant le comptage sont conservees.
+    v_delta := v_line.counted_qty - v_line.theoretical_qty;
     IF v_delta = 0 THEN CONTINUE; END IF;
+    v_after := v_before + v_delta;
 
-    UPDATE public.ingredients SET current_stock = v_line.counted_qty, updated_at = now()
+    UPDATE public.ingredients SET current_stock = v_after, updated_at = now()
       WHERE id = v_line.ingredient_id AND tenant_id = p_tenant_id;
 
     INSERT INTO public.stock_movements
       (tenant_id, ingredient_id, movement_type, quantity, reference_id, notes, created_by)
     VALUES
-      (p_tenant_id, v_line.ingredient_id, 'physical_count', v_delta, p_count_id,
+      (p_tenant_id, v_line.ingredient_id, 'physical_count', v_after - v_before, p_count_id,
        'Inventaire physique', v_author);
 
     v_n := v_n + 1;
@@ -1064,6 +1132,9 @@ BEGIN
       JOIN venues v ON v.id = z.venue_id
       WHERE v.tenant_id = p_tenant_id
         AND (t.table_number = p_table_number OR t.display_name = p_table_number)
+      -- B122: le NUMERO d'abord (unique par restaurant), le nom affiche
+      -- seulement a defaut, dans un ordre fixe.
+      ORDER BY (t.table_number = p_table_number) DESC, t.table_number, t.id
       LIMIT 1;
   END IF;
 
@@ -1754,15 +1825,27 @@ CREATE FUNCTION "public"."enforce_min_one_active_venue"() RETURNS "trigger"
 DECLARE
   v_count int;
 BEGIN
-  PERFORM pg_advisory_xact_lock(hashtext('venue_cap:' || NEW.tenant_id::text));
+  -- B135 (2): un changement de restaurant touche DEUX plafonds. Verrous pris
+  -- dans un ordre fixe (plus petit identifiant d'abord) pour que deux
+  -- deplacements croises ne s'interbloquent pas; enforce_venue_plan_limit
+  -- reprend ensuite le verrou du restaurant qui recoit (deja tenu).
+  IF NEW.tenant_id IS DISTINCT FROM OLD.tenant_id THEN
+    PERFORM pg_advisory_xact_lock(hashtext('venue_cap:' || LEAST(OLD.tenant_id, NEW.tenant_id)::text));
+    PERFORM pg_advisory_xact_lock(hashtext('venue_cap:' || GREATEST(OLD.tenant_id, NEW.tenant_id)::text));
+  ELSE
+    PERFORM pg_advisory_xact_lock(hashtext('venue_cap:' || NEW.tenant_id::text));
+  END IF;
 
-  IF NOT (OLD.is_active = true AND NEW.is_active = false) THEN
+  -- Le restaurant qui PERD l'etablissement (desactive sur place, ou parti
+  -- vers un autre restaurant) doit en garder un actif.
+  IF NOT (OLD.is_active = true
+          AND (NEW.is_active = false OR NEW.tenant_id IS DISTINCT FROM OLD.tenant_id)) THEN
     RETURN NEW;
   END IF;
 
   SELECT count(*) INTO v_count
   FROM venues
-  WHERE tenant_id = NEW.tenant_id AND is_active = true;
+  WHERE tenant_id = OLD.tenant_id AND is_active = true;
 
   IF v_count = 0 THEN
     RAISE EXCEPTION 'Cannot deactivate the last active venue'
@@ -1966,6 +2049,25 @@ BEGIN
     RETURN NEW;
   END IF;
 
+  -- B124: un restaurant ferme ne concurrence personne; et sur UPDATE, on ne
+  -- juge que ce qui peut creer un doublon (le nom, le passage en etabli, le
+  -- changement de groupe, la reouverture). Un UPDATE sans rapport ne doit pas
+  -- echouer sur un doublon ancien, anterieur a cette garde.
+  IF NEW.deleted_at IS NOT NULL THEN
+    RETURN NEW;
+  END IF;
+  IF TG_OP = 'UPDATE'
+     AND NEW.name IS NOT DISTINCT FROM OLD.name
+     AND NOT (coalesce(NEW.onboarding_completed, false) AND NOT coalesce(OLD.onboarding_completed, false))
+     AND NEW.group_id IS NOT DISTINCT FROM OLD.group_id
+     AND NOT (OLD.deleted_at IS NOT NULL AND NEW.deleted_at IS NULL) THEN
+    RETURN NEW;
+  END IF;
+
+  -- Deux comptes qui terminent en meme temps avec le meme nom: le second
+  -- attend la fin du premier, puis le voit etabli.
+  PERFORM pg_advisory_xact_lock(hashtext('tenant_name:' || lower(btrim(NEW.name))));
+
   IF EXISTS (
     SELECT 1
     FROM tenants t
@@ -2002,7 +2104,10 @@ DECLARE
 BEGIN
   PERFORM pg_advisory_xact_lock(hashtext('venue_cap:' || NEW.tenant_id::text));
 
-  IF NOT (NEW.is_active = true AND (TG_OP = 'INSERT' OR OLD.is_active = false)) THEN
+  -- B135 (2): un etablissement actif qui CHANGE de restaurant compte aussi
+  -- pour le plafond du restaurant qui le recoit.
+  IF NOT (NEW.is_active = true AND (TG_OP = 'INSERT' OR OLD.is_active = false
+          OR NEW.tenant_id IS DISTINCT FROM OLD.tenant_id)) THEN
     RETURN NEW;
   END IF;
 
@@ -2107,6 +2212,82 @@ $$;
 
 
 ALTER FUNCTION "public"."exiger_registre_pour_paid"() OWNER TO "postgres";
+
+--
+-- Name: exiger_registre_rembourse_pour_annuler(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION "public"."exiger_registre_rembourse_pour_annuler"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_status text;
+  v_payment_status text;
+  v_total bigint;
+  v_tip bigint;
+  v_tenant uuid;
+  v_du numeric;
+  v_net numeric;
+BEGIN
+  -- Lu a la validation de la transaction, pas au moment de l'ecriture.
+  IF current_user NOT IN ('authenticated', 'anon') THEN
+    RETURN NULL;
+  END IF;
+
+  -- Etat COURANT: si la meme transaction a fait repartir la commande d'un
+  -- autre statut, il n'y a plus d'annulation a juger.
+  SELECT o.status, o.payment_status, o.total, o.tip_amount, o.tenant_id
+    INTO v_status, v_payment_status, v_total, v_tip, v_tenant
+    FROM public.orders o
+   WHERE o.id = NEW.id;
+
+  IF FOUND THEN
+    IF v_status IS DISTINCT FROM 'cancelled' THEN
+      RETURN NULL;
+    END IF;
+  ELSE
+    -- Ligne invisible ou supprimee dans la meme transaction: on juge sur la
+    -- valeur ecrite. Ferme par defaut.
+    v_payment_status := NEW.payment_status;
+    v_total := NEW.total;
+    v_tip := NEW.tip_amount;
+    v_tenant := NEW.tenant_id;
+  END IF;
+
+  v_du := coalesce(v_total, 0) + coalesce(v_tip, 0);
+
+  -- Meme calcul que exiger_registre_pour_paid (20261124100000).
+  SELECT coalesce(sum(CASE WHEN p.status = 'refunded' THEN -p.amount
+                           WHEN p.status = 'completed' THEN p.amount
+                           ELSE 0 END), 0)
+    INTO v_net
+    FROM public.payments p
+   WHERE p.order_id = NEW.id
+     AND p.tenant_id = v_tenant;
+
+  -- Regle 1: commande reglee. Il faut un remboursement, quel que soit le role.
+  IF v_payment_status = 'paid' OR v_net >= greatest(v_du, 1) THEN
+    RAISE EXCEPTION
+      'Une commande payee ne s''annule pas: il faut d''abord la rembourser'
+      USING ERRCODE = '42501',
+            HINT = 'orders_annulation_exige_remboursement';
+  END IF;
+
+  -- Regle 2: de l'argent reste en caisse. Decision de l'autorite sur l'argent.
+  IF v_net > 0 AND NOT public.has_tenant_money_permission(v_tenant) THEN
+    RAISE EXCEPTION
+      'Annuler une commande dont l''argent est encore en caisse exige l''autorite sur l''argent'
+      USING ERRCODE = '42501',
+            HINT = 'orders_annulation_exige_autorite_argent';
+  END IF;
+
+  RETURN NULL;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."exiger_registre_rembourse_pour_annuler"() OWNER TO "postgres";
 
 --
 -- Name: expire_stale_payment_sessions(integer); Type: FUNCTION; Schema: public; Owner: postgres
@@ -2448,31 +2629,6 @@ $$;
 ALTER FUNCTION "public"."get_co_ordered_items"("p_tenant_id" "uuid", "p_cart_ids" "uuid"[], "p_limit" integer) OWNER TO "postgres";
 
 --
--- Name: get_daily_comps("uuid", timestamp with time zone, timestamp with time zone); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION "public"."get_daily_comps"("p_tenant_id" "uuid", "p_start_date" timestamp with time zone, "p_end_date" timestamp with time zone) RETURNS TABLE("day" "date", "comp_total" bigint, "comp_count" bigint)
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-BEGIN
-  PERFORM public.assert_tenant_member(p_tenant_id);
-  RETURN QUERY
-  SELECT DATE(o.comped_at) AS day,
-         COALESCE(SUM(o.comp_amount),0)::bigint AS comp_total,
-         COUNT(o.id)::bigint AS comp_count
-  FROM orders o
-  WHERE o.tenant_id = p_tenant_id
-    AND o.is_comp = true
-    AND o.comped_at >= p_start_date AND o.comped_at <= p_end_date
-  GROUP BY DATE(o.comped_at)
-  ORDER BY day ASC;
-END; $$;
-
-
-ALTER FUNCTION "public"."get_daily_comps"("p_tenant_id" "uuid", "p_start_date" timestamp with time zone, "p_end_date" timestamp with time zone) OWNER TO "postgres";
-
---
 -- Name: get_daily_revenue("uuid", timestamp with time zone, timestamp with time zone, "text"); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2626,7 +2782,7 @@ CREATE FUNCTION "public"."get_losses_by_reason"("p_tenant_id" "uuid", "p_start" 
     SET "search_path" TO 'public'
     AS $$
 BEGIN
-  PERFORM public.assert_tenant_member(p_tenant_id);
+  PERFORM public.assert_inventory_view(p_tenant_id);
   RETURN QUERY
   SELECT
     sm.reason_code,
@@ -2649,6 +2805,24 @@ $$;
 ALTER FUNCTION "public"."get_losses_by_reason"("p_tenant_id" "uuid", "p_start" timestamp with time zone, "p_end" timestamp with time zone) OWNER TO "postgres";
 
 --
+-- Name: get_my_inventory_tenant_ids(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION "public"."get_my_inventory_tenant_ids"() RETURNS "uuid"[]
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'pg_temp'
+    AS $$
+  SELECT COALESCE(array_agg(DISTINCT au.tenant_id), '{}')
+  FROM public.admin_users au
+  WHERE au.user_id = (SELECT auth.uid())
+    AND (public.has_tenant_write_permission(au.tenant_id, 'inventory.view')
+         OR public.has_tenant_write_permission(au.tenant_id, 'inventory.edit'));
+$$;
+
+
+ALTER FUNCTION "public"."get_my_inventory_tenant_ids"() OWNER TO "postgres";
+
+--
 -- Name: get_my_tenant_ids(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2660,6 +2834,7 @@ CREATE FUNCTION "public"."get_my_tenant_ids"() RETURNS SETOF "uuid"
   from admin_users
   where user_id = auth.uid()
     and coalesce(is_active, true) = true
+    and public.mfa_satisfait()
 $$;
 
 
@@ -2677,6 +2852,7 @@ CREATE FUNCTION "public"."get_my_tenant_ids_array"() RETURNS "uuid"[]
   from admin_users
   where user_id = auth.uid()
     and coalesce(is_active, true) = true
+    and public.mfa_satisfait()
 $$;
 
 
@@ -3094,7 +3270,7 @@ CREATE FUNCTION "public"."get_stock_movements_page"("p_tenant_id" "uuid", "p_lim
     SET "search_path" TO 'public'
     AS $$
 BEGIN
-  PERFORM public.assert_tenant_member(p_tenant_id);
+  PERFORM public.assert_inventory_view(p_tenant_id);
   RETURN QUERY
   SELECT
     sm.id, sm.tenant_id, sm.ingredient_id, sm.movement_type, sm.quantity,
@@ -3132,7 +3308,7 @@ CREATE FUNCTION "public"."get_stock_status"("p_tenant_id" "uuid") RETURNS TABLE(
     SET "search_path" TO 'public'
     AS $$
 BEGIN
-  PERFORM public.assert_tenant_member(p_tenant_id);
+  PERFORM public.assert_inventory_view(p_tenant_id);
   RETURN QUERY
   SELECT
     i.id, i.name, i.unit, i.current_stock, i.min_stock_alert,
@@ -3493,7 +3669,7 @@ CREATE FUNCTION "public"."has_tenant_write_permission"("p_tenant" "uuid", "p_per
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public', 'pg_temp'
     AS $$
-  SELECT EXISTS (
+  SELECT public.mfa_satisfait() AND EXISTS (
     SELECT 1
     FROM public.admin_users au
     LEFT JOIN public.role_permissions rp
@@ -3524,6 +3700,10 @@ CREATE FUNCTION "public"."has_tenant_write_permission"("p_tenant" "uuid", "p_per
                       THEN au.role = ANY (ARRAY['admin', 'manager'])
                     WHEN 'inventory.edit'
                       THEN au.role = ANY (ARRAY['admin', 'manager'])
+                    -- B127: DEFAULT_PERMISSIONS donne aussi la lecture du stock
+                    -- au chef (permission.types.ts), pas au caissier ni au serveur.
+                    WHEN 'inventory.view'
+                      THEN au.role = ANY (ARRAY['admin', 'manager', 'chef'])
                     ELSE au.role = ANY (ARRAY['admin', 'manager'])
                   END
            END
@@ -3535,12 +3715,12 @@ $$;
 ALTER FUNCTION "public"."has_tenant_write_permission"("p_tenant" "uuid", "p_perm" "text") OWNER TO "postgres";
 
 --
--- Name: import_recipes_tx("uuid", "jsonb"); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: import_recipes_tx("uuid", "jsonb", "jsonb"); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION "public"."import_recipes_tx"("p_tenant_id" "uuid", "p_rows" "jsonb") RETURNS "jsonb"
+CREATE FUNCTION "public"."import_recipes_tx"("p_tenant_id" "uuid", "p_rows" "jsonb", "p_removals" "jsonb" DEFAULT '[]'::"jsonb") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
+    SET "search_path" TO ''
     AS $$
 DECLARE
   v_row jsonb;
@@ -3554,8 +3734,13 @@ DECLARE
   v_recipes_created int := 0;
   v_recipes_updated int := 0;
   v_ingredients_created int := 0;
+  v_recipes_removed int := 0;
 BEGIN
   PERFORM public.assert_inventory_edit(p_tenant_id);
+
+  IF p_removals IS NOT NULL AND jsonb_typeof(p_removals) <> 'array' THEN
+    RAISE EXCEPTION 'INVALID_REMOVALS' USING ERRCODE = '22023';
+  END IF;
 
   FOR v_row IN SELECT * FROM jsonb_array_elements(COALESCE(p_rows, '[]'::jsonb))
   LOOP
@@ -3606,16 +3791,26 @@ BEGIN
     END IF;
   END LOOP;
 
+  -- Audit B84: retraits dans la meme transaction, filtres par restaurant.
+  DELETE FROM public.recipes r
+   USING jsonb_to_recordset(COALESCE(p_removals, '[]'::jsonb))
+         AS x(menu_item_id uuid, ingredient_id uuid)
+   WHERE r.tenant_id = p_tenant_id
+     AND r.menu_item_id = x.menu_item_id
+     AND r.ingredient_id = x.ingredient_id;
+  GET DIAGNOSTICS v_recipes_removed = ROW_COUNT;
+
   RETURN jsonb_build_object(
     'recipes_created', v_recipes_created,
     'recipes_updated', v_recipes_updated,
-    'ingredients_created', v_ingredients_created
+    'ingredients_created', v_ingredients_created,
+    'recipes_removed', v_recipes_removed
   );
 END;
 $$;
 
 
-ALTER FUNCTION "public"."import_recipes_tx"("p_tenant_id" "uuid", "p_rows" "jsonb") OWNER TO "postgres";
+ALTER FUNCTION "public"."import_recipes_tx"("p_tenant_id" "uuid", "p_rows" "jsonb", "p_removals" "jsonb") OWNER TO "postgres";
 
 --
 -- Name: increment_login_count("uuid"); Type: FUNCTION; Schema: public; Owner: postgres
@@ -3710,7 +3905,7 @@ CREATE FUNCTION "public"."is_super_admin"() RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
-  SELECT EXISTS (
+  SELECT public.mfa_satisfait() AND EXISTS (
     SELECT 1 FROM admin_users
     WHERE user_id = auth.uid()
       AND (is_super_admin = true OR role = 'super_admin')
@@ -3764,6 +3959,32 @@ $$;
 ALTER FUNCTION "public"."is_tenant_name_taken"("p_name" "text") OWNER TO "postgres";
 
 --
+-- Name: item_suggestions_modifiee_devient_manuelle(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION "public"."item_suggestions_modifiee_devient_manuelle"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO ''
+    AS $$
+BEGIN
+  IF OLD.source = 'auto' AND (
+       NEW.menu_item_id IS DISTINCT FROM OLD.menu_item_id
+    OR NEW.suggested_item_id IS DISTINCT FROM OLD.suggested_item_id
+    OR NEW.suggestion_type IS DISTINCT FROM OLD.suggestion_type
+    OR NEW.description IS DISTINCT FROM OLD.description
+    OR NEW.display_order IS DISTINCT FROM OLD.display_order
+    OR NEW.is_active IS DISTINCT FROM OLD.is_active
+  ) THEN
+    NEW.source := 'manual';
+  END IF;
+  RETURN NEW;
+END
+$$;
+
+
+ALTER FUNCTION "public"."item_suggestions_modifiee_devient_manuelle"() OWNER TO "postgres";
+
+--
 -- Name: marquer_tables_initialisees(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -3791,6 +4012,26 @@ $$;
 
 
 ALTER FUNCTION "public"."marquer_tables_initialisees"() OWNER TO "postgres";
+
+--
+-- Name: menu_items_masquage_manuel(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION "public"."menu_items_masquage_manuel"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF current_user IN ('authenticated', 'anon', 'service_role')
+     AND NEW.is_available IS DISTINCT FROM OLD.is_available THEN
+    NEW.masque_par_stock := false;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."menu_items_masquage_manuel"() OWNER TO "postgres";
 
 --
 -- Name: menus_same_tenant_links(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -3895,6 +4136,33 @@ $$;
 
 
 ALTER FUNCTION "public"."menus_tenant_move_keeps_children"() OWNER TO "postgres";
+
+--
+-- Name: mfa_satisfait(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION "public"."mfa_satisfait"() RETURNS boolean
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+  SELECT coalesce((SELECT auth.jwt() ->> 'aal'), 'aal1') = 'aal2'
+      OR NOT EXISTS (
+        SELECT 1
+        FROM auth.mfa_factors f
+        WHERE f.user_id = (SELECT auth.uid())
+          AND f.status = 'verified'
+      );
+$$;
+
+
+ALTER FUNCTION "public"."mfa_satisfait"() OWNER TO "postgres";
+
+--
+-- Name: FUNCTION "mfa_satisfait"(); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION "public"."mfa_satisfait"() IS 'Vrai si le compte appelant n a aucun facteur MFA verifie, ou si son jeton est aal2. Ajoutee aux fonctions de droits communes (double authentification exigee par la base).';
+
 
 --
 -- Name: mon_restaurant_a_le_stock("uuid"); Type: FUNCTION; Schema: public; Owner: postgres
@@ -4379,6 +4647,17 @@ BEGIN
     RAISE EXCEPTION 'Destination table number is required' USING ERRCODE = 'check_violation';
   END IF;
 
+  -- B133: la destination doit etre une table de CE restaurant (meme valeur
+  -- que l'ecran envoie: `table_number`). Sans ce controle, une commande
+  -- partait vers une etiquette inexistante et ouvrait une session fantome.
+  IF NOT EXISTS (
+    SELECT 1 FROM tables t
+     WHERE t.tenant_id = p_tenant_id
+       AND t.table_number = p_new_table_number
+  ) THEN
+    RAISE EXCEPTION 'Destination table not found' USING ERRCODE = 'no_data_found';
+  END IF;
+
   -- No-op: already on the destination table.
   IF v_old_table_number IS NOT DISTINCT FROM p_new_table_number THEN
     RETURN;
@@ -4518,7 +4797,11 @@ BEGIN
     RAISE EXCEPTION 'INGREDIENT_NOT_FOUND' USING ERRCODE = 'P0002';
   END IF;
 
-  v_after := GREATEST(0, v_before - p_quantity);
+  -- B142: la perte porte la quantite DECLAREE et le stock descend d'autant,
+  -- y compris sous zero, comme le fait deja la vente (20261112150000). Une
+  -- perte ne fait jamais monter le stock et ne disparait plus du rapport des
+  -- pertes (decision de l'orchestrateur, contre-audit 1).
+  v_after := v_before - p_quantity;
 
   UPDATE public.ingredients
   SET current_stock = v_after, updated_at = now()
@@ -4704,9 +4987,33 @@ CREATE FUNCTION "public"."refuser_argent_sans_orders_pay"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     SET "search_path" TO 'public', 'pg_temp'
     AS $$
+DECLARE
+  -- B138: la commande est-elle offerte ou remboursee, avant et apres.
+  v_argent_avant boolean :=
+    coalesce(OLD.payment_status, '') IN ('comp', 'refunded') OR coalesce(OLD.is_comp, false);
+  v_argent_apres boolean :=
+    coalesce(NEW.payment_status, '') IN ('comp', 'refunded') OR coalesce(NEW.is_comp, false);
+  v_hors_cuisine boolean;
 BEGIN
   IF current_user NOT IN ('authenticated', 'anon') THEN
     RETURN NEW;
+  END IF;
+
+  -- B144: une commande annulee ne revient pas. L'annulation a rendu le stock et
+  -- le coupon; la sortir de `cancelled` ne les reprend pas. Aucun client, quel
+  -- que soit son droit (l'application ne fait jamais cette transition).
+  IF OLD.status = 'cancelled' AND NEW.status IS DISTINCT FROM 'cancelled' THEN
+    RAISE EXCEPTION
+      'Une commande annulee ne peut pas revenir: creez une nouvelle commande'
+      USING ERRCODE = '42501';
+  END IF;
+
+  -- B68: une commande payee ne s'annule pas; elle se rembourse.
+  IF OLD.payment_status = 'paid'
+     AND NEW.status = 'cancelled' AND OLD.status IS DISTINCT FROM 'cancelled' THEN
+    RAISE EXCEPTION
+      'Une commande payee ne peut pas etre annulee: utilisez un remboursement'
+      USING ERRCODE = '42501';
   END IF;
 
   -- LISTE BLANCHE, comme la section 10 pour `order_items`. Sans `orders.pay`,
@@ -4721,10 +5028,13 @@ BEGIN
   -- Les seuls UPDATE applicatifs sous jeton d'employe sans `orders.pay`
   -- (order-lifecycle: status + served_at; assignment.service: server_id)
   -- n'ecrivent que ces colonnes.
-  IF (
+  v_hors_cuisine :=
        (to_jsonb(NEW) - ARRAY['status', 'served_at', 'server_id', 'updated_at'])
          IS DISTINCT FROM
-       (to_jsonb(OLD) - ARRAY['status', 'served_at', 'server_id', 'updated_at'])
+       (to_jsonb(OLD) - ARRAY['status', 'served_at', 'server_id', 'updated_at']);
+
+  IF (
+       v_hors_cuisine
        -- Annuler une note impayee apres avoir pris l'argent est le
        -- detournement classique: l'annulation reste une operation d'argent.
        OR (NEW.status = 'cancelled' AND OLD.status IS DISTINCT FROM 'cancelled')
@@ -4734,6 +5044,23 @@ BEGIN
   THEN
     RAISE EXCEPTION
       'Encaisser, annuler, changer la note d''une table ou mettre sur une ardoise exige le droit d''encaisser'
+      USING ERRCODE = '42501';
+  END IF;
+
+  -- B138: offrir ou rembourser exige l'autorite sur l'argent (regle reprise de
+  -- l'ancien WITH CHECK de la politique UPDATE). Sur une commande deja offerte
+  -- ou remboursee, seul le suivi de cuisine reste libre: toute autre colonne,
+  -- ou l'annulation, exige aussi cette autorite.
+  IF (v_argent_avant OR v_argent_apres)
+     AND (
+       NOT v_argent_avant
+       OR v_hors_cuisine
+       OR (NEW.status = 'cancelled' AND OLD.status IS DISTINCT FROM 'cancelled')
+     )
+     AND NOT public.has_tenant_money_permission(OLD.tenant_id)
+  THEN
+    RAISE EXCEPTION
+      'Offrir, rembourser ou modifier une commande offerte ou remboursee exige l''autorite sur l''argent'
       USING ERRCODE = '42501';
   END IF;
 
@@ -4785,9 +5112,9 @@ CREATE FUNCTION "public"."refuser_reecriture_montants_commande"() RETURNS "trigg
     AS $$
 DECLARE
   -- Ordre de REGLEMENT, pour distinguer un progres d'un retour en arriere.
-  -- `comp` et `refunded` sont au-dela: ce sont des etats terminaux, et la
-  -- policy UPDATE de 20261107190000 exige deja l'autorite argent pour produire
-  -- une ligne qui les porte.
+  -- `comp` et `refunded` sont au-dela: ce sont des etats terminaux, et le
+  -- declencheur `refuser_argent_sans_orders_pay` (20261124150000) exige
+  -- l'autorite argent pour rendre une commande offerte ou remboursee.
   rang_ancien integer;
   rang_nouveau integer;
 BEGIN
@@ -4826,6 +5153,19 @@ BEGIN
   THEN
     RAISE EXCEPTION
       'Les montants d''une commande ne se reecrivent pas apres sa creation'
+      USING ERRCODE = '42501';
+  END IF;
+
+  -- Contre-audit 2 du lot B2b-1 (B67): le coupon d'une commande et la trace de
+  -- son rendu ne se reecrivent pas apres la creation. Le coupon est rendu par
+  -- `rendre_coupon_commande` (service_role) a partir de CETTE colonne: un
+  -- employe qui la reecrivait faisait rendre un coupon de son choix, y compris
+  -- d'un autre restaurant.
+  IF NEW.coupon_id IS DISTINCT FROM OLD.coupon_id
+     OR NEW.coupon_rendu_at IS DISTINCT FROM OLD.coupon_rendu_at
+  THEN
+    RAISE EXCEPTION
+      'Le coupon d''une commande ne se reecrit pas apres sa creation'
       USING ERRCODE = '42501';
   END IF;
 
@@ -5038,6 +5378,77 @@ $$;
 ALTER FUNCTION "public"."refuser_reecriture_montants_commande"() OWNER TO "postgres";
 
 --
+-- Name: regenerate_auto_suggestions("uuid", "jsonb"); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION "public"."regenerate_auto_suggestions"("p_tenant_id" "uuid", "p_rows" "jsonb") RETURNS integer
+    LANGUAGE "plpgsql"
+    SET "search_path" TO ''
+    AS $$
+DECLARE
+  v_count integer;
+BEGIN
+  DELETE FROM public.item_suggestions
+   WHERE tenant_id = p_tenant_id
+     AND source = 'auto';
+
+  INSERT INTO public.item_suggestions (
+    tenant_id, menu_item_id, suggested_item_id, suggestion_type,
+    description, display_order, is_active, source
+  )
+  SELECT p_tenant_id, r.menu_item_id, r.suggested_item_id, r.suggestion_type,
+         NULL, COALESCE(r.display_order, 0), true, 'auto'
+    FROM jsonb_to_recordset(COALESCE(p_rows, '[]'::jsonb))
+         AS r(menu_item_id uuid, suggested_item_id uuid, suggestion_type text, display_order integer)
+   WHERE NOT EXISTS (
+     SELECT 1 FROM public.item_suggestions s
+      WHERE s.tenant_id = p_tenant_id
+        AND s.source = 'manual'
+        AND s.menu_item_id = r.menu_item_id
+        AND s.suggested_item_id = r.suggested_item_id
+   );
+
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  RETURN v_count;
+END
+$$;
+
+
+ALTER FUNCTION "public"."regenerate_auto_suggestions"("p_tenant_id" "uuid", "p_rows" "jsonb") OWNER TO "postgres";
+
+--
+-- Name: registre_stock_garde_ingredients(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION "public"."registre_stock_garde_ingredients"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  -- Seule une requete directe d'un client est visee. Dans une fonction
+  -- SECURITY DEFINER du registre, current_user est le proprietaire (postgres).
+  IF current_user NOT IN ('authenticated', 'anon') THEN
+    RETURN NEW;
+  END IF;
+
+  IF TG_OP = 'INSERT' AND NEW.current_stock IS DISTINCT FROM 0 THEN
+    RAISE EXCEPTION 'current_stock: un produit nait a 0, son stock passe par les fonctions du registre'
+      USING ERRCODE = '42501', HINT = 'stock_par_registre';
+  END IF;
+
+  IF TG_OP = 'UPDATE' AND NEW.current_stock IS DISTINCT FROM OLD.current_stock THEN
+    RAISE EXCEPTION 'current_stock ne change que par les fonctions du registre de stock'
+      USING ERRCODE = '42501', HINT = 'stock_par_registre';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."registre_stock_garde_ingredients"() OWNER TO "postgres";
+
+--
 -- Name: reminder_coach_items("uuid", timestamp with time zone, timestamp with time zone, timestamp with time zone); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -5116,6 +5527,129 @@ $$;
 ALTER FUNCTION "public"."reminder_rule_stats"("p_since" timestamp with time zone, "p_resolved_within_min" integer) OWNER TO "postgres";
 
 --
+-- Name: rendre_coupon_commande("uuid", "uuid"); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION "public"."rendre_coupon_commande"("p_order_id" "uuid", "p_tenant_id" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_coupon uuid;
+  v_status text;
+  v_rendu timestamptz;
+BEGIN
+  SELECT o.coupon_id, o.status, o.coupon_rendu_at
+    INTO v_coupon, v_status, v_rendu
+    FROM public.orders o
+   WHERE o.id = p_order_id AND o.tenant_id = p_tenant_id
+   FOR UPDATE;
+
+  IF NOT FOUND OR v_status IS DISTINCT FROM 'cancelled'
+     OR v_coupon IS NULL OR v_rendu IS NOT NULL THEN
+    RETURN false;
+  END IF;
+
+  -- Le coupon doit etre celui du MEME restaurant.
+  UPDATE public.coupons c
+     SET current_uses = GREATEST(c.current_uses - 1, 0), updated_at = now()
+   WHERE c.id = v_coupon AND c.tenant_id = p_tenant_id;
+  IF NOT FOUND THEN
+    RETURN false;
+  END IF;
+
+  UPDATE public.orders SET coupon_rendu_at = now()
+   WHERE id = p_order_id AND tenant_id = p_tenant_id;
+  RETURN true;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."rendre_coupon_commande"("p_order_id" "uuid", "p_tenant_id" "uuid") OWNER TO "postgres";
+
+--
+-- Name: reorder_categories("uuid", "jsonb"); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION "public"."reorder_categories"("p_tenant_id" "uuid", "p_updates" "jsonb") RETURNS integer
+    LANGUAGE "plpgsql"
+    SET "search_path" TO ''
+    AS $$
+DECLARE
+  v_expected integer;
+  v_count integer;
+BEGIN
+  IF p_tenant_id IS NULL OR p_updates IS NULL OR jsonb_typeof(p_updates) <> 'array' THEN
+    RAISE EXCEPTION 'reorder_invalid_input' USING ERRCODE = '22023';
+  END IF;
+
+  v_expected := jsonb_array_length(p_updates);
+  IF v_expected = 0 THEN
+    RETURN 0;
+  END IF;
+  IF v_expected > 500 THEN
+    RAISE EXCEPTION 'reorder_too_many_rows' USING ERRCODE = '22023';
+  END IF;
+
+  UPDATE public.categories c
+     SET display_order = u.display_order
+    FROM jsonb_to_recordset(p_updates) AS u(id uuid, display_order integer)
+   WHERE c.id = u.id
+     AND c.tenant_id = p_tenant_id;
+
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  IF v_count <> v_expected THEN
+    RAISE EXCEPTION 'reorder_rows_missing' USING ERRCODE = 'P0002';
+  END IF;
+  RETURN v_count;
+END
+$$;
+
+
+ALTER FUNCTION "public"."reorder_categories"("p_tenant_id" "uuid", "p_updates" "jsonb") OWNER TO "postgres";
+
+--
+-- Name: reorder_menus("uuid", "uuid"[]); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION "public"."reorder_menus"("p_tenant_id" "uuid", "p_ordered_ids" "uuid"[]) RETURNS integer
+    LANGUAGE "plpgsql"
+    SET "search_path" TO ''
+    AS $$
+DECLARE
+  v_expected integer;
+  v_count integer;
+BEGIN
+  IF p_tenant_id IS NULL OR p_ordered_ids IS NULL THEN
+    RAISE EXCEPTION 'reorder_invalid_input' USING ERRCODE = '22023';
+  END IF;
+
+  v_expected := COALESCE(cardinality(p_ordered_ids), 0);
+  IF v_expected = 0 THEN
+    RETURN 0;
+  END IF;
+  IF v_expected > 500 THEN
+    RAISE EXCEPTION 'reorder_too_many_rows' USING ERRCODE = '22023';
+  END IF;
+
+  UPDATE public.menus m
+     SET display_order = (o.ord - 1)::integer
+    FROM unnest(p_ordered_ids) WITH ORDINALITY AS o(id, ord)
+   WHERE m.id = o.id
+     AND m.tenant_id = p_tenant_id;
+
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  IF v_count <> v_expected THEN
+    RAISE EXCEPTION 'reorder_rows_missing' USING ERRCODE = 'P0002';
+  END IF;
+  RETURN v_count;
+END
+$$;
+
+
+ALTER FUNCTION "public"."reorder_menus"("p_tenant_id" "uuid", "p_ordered_ids" "uuid"[]) OWNER TO "postgres";
+
+--
 -- Name: request_account_deletion(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -5154,6 +5688,56 @@ $$;
 
 
 ALTER FUNCTION "public"."request_account_deletion"() OWNER TO "postgres";
+
+--
+-- Name: reserver_alerte_nouvelle_connexion(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION "public"."reserver_alerte_nouvelle_connexion"() RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_reserve boolean;
+BEGIN
+  IF v_uid IS NULL THEN
+    RETURN false;
+  END IF;
+
+  -- Premiere connexion du compte depuis la mise en service de l'alerte: aucun
+  -- appareil n'est encore connu (le cookie n'existait pas), on enregistre sans
+  -- alerter. Sans cette regle, CHAQUE utilisateur existant recevait une alerte
+  -- "nouvelle connexion" a sa premiere connexion apres le deploiement.
+  IF NOT EXISTS (
+    SELECT 1 FROM public.alertes_nouvelle_connexion WHERE user_id = v_uid
+  ) THEN
+    INSERT INTO public.alertes_nouvelle_connexion (user_id, derniere_alerte_at)
+    VALUES (v_uid, now() - interval '2 hours')
+    ON CONFLICT (user_id) DO NOTHING;
+    RETURN false;
+  END IF;
+
+  INSERT INTO public.alertes_nouvelle_connexion AS a (user_id, derniere_alerte_at)
+  VALUES (v_uid, now())
+  ON CONFLICT (user_id) DO UPDATE
+    SET derniere_alerte_at = EXCLUDED.derniere_alerte_at
+    WHERE a.derniere_alerte_at < now() - interval '1 hour'
+  RETURNING true INTO v_reserve;
+
+  RETURN coalesce(v_reserve, false);
+END;
+$$;
+
+
+ALTER FUNCTION "public"."reserver_alerte_nouvelle_connexion"() OWNER TO "postgres";
+
+--
+-- Name: FUNCTION "reserver_alerte_nouvelle_connexion"(); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION "public"."reserver_alerte_nouvelle_connexion"() IS 'Reserve, pour le compte appelant (auth.uid()), le droit d envoyer une alerte de nouvelle connexion: false a la toute premiere connexion (amorcage, aucun appareil connu), puis true au plus une fois par heure.';
+
 
 --
 -- Name: reset_tenant_data("uuid", "text"); Type: FUNCTION; Schema: public; Owner: postgres
@@ -5208,9 +5792,23 @@ CREATE FUNCTION "public"."reset_tenant_data"("p_tenant_id" "uuid", "p_reset_type
       WITH del_orders AS (
         DELETE FROM orders WHERE tenant_id = p_tenant_id RETURNING 1
       ) SELECT count(*) INTO orders_deleted FROM del_orders;
+      -- B76: la table s'appelle stock_movements (inventory_movements n'existe
+      -- pas: le type 'all' echouait toujours).
       WITH del_mov AS (
-        DELETE FROM inventory_movements WHERE tenant_id = p_tenant_id RETURNING 1
+        DELETE FROM stock_movements WHERE tenant_id = p_tenant_id RETURNING 1
       ) SELECT count(*) INTO movements_deleted FROM del_mov;
+      -- Le registre repart du stock actuel, qui n'est pas efface: une ligne
+      -- d'ouverture par ingredient a stock non nul, pour que registre et stock
+      -- concordent (verify_stock_ledger). Seulement si le restaurant a le
+      -- module Stock: sans lui, le verrou de plan refuse ces lignes, et un
+      -- reconcile_stock_ledger les ecrira le jour ou il le reprend.
+      IF public.tenant_effective_plan(p_tenant_id) IN ('pro', 'business', 'enterprise') THEN
+        INSERT INTO stock_movements (tenant_id, ingredient_id, movement_type, quantity, notes)
+        SELECT i.tenant_id, i.id, 'opening', i.current_stock, 'Remise a zero: stock de depart'
+          FROM ingredients i
+         WHERE i.tenant_id = p_tenant_id
+           AND i.current_stock <> 0;
+      END IF;
       WITH upd_coupons AS (
         UPDATE coupons SET current_uses = 0 WHERE tenant_id = p_tenant_id RETURNING 1
       ) SELECT count(*) INTO coupons_reset FROM upd_coupons;
@@ -5247,6 +5845,12 @@ DECLARE
   v_deltas numeric[] := '{}';
   v_i INT;
 BEGIN
+  -- B123: verrou par commande, comme destock_order. Deux annulations
+  -- simultanees lisaient toutes deux "pas encore de order_restock" avant que
+  -- la premiere ne valide, et la seconde recreditait une deuxieme fois. Avec
+  -- le verrou, la seconde attend la fin de la premiere puis voit ses lignes.
+  PERFORM pg_advisory_xact_lock(hashtext('restock_order:' || p_order_id::text));
+
   FOR v_mov IN
     SELECT sm.ingredient_id, SUM(sm.quantity) AS net_destocked
     FROM public.stock_movements sm
@@ -5464,10 +6068,14 @@ BEGIN
   FROM jsonb_array_elements(COALESCE(p_lines, '[]'::jsonb)) AS line;
 
   UPDATE public.menu_items mi
-  SET is_available = true
+  SET is_available = true,
+      masque_par_stock = false
   WHERE mi.id = p_menu_item_id
     AND mi.tenant_id = p_tenant_id
     AND mi.is_available = false
+    -- B143: seul un plat masque PAR LE STOCK revient a la carte; un plat
+    -- retire a la main par le restaurateur reste retire.
+    AND mi.masque_par_stock
     AND NOT EXISTS (
       SELECT 1
       FROM public.recipes r
@@ -5541,7 +6149,9 @@ BEGIN
   -- de la carte.
   IF p_stock_after <= 0 AND p_stock_before > 0 THEN
     UPDATE public.menu_items
-    SET is_available = false
+    SET is_available = false,
+        -- B143: la cause est notee, pour ne rallumer que ce que le stock a eteint.
+        masque_par_stock = true
     WHERE tenant_id = p_tenant_id
       AND is_available = true
       AND id IN (
@@ -5555,9 +6165,12 @@ BEGIN
   -- entierement servables.
   IF p_stock_after > 0 AND p_stock_before <= 0 THEN
     UPDATE public.menu_items mi
-    SET is_available = true
+    SET is_available = true,
+        masque_par_stock = false
     WHERE mi.tenant_id = p_tenant_id
       AND mi.is_available = false
+      -- B143: jamais un plat que le restaurateur a retire lui-meme.
+      AND mi.masque_par_stock
       AND EXISTS (
         SELECT 1 FROM public.recipes r
         WHERE r.menu_item_id = mi.id
@@ -5580,6 +6193,41 @@ $$;
 
 
 ALTER FUNCTION "public"."sync_menu_availability"("p_tenant_id" "uuid", "p_ingredient_id" "uuid", "p_stock_before" numeric, "p_stock_after" numeric) OWNER TO "postgres";
+
+--
+-- Name: tables_nom_pas_numero_autre(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION "public"."tables_nom_pas_numero_autre"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM public.tables t
+     WHERE t.tenant_id = NEW.tenant_id
+       AND t.id <> NEW.id
+       AND t.table_number = NEW.display_name
+  ) THEN
+    RAISE EXCEPTION 'table_display_name_is_other_table_number: %', NEW.display_name
+      USING ERRCODE = '23505';
+  END IF;
+  -- Sens inverse: un numero egal au nom d'une autre table.
+  IF EXISTS (
+    SELECT 1 FROM public.tables t
+     WHERE t.tenant_id = NEW.tenant_id
+       AND t.id <> NEW.id
+       AND t.display_name = NEW.table_number
+  ) THEN
+    RAISE EXCEPTION 'table_number_is_other_table_display_name: %', NEW.table_number
+      USING ERRCODE = '23505';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."tables_nom_pas_numero_autre"() OWNER TO "postgres";
 
 --
 -- Name: tenant_effective_plan("uuid"); Type: FUNCTION; Schema: public; Owner: postgres
@@ -5774,7 +6422,7 @@ CREATE FUNCTION "public"."verify_stock_ledger"("p_tenant_id" "uuid") RETURNS TAB
     SET "search_path" TO 'public'
     AS $$
 BEGIN
-  PERFORM public.assert_tenant_member(p_tenant_id);
+  PERFORM public.assert_inventory_view(p_tenant_id);
   RETURN QUERY
   SELECT
     i.id,
@@ -5846,6 +6494,32 @@ CREATE TABLE "public"."admin_users" (
 ALTER TABLE "public"."admin_users" OWNER TO "postgres";
 
 --
+-- Name: adresses_email_bloquees; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE "public"."adresses_email_bloquees" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "email_hash" "text" NOT NULL,
+    "raison" "text" NOT NULL,
+    "evenement_id" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "adresses_email_bloquees_evenement_check" CHECK ((("evenement_id" IS NULL) OR (("length"("evenement_id") >= 1) AND ("length"("evenement_id") <= 200)))),
+    CONSTRAINT "adresses_email_bloquees_hash_check" CHECK (("email_hash" ~ '^[0-9a-f]{64}$'::"text")),
+    CONSTRAINT "adresses_email_bloquees_raison_check" CHECK (("raison" = ANY (ARRAY['rebond_definitif'::"text", 'plainte'::"text"])))
+);
+
+
+ALTER TABLE "public"."adresses_email_bloquees" OWNER TO "postgres";
+
+--
+-- Name: TABLE "adresses_email_bloquees"; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE "public"."adresses_email_bloquees" IS 'Adresses en rebond definitif ou en plainte (empreinte SHA-256 de l adresse en minuscules). Ecrit et lu par service_role seulement.';
+
+
+--
 -- Name: ads; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -5897,6 +6571,25 @@ CREATE TABLE "public"."ai_photo_credits" (
 
 
 ALTER TABLE "public"."ai_photo_credits" OWNER TO "postgres";
+
+--
+-- Name: alertes_nouvelle_connexion; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE "public"."alertes_nouvelle_connexion" (
+    "user_id" "uuid" NOT NULL,
+    "derniere_alerte_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."alertes_nouvelle_connexion" OWNER TO "postgres";
+
+--
+-- Name: TABLE "alertes_nouvelle_connexion"; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE "public"."alertes_nouvelle_connexion" IS 'Date de la derniere alerte de nouvelle connexion par compte (plafond 1 par heure). Ecrit par reserver_alerte_nouvelle_connexion() seulement.';
+
 
 --
 -- Name: announcements; Type: TABLE; Schema: public; Owner: postgres
@@ -6053,6 +6746,58 @@ CREATE TABLE "public"."dish_photo_drafts" (
 
 
 ALTER TABLE "public"."dish_photo_drafts" OWNER TO "postgres";
+
+--
+-- Name: email_unsubscribes; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE "public"."email_unsubscribes" (
+    "email_normalized" "text" NOT NULL,
+    "unsubscribed_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "email_unsubscribes_normalized_check" CHECK ((("email_normalized" = "lower"("btrim"("email_normalized"))) AND (("char_length"("email_normalized") >= 3) AND ("char_length"("email_normalized") <= 320)) AND (POSITION(('@'::"text") IN ("email_normalized")) > 1)))
+);
+
+
+ALTER TABLE "public"."email_unsubscribes" OWNER TO "postgres";
+
+--
+-- Name: TABLE "email_unsubscribes"; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE "public"."email_unsubscribes" IS 'Adresses desabonnees des relances commerciales (inactivite, fin d essai, premiere et dixieme commande). Ecrite par la route /api/email/unsubscribe (service_role, adresse issue d un jeton verifie), lue avant chaque relance. Jamais lue par un e-mail transactionnel. Aucun acces anon/authenticated.';
+
+
+--
+-- Name: flutterwave_anomalies; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE "public"."flutterwave_anomalies" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "tenant_id" "uuid",
+    "payment_id" "uuid",
+    "flw_transaction_id" bigint NOT NULL,
+    "tx_ref" "text",
+    "kind" "text" NOT NULL,
+    "reason" "text" NOT NULL,
+    "amount" numeric,
+    "currency" "text",
+    "detected_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "resolved_at" timestamp with time zone,
+    "resolution_note" "text",
+    CONSTRAINT "flutterwave_anomalies_amount_check" CHECK ((("amount" IS NULL) OR ("amount" >= (0)::numeric))),
+    CONSTRAINT "flutterwave_anomalies_kind_check" CHECK (("kind" = ANY (ARRAY['refund_due'::"text", 'provider_mismatch'::"text", 'paid_period_not_active'::"text"]))),
+    CONSTRAINT "flutterwave_anomalies_reason_check" CHECK ((("length"("reason") >= 1) AND ("length"("reason") <= 200)))
+);
+
+
+ALTER TABLE "public"."flutterwave_anomalies" OWNER TO "postgres";
+
+--
+-- Name: TABLE "flutterwave_anomalies"; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE "public"."flutterwave_anomalies" IS 'Anomalies d encaissement Flutterwave (remboursements dus, ecarts avec le prestataire). Ecrit par service_role, lu par le super administrateur seulement.';
+
 
 --
 -- Name: flutterwave_payments; Type: TABLE; Schema: public; Owner: postgres
@@ -6250,7 +6995,9 @@ CREATE TABLE "public"."item_suggestions" (
     "display_order" integer DEFAULT 0 NOT NULL,
     "is_active" boolean DEFAULT true NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "source" "text" DEFAULT 'manual'::"text" NOT NULL,
     CONSTRAINT "item_suggestions_check" CHECK (("menu_item_id" <> "suggested_item_id")),
+    CONSTRAINT "item_suggestions_source_check" CHECK (("source" = ANY (ARRAY['manual'::"text", 'auto'::"text"]))),
     CONSTRAINT "item_suggestions_suggestion_type_check" CHECK (("suggestion_type" = ANY (ARRAY['pairing'::"text", 'upsell'::"text", 'alternative'::"text"])))
 );
 
@@ -6291,6 +7038,7 @@ CREATE TABLE "public"."menu_items" (
     "options_title_fr" "text",
     "options_title_en" "text",
     "images" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
+    "masque_par_stock" boolean DEFAULT false NOT NULL,
     CONSTRAINT "menu_items_favorite_count_check" CHECK (("favorite_count" >= 0)),
     CONSTRAINT "menu_items_image_source_check" CHECK (("image_source" = ANY (ARRAY['web'::"text", 'at_food_ios'::"text", 'import'::"text", 'ai_generated'::"text"]))),
     CONSTRAINT "menu_items_price_non_negative" CHECK (("price" >= (0)::numeric)),
@@ -6300,6 +7048,13 @@ CREATE TABLE "public"."menu_items" (
 
 
 ALTER TABLE "public"."menu_items" OWNER TO "postgres";
+
+--
+-- Name: COLUMN "menu_items"."masque_par_stock"; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN "public"."menu_items"."masque_par_stock" IS 'Vrai quand le moteur de stock a masque le plat (rupture). Seuls ces plats reviennent seuls a la carte.';
+
 
 --
 -- Name: menus; Type: TABLE; Schema: public; Owner: postgres
@@ -6555,6 +7310,7 @@ CREATE TABLE "public"."orders" (
     "comp_amount" bigint,
     "house_account_id" "uuid",
     "ready_at" timestamp with time zone,
+    "coupon_rendu_at" timestamp with time zone,
     CONSTRAINT "orders_montants_non_negatifs_check" CHECK ((("total" >= 0) AND ("subtotal" >= 0) AND (COALESCE("discount_amount", (0)::bigint) >= 0) AND (COALESCE("service_charge_amount", (0)::bigint) >= 0) AND (COALESCE("tip_amount", (0)::bigint) >= 0))),
     CONSTRAINT "orders_payment_method_check" CHECK ((("payment_method")::"text" = ANY ((ARRAY['cash'::character varying, 'card'::character varying, 'wave'::character varying, 'orange_money'::character varying, 'mtn_momo'::character varying, 'free_money'::character varying])::"text"[]))),
     CONSTRAINT "orders_payment_status_check" CHECK ((("payment_status")::"text" = ANY ((ARRAY['pending'::character varying, 'paid'::character varying, 'partial'::character varying, 'refunded'::character varying, 'comp'::character varying])::"text"[]))),
@@ -6571,6 +7327,13 @@ ALTER TABLE "public"."orders" OWNER TO "postgres";
 --
 
 COMMENT ON COLUMN "public"."orders"."tip_amount" IS 'Tip/pourboire amount in base currency (XAF)';
+
+
+--
+-- Name: COLUMN "orders"."coupon_rendu_at"; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN "public"."orders"."coupon_rendu_at" IS 'Quand le coupon de cette commande annulee a ete rendu (rendre_coupon_commande). NULL = pas rendu.';
 
 
 --
@@ -6882,12 +7645,21 @@ CREATE TABLE "public"."stock_movements" (
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "supplier_id" "uuid",
     "reason_code" "text",
+    "unit_cost" numeric(12,4),
     CONSTRAINT "stock_movements_movement_type_check" CHECK (("movement_type" = ANY (ARRAY['order_destock'::"text", 'order_restock'::"text", 'manual_add'::"text", 'manual_remove'::"text", 'adjustment'::"text", 'opening'::"text", 'physical_count'::"text", 'loss'::"text", 'transfer_in'::"text", 'transfer_out'::"text"]))),
-    CONSTRAINT "stock_movements_reason_code_check" CHECK ((("reason_code" IS NULL) OR ("reason_code" = ANY (ARRAY['expired'::"text", 'breakage'::"text", 'theft'::"text", 'spillage'::"text", 'prep_waste'::"text", 'recount'::"text", 'reconcile'::"text", 'other'::"text"]))))
+    CONSTRAINT "stock_movements_reason_code_check" CHECK ((("reason_code" IS NULL) OR ("reason_code" = ANY (ARRAY['expired'::"text", 'breakage'::"text", 'theft'::"text", 'spillage'::"text", 'prep_waste'::"text", 'recount'::"text", 'reconcile'::"text", 'other'::"text"])))),
+    CONSTRAINT "stock_movements_unit_cost_positive" CHECK ((("unit_cost" IS NULL) OR ("unit_cost" > (0)::numeric)))
 );
 
 
 ALTER TABLE "public"."stock_movements" OWNER TO "postgres";
+
+--
+-- Name: COLUMN "stock_movements"."unit_cost"; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN "public"."stock_movements"."unit_cost" IS 'Prix d achat par unite de stock saisi a la reception (manual_add). NULL sinon. Sert au cout moyen pondere.';
+
 
 --
 -- Name: stripe_events; Type: TABLE; Schema: public; Owner: postgres
@@ -7284,6 +8056,14 @@ ALTER TABLE ONLY "public"."admin_users"
 
 
 --
+-- Name: adresses_email_bloquees adresses_email_bloquees_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY "public"."adresses_email_bloquees"
+    ADD CONSTRAINT "adresses_email_bloquees_pkey" PRIMARY KEY ("id");
+
+
+--
 -- Name: ads ads_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -7305,6 +8085,14 @@ ALTER TABLE ONLY "public"."ai_credits_ledger"
 
 ALTER TABLE ONLY "public"."ai_photo_credits"
     ADD CONSTRAINT "ai_photo_credits_pkey" PRIMARY KEY ("tenant_id");
+
+
+--
+-- Name: alertes_nouvelle_connexion alertes_nouvelle_connexion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY "public"."alertes_nouvelle_connexion"
+    ADD CONSTRAINT "alertes_nouvelle_connexion_pkey" PRIMARY KEY ("user_id");
 
 
 --
@@ -7377,6 +8165,30 @@ ALTER TABLE ONLY "public"."cron_heartbeats"
 
 ALTER TABLE ONLY "public"."dish_photo_drafts"
     ADD CONSTRAINT "dish_photo_drafts_pkey" PRIMARY KEY ("id");
+
+
+--
+-- Name: email_unsubscribes email_unsubscribes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY "public"."email_unsubscribes"
+    ADD CONSTRAINT "email_unsubscribes_pkey" PRIMARY KEY ("email_normalized");
+
+
+--
+-- Name: flutterwave_anomalies flutterwave_anomalies_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY "public"."flutterwave_anomalies"
+    ADD CONSTRAINT "flutterwave_anomalies_pkey" PRIMARY KEY ("id");
+
+
+--
+-- Name: flutterwave_anomalies flutterwave_anomalies_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY "public"."flutterwave_anomalies"
+    ADD CONSTRAINT "flutterwave_anomalies_unique" UNIQUE ("flw_transaction_id", "kind");
 
 
 --
@@ -7628,11 +8440,11 @@ ALTER TABLE ONLY "public"."push_subscriptions"
 
 
 --
--- Name: push_subscriptions push_subscriptions_user_id_endpoint_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: push_subscriptions push_subscriptions_tenant_user_endpoint_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY "public"."push_subscriptions"
-    ADD CONSTRAINT "push_subscriptions_user_id_endpoint_key" UNIQUE ("user_id", "endpoint");
+    ADD CONSTRAINT "push_subscriptions_tenant_user_endpoint_key" UNIQUE ("tenant_id", "user_id", "endpoint");
 
 
 --
@@ -7932,6 +8744,34 @@ ALTER TABLE ONLY "public"."zones"
 
 
 --
+-- Name: adresses_email_bloquees_email_hash_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "adresses_email_bloquees_email_hash_key" ON "public"."adresses_email_bloquees" USING "btree" ("email_hash");
+
+
+--
+-- Name: flutterwave_anomalies_non_resolues_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "flutterwave_anomalies_non_resolues_idx" ON "public"."flutterwave_anomalies" USING "btree" ("detected_at") WHERE ("resolved_at" IS NULL);
+
+
+--
+-- Name: flutterwave_anomalies_payment_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "flutterwave_anomalies_payment_id_idx" ON "public"."flutterwave_anomalies" USING "btree" ("payment_id");
+
+
+--
+-- Name: flutterwave_anomalies_tenant_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "flutterwave_anomalies_tenant_id_idx" ON "public"."flutterwave_anomalies" USING "btree" ("tenant_id");
+
+
+--
 -- Name: flutterwave_payments_tenant_status_period_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -8146,6 +8986,20 @@ CREATE INDEX "idx_dish_photo_drafts_created_by" ON "public"."dish_photo_drafts" 
 --
 
 CREATE INDEX "idx_dish_photo_drafts_tenant" ON "public"."dish_photo_drafts" USING "btree" ("tenant_id", "status");
+
+
+--
+-- Name: idx_house_accounts_created_by; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "idx_house_accounts_created_by" ON "public"."house_accounts" USING "btree" ("created_by");
+
+
+--
+-- Name: idx_house_accounts_settled_by; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "idx_house_accounts_settled_by" ON "public"."house_accounts" USING "btree" ("settled_by");
 
 
 --
@@ -8436,6 +9290,20 @@ CREATE INDEX "idx_order_mutation_requests_tenant" ON "public"."order_mutation_re
 
 
 --
+-- Name: idx_order_notes_created_by; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "idx_order_notes_created_by" ON "public"."order_notes" USING "btree" ("created_by");
+
+
+--
+-- Name: idx_order_notes_order_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "idx_order_notes_order_id" ON "public"."order_notes" USING "btree" ("order_id");
+
+
+--
 -- Name: idx_order_notes_tenant_order; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -8457,6 +9325,13 @@ CREATE INDEX "idx_orders_cashier" ON "public"."orders" USING "btree" ("cashier_i
 
 
 --
+-- Name: idx_orders_comped_by; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "idx_orders_comped_by" ON "public"."orders" USING "btree" ("comped_by");
+
+
+--
 -- Name: idx_orders_coupon_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -8475,6 +9350,13 @@ CREATE INDEX "idx_orders_created_at" ON "public"."orders" USING "btree" ("create
 --
 
 CREATE INDEX "idx_orders_house_account" ON "public"."orders" USING "btree" ("tenant_id", "house_account_id") WHERE ("house_account_id" IS NOT NULL);
+
+
+--
+-- Name: idx_orders_house_account_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "idx_orders_house_account_id" ON "public"."orders" USING "btree" ("house_account_id");
 
 
 --
@@ -8727,6 +9609,13 @@ CREATE INDEX "idx_recipes_tenant" ON "public"."recipes" USING "btree" ("tenant_i
 --
 
 CREATE INDEX "idx_reminder_preferences_tenant" ON "public"."reminder_preferences" USING "btree" ("tenant_id");
+
+
+--
+-- Name: idx_reminder_settings_updated_by; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "idx_reminder_settings_updated_by" ON "public"."reminder_settings" USING "btree" ("updated_by");
 
 
 --
@@ -9094,6 +9983,20 @@ CREATE UNIQUE INDEX "ingredients_tenant_lower_name_active_key" ON "public"."ingr
 
 
 --
+-- Name: invitations_pending_email_unique; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "invitations_pending_email_unique" ON "public"."invitations" USING "btree" ("tenant_id", "lower"("email")) WHERE ("status" = 'pending'::"text");
+
+
+--
+-- Name: item_suggestions_active_pair_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "item_suggestions_active_pair_key" ON "public"."item_suggestions" USING "btree" ("tenant_id", "menu_item_id", "suggested_item_id") WHERE "is_active";
+
+
+--
 -- Name: orange_money_events_processed_at_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -9252,6 +10155,13 @@ CREATE TRIGGER "prevent_super_admin_elevation_trg" BEFORE INSERT OR UPDATE ON "p
 --
 
 CREATE TRIGGER "tenant_supports_updated_at" BEFORE UPDATE ON "public"."tenant_supports" FOR EACH ROW EXECUTE FUNCTION "public"."update_tenant_supports_updated_at"();
+
+
+--
+-- Name: orders trg_annulation_exige_registre_rembourse; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE CONSTRAINT TRIGGER "trg_annulation_exige_registre_rembourse" AFTER UPDATE ON "public"."orders" DEFERRABLE INITIALLY DEFERRED FOR EACH ROW WHEN ((("new"."status" = 'cancelled'::"text") AND ("old"."status" IS DISTINCT FROM 'cancelled'::"text"))) EXECUTE FUNCTION "public"."exiger_registre_rembourse_pour_annuler"();
 
 
 --
@@ -9416,10 +10326,24 @@ CREATE TRIGGER "trg_inscrire_espace_commande" BEFORE INSERT OR UPDATE OF "table_
 
 
 --
+-- Name: item_suggestions trg_item_suggestions_modifiee_devient_manuelle; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER "trg_item_suggestions_modifiee_devient_manuelle" BEFORE UPDATE ON "public"."item_suggestions" FOR EACH ROW EXECUTE FUNCTION "public"."item_suggestions_modifiee_devient_manuelle"();
+
+
+--
 -- Name: tables trg_marquer_tables_initialisees; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
 CREATE TRIGGER "trg_marquer_tables_initialisees" AFTER INSERT ON "public"."tables" REFERENCING NEW TABLE AS "nouvelles_tables" FOR EACH STATEMENT EXECUTE FUNCTION "public"."marquer_tables_initialisees"();
+
+
+--
+-- Name: menu_items trg_menu_items_masquage_manuel; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER "trg_menu_items_masquage_manuel" BEFORE UPDATE OF "is_available" ON "public"."menu_items" FOR EACH ROW EXECUTE FUNCTION "public"."menu_items_masquage_manuel"();
 
 
 --
@@ -9486,6 +10410,13 @@ CREATE TRIGGER "trg_qr_designs_updated_at" BEFORE UPDATE ON "public"."qr_designs
 
 
 --
+-- Name: ingredients trg_registre_stock_garde; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER "trg_registre_stock_garde" BEFORE INSERT OR UPDATE OF "current_stock" ON "public"."ingredients" FOR EACH ROW EXECUTE FUNCTION "public"."registre_stock_garde_ingredients"();
+
+
+--
 -- Name: tables trg_tables_delete_occupied_guard; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -9493,10 +10424,17 @@ CREATE TRIGGER "trg_tables_delete_occupied_guard" BEFORE DELETE ON "public"."tab
 
 
 --
+-- Name: tables trg_tables_nom_pas_numero_autre; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER "trg_tables_nom_pas_numero_autre" BEFORE INSERT OR UPDATE OF "display_name", "table_number", "tenant_id" ON "public"."tables" FOR EACH ROW EXECUTE FUNCTION "public"."tables_nom_pas_numero_autre"();
+
+
+--
 -- Name: tenants trg_tenant_name_cross_group_unique; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
-CREATE TRIGGER "trg_tenant_name_cross_group_unique" BEFORE INSERT OR UPDATE OF "name" ON "public"."tenants" FOR EACH ROW EXECUTE FUNCTION "public"."enforce_tenant_name_cross_group_unique"();
+CREATE TRIGGER "trg_tenant_name_cross_group_unique" BEFORE INSERT OR UPDATE OF "name", "onboarding_completed", "group_id", "deleted_at" ON "public"."tenants" FOR EACH ROW EXECUTE FUNCTION "public"."enforce_tenant_name_cross_group_unique"();
 
 
 --
@@ -9665,6 +10603,14 @@ ALTER TABLE ONLY "public"."ai_photo_credits"
 
 
 --
+-- Name: alertes_nouvelle_connexion alertes_nouvelle_connexion_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY "public"."alertes_nouvelle_connexion"
+    ADD CONSTRAINT "alertes_nouvelle_connexion_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+--
 -- Name: announcements announcements_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -9766,6 +10712,22 @@ ALTER TABLE ONLY "public"."dish_photo_drafts"
 
 ALTER TABLE ONLY "public"."dish_photo_drafts"
     ADD CONSTRAINT "dish_photo_drafts_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
+
+
+--
+-- Name: flutterwave_anomalies flutterwave_anomalies_payment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY "public"."flutterwave_anomalies"
+    ADD CONSTRAINT "flutterwave_anomalies_payment_id_fkey" FOREIGN KEY ("payment_id") REFERENCES "public"."flutterwave_payments"("id") ON DELETE SET NULL;
+
+
+--
+-- Name: flutterwave_anomalies flutterwave_anomalies_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY "public"."flutterwave_anomalies"
+    ADD CONSTRAINT "flutterwave_anomalies_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE SET NULL;
 
 
 --
@@ -10585,13 +11547,6 @@ CREATE POLICY "Admins can view own tenant ads" ON "public"."ads" FOR SELECT TO "
 
 
 --
--- Name: ingredients Admins can view own tenant ingredients; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY "Admins can view own tenant ingredients" ON "public"."ingredients" FOR SELECT USING (("tenant_id" = ANY ("public"."get_my_tenant_ids_array"())));
-
-
---
 -- Name: item_suggestions Admins can view own tenant item_suggestions; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -10612,27 +11567,6 @@ CREATE POLICY "Admins can view own tenant order items" ON "public"."order_items"
 --
 
 CREATE POLICY "Admins can view own tenant orders" ON "public"."orders" FOR SELECT USING (("tenant_id" = ANY ("public"."get_my_tenant_ids_array"())));
-
-
---
--- Name: recipes Admins can view own tenant recipes; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY "Admins can view own tenant recipes" ON "public"."recipes" FOR SELECT USING (("tenant_id" = ANY ("public"."get_my_tenant_ids_array"())));
-
-
---
--- Name: stock_movements Admins can view own tenant stock_movements; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY "Admins can view own tenant stock_movements" ON "public"."stock_movements" FOR SELECT USING (("tenant_id" = ANY ("public"."get_my_tenant_ids_array"())));
-
-
---
--- Name: suppliers Admins can view own tenant suppliers; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY "Admins can view own tenant suppliers" ON "public"."suppliers" FOR SELECT USING (("tenant_id" = ANY ("public"."get_my_tenant_ids_array"())));
 
 
 --
@@ -10671,7 +11605,7 @@ CREATE POLICY "Authenticated users can read tenants they belong to" ON "public".
 -- Name: admin_users Block super_admin escalation by non-super-admins; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Block super_admin escalation by non-super-admins" ON "public"."admin_users" AS RESTRICTIVE USING ((((COALESCE("is_super_admin", false) = false) AND ("role" IS DISTINCT FROM 'super_admin'::"text")) OR "public"."is_super_admin"())) WITH CHECK ((((COALESCE("is_super_admin", false) = false) AND ("role" IS DISTINCT FROM 'super_admin'::"text")) OR "public"."is_super_admin"()));
+CREATE POLICY "Block super_admin escalation by non-super-admins" ON "public"."admin_users" AS RESTRICTIVE USING ((((COALESCE("is_super_admin", false) = false) AND ("role" IS DISTINCT FROM 'super_admin'::"text")) OR "public"."is_super_admin"() OR ("user_id" = ( SELECT "auth"."uid"() AS "uid")))) WITH CHECK ((((COALESCE("is_super_admin", false) = false) AND ("role" IS DISTINCT FROM 'super_admin'::"text")) OR "public"."is_super_admin"()));
 
 
 --
@@ -10899,13 +11833,6 @@ CREATE POLICY "Inventory managers can insert own tenant stock_counts" ON "public
 
 
 --
--- Name: stock_movements Inventory managers can insert own tenant stock_movements; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY "Inventory managers can insert own tenant stock_movements" ON "public"."stock_movements" FOR INSERT WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'inventory.edit'::"text"));
-
-
---
 -- Name: suppliers Inventory managers can insert own tenant suppliers; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -10955,10 +11882,52 @@ CREATE POLICY "Inventory managers can update own tenant suppliers" ON "public"."
 
 
 --
+-- Name: ingredients Inventory viewers can view own tenant ingredients; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Inventory viewers can view own tenant ingredients" ON "public"."ingredients" FOR SELECT TO "authenticated" USING (("tenant_id" = ANY (( SELECT "public"."get_my_inventory_tenant_ids"() AS "get_my_inventory_tenant_ids")::"uuid"[])));
+
+
+--
+-- Name: recipes Inventory viewers can view own tenant recipes; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Inventory viewers can view own tenant recipes" ON "public"."recipes" FOR SELECT TO "authenticated" USING (("tenant_id" = ANY (( SELECT "public"."get_my_inventory_tenant_ids"() AS "get_my_inventory_tenant_ids")::"uuid"[])));
+
+
+--
+-- Name: stock_count_lines Inventory viewers can view own tenant stock_count_lines; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Inventory viewers can view own tenant stock_count_lines" ON "public"."stock_count_lines" FOR SELECT TO "authenticated" USING (("tenant_id" = ANY (( SELECT "public"."get_my_inventory_tenant_ids"() AS "get_my_inventory_tenant_ids")::"uuid"[])));
+
+
+--
+-- Name: stock_counts Inventory viewers can view own tenant stock_counts; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Inventory viewers can view own tenant stock_counts" ON "public"."stock_counts" FOR SELECT TO "authenticated" USING (("tenant_id" = ANY (( SELECT "public"."get_my_inventory_tenant_ids"() AS "get_my_inventory_tenant_ids")::"uuid"[])));
+
+
+--
+-- Name: stock_movements Inventory viewers can view own tenant stock_movements; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Inventory viewers can view own tenant stock_movements" ON "public"."stock_movements" FOR SELECT TO "authenticated" USING (("tenant_id" = ANY (( SELECT "public"."get_my_inventory_tenant_ids"() AS "get_my_inventory_tenant_ids")::"uuid"[])));
+
+
+--
+-- Name: suppliers Inventory viewers can view own tenant suppliers; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Inventory viewers can view own tenant suppliers" ON "public"."suppliers" FOR SELECT TO "authenticated" USING (("tenant_id" = ANY (( SELECT "public"."get_my_inventory_tenant_ids"() AS "get_my_inventory_tenant_ids")::"uuid"[])));
+
+
+--
 -- Name: item_modifiers Item modifiers viewable by anon for available items; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Item modifiers viewable by anon for available items" ON "public"."item_modifiers" FOR SELECT TO "anon" USING ((EXISTS ( SELECT 1
+CREATE POLICY "Item modifiers viewable by anon for available items" ON "public"."item_modifiers" FOR SELECT TO "authenticated", "anon" USING ((EXISTS ( SELECT 1
    FROM "public"."menu_items" "mi"
   WHERE (("mi"."id" = "item_modifiers"."menu_item_id") AND ("mi"."tenant_id" = "item_modifiers"."tenant_id") AND ("mi"."is_available" = true) AND ("mi"."deleted_at" IS NULL)))));
 
@@ -10967,7 +11936,7 @@ CREATE POLICY "Item modifiers viewable by anon for available items" ON "public".
 -- Name: item_options Item options viewable by anon for available items; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Item options viewable by anon for available items" ON "public"."item_options" FOR SELECT TO "anon" USING ((EXISTS ( SELECT 1
+CREATE POLICY "Item options viewable by anon for available items" ON "public"."item_options" FOR SELECT TO "authenticated", "anon" USING ((EXISTS ( SELECT 1
    FROM "public"."menu_items" "mi"
   WHERE (("mi"."id" = "item_options"."menu_item_id") AND ("mi"."tenant_id" = "item_options"."tenant_id") AND ("mi"."is_available" = true) AND ("mi"."deleted_at" IS NULL)))));
 
@@ -11068,6 +12037,15 @@ CREATE POLICY "Members update their own admin row" ON "public"."admin_users" FOR
 --
 
 CREATE POLICY "Membres connectes: lecture des reglages plateforme" ON "public"."platform_settings" FOR SELECT TO "authenticated" USING (true);
+
+
+--
+-- Name: tenants Membres: leurs restaurants avant double authentification; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Membres: leurs restaurants avant double authentification" ON "public"."tenants" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."admin_users" "au"
+  WHERE (("au"."tenant_id" = "tenants"."id") AND ("au"."user_id" = ( SELECT "auth"."uid"() AS "uid")) AND (COALESCE("au"."is_active", true) = true) AND ("au"."deleted_at" IS NULL)))));
 
 
 --
@@ -11327,7 +12305,7 @@ CREATE POLICY "Order managers can update own tenant order items" ON "public"."or
 -- Name: orders Order managers can update own tenant orders; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Order managers can update own tenant orders" ON "public"."orders" FOR UPDATE USING ("public"."has_tenant_write_permission"("tenant_id", 'orders.manage'::"text")) WITH CHECK (("public"."has_tenant_write_permission"("tenant_id", 'orders.manage'::"text") AND ((((COALESCE("payment_status", ''::character varying))::"text" <> ALL ((ARRAY['comp'::character varying, 'refunded'::character varying])::"text"[])) AND (COALESCE("is_comp", false) = false)) OR "public"."has_tenant_money_permission"("tenant_id"))));
+CREATE POLICY "Order managers can update own tenant orders" ON "public"."orders" FOR UPDATE USING ("public"."has_tenant_write_permission"("tenant_id", 'orders.manage'::"text")) WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'orders.manage'::"text"));
 
 
 --
@@ -11341,7 +12319,7 @@ CREATE POLICY "Platform-removed admin rows are frozen for tenants" ON "public"."
 -- Name: item_price_variants Price variants viewable by anon for available items; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Price variants viewable by anon for available items" ON "public"."item_price_variants" FOR SELECT TO "anon" USING ((EXISTS ( SELECT 1
+CREATE POLICY "Price variants viewable by anon for available items" ON "public"."item_price_variants" FOR SELECT TO "authenticated", "anon" USING ((EXISTS ( SELECT 1
    FROM "public"."menu_items" "mi"
   WHERE (("mi"."id" = "item_price_variants"."menu_item_id") AND ("mi"."tenant_id" = "item_price_variants"."tenant_id") AND ("mi"."is_available" = true) AND ("mi"."deleted_at" IS NULL)))));
 
@@ -11486,6 +12464,13 @@ CREATE POLICY "Settings managers can update own tenant venues" ON "public"."venu
 --
 
 CREATE POLICY "Super admin: ajout des reglages plateforme" ON "public"."platform_settings" FOR INSERT TO "authenticated" WITH CHECK (( SELECT "public"."is_super_admin"() AS "is_super_admin"));
+
+
+--
+-- Name: flutterwave_anomalies Super admin: lecture des anomalies Flutterwave; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Super admin: lecture des anomalies Flutterwave" ON "public"."flutterwave_anomalies" FOR SELECT TO "authenticated" USING (( SELECT "public"."is_super_admin"() AS "is_super_admin"));
 
 
 --
@@ -11637,6 +12622,12 @@ ALTER TABLE "public"."account_deletion_requests" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."admin_users" ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: adresses_email_bloquees; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE "public"."adresses_email_bloquees" ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: ads; Type: ROW SECURITY; Schema: public; Owner: postgres
 --
 
@@ -11653,6 +12644,12 @@ ALTER TABLE "public"."ai_credits_ledger" ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE "public"."ai_photo_credits" ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: alertes_nouvelle_connexion; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE "public"."alertes_nouvelle_connexion" ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: announcements; Type: ROW SECURITY; Schema: public; Owner: postgres
@@ -11716,6 +12713,18 @@ ALTER TABLE "public"."cron_heartbeats" ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE "public"."dish_photo_drafts" ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: email_unsubscribes; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE "public"."email_unsubscribes" ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: flutterwave_anomalies; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE "public"."flutterwave_anomalies" ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: flutterwave_payments; Type: ROW SECURITY; Schema: public; Owner: postgres
@@ -12185,24 +13194,10 @@ CREATE POLICY "stock_alerts_select" ON "public"."stock_alert_notifications" FOR 
 ALTER TABLE "public"."stock_count_lines" ENABLE ROW LEVEL SECURITY;
 
 --
--- Name: stock_count_lines stock_count_lines_select; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY "stock_count_lines_select" ON "public"."stock_count_lines" FOR SELECT USING (("tenant_id" = ANY ("public"."get_my_tenant_ids_array"())));
-
-
---
 -- Name: stock_counts; Type: ROW SECURITY; Schema: public; Owner: postgres
 --
 
 ALTER TABLE "public"."stock_counts" ENABLE ROW LEVEL SECURITY;
-
---
--- Name: stock_counts stock_counts_select; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY "stock_counts_select" ON "public"."stock_counts" FOR SELECT USING (("tenant_id" = ANY ("public"."get_my_tenant_ids_array"())));
-
 
 --
 -- Name: stock_movements; Type: ROW SECURITY; Schema: public; Owner: postgres
@@ -12391,12 +13386,12 @@ GRANT ALL ON FUNCTION "public"."accept_invitation_membership"("p_invitation_id" 
 
 
 --
--- Name: FUNCTION "adjust_ingredient_stock_tx"("p_tenant_id" "uuid", "p_ingredient_id" "uuid", "p_delta" numeric, "p_movement_type" "text", "p_notes" "text", "p_created_by" "uuid", "p_supplier_id" "uuid"); Type: ACL; Schema: public; Owner: postgres
+-- Name: FUNCTION "adjust_ingredient_stock_tx"("p_tenant_id" "uuid", "p_ingredient_id" "uuid", "p_delta" numeric, "p_movement_type" "text", "p_notes" "text", "p_created_by" "uuid", "p_supplier_id" "uuid", "p_unit_cost" numeric); Type: ACL; Schema: public; Owner: postgres
 --
 
-REVOKE ALL ON FUNCTION "public"."adjust_ingredient_stock_tx"("p_tenant_id" "uuid", "p_ingredient_id" "uuid", "p_delta" numeric, "p_movement_type" "text", "p_notes" "text", "p_created_by" "uuid", "p_supplier_id" "uuid") FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."adjust_ingredient_stock_tx"("p_tenant_id" "uuid", "p_ingredient_id" "uuid", "p_delta" numeric, "p_movement_type" "text", "p_notes" "text", "p_created_by" "uuid", "p_supplier_id" "uuid") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."adjust_ingredient_stock_tx"("p_tenant_id" "uuid", "p_ingredient_id" "uuid", "p_delta" numeric, "p_movement_type" "text", "p_notes" "text", "p_created_by" "uuid", "p_supplier_id" "uuid") TO "service_role";
+REVOKE ALL ON FUNCTION "public"."adjust_ingredient_stock_tx"("p_tenant_id" "uuid", "p_ingredient_id" "uuid", "p_delta" numeric, "p_movement_type" "text", "p_notes" "text", "p_created_by" "uuid", "p_supplier_id" "uuid", "p_unit_cost" numeric) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."adjust_ingredient_stock_tx"("p_tenant_id" "uuid", "p_ingredient_id" "uuid", "p_delta" numeric, "p_movement_type" "text", "p_notes" "text", "p_created_by" "uuid", "p_supplier_id" "uuid", "p_unit_cost" numeric) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."adjust_ingredient_stock_tx"("p_tenant_id" "uuid", "p_ingredient_id" "uuid", "p_delta" numeric, "p_movement_type" "text", "p_notes" "text", "p_created_by" "uuid", "p_supplier_id" "uuid", "p_unit_cost" numeric) TO "service_role";
 
 
 --
@@ -12421,6 +13416,14 @@ GRANT ALL ON FUNCTION "public"."apply_flutterwave_payment"("p_payment_id" "uuid"
 
 REVOKE ALL ON FUNCTION "public"."assert_inventory_edit"("p_tenant_id" "uuid") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."assert_inventory_edit"("p_tenant_id" "uuid") TO "service_role";
+
+
+--
+-- Name: FUNCTION "assert_inventory_view"("p_tenant_id" "uuid"); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "public"."assert_inventory_view"("p_tenant_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."assert_inventory_view"("p_tenant_id" "uuid") TO "service_role";
 
 
 --
@@ -12534,7 +13537,6 @@ GRANT ALL ON FUNCTION "public"."claim_activation_event"("p_tenant_id" "uuid", "p
 --
 
 REVOKE ALL ON FUNCTION "public"."claim_coupon_usage"("p_coupon_id" "uuid") FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."claim_coupon_usage"("p_coupon_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."claim_coupon_usage"("p_coupon_id" "uuid") TO "service_role";
 
 
@@ -12754,6 +13756,13 @@ REVOKE ALL ON FUNCTION "public"."exiger_registre_pour_paid"() FROM PUBLIC;
 
 
 --
+-- Name: FUNCTION "exiger_registre_rembourse_pour_annuler"(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "public"."exiger_registre_rembourse_pour_annuler"() FROM PUBLIC;
+
+
+--
 -- Name: FUNCTION "expire_stale_payment_sessions"("p_max_age_minutes" integer); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -12823,15 +13832,6 @@ GRANT ALL ON FUNCTION "public"."get_co_ordered_items"("p_tenant_id" "uuid", "p_c
 
 
 --
--- Name: FUNCTION "get_daily_comps"("p_tenant_id" "uuid", "p_start_date" timestamp with time zone, "p_end_date" timestamp with time zone); Type: ACL; Schema: public; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION "public"."get_daily_comps"("p_tenant_id" "uuid", "p_start_date" timestamp with time zone, "p_end_date" timestamp with time zone) FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."get_daily_comps"("p_tenant_id" "uuid", "p_start_date" timestamp with time zone, "p_end_date" timestamp with time zone) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."get_daily_comps"("p_tenant_id" "uuid", "p_start_date" timestamp with time zone, "p_end_date" timestamp with time zone) TO "service_role";
-
-
---
 -- Name: FUNCTION "get_daily_revenue"("p_tenant_id" "uuid", "p_start_date" timestamp with time zone, "p_end_date" timestamp with time zone, "p_timezone" "text"); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -12873,6 +13873,16 @@ GRANT ALL ON FUNCTION "public"."get_house_account_balances"("p_tenant_id" "uuid"
 REVOKE ALL ON FUNCTION "public"."get_losses_by_reason"("p_tenant_id" "uuid", "p_start" timestamp with time zone, "p_end" timestamp with time zone) FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."get_losses_by_reason"("p_tenant_id" "uuid", "p_start" timestamp with time zone, "p_end" timestamp with time zone) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_losses_by_reason"("p_tenant_id" "uuid", "p_start" timestamp with time zone, "p_end" timestamp with time zone) TO "service_role";
+
+
+--
+-- Name: FUNCTION "get_my_inventory_tenant_ids"(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "public"."get_my_inventory_tenant_ids"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."get_my_inventory_tenant_ids"() TO "anon";
+GRANT ALL ON FUNCTION "public"."get_my_inventory_tenant_ids"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_my_inventory_tenant_ids"() TO "service_role";
 
 
 --
@@ -13113,12 +14123,12 @@ GRANT ALL ON FUNCTION "public"."has_tenant_write_permission"("p_tenant" "uuid", 
 
 
 --
--- Name: FUNCTION "import_recipes_tx"("p_tenant_id" "uuid", "p_rows" "jsonb"); Type: ACL; Schema: public; Owner: postgres
+-- Name: FUNCTION "import_recipes_tx"("p_tenant_id" "uuid", "p_rows" "jsonb", "p_removals" "jsonb"); Type: ACL; Schema: public; Owner: postgres
 --
 
-REVOKE ALL ON FUNCTION "public"."import_recipes_tx"("p_tenant_id" "uuid", "p_rows" "jsonb") FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."import_recipes_tx"("p_tenant_id" "uuid", "p_rows" "jsonb") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."import_recipes_tx"("p_tenant_id" "uuid", "p_rows" "jsonb") TO "service_role";
+REVOKE ALL ON FUNCTION "public"."import_recipes_tx"("p_tenant_id" "uuid", "p_rows" "jsonb", "p_removals" "jsonb") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."import_recipes_tx"("p_tenant_id" "uuid", "p_rows" "jsonb", "p_removals" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."import_recipes_tx"("p_tenant_id" "uuid", "p_rows" "jsonb", "p_removals" "jsonb") TO "service_role";
 
 
 --
@@ -13172,11 +14182,27 @@ GRANT ALL ON FUNCTION "public"."is_tenant_name_taken"("p_name" "text") TO "servi
 
 
 --
+-- Name: FUNCTION "item_suggestions_modifiee_devient_manuelle"(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "public"."item_suggestions_modifiee_devient_manuelle"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."item_suggestions_modifiee_devient_manuelle"() TO "service_role";
+
+
+--
 -- Name: FUNCTION "marquer_tables_initialisees"(); Type: ACL; Schema: public; Owner: postgres
 --
 
 REVOKE ALL ON FUNCTION "public"."marquer_tables_initialisees"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."marquer_tables_initialisees"() TO "service_role";
+
+
+--
+-- Name: FUNCTION "menu_items_masquage_manuel"(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "public"."menu_items_masquage_manuel"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."menu_items_masquage_manuel"() TO "service_role";
 
 
 --
@@ -13193,6 +14219,16 @@ GRANT ALL ON FUNCTION "public"."menus_same_tenant_links"() TO "service_role";
 
 REVOKE ALL ON FUNCTION "public"."menus_tenant_move_keeps_children"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."menus_tenant_move_keeps_children"() TO "service_role";
+
+
+--
+-- Name: FUNCTION "mfa_satisfait"(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "public"."mfa_satisfait"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."mfa_satisfait"() TO "anon";
+GRANT ALL ON FUNCTION "public"."mfa_satisfait"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."mfa_satisfait"() TO "service_role";
 
 
 --
@@ -13342,6 +14378,23 @@ GRANT ALL ON FUNCTION "public"."refuser_reecriture_montants_commande"() TO "serv
 
 
 --
+-- Name: FUNCTION "regenerate_auto_suggestions"("p_tenant_id" "uuid", "p_rows" "jsonb"); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "public"."regenerate_auto_suggestions"("p_tenant_id" "uuid", "p_rows" "jsonb") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."regenerate_auto_suggestions"("p_tenant_id" "uuid", "p_rows" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."regenerate_auto_suggestions"("p_tenant_id" "uuid", "p_rows" "jsonb") TO "service_role";
+
+
+--
+-- Name: FUNCTION "registre_stock_garde_ingredients"(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "public"."registre_stock_garde_ingredients"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."registre_stock_garde_ingredients"() TO "service_role";
+
+
+--
 -- Name: FUNCTION "reminder_coach_items"("p_tenant_id" "uuid", "p_since" timestamp with time zone, "p_split" timestamp with time zone, "p_until" timestamp with time zone); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -13366,12 +14419,47 @@ GRANT ALL ON FUNCTION "public"."reminder_rule_stats"("p_since" timestamp with ti
 
 
 --
+-- Name: FUNCTION "rendre_coupon_commande"("p_order_id" "uuid", "p_tenant_id" "uuid"); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "public"."rendre_coupon_commande"("p_order_id" "uuid", "p_tenant_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."rendre_coupon_commande"("p_order_id" "uuid", "p_tenant_id" "uuid") TO "service_role";
+
+
+--
+-- Name: FUNCTION "reorder_categories"("p_tenant_id" "uuid", "p_updates" "jsonb"); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "public"."reorder_categories"("p_tenant_id" "uuid", "p_updates" "jsonb") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."reorder_categories"("p_tenant_id" "uuid", "p_updates" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."reorder_categories"("p_tenant_id" "uuid", "p_updates" "jsonb") TO "service_role";
+
+
+--
+-- Name: FUNCTION "reorder_menus"("p_tenant_id" "uuid", "p_ordered_ids" "uuid"[]); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "public"."reorder_menus"("p_tenant_id" "uuid", "p_ordered_ids" "uuid"[]) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."reorder_menus"("p_tenant_id" "uuid", "p_ordered_ids" "uuid"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."reorder_menus"("p_tenant_id" "uuid", "p_ordered_ids" "uuid"[]) TO "service_role";
+
+
+--
 -- Name: FUNCTION "request_account_deletion"(); Type: ACL; Schema: public; Owner: postgres
 --
 
 REVOKE ALL ON FUNCTION "public"."request_account_deletion"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."request_account_deletion"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."request_account_deletion"() TO "service_role";
+
+
+--
+-- Name: FUNCTION "reserver_alerte_nouvelle_connexion"(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "public"."reserver_alerte_nouvelle_connexion"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."reserver_alerte_nouvelle_connexion"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."reserver_alerte_nouvelle_connexion"() TO "service_role";
 
 
 --
@@ -13469,6 +14557,14 @@ GRANT ALL ON FUNCTION "public"."sync_menu_availability"("p_tenant_id" "uuid", "p
 
 
 --
+-- Name: FUNCTION "tables_nom_pas_numero_autre"(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "public"."tables_nom_pas_numero_autre"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."tables_nom_pas_numero_autre"() TO "service_role";
+
+
+--
 -- Name: FUNCTION "tenant_effective_plan"("p_tenant_id" "uuid"); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -13481,7 +14577,6 @@ GRANT ALL ON FUNCTION "public"."tenant_effective_plan"("p_tenant_id" "uuid") TO 
 --
 
 REVOKE ALL ON FUNCTION "public"."unclaim_coupon_usage"("p_coupon_id" "uuid") FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."unclaim_coupon_usage"("p_coupon_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."unclaim_coupon_usage"("p_coupon_id" "uuid") TO "service_role";
 
 
@@ -13608,6 +14703,13 @@ GRANT UPDATE("login_count") ON TABLE "public"."admin_users" TO "authenticated";
 
 
 --
+-- Name: TABLE "adresses_email_bloquees"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE "public"."adresses_email_bloquees" TO "service_role";
+
+
+--
 -- Name: TABLE "ads"; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -13631,6 +14733,13 @@ GRANT ALL ON TABLE "public"."ai_credits_ledger" TO "service_role";
 GRANT SELECT,MAINTAIN ON TABLE "public"."ai_photo_credits" TO "anon";
 GRANT ALL ON TABLE "public"."ai_photo_credits" TO "authenticated";
 GRANT ALL ON TABLE "public"."ai_photo_credits" TO "service_role";
+
+
+--
+-- Name: TABLE "alertes_nouvelle_connexion"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE "public"."alertes_nouvelle_connexion" TO "service_role";
 
 
 --
@@ -13691,6 +14800,21 @@ GRANT ALL ON TABLE "public"."cron_heartbeats" TO "service_role";
 GRANT SELECT,MAINTAIN ON TABLE "public"."dish_photo_drafts" TO "anon";
 GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,MAINTAIN,UPDATE ON TABLE "public"."dish_photo_drafts" TO "authenticated";
 GRANT ALL ON TABLE "public"."dish_photo_drafts" TO "service_role";
+
+
+--
+-- Name: TABLE "email_unsubscribes"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE ON TABLE "public"."email_unsubscribes" TO "service_role";
+
+
+--
+-- Name: TABLE "flutterwave_anomalies"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE "public"."flutterwave_anomalies" TO "service_role";
+GRANT SELECT ON TABLE "public"."flutterwave_anomalies" TO "authenticated";
 
 
 --
@@ -14352,7 +15476,7 @@ GRANT ALL ON TABLE "public"."stock_counts" TO "service_role";
 --
 
 GRANT SELECT,MAINTAIN ON TABLE "public"."stock_movements" TO "anon";
-GRANT ALL ON TABLE "public"."stock_movements" TO "authenticated";
+GRANT SELECT,REFERENCES,TRIGGER,MAINTAIN ON TABLE "public"."stock_movements" TO "authenticated";
 GRANT ALL ON TABLE "public"."stock_movements" TO "service_role";
 
 
@@ -14926,18 +16050,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "supabase_admin" IN SCHEMA "public" GRANT ALL 
 ALTER DEFAULT PRIVILEGES FOR ROLE "supabase_admin" IN SCHEMA "public" GRANT ALL ON TABLES TO "anon";
 ALTER DEFAULT PRIVILEGES FOR ROLE "supabase_admin" IN SCHEMA "public" GRANT ALL ON TABLES TO "authenticated";
 ALTER DEFAULT PRIVILEGES FOR ROLE "supabase_admin" IN SCHEMA "public" GRANT ALL ON TABLES TO "service_role";
-
-
---
--- Declencheurs poses sur auth.users par les migrations de ce depot
--- (20261114120000). pg_dump --schema public --schema private ne les emporte
--- pas, puisque la table est dans auth. Definitions relues en production avec
--- pg_get_triggerdef, fonction qualifiee (le search_path du dump est vide).
---
-
-CREATE TRIGGER tg_owner_trial_ledger_confirm_del BEFORE DELETE ON auth.users FOR EACH ROW EXECUTE FUNCTION "public"."owner_trial_ledger_sync_confirmation"();
-
-CREATE TRIGGER tg_owner_trial_ledger_confirm_upd AFTER UPDATE OF email_confirmed_at ON auth.users FOR EACH ROW WHEN (((old.email_confirmed_at IS NULL) AND (new.email_confirmed_at IS NOT NULL))) EXECUTE FUNCTION "public"."owner_trial_ledger_sync_confirmation"();
 
 
 --
