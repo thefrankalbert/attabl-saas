@@ -118,7 +118,7 @@ describe('page Securite', () => {
     const dialogButtons = await screen.findAllByRole('button', { name: 'Se déconnecter partout' });
     fireEvent.click(dialogButtons[dialogButtons.length - 1]);
     await waitFor(() => expect(prepareLogout).toHaveBeenCalledWith({ force: false }));
-    expect(fetchMock).not.toHaveBeenCalledWith('/api/auth/signout', expect.anything());
+    expect(fetchMock).not.toHaveBeenCalledWith('/api/auth/signout?scope=global', expect.anything());
     expect(toast).toHaveBeenCalledWith(expect.objectContaining({ variant: 'destructive' }));
   });
 
@@ -150,7 +150,7 @@ describe('page Securite', () => {
     const dialogButtons = await screen.findAllByRole('button', { name: 'Se déconnecter partout' });
     fireEvent.click(dialogButtons[dialogButtons.length - 1]);
     await waitFor(() =>
-      expect(fetchMock).toHaveBeenCalledWith('/api/auth/signout', { method: 'POST' }),
+      expect(fetchMock).toHaveBeenCalledWith('/api/auth/signout?scope=global', { method: 'POST' }),
     );
     await waitFor(() => expect(assign).toHaveBeenCalledWith('/login'));
   });
