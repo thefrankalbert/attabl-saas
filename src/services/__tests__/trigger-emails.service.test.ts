@@ -37,14 +37,16 @@ describe('isTrialIdle (B104)', () => {
 });
 
 describe('determineTrialEventKey (B104)', () => {
-  // La fonction lit l'heure reelle (getTrialDaysRemaining): sans horloge figee
-  // sur NOW, "dans 2 jours" devenait une date passee des le 2026-11-27 et le
-  // test echouait pour toutes les PR.
+  // determineTrialEventKey lit l'heure reelle (getTrialDaysRemaining). Sans
+  // horloge figee sur NOW, "fin d'essai dans 2 jours" est devenue une date
+  // passee le 2026-11-26 et le test a casse tout seul.
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(NOW);
   });
-  afterEach(() => vi.useRealTimers());
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   it('ne rend plus jamais la relance d inactivite pendant une visite', () => {
     // Un nouvel inscrit (aucune visite enregistree) la recevait des sa premiere visite.

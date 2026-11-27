@@ -173,6 +173,11 @@ export default function CouponsClient({
                     }}
                     className="flex items-center gap-1.5 group h-auto p-0"
                     title={coupon.is_active ? t('deactivate') : t('activate')}
+                    aria-label={
+                      coupon.is_active
+                        ? t('deactivateCoupon', { code: coupon.code })
+                        : t('activateCoupon', { code: coupon.code })
+                    }
                   >
                     {coupon.is_active ? (
                       <>

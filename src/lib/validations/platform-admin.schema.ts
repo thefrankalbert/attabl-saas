@@ -29,7 +29,7 @@ export const supportContactSchema = z.object({
     // lien wa.me/tel: vers un autre pays ou casse.
     .regex(
       /^\+[1-9][\d ]*$/,
-      'Commencez par + et l indicatif, chiffres et espaces seulement (ex: +226 55 21 22 93)',
+      "Commencez par + et l'indicatif, chiffres et espaces seulement (ex: +226 55 21 22 93)",
     )
     .refine((v) => {
       const n = v.replace(/\D/g, '').length;

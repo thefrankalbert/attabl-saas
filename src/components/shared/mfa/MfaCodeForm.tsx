@@ -73,8 +73,15 @@ export function MfaCodeForm({
         </Label>
         <Input
           id={inputId}
-          {...register('code')}
+          {...register('code', {
+            // Chiffres et espaces seulement: une lettre tapee ou collee est retiree
+            // (le schema Zod retire deja les espaces d'un code "123 456" colle).
+            onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
+              event.target.value = event.target.value.replace(/[^\d\s]/g, '');
+            },
+          })}
           inputMode="numeric"
+          pattern="[0-9 ]*"
           autoComplete="one-time-code"
           maxLength={7}
           placeholder="123456"

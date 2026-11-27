@@ -59,7 +59,7 @@
   --cc-border-strong: rgba(255, 255, 255, 0.14);
   --cc-text: #f5f5f4;
   --cc-text-2: #a8a29e;
-  --cc-text-3: #6b6560;
+  --cc-text-3: #8c8680;
   --cc-soft: #57534e;
   /* Neutral primary flips to near-white on dark; green stays only as the
    * positive/success ink (lifted for contrast on dark surfaces). */

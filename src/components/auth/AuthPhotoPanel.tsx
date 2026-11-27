@@ -96,6 +96,10 @@ export function AuthPhotoPanel({ scene: sceneProp }: { scene: AuthScene }) {
               src={src}
               alt=""
               fill
+              // Ne PAS passer en fetchPriority="high" (essaye le 2026-11-27, PR
+              // #493, annule): la photo arrivait deja avant la feuille de style,
+              // qui fixe seule le premier affichage. En priorite haute elle lui
+              // prenait du debit: Lighthouse mobile /login 81 -> 73.
               preload={i === 0}
               sizes="100vw"
               className={cn(

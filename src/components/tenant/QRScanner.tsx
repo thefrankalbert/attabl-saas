@@ -29,6 +29,24 @@ setZXingModuleOverrides({
 
 // --- Types ---
 type ScanStatus = 'loading' | 'scanning' | 'success' | 'error';
+// Cause de l'ecran d'erreur: refus de permission, aucune camera utilisable, autre.
+type CameraProblem = 'denied' | 'absent' | 'other';
+
+// Erreurs de la bibliotheque qui veulent dire "pas de camera utilisable ici".
+const ABSENT_KINDS: ReadonlySet<string> = new Set(['no-camera', 'unsupported', 'insecure-context']);
+
+/** Vrai quand le navigateur n'offre aucune camera (pas d'API, ou aucune entree video). */
+async function hasNoCamera(): Promise<boolean> {
+  const devices = typeof navigator === 'undefined' ? undefined : navigator.mediaDevices;
+  if (!devices?.getUserMedia) return true;
+  if (!devices.enumerateDevices) return false;
+  try {
+    const list = await devices.enumerateDevices();
+    return !list.some((d) => d.kind === 'videoinput');
+  } catch {
+    return false;
+  }
+}
 
 export interface QRScanResult {
   tableNumber: string | null;
@@ -93,8 +111,8 @@ export default function QRScanner({
   const [matchedTable, setMatchedTable] = useState<string | null>(null);
   const [scannedResult, setScannedResult] = useState<QRScanResult | null>(null);
   // Refus de la permission: on dit ou l'autoriser (un site ne peut pas ouvrir
-  // les reglages du telephone lui-meme).
-  const [permissionDenied, setPermissionDenied] = useState(false);
+  // les reglages du telephone lui-meme). Absence de camera: on le dit aussi.
+  const [cameraProblem, setCameraProblem] = useState<CameraProblem>('other');
 
   // Reset on open/close
   useEffect(() => {
@@ -109,6 +127,21 @@ export default function QRScanner({
     setScanStatus('loading');
     setMatchedTable(null);
     setScannedResult(null);
+  }, [isOpen]);
+
+  // Sans camera (ordinateur sans webcam, navigateur sans API), la bibliotheque
+  // ne repondait rien de visible: on le detecte a l'ouverture et on le dit.
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    void hasNoCamera().then((absent) => {
+      if (cancelled || !absent) return;
+      setCameraProblem('absent');
+      setScanStatus('error');
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [isOpen]);
 
   // loading -> scanning transition (gives camera time to init)
@@ -161,9 +194,12 @@ export default function QRScanner({
     // La bibliotheque classe deja l'erreur: `kind` est la seule source fiable
     // (le message d'origine n'est pas repris tel quel).
     const denied = error.kind === 'permission-denied';
-    setPermissionDenied(denied);
+    const absent = ABSENT_KINDS.has(error.kind);
+    setCameraProblem(denied ? 'denied' : absent ? 'absent' : 'other');
     if (denied) {
       logger.warn('Camera permission denied');
+    } else if (absent) {
+      logger.warn('No usable camera', { kind: error.kind });
     } else {
       logger.error('Camera error', error);
     }
@@ -320,10 +356,18 @@ export default function QRScanner({
             </div>
             <div className="text-center">
               <p className="text-white text-base font-semibold">
-                {permissionDenied ? t('cameraDeniedTitle') : t('cameraUnavailable')}
+                {cameraProblem === 'denied'
+                  ? t('cameraDeniedTitle')
+                  : cameraProblem === 'absent'
+                    ? t('noCameraTitle')
+                    : t('cameraUnavailable')}
               </p>
               <p className="text-white/60 text-xs mt-1 leading-relaxed">
-                {permissionDenied ? t('cameraDeniedHint') : t('cameraHint')}
+                {cameraProblem === 'denied'
+                  ? t('cameraDeniedHint')
+                  : cameraProblem === 'absent'
+                    ? t('noCameraHint')
+                    : t('cameraHint')}
               </p>
             </div>
 
