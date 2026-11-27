@@ -1139,7 +1139,7 @@
       "metaTitle": "Conditions Générales d'Utilisation",
       "metaDescription": "Conditions générales d'utilisation de la plateforme ATTABL.",
       "heading": "Conditions Générales d'Utilisation",
-      "lastUpdate": "Dernière mise à jour : 28 février 2026",
+      "lastUpdate": "Dernière mise à jour : 27 novembre 2026",
       "section1Title": "1. Objet",
       "section1Body": "Les présentes Conditions Générales d'Utilisation (CGU) régissent l'accès et l'utilisation de la plateforme ATTABL, un service SaaS de gestion digitale pour la restauration et l'hôtellerie.",
       "section2Title": "2. Accès au service",
@@ -1151,7 +1151,11 @@
       "section4Title": "4. Propriété des données",
       "section4Body": "Les données saisies par l'utilisateur (menus, commandes, clients) restent sa propriété exclusive. ATTABL s'engage à ne pas commercialiser ces données.",
       "section5Title": "5. Contact",
-      "section5Body": "Pour toute question relative aux présentes CGU, contactez-nous à"
+      "section5Body": "Pour toute question relative aux présentes CGU, contactez-nous à",
+      "section6Title": "6. Éditeur du site",
+      "section6Body": "ATTABL, société de droit camerounais en cours d'immatriculation. Ses numéros d'immatriculation (RCCM) et d'identification fiscale (NIU) seront publiés ici dès leur délivrance.\nSiège social : Cameroun.\nExploitation : Ouagadougou, Burkina Faso.\nDirecteur de la publication : le représentant légal d'ATTABL.\nContact : contact@attabl.com",
+      "section7Title": "7. Hébergement",
+      "section7Body": "Site et application : Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis.\nBase de données : Supabase Inc., données stockées dans l'Union européenne (Irlande)."
     },
     "nouveautes": {
       "metaTitle": "Nouveautés",
@@ -4056,6 +4060,14 @@
     "menuVisibleDaysLeft": "Votre carte reste visible encore {count, plural, one {# jour} other {# jours}}. Choisissez un plan pour reprendre les commandes."
   },
   "ads": {
+    "confirmDelete": "Supprimer cette publicité ?",
+    "noLink": "Sans lien",
+    "activated": "Publicité activée",
+    "deactivated": "Publicité désactivée",
+    "linkHint": "Adresse complète, commençant par https://",
+    "activate": "Activer la publicité",
+    "deactivate": "Désactiver la publicité",
+    "deleteAd": "Supprimer la publicité",
     "title": "Publicités & Bannières",
     "newAd": "Nouvelle Publicité",
     "orderLabel": "Ordre: {order}",
@@ -5574,6 +5586,8 @@
     "close": "Fermer"
   },
   "homePage": {
+    "adsLabel": "Offres du restaurant",
+    "adOpen": "Ouvrir l'offre",
     "featured": "Populaire",
     "seeAll": "Tout voir",
     "platDuJour": "Plat du jour",

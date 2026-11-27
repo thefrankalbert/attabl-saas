@@ -19,6 +19,7 @@ import { CategoryTile } from '@/components/tenant/client/CategoryTile';
 import type { ClientCategory } from '@/components/tenant/client/CategoryTile';
 import { HomeItemsSection } from '@/components/tenant/client/HomeItemsSection';
 import { HomeHero } from '@/components/tenant/client/HomeHero';
+import { HomeAdsStrip, type HomeAd } from '@/components/tenant/client/HomeAdsStrip';
 import type { ClientMenuItem } from '@/components/tenant/client/MenuItemCard';
 import { SectionHeader } from '@/components/tenant/client/SectionHeader';
 import { deriveCategoryIconKey, getCategoryColors } from '@/components/tenant/client/CategoryIcon';
@@ -125,7 +126,7 @@ export default async function HomePage({
     return null;
   }
 
-  const [categoriesResult, featuredResult, recentResult, menusResult, tablesResult] =
+  const [categoriesResult, featuredResult, recentResult, menusResult, tablesResult, adsResult] =
     await Promise.all([
       supabase
         .from('categories')
@@ -188,6 +189,10 @@ export default async function HomePage({
         )
         .eq('tenant_id', tenant.id)
         .eq('is_active', true),
+
+      // Bannieres de la page Publicites. La table reste fermee aux clients:
+      // la fonction ne rend que les annonces actives d'un restaurant visible.
+      supabase.rpc('get_storefront_ads', { p_tenant_id: tenant.id }),
     ]);
 
   // C-061: an unknown table in the URL is ignored, never remembered.
@@ -201,6 +206,7 @@ export default async function HomePage({
   const recentItems = (recentResult.data || []) as unknown as MenuItem[];
   const menus = (menusResult.data || []) as unknown as Menu[];
   const tables = (tablesResult.data || []) as unknown as Table[];
+  const ads = (adsResult.data || []) as HomeAd[];
 
   const clientCategories = allCategories.slice(0, 8).map((cat) => toClientCategory(cat, lang));
 
@@ -265,6 +271,8 @@ export default async function HomePage({
           tenantSlug={site}
           tableNumber={initialTable}
         />
+
+        <HomeAdsStrip ads={ads} label={t('adsLabel')} openLabel={t('adOpen')} />
 
         {/* - HERO - */}
         <div className="px-4 pb-6">
