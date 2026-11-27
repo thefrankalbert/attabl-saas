@@ -25,6 +25,17 @@ function zoneLabel(index: number, name: string | undefined, t: Translate): strin
     : t('zoneLabel', { number: index + 1 });
 }
 
+/** Refus portant sur une zone de tables, que l'interface sait nommer. */
+export function isZoneLaunchIssue(issue: LaunchIssue): boolean {
+  const [root, list, rawIndex] = issue.path;
+  return (
+    root === 'data' &&
+    list === 'tableZones' &&
+    Number.isInteger(Number(rawIndex)) &&
+    (ZONE_CODES as readonly string[]).includes(issue.message)
+  );
+}
+
 /** Phrases lisibles pour les refus du lancement (contre-audit 3). */
 export function describeLaunchIssues(
   issues: LaunchIssue[],
@@ -32,14 +43,8 @@ export function describeLaunchIssues(
   t: Translate,
 ): string[] {
   return issues.map((issue) => {
-    const [root, list, rawIndex] = issue.path;
-    const index = Number(rawIndex);
-    if (
-      root === 'data' &&
-      list === 'tableZones' &&
-      Number.isInteger(index) &&
-      (ZONE_CODES as readonly string[]).includes(issue.message)
-    ) {
+    if (isZoneLaunchIssue(issue)) {
+      const index = Number(issue.path[2]);
       const zone = zones[index];
       return t(`zoneIssue.${issue.message}`, {
         zone: zoneLabel(index, zone?.name, t),

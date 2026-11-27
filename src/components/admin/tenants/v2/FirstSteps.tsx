@@ -58,7 +58,7 @@ export function FirstSteps({ title, steps, columns = 1 }: FirstStepsProps) {
                 <span className="block text-[13px] font-medium text-[var(--cc-text)]">
                   {step.title}
                 </span>
-                <span className="block text-[11px] text-[var(--cc-text-3)]">{step.hint}</span>
+                <span className="block text-xs text-[var(--cc-text-3)]">{step.hint}</span>
               </span>
               <ArrowRight
                 className="size-4 shrink-0 text-[var(--cc-text-3)] transition-transform group-hover:translate-x-0.5"

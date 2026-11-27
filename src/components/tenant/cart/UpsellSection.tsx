@@ -59,7 +59,7 @@ export function UpsellSection({
         </div>
         <Link
           href={menuPath}
-          className="flex shrink-0 items-center gap-0.5 text-[13px] font-medium text-[var(--color-accent)]"
+          className="-my-3.5 flex shrink-0 items-center gap-0.5 py-3.5 text-[13px] font-medium text-[var(--color-accent)]"
         >
           {labels.seeAll}
           <ChevronRight className="h-3.5 w-3.5" strokeWidth={2} />

@@ -44,7 +44,7 @@ export default function SuggestionsList({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  aria-label="Select"
+                  aria-label={tc('aria.select')}
                   onClick={() => onToggleSelect(suggestion.id)}
                   className="text-app-text-muted hover:text-app-text-secondary transition-colors shrink-0 h-auto w-auto p-1"
                 >
@@ -83,7 +83,7 @@ export default function SuggestionsList({
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0 text-[var(--destructive)] hover:bg-[var(--accent)]"
-                    title="Supprimer"
+                    title={tc('delete')}
                     onClick={() => onDelete(suggestion.id)}
                   >
                     <Trash2 className="w-3.5 h-3.5" />

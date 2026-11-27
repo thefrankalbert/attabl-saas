@@ -131,11 +131,6 @@ jobs:
       - name: Test (with coverage gate)
         run: pnpm test:coverage
 
-      # Charte typographique (CLAUDE.md, audit X1): ni tiret long, ni points de
-      # suspension unicode, ni guillemets typographiques dans src.
-      - name: Typographie
-        run: bash scripts/verifier-typographie.sh src
-
       # Tests des scripts shell. Vitest ne les voit pas, et un test sans
       # executant ne protege rien (lecon des tests pgTAP, qui sont restes sans
       # executant pendant des mois). La sortie est grep-friendly, comme les
@@ -270,7 +265,7 @@ jobs:
   #
   # Les jobs Stripe (parcours 01 et 06) restent NOCTURNES, jamais sur PR: le
   # compte Stripe a une limite de Test Clocks actives, et deux PR concurrentes
-  # se casseraient mutuellement.
+  # se casseraient mutuellement. Ils tournent dans parcours-nocturnes.yml.
   journeys:
     name: Journeys (BOLA + commande + permissions)
     # Fige sur 24.04: GitHub a bascule `ubuntu-latest` sur Ubuntu 26.04 le

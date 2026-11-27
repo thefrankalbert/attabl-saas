@@ -146,6 +146,11 @@ function ResetPasswordContent() {
         setSessionReady(false);
         return;
       }
+      if (code === 'MFA_REQUIRED') {
+        // Compte protege par un code: on le demande, puis /auth/mfa revient ici.
+        router.push('/auth/mfa?next=/reset-password');
+        return;
+      }
       if (code === 'SAME_PASSWORD') {
         form.setError('root', { message: t('samePasswordError') });
         return;
@@ -225,7 +230,6 @@ function ResetPasswordContent() {
                             type="email"
                             autoComplete="email"
                             placeholder={t('accountEmailPlaceholder')}
-                            autoFocus
                             className={inputClass}
                             {...field}
                           />
@@ -242,33 +246,34 @@ function ResetPasswordContent() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className={labelClass}>{t('newPasswordLabel')}</FormLabel>
-                        <FormControl>
-                          <div className="relative">
+                        <div className="relative">
+                          <FormControl>
                             <Input
                               type={showPassword ? 'text' : 'password'}
+                              autoComplete="new-password"
                               placeholder={t('newPasswordPlaceholder')}
                               className={`${inputClass} pr-10`}
                               {...field}
                             />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              aria-label={
-                                showPassword ? tForm('hidePassword') : tForm('showPassword')
-                              }
-                              aria-pressed={showPassword}
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-[var(--muted)] hover:bg-transparent hover:text-[var(--fg)]"
-                            >
-                              {showPassword ? (
-                                <EyeOff className="h-4 w-4" />
-                              ) : (
-                                <Eye className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </div>
-                        </FormControl>
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label={
+                              showPassword ? tForm('hidePassword') : tForm('showPassword')
+                            }
+                            aria-pressed={showPassword}
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-[var(--muted)] hover:bg-transparent hover:text-[var(--fg)]"
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -283,6 +288,7 @@ function ResetPasswordContent() {
                         <FormControl>
                           <Input
                             type={showPassword ? 'text' : 'password'}
+                            autoComplete="new-password"
                             placeholder={t('confirmPasswordPlaceholder')}
                             className={inputClass}
                             {...field}

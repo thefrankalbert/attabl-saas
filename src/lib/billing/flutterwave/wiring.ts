@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createEmailService } from '@/services/email.service';
 import { createFlutterwaveBillingService } from '@/services/flutterwave-billing.service';
+import { createFlutterwaveReconciliationService } from '@/services/flutterwave-reconciliation.service';
 import {
   createFlutterwaveRenewalService,
   type RenewalRunResult,
@@ -42,12 +43,24 @@ export async function runFlutterwaveRenewals(): Promise<RenewalRunResult | null>
   }).run();
 }
 
-/** Rattrapage des tentatives `pending` non confirmees par webhook. `null` quand la fonctionnalite est eteinte. */
+/**
+ * Rattrapage des tentatives `pending` non confirmees par webhook, puis
+ * rapprochement des paiements deja regles avec Flutterwave (audit SM8).
+ * `null` quand la fonctionnalite est eteinte.
+ */
 export async function runFlutterwaveReconcile(): Promise<{
   checked: number;
   applied: number;
   errors: number;
+  settledChecked: number;
+  anomalies: number;
+  settledErrors: number;
 } | null> {
   const wired = buildFlutterwaveBilling();
-  return wired ? wired.billing.reconcilePending() : null;
+  if (!wired) return null;
+  const pending = await wired.billing.reconcilePending();
+  const settled = await createFlutterwaveReconciliationService(createAdminClient(), {
+    client: createFlutterwaveClient(wired.config.secretKey),
+  }).reconcileSettled();
+  return { ...pending, ...settled };
 }

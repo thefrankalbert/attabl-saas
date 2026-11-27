@@ -33,7 +33,7 @@ export const createInvitationSchema = z.object({
 //    session. Ils sont donc optionnels, bornes quand ils sont fournis.
 // Le risque d'origine (appel vide au montage de la page qui brulait un jeton
 // de rate-limit) est couvert autrement: la page utilise maintenant
-// GET /api/invitations/validate pour sa verification au montage.
+// POST /api/invitations/validate pour sa verification au montage.
 export const acceptInvitationSchema = z.object({
   token: z.string().regex(/^[a-f0-9]{64}$/, 'Token invalide'),
   full_name: z.string().min(2, 'Le nom doit contenir au moins 2 caracteres').max(100).optional(),

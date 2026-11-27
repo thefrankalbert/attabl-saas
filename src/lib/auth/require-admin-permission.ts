@@ -31,10 +31,7 @@ export interface AdminPermissionContext {
  * middleware gate: live membership (is_active, no deleted_at) OR live platform
  * super_admin, then the 3-level `hasPermission` model.
  */
-export async function requireAdminPermission(
-  site: string,
-  permission: PermissionCode,
-): Promise<AdminPermissionContext> {
+async function resolvePageAccess(site: string, permission: PermissionCode) {
   const headersList = await headers();
   const tenantSlug = readTenantSlug(headersList).slug || site;
 
@@ -56,12 +53,40 @@ export async function requireAdminPermission(
   }
 
   const { allowed, role } = await resolveAdminPermission(supabase, user.id, tenant.id, permission);
+  return { tenantId: tenant.id, allowed, role };
+}
+
+export async function requireAdminPermission(
+  site: string,
+  permission: PermissionCode,
+): Promise<AdminPermissionContext> {
+  const { tenantId, allowed, role } = await resolvePageAccess(site, permission);
 
   if (!allowed || !role) {
     redirectToUnauthorized();
   }
 
-  return { tenantId: tenant.id, role };
+  return { tenantId, role };
+}
+
+/**
+ * Garde des pages ouvertes a TOUT membre du restaurant (accueil, cuisine,
+ * cartes, plats, categories, service, QR, aide): aucune permission exigee,
+ * mais il faut etre membre vivant du restaurant ou super-admin.
+ *
+ * Sans elle, la page chargeait ses donnees en parallele du layout: le refus du
+ * layout arrivait apres, et le contenu etait deja dans la reponse envoyee a un
+ * utilisateur d'un autre restaurant.
+ */
+export async function requireAdminMember(site: string): Promise<AdminPermissionContext> {
+  // La permission demandee ne sert pas a la decision: seul le role compte.
+  const { tenantId, role } = await resolvePageAccess(site, 'menu.view');
+
+  if (!role) {
+    redirectToUnauthorized();
+  }
+
+  return { tenantId, role };
 }
 
 /**

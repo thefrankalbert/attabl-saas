@@ -36,12 +36,3 @@ export interface TopDishRecord {
   initials: string;
   available: boolean;
 }
-
-export interface StockAlertRecord {
-  id: string;
-  level: 'ok' | 'warn' | 'err';
-  title: string;
-  current: number;
-  threshold: number;
-  unit: string;
-}

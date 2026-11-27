@@ -4,6 +4,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { RecentOrder } from '@/types/command-center.types';
+import { mapFluxStatus, type FluxStatus } from './flux-status';
 
 interface FluxListProps {
   orders: RecentOrder[];
@@ -16,15 +17,6 @@ interface FluxListProps {
    * superadmins and multi-site owners can tell sites apart.
    */
   multiTenant?: boolean;
-}
-
-type FluxStatus = 'delivered' | 'prep' | 'attente';
-
-function mapStatus(raw: string): FluxStatus {
-  const s = raw.toLowerCase();
-  if (s === 'delivered' || s === 'served' || s === 'ready') return 'delivered';
-  if (s === 'preparing' || s === 'in_progress' || s === 'accepted') return 'prep';
-  return 'attente';
 }
 
 function formatAmount(value: number, locale: string): string {
@@ -43,9 +35,12 @@ export function FluxList({ orders, onSelect, max = 5, multiTenant = true }: Flux
   const locale = useLocale();
   const visible = orders.slice(0, max);
   const labels: Record<FluxStatus, string> = {
-    delivered: t('statusDelivered'),
+    pending: t('statusPending'),
+    confirmed: t('statusConfirmed'),
     prep: t('statusPreparing'),
-    attente: t('statusPending'),
+    ready: t('statusReady'),
+    delivered: t('statusDelivered'),
+    cancelled: t('statusCancelled'),
   };
 
   return (
@@ -73,7 +68,7 @@ export function FluxList({ orders, onSelect, max = 5, multiTenant = true }: Flux
               isFirst={idx === 0}
               showTenant={multiTenant}
               onClick={onSelect ? () => onSelect(order.tenant_slug) : undefined}
-              statusLabel={labels[mapStatus(order.status)]}
+              statusLabel={labels[mapFluxStatus(order.status)]}
               locale={locale}
             />
           ))
@@ -93,19 +88,25 @@ interface FluxRowProps {
 }
 
 function FluxRow({ order, isFirst, showTenant, onClick, statusLabel, locale }: FluxRowProps) {
-  const status = mapStatus(order.status);
+  const status = mapFluxStatus(order.status);
   const statusBg: Record<FluxStatus, string> = {
-    delivered: 'var(--cc-accent-ink)',
+    pending: 'var(--cc-text-3)',
+    confirmed: 'var(--cc-text-3)',
     prep: 'var(--cc-warn)',
-    attente: 'var(--cc-text-3)',
+    ready: 'var(--cc-accent-ink)',
+    delivered: 'var(--cc-accent-ink)',
+    cancelled: 'var(--cc-danger)',
   };
   const badgeStyle: Record<FluxStatus, { background: string; color: string }> = {
     delivered: { background: 'var(--cc-accent-soft)', color: 'var(--cc-accent-ink)' },
+    ready: { background: 'var(--cc-accent-soft)', color: 'var(--cc-accent-ink)' },
     prep: {
       background: 'color-mix(in srgb, var(--cc-warn) 16%, transparent)',
       color: 'var(--cc-warn)',
     },
-    attente: { background: 'var(--cc-surface-2)', color: 'var(--cc-text-2)' },
+    pending: { background: 'var(--cc-surface-2)', color: 'var(--cc-text-2)' },
+    confirmed: { background: 'var(--cc-surface-2)', color: 'var(--cc-text-2)' },
+    cancelled: { background: 'var(--cc-surface-2)', color: 'var(--cc-text-2)' },
   };
   const interactive = Boolean(onClick);
 
@@ -124,11 +125,11 @@ function FluxRow({ order, isFirst, showTenant, onClick, statusLabel, locale }: F
           #{order.order_number || order.id.slice(0, 8)}
         </div>
         <div
-          className="mt-[3px] flex items-center gap-2 whitespace-nowrap text-[11px]"
+          className="mt-[3px] flex items-center gap-2 whitespace-nowrap text-xs"
           style={{ color: 'var(--cc-text-3)' }}
         >
           <span
-            className="inline-flex items-center rounded px-1.5 py-[1px] text-[10px] font-bold uppercase tracking-[0.04em]"
+            className="inline-flex items-center rounded px-1.5 py-[1px] text-xs font-bold uppercase tracking-[0.04em]"
             style={badgeStyle[status]}
           >
             {statusLabel}

@@ -5,6 +5,11 @@ import AnnouncementsClient from '@/components/admin/AnnouncementsClient';
 import TenantNotFound from '@/components/admin/TenantNotFound';
 import type { Announcement } from '@/types/admin.types';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('sidebar', 'navAnnouncements');
+}
 
 export const dynamic = 'force-dynamic';
 

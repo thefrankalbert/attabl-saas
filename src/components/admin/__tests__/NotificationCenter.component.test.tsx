@@ -102,7 +102,7 @@ describe('NotificationCenter', () => {
   it('renders bell icon button', () => {
     render(<NotificationCenter tenantId="tenant-1" userId="user-1" />);
 
-    expect(screen.getByRole('button', { name: 'title' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^title/ })).toBeInTheDocument();
   });
 
   it('shows unread badge count', () => {
@@ -115,6 +115,8 @@ describe('NotificationCenter', () => {
     render(<NotificationCenter tenantId="tenant-1" userId="user-1" />);
 
     expect(screen.getByText('2')).toBeInTheDocument();
+    // WCAG 2.5.3: the accessible name must contain the visible count.
+    expect(screen.getByRole('button', { name: 'title (2)' })).toBeInTheDocument();
   });
 
   it('does not show badge when all read', () => {
@@ -131,7 +133,7 @@ describe('NotificationCenter', () => {
     const user = userEvent.setup();
     render(<NotificationCenter tenantId="tenant-1" userId="user-1" />);
 
-    await user.click(screen.getByRole('button', { name: 'title' }));
+    await user.click(screen.getByRole('button', { name: /^title/ }));
 
     await waitFor(() => {
       expect(screen.getByText('empty')).toBeInTheDocument();
@@ -147,7 +149,7 @@ describe('NotificationCenter', () => {
     const user = userEvent.setup();
     render(<NotificationCenter tenantId="tenant-1" userId="user-1" />);
 
-    await user.click(screen.getByRole('button', { name: 'title' }));
+    await user.click(screen.getByRole('button', { name: /^title/ }));
 
     await waitFor(() => {
       expect(screen.getByText('New order')).toBeInTheDocument();
@@ -163,7 +165,7 @@ describe('NotificationCenter', () => {
     const user = userEvent.setup();
     render(<NotificationCenter tenantId="tenant-1" userId="user-1" />);
 
-    await user.click(screen.getByRole('button', { name: 'title' }));
+    await user.click(screen.getByRole('button', { name: /^title/ }));
 
     await waitFor(() => {
       expect(screen.getByText('New order')).toBeInTheDocument();
@@ -183,7 +185,7 @@ describe('NotificationCenter', () => {
     const user = userEvent.setup();
     render(<NotificationCenter tenantId="tenant-1" userId="user-1" />);
 
-    await user.click(screen.getByRole('button', { name: 'title' }));
+    await user.click(screen.getByRole('button', { name: /^title/ }));
 
     await waitFor(() => {
       expect(screen.getByText('markAllRead')).toBeInTheDocument();
@@ -214,7 +216,7 @@ describe('NotificationCenter', () => {
       );
       const user = userEvent.setup();
       render(<NotificationCenter tenantId="tenant-1" userId="user-1" />);
-      await user.click(screen.getByRole('button', { name: 'title' }));
+      await user.click(screen.getByRole('button', { name: /^title/ }));
 
       const mute = await screen.findByRole('button', { name: 'muteReminder' });
       expect(mute.closest('button')?.parentElement?.closest('button')).toBeNull();
@@ -229,7 +231,7 @@ describe('NotificationCenter', () => {
       mockSetMuted.mockResolvedValueOnce({ success: false, error: 'non autorise' } as never);
       const user = userEvent.setup();
       render(<NotificationCenter tenantId="tenant-1" userId="user-1" />);
-      await user.click(screen.getByRole('button', { name: 'title' }));
+      await user.click(screen.getByRole('button', { name: /^title/ }));
       await user.click(await screen.findByRole('button', { name: 'muteReminder' }));
       await waitFor(() =>
         expect(mockToast).toHaveBeenCalledWith(
@@ -242,7 +244,7 @@ describe('NotificationCenter', () => {
       mockNotifications.push(makeNotification({ id: 'n1', type: 'info' }));
       const user = userEvent.setup();
       render(<NotificationCenter tenantId="tenant-1" userId="user-1" />);
-      await user.click(screen.getByRole('button', { name: 'title' }));
+      await user.click(screen.getByRole('button', { name: /^title/ }));
 
       await screen.findByText('New order received');
       expect(screen.queryByRole('button', { name: 'muteReminder' })).toBeNull();
@@ -252,7 +254,7 @@ describe('NotificationCenter', () => {
       mockMuted.push('weekly_coach');
       const user = userEvent.setup();
       render(<NotificationCenter tenantId="tenant-1" userId="user-1" />);
-      await user.click(screen.getByRole('button', { name: 'title' }));
+      await user.click(screen.getByRole('button', { name: /^title/ }));
 
       expect(await screen.findByText('reminderRules.weekly_coach')).toBeInTheDocument();
       await user.click(screen.getByRole('button', { name: 'unmuteReminder' }));

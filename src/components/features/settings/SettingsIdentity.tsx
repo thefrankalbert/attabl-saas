@@ -135,7 +135,7 @@ export default function SettingsIdentity({
 
             <div className="space-y-2">
               <Label htmlFor="settings-establishment-type">
-                {t('establishmentType') ?? "Type d'etablissement"}
+                {t('establishmentType') ?? "Type d'établissement"}
               </Label>
               <Select
                 value={watchedEstablishmentType || 'restaurant'}
@@ -208,12 +208,15 @@ export default function SettingsIdentity({
         {/* Domain section (moved from separate tab) */}
         <div className="space-y-4">
           <div>
-            <Label className="text-sm font-semibold text-app-text">{t('customDomain')}</Label>
+            <Label htmlFor="settings-custom-domain" className="text-sm font-semibold text-app-text">
+              {t('customDomain')}
+            </Label>
             <p className="text-xs text-app-text-secondary mt-0.5">{t('customDomainDesc')}</p>
           </div>
 
           <div className="flex gap-2">
             <Input
+              id="settings-custom-domain"
               value={domain}
               onChange={(e) => {
                 setDomain(e.target.value);

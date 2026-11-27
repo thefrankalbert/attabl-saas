@@ -23,6 +23,7 @@ import InventoryLossModal from '@/components/admin/inventory/InventoryLossModal'
 import { useInventoryColumns } from '@/components/admin/inventory/use-inventory-columns';
 import { useInventoryActions } from '@/components/admin/inventory/use-inventory-actions';
 import { useSound } from '@/contexts/SoundContext';
+import { getStockLevel } from '@/lib/inventory/stock-level';
 
 interface InventoryClientProps {
   tenantId: string;
@@ -91,6 +92,8 @@ export default function InventoryClient({ tenantId, currency, tenantSlug }: Inve
     setAdjustNotes,
     adjustSupplierId,
     setAdjustSupplierId,
+    adjustUnitCost,
+    setAdjustUnitCost,
     receiveUnitMode,
     setReceiveUnitMode,
     lossQty,
@@ -145,8 +148,9 @@ export default function InventoryClient({ tenantId, currency, tenantSlug }: Inve
   // Filtered list
   const filtered = ingredients.filter((ing) => {
     if (searchQuery && !ing.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    if (filterStatus === 'low' && ing.current_stock > ing.min_stock_alert) return false;
-    if (filterStatus === 'out' && ing.current_stock > 0) return false;
+    // Meme regle que le badge et les compteurs (getStockLevel): "Stock bas"
+    // n'inclut pas les ruptures.
+    if (filterStatus !== 'all' && getStockLevel(ing) !== filterStatus) return false;
     return true;
   });
 
@@ -155,10 +159,12 @@ export default function InventoryClient({ tenantId, currency, tenantSlug }: Inve
   const canEdit = usePermissions().can('inventory.edit');
   const columns = useInventoryColumns(currency, openAdjust, openEdit, openLoss, canEdit);
 
-  const lowCount = ingredients.filter(
-    (i) => i.current_stock > 0 && i.current_stock <= i.min_stock_alert,
-  ).length;
-  const outCount = ingredients.filter((i) => i.current_stock <= 0).length;
+  const lowCount = ingredients.filter((i) => getStockLevel(i) === 'low').length;
+  const outCount = ingredients.filter((i) => getStockLevel(i) === 'out').length;
+
+  // Aucun produit et aucune recherche ni filtre en cours: ce n'est pas une
+  // recherche sans resultat, on invite a creer le premier produit.
+  const isEmptyInventory = ingredients.length === 0 && !searchQuery && filterStatus === 'all';
 
   return (
     <RoleGuard permission="inventory.view">
@@ -232,7 +238,13 @@ export default function InventoryClient({ tenantId, currency, tenantSlug }: Inve
               <ResponsiveDataTable
                 columns={columns}
                 data={filtered}
-                emptyMessage={t('noProductFound')}
+                emptyMessage={
+                  isEmptyInventory
+                    ? canEdit
+                      ? t('noProductYetCanEdit')
+                      : t('noProductYet')
+                    : t('noProductFound')
+                }
                 storageKey="inventory"
                 cardsBelowXl
                 mobileConfig={{
@@ -291,6 +303,8 @@ export default function InventoryClient({ tenantId, currency, tenantSlug }: Inve
               setAdjustNotes={setAdjustNotes}
               adjustSupplierId={adjustSupplierId}
               setAdjustSupplierId={setAdjustSupplierId}
+              adjustUnitCost={adjustUnitCost}
+              setAdjustUnitCost={setAdjustUnitCost}
               receiveUnitMode={receiveUnitMode}
               setReceiveUnitMode={setReceiveUnitMode}
               activeSuppliers={activeSuppliers}

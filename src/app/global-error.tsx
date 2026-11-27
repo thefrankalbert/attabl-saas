@@ -87,8 +87,8 @@ export default function GlobalError({
                 marginBottom: '32px',
               }}
             >
-              Une erreur inattendue est survenue. Nos equipes ont ete alertees. Vous pouvez
-              reessayer ou revenir plus tard.
+              Une erreur inattendue est survenue. Nos équipes ont été alertées. Vous pouvez
+              réessayer ou revenir plus tard.
             </p>
             {/* eslint-disable-next-line react/forbid-elements */}
             <button
@@ -105,7 +105,7 @@ export default function GlobalError({
                 width: '100%',
               }}
             >
-              Reessayer
+              Réessayer
             </button>
           </div>
         </div>

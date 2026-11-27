@@ -15,6 +15,8 @@ const state = vi.hoisted(() => ({
 }));
 
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }));
+// The layout sends the convive messages subset; its content does not matter here.
+vi.mock('@/i18n/storefront-messages', () => ({ getStorefrontMessages: async () => ({}) }));
 vi.mock('@/lib/cache', () => ({
   getCachedTenant: async () => state.tenant,
   toPublicTenant: (t: unknown) => t,
@@ -54,7 +56,8 @@ async function render(tenant: Record<string, unknown>) {
 }
 
 function isUnavailable(tree: unknown): boolean {
-  return isValidElement(tree) && tree.type === StorefrontUnavailable;
+  // Wrapped in the messages provider: look for it anywhere in the tree.
+  return isValidElement(tree) && find(tree, (el) => el.type === StorefrontUnavailable) !== null;
 }
 
 function orderingPaused(tree: ReactNode): unknown {

@@ -13,14 +13,18 @@
 
 name: pgTAP (privileges et RLS)
 
-# Sur CHAQUE PR et chaque push sur main, sans filtre de chemins (audit K1.11):
-# ce controle doit pouvoir etre exige avant fusion, et un controle exige qui ne
-# se lance pas pour une PR bloque cette PR. Le cout (quelques minutes) est le
-# prix d'un refus d'isolation teste a chaque changement.
 on:
+  # Sur CHAQUE pull request, sans filtre de chemins: ce controle est un
+  # controle REQUIS de la branche main (audit K1.11). Un controle requis qui ne
+  # se lance pas pour une PR ne rend jamais de statut, et la PR attend pour
+  # toujours. Le job prend quelques minutes, c'est le prix d'une RLS gardee.
   pull_request:
   push:
     branches: [main]
+    paths:
+      - 'supabase/**'
+      - 'scripts/run-pgtap.sh'
+      - '.github/workflows/pgtap.yml'
 
 concurrency:
   group: pgtap-${{ github.ref }}

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useQueryClient } from '@tanstack/react-query';
-import { Plus, ClipboardList } from 'lucide-react';
+import { Plus, ClipboardList, AlertTriangle } from 'lucide-react';
 import type { ColumnDef } from '@tanstack/react-table';
 
 import { Button } from '@/components/ui/button';
@@ -56,7 +56,7 @@ export default function StockCountClient({ tenantId }: StockCountClientProps) {
   // isPending, not isLoading (audit C-018): isLoading also needs fetchStatus,
   // which query-core forces to 'idle' on the server and 'fetching' on the first
   // client render, so the two rendered different branches (hydration error).
-  const { data: counts = [], isPending: isLoading } = useStockCounts(tenantId);
+  const { data: counts = [], isPending: isLoading, isError, refetch } = useStockCounts(tenantId);
 
   const columns: ColumnDef<StockCount, unknown>[] = [
     {
@@ -140,7 +140,15 @@ export default function StockCountClient({ tenantId }: StockCountClientProps) {
         />
       </div>
 
-      {counts.length === 0 && !isLoading ? (
+      {isError && counts.length === 0 ? (
+        <div className="flex flex-col items-center justify-center flex-1 text-center gap-3">
+          <AlertTriangle className="h-10 w-10 text-app-text-muted" />
+          <p className="text-sm text-status-error">{tc('loadingError')}</p>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            {tc('retry')}
+          </Button>
+        </div>
+      ) : counts.length === 0 && !isLoading ? (
         <div className="flex flex-col items-center justify-center flex-1 text-center gap-3">
           <ClipboardList className="h-12 w-12 text-app-text-muted opacity-40" />
           <p className="font-medium text-app-text-muted">{t('countsEmptyTitle')}</p>

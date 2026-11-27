@@ -4,7 +4,7 @@ import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { ArrowRight, Check, Loader2, Mail, MapPin, MessageCircle } from 'lucide-react';
-import { actionSubmitContactForm } from '@/app/actions/contact';
+import { actionSubmitContactForm, type ContactState } from '@/app/actions/contact';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,6 +25,24 @@ const CITY_TEL: Record<(typeof CITY_KEYS)[number], string> = {
   ndjamena: '+23564940372',
 };
 const FAQ_KEYS = ['q1', 'q2', 'q3'] as const;
+
+const SAISIE = ['name', 'company', 'email', 'message'] as const;
+
+// Etat du formulaire + saisie rendue par l'action. React 19 vide le formulaire
+// apres chaque action: les champs se reremplissent depuis `values`, pour qu'une
+// erreur (validation ou reseau coupe) ne fasse pas perdre le message du visiteur.
+type ContactFormState = ContactState & {
+  values?: Partial<Record<(typeof SAISIE)[number], string>>;
+};
+
+function readValues(formData: FormData): NonNullable<ContactFormState['values']> {
+  const values: NonNullable<ContactFormState['values']> = {};
+  for (const key of SAISIE) {
+    const v = formData.get(key);
+    values[key] = typeof v === 'string' ? v : '';
+  }
+  return values;
+}
 
 const FIELD =
   'h-11 rounded-xl border-zinc-200 bg-white text-base text-zinc-950 focus-visible:border-zinc-400 focus-visible:ring-0 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50';
@@ -56,7 +74,17 @@ function SubmitButton() {
 
 export default function ContactPage() {
   const t = useTranslations('contact');
-  const [formState, formAction] = useActionState(actionSubmitContactForm, {
+  // Un echec reseau fait lever l'appel de l'action: sans ce try/catch la page
+  // entiere est remplacee par l'ecran d'erreur et la saisie est perdue.
+  const submit = async (prev: ContactFormState, formData: FormData): Promise<ContactFormState> => {
+    const values = readValues(formData);
+    try {
+      return { ...(await actionSubmitContactForm(prev, formData)), values };
+    } catch {
+      return { success: false, message: t('networkError'), values };
+    }
+  };
+  const [formState, formAction] = useActionState<ContactFormState, FormData>(submit, {
     success: false,
     message: '',
   });
@@ -133,6 +161,7 @@ export default function ContactPage() {
                       name="name"
                       id="name"
                       required
+                      defaultValue={formState.values?.name}
                       placeholder={t('placeholderName')}
                       className={FIELD}
                     />
@@ -148,6 +177,7 @@ export default function ContactPage() {
                       type="text"
                       name="company"
                       id="company"
+                      defaultValue={formState.values?.company}
                       placeholder={t('placeholderCompany')}
                       className={FIELD}
                     />
@@ -162,6 +192,7 @@ export default function ContactPage() {
                     name="email"
                     id="email"
                     required
+                    defaultValue={formState.values?.email}
                     placeholder={t('placeholderEmail')}
                     className={FIELD}
                   />
@@ -178,6 +209,7 @@ export default function ContactPage() {
                     id="message"
                     rows={4}
                     required
+                    defaultValue={formState.values?.message}
                     placeholder={t('placeholderMessage')}
                     className="min-h-[110px] resize-y rounded-xl border-zinc-200 bg-white text-base text-zinc-950 focus-visible:border-zinc-400 focus-visible:ring-0 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
                   />

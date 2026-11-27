@@ -112,6 +112,7 @@ export async function actionDeleteAdminUser(
     .select('user_id, email, full_name, role')
     .eq('id', userId)
     .eq('tenant_id', tenantId)
+    .is('deleted_at', null)
     .single();
 
   const t = await getTranslations('errors');
@@ -449,6 +450,7 @@ export async function actionResetUserPassword(
     .select('user_id, email, role')
     .eq('id', userId)
     .eq('tenant_id', tenantId)
+    .is('deleted_at', null)
     .single();
 
   if (!targetUser) return { error: t('userNotFound') };

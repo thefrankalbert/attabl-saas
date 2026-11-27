@@ -69,6 +69,74 @@ describe('submitOrder', () => {
     expect((entries[0]?.body as { client_request_id: string }).client_request_id).toBe('key-2');
   });
 
+  /**
+   * Audit du 2026-11-24: sous charge, la requete expirait cote client alors que
+   * le serveur creait la commande, et la page disait "pas encore arrivee".
+   * On retente UNE fois avec la meme cle: si le serveur a la commande, il la rend.
+   */
+  it('retries once with the same key after a timeout and returns sent', async () => {
+    const { outbox, entries } = fakeOutbox();
+    const bodies: string[] = [];
+    let calls = 0;
+    const fetchImpl = vi.fn(async (_url: string, init?: RequestInit) => {
+      calls += 1;
+      bodies.push(init?.body as string);
+      if (calls === 1) throw new DOMException('timed out', 'TimeoutError');
+      return jsonResponse(200, { orderId: 'o-late' });
+    });
+
+    const result = await submitOrder({
+      endpoint: '/api/orders',
+      body: {},
+      clientRequestId: 'key-timeout',
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      outbox,
+    });
+
+    expect(result).toEqual({ status: 'sent', data: { orderId: 'o-late' } });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(bodies[0]).toBe(bodies[1]);
+    expect(JSON.parse(bodies[1] ?? '{}').client_request_id).toBe('key-timeout');
+    expect(entries).toHaveLength(0);
+  });
+
+  it('queues as unconfirmed when the retry also times out', async () => {
+    const { outbox, entries } = fakeOutbox();
+    const fetchImpl = vi.fn(async () => {
+      throw new DOMException('timed out', 'TimeoutError');
+    });
+
+    const result = await submitOrder({
+      endpoint: '/api/orders',
+      body: {},
+      clientRequestId: 'key-timeout-2',
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      outbox,
+    });
+
+    expect(result).toEqual({ status: 'queued', unconfirmed: true });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(entries).toHaveLength(1);
+  });
+
+  it('does not retry on a plain network failure (offline stays an offline queue)', async () => {
+    const { outbox } = fakeOutbox();
+    const fetchImpl = vi.fn(async () => {
+      throw new TypeError('Failed to fetch');
+    });
+
+    const result = await submitOrder({
+      endpoint: '/api/orders',
+      body: {},
+      clientRequestId: 'key-offline',
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      outbox,
+    });
+
+    expect(result).toEqual({ status: 'queued' });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
   it('queues on a transient 5xx', async () => {
     const { outbox, entries } = fakeOutbox();
     const fetchImpl = vi.fn(async () => jsonResponse(503, { error: 'unavailable' }));

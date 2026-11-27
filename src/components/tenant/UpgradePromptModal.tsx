@@ -22,6 +22,7 @@ interface UpgradePromptModalProps {
 
 export function UpgradePromptModal({ feature, checkoutUrl, onClose }: UpgradePromptModalProps) {
   const t = useTranslations('admin.upgradeWall');
+  const tc = useTranslations('common');
 
   return (
     <Dialog
@@ -56,7 +57,7 @@ export function UpgradePromptModal({ feature, checkoutUrl, onClose }: UpgradePro
             </Link>
           </Button>
           <Button variant="ghost" size="sm" className="w-full" onClick={onClose}>
-            Plus tard
+            {tc('later')}
           </Button>
         </DialogFooter>
       </DialogContent>

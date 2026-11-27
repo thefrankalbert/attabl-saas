@@ -4,6 +4,11 @@ import { notFound } from 'next/navigation';
 import SingleOrderClient from '@/components/admin/SingleOrderClient';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 import type { Order, ItemStatus, Course, CurrencyCode } from '@/types/admin.types';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('sidebar', 'navOrders');
+}
 
 export const dynamic = 'force-dynamic';
 

@@ -4,6 +4,8 @@
  * Pure string builders shared by every email template. No side effects.
  */
 
+import { emailFooterLine } from '@/lib/legal/company';
+
 export function escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
@@ -19,7 +21,7 @@ export function escapeHtml(str: string): string {
  * `%XX` deja present: `encodeURI` le transformait en `%25XX`, et un lien passe
  * deux fois (modele puis `cta`) arrivait casse.
  */
-function sanitizeUrl(url: string): string {
+export function sanitizeUrl(url: string): string {
   try {
     const parsed = new URL(url);
     if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
@@ -31,7 +33,7 @@ function sanitizeUrl(url: string): string {
   }
 }
 
-export const FOOTER = 'ATTABL SAS - Douala, Cameroun';
+export const FOOTER = emailFooterLine();
 
 export function wrap(preheader: string, body: string): string {
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -46,7 +48,7 @@ export function wrap(preheader: string, body: string): string {
 <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;">
 <tr><td style="padding:0 0 24px;text-align:center;font-size:18px;font-weight:700;color:#111827;">ATTABL</td></tr>
 ${body}
-<tr><td style="padding:24px 0 0;text-align:center;font-size:11px;color:#9ca3af;">${FOOTER}</td></tr>
+<tr><td style="padding:24px 0 0;text-align:center;font-size:11px;color:#9ca3af;">${escapeHtml(FOOTER)}</td></tr>
 </table></td></tr></table></body></html>`;
 }
 

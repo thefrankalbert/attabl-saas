@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
+import { isMfaSatisfied, MFA_REQUIRED_CODE } from '@/lib/auth/mfa-assurance';
 import { verifyOrigin } from '@/lib/csrf';
 import { forgotPasswordAdresseLimiter, getClientIp } from '@/lib/rate-limit';
 import { resetPasswordSubmitSchema } from '@/lib/validations/auth.schema';
@@ -20,7 +21,8 @@ import { RECOVERY_MARKER_COOKIE, verifyRecoveryMarker } from '@/lib/auth/recover
  *     lien n'etait pas le sien (lien d'un autre compte envoye a une victime): on
  *     deconnecte localement et on ne change rien.
  *
- * Codes de refus: NO_RECOVERY (401/403), EMAIL_MISMATCH (403), SAME_PASSWORD (400).
+ * Codes de refus: NO_RECOVERY (401/403), MFA_REQUIRED (403), EMAIL_MISMATCH (403),
+ * SAME_PASSWORD (400).
  */
 export async function POST(request: Request) {
   try {
@@ -54,6 +56,12 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ code: 'NO_RECOVERY' }, { status: 401 });
+    }
+
+    // Double authentification: un compte qui a un facteur ne change son mot de
+    // passe qu'en aal2. La page renvoie vers /auth/mfa puis revient ici.
+    if (!(await isMfaSatisfied(supabase, user))) {
+      return NextResponse.json({ code: MFA_REQUIRED_CODE }, { status: 403 });
     }
 
     const cookieStore = await cookies();

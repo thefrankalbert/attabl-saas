@@ -128,6 +128,7 @@ function Panel({
                 size={config.qrCode.width * SCALE}
                 fgColor="#000000"
                 bgColor="#FFFFFF"
+                aria-hidden="true"
               />
             </div>
           </>
@@ -141,7 +142,12 @@ export function ChevaletPreview({ config, logoUrl, previewRef }: ChevaletPreview
   const t = useTranslations('sidebar.supports');
 
   return (
-    <div className="flex flex-col items-center gap-4 w-full overflow-x-auto">
+    <div
+      tabIndex={0}
+      role="region"
+      aria-label={t('previewRegionLabel')}
+      className="flex flex-col items-center gap-4 w-full overflow-x-auto"
+    >
       {/* Recto */}
       <div ref={previewRef}>
         <Panel config={config} logoUrl={logoUrl} label={t('rectoLabel')} />

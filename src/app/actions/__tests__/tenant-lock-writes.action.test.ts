@@ -188,6 +188,7 @@ const writes: Call[] = [
   ],
   ['actionUpdateIngredient', () => inventory.actionUpdateIngredient(T, X, { name: 'Oignon' })],
   ['actionSetRecipe', () => inventory.actionSetRecipe(T, X, [])],
+  ['actionSetOpeningStock', () => inventory.actionSetOpeningStock(T, X, 1)],
 
   ['actionCreateMenuItem', () => menuItems.actionCreateMenuItem(T, {})],
   ['actionUpdateMenuItem', () => menuItems.actionUpdateMenuItem(T, X, {})],
@@ -292,10 +293,6 @@ describe('restaurant coupe: aucune ecriture par Server Action (A-02)', () => {
     expect(adminClientSpy).not.toHaveBeenCalled();
   });
 
-  it('B38: actionSetOpeningStock (morte) n est plus exportee', () => {
-    expect('actionSetOpeningStock' in inventory).toBe(false);
-  });
-
   it('classe TOUTE action exportee de src/app/actions (aucune non classee)', () => {
     const dir = join(process.cwd(), 'src/app/actions');
     // Hors perimetre, par decision: console plateforme (deverrouille les
@@ -308,6 +305,7 @@ describe('restaurant coupe: aucune ecriture par Server Action (A-02)', () => {
       'actionGetPaymentSummary',
       'actionListOrderNotes',
       'actionListHouseAccounts',
+      'actionGetMfaStatus',
     ]);
     // Retirer ou desactiver un membre reste permis restaurant coupe (securite).
     // Couper un rappel pour soi: etat personnel, comme "lu" (notifications.ts).
@@ -320,6 +318,11 @@ describe('restaurant coupe: aucune ecriture par Server Action (A-02)', () => {
       'actionSendTestAlert',
       'actionDeleteOwnerAccount',
       'actionDeleteStaffAccount',
+      // Double authentification (K6.13): securite du COMPTE, sans restaurant;
+      // un restaurant coupe ne doit pas empecher de proteger son compte.
+      'actionStartMfaEnrollment',
+      'actionVerifyMfaCode',
+      'actionDisableMfa',
     ]);
     // Ecritures verrouillees, prouvees par un autre fichier de test (avec la
     // garde simulee) ou deja existantes: la source doit appeler la garde.

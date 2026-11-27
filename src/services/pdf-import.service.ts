@@ -106,7 +106,7 @@ export function createPdfImportService(supabase: SupabaseClient): PdfImportServi
 
       if (!apiKey) {
         throw new ServiceError(
-          'ANTHROPIC_API_KEY is not configured. PDF import requires a valid Anthropic API key.',
+          "L'import de carte en PDF n'est pas disponible pour le moment.",
           'INTERNAL',
         );
       }

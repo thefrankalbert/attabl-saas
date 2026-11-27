@@ -14,6 +14,10 @@ import { SettingsDialog } from '../SettingsDialog';
 // n'importe quelle page du shell, /subscription comprise.
 
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
+// Volet double authentification: teste a part (actions et service mfa).
+vi.mock('@/components/shared/mfa/MfaSettingsSection', () => ({
+  MfaSettingsSection: () => null,
+}));
 vi.mock('@/app/actions/account-deletion', () => ({
   actionDeleteOwnerAccount: vi.fn(),
   actionDeleteStaffAccount: vi.fn(),

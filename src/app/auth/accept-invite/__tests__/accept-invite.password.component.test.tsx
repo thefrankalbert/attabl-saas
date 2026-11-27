@@ -22,12 +22,14 @@ import AcceptInvitePage from '../page';
 
 const fetchMock = vi.fn();
 
-function renderPage(locale: 'fr-FR' | 'en-US') {
+async function renderPage(locale: 'fr-FR' | 'en-US') {
   render(
     <NextIntlClientProvider locale={locale} messages={locale === 'fr-FR' ? fr : en}>
       <AcceptInvitePage />
     </NextIntlClientProvider>,
   );
+  // Le formulaire n'apparait qu'une fois le jeton verifie par le serveur.
+  await waitFor(() => expect(document.querySelector('form')).not.toBeNull());
 }
 
 function fillAndSubmit(password: string) {
@@ -53,7 +55,7 @@ describe('page d invitation: mot de passe', () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it('11 caracteres: aucun envoi, phrase traduite, aucun minLength natif', async () => {
-    renderPage('fr-FR');
+    await renderPage('fr-FR');
     expect(document.querySelector('#password')).not.toHaveAttribute('minLength');
     fillAndSubmit('Maquis-2026');
     expect(await screen.findByText('Il manque : 12 caractères.')).toBeInTheDocument();
@@ -61,7 +63,7 @@ describe('page d invitation: mot de passe', () => {
   });
 
   it('en-US: titre et phrase en anglais', async () => {
-    renderPage('en-US');
+    await renderPage('en-US');
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('You have been invited!');
     fillAndSubmit('maquis-2026!');
     expect(await screen.findByText('Still missing: an uppercase letter.')).toBeInTheDocument();
@@ -69,7 +71,7 @@ describe('page d invitation: mot de passe', () => {
   });
 
   it('temoin: un mot de passe conforme est envoye', async () => {
-    renderPage('fr-FR');
+    await renderPage('fr-FR');
     fillAndSubmit('Maquis-2026!Awa');
     await waitFor(() => expect(acceptCalls()).toHaveLength(1));
   });

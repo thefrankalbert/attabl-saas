@@ -14,6 +14,9 @@ export function createClient() {
         // cross-site top-level navigation back from Google/Supabase to /auth/callback.
         // 'strict' withholds it on that navigation, breaking exchangeCodeForSession.
         sameSite: 'lax',
+        // Audit K3.9: HTTPS seulement en production; hors production
+        // (http://localhost) le cookie doit rester lisible sans HTTPS.
+        secure: process.env.NODE_ENV === 'production',
       },
     },
   );

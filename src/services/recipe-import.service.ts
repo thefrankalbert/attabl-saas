@@ -62,6 +62,7 @@ export function createRecipeImportService(supabase: SupabaseClient): RecipeImpor
       const { rows, removals, errors: parseErrors } = await this.parseExcel(buffer);
       const errors: ImportRowError[] = [...parseErrors];
       let recipesUnchanged = 0;
+      let ingredientsCreatedNames: string[] = [];
 
       const result = (
         counts: { created?: number; updated?: number; ingredients?: number; removed?: number } = {},
@@ -71,6 +72,7 @@ export function createRecipeImportService(supabase: SupabaseClient): RecipeImpor
         recipesRemoved: counts.removed ?? 0,
         recipesUnchanged,
         ingredientsCreated: counts.ingredients ?? 0,
+        ingredientsCreatedNames,
         itemsSkipped: errors.length,
         errors,
       });
@@ -248,6 +250,17 @@ export function createRecipeImportService(supabase: SupabaseClient): RecipeImpor
           );
         }
         counts = (data ?? {}) as typeof counts;
+        // Produits que l'import vient de creer: les noms inconnus retenus dans
+        // le lot ecrit, avec l'orthographe de leur premiere ligne.
+        const createdKeys = new Set<string>();
+        for (const row of cleanRows) {
+          const key = row.ingredient_name.toLowerCase();
+          if (!ingredientByLowerName.has(key) && !createdKeys.has(key)) {
+            createdKeys.add(key);
+            ingredientsCreatedNames.push(row.ingredient_name);
+          }
+        }
+        ingredientsCreatedNames = ingredientsCreatedNames.sort((a, b) => a.localeCompare(b));
       }
 
       return result({
