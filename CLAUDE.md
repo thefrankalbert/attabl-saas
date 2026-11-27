@@ -440,6 +440,7 @@ Ces fichiers contiennent des logiques critiques qui ont ete debuggees et stabili
 | -------------------------------------- | ------------------------------------------------------------------------------ |
 | `src/proxy.ts`                         | Middleware central : routing multi-tenant, auth guards, anti-spoofing header   |
 | `src/app/globals.css`                  | Theme Tailwind v4, contrat viewport (html/body overflow:hidden), design tokens |
+| `src/styles/app.css`                   | Classes de l'application (admin, sites, onboarding, checkout), via @reference  |
 | `src/lib/supabase/admin.ts`            | Client service_role, desactive autoRefresh et persistSession                   |
 | `src/lib/supabase/middleware.ts`       | Refresh session, cookies auth                                                  |
 | `src/lib/rate-limit.ts`                | 24 limiters, fail-closed/fail-open, protection anti-brute-force                |
