@@ -96,7 +96,12 @@ export function AuthPhotoPanel({ scene: sceneProp }: { scene: AuthScene }) {
               src={src}
               alt=""
               fill
-              preload={i === 0}
+              // La premiere photo est l'element LCP sur telephone (mesure Lighthouse
+              // du 2026-11-24 sur /login). `preload` la lancait tot mais en
+              // priorite normale: elle partageait le debit avec une vingtaine de
+              // scripts et arrivait apres 2 s. La doc Next 16 recommande ce couple.
+              loading={i === 0 ? 'eager' : undefined}
+              fetchPriority={i === 0 ? 'high' : undefined}
               sizes="100vw"
               className={cn(
                 'object-cover transition-opacity duration-[800ms] ease-in-out motion-reduce:transition-none',
