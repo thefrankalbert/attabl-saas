@@ -76,4 +76,23 @@ describe('feuille de style du site public', () => {
     }
     expect([...fuites].sort()).toEqual([]);
   });
+
+  it('chaque dossier de page est lu par la feuille publique ou charge la feuille de l application', () => {
+    // Une nouvelle route (ex: /unsubscribe) hors de la liste @source et sans
+    // app.css s'afficherait sans ses classes. api, actions et fonts ne rendent
+    // pas de page.
+    const sansPage = new Set(['__tests__', 'api', 'actions', 'fonts']);
+    const orphelins = readdirSync(APP).filter((name) => {
+      const dir = path.join(APP, name);
+      if (sansPage.has(name) || !statSync(dir).isDirectory() || inZone(dir)) return false;
+      try {
+        return !/['"]@\/styles\/app\.css['"]/.test(
+          readFileSync(path.join(dir, 'layout.tsx'), 'utf8'),
+        );
+      } catch {
+        return true; // ni dans la zone publique, ni layout qui charge app.css
+      }
+    });
+    expect(orphelins).toEqual([]);
+  });
 });
