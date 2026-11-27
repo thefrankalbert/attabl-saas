@@ -68,6 +68,20 @@ export default async function LegalPage() {
           </a>
           .
         </p>
+
+        <h2 className="mt-10 text-xl font-semibold tracking-[-0.015em] text-zinc-950 dark:text-zinc-50">
+          {t('section6Title')}
+        </h2>
+        <p className="mt-3 whitespace-pre-line text-base leading-[1.6] text-zinc-600 dark:text-zinc-400">
+          {t('section6Body')}
+        </p>
+
+        <h2 className="mt-10 text-xl font-semibold tracking-[-0.015em] text-zinc-950 dark:text-zinc-50">
+          {t('section7Title')}
+        </h2>
+        <p className="mt-3 whitespace-pre-line text-base leading-[1.6] text-zinc-600 dark:text-zinc-400">
+          {t('section7Body')}
+        </p>
       </div>
     </section>
   );

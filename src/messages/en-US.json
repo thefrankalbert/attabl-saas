@@ -1139,7 +1139,7 @@
       "metaTitle": "Terms of Service",
       "metaDescription": "Terms of service for the ATTABL platform.",
       "heading": "Terms of Service",
-      "lastUpdate": "Last updated: February 28, 2026",
+      "lastUpdate": "Last updated: November 27, 2026",
       "section1Title": "1. Purpose",
       "section1Body": "These Terms of Service (ToS) govern access to and use of the ATTABL platform, a SaaS service for digital restaurant and hospitality management.",
       "section2Title": "2. Access to the service",
@@ -1151,7 +1151,11 @@
       "section4Title": "4. Ownership of data",
       "section4Body": "Data entered by the user (menus, orders, customers) remains their exclusive property. ATTABL undertakes not to commercialize this data.",
       "section5Title": "5. Contact",
-      "section5Body": "For any question regarding these ToS, contact us at"
+      "section5Body": "For any question regarding these ToS, contact us at",
+      "section6Title": "6. Site publisher",
+      "section6Body": "ATTABL, a company under Cameroonian law currently being registered. Its trade register (RCCM) and tax (NIU) numbers will be published here as soon as they are issued.\nRegistered office: Cameroon.\nOperations: Ouagadougou, Burkina Faso.\nPublication director: the legal representative of ATTABL.\nContact: contact@attabl.com",
+      "section7Title": "7. Hosting",
+      "section7Body": "Website and application: Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, United States.\nDatabase: Supabase Inc., data stored in the European Union (Ireland)."
     },
     "nouveautes": {
       "metaTitle": "What's new",
@@ -4056,6 +4060,14 @@
     "menuVisibleDaysLeft": "Your menu stays visible for {count, plural, one {# more day} other {# more days}}. Choose a plan to take orders again."
   },
   "ads": {
+    "confirmDelete": "Delete this ad?",
+    "noLink": "No link",
+    "activated": "Ad enabled",
+    "deactivated": "Ad disabled",
+    "linkHint": "Full address, starting with https://",
+    "activate": "Enable the ad",
+    "deactivate": "Disable the ad",
+    "deleteAd": "Delete the ad",
     "title": "Ads & Banners",
     "newAd": "New Ad",
     "orderLabel": "Order: {order}",
@@ -5574,6 +5586,8 @@
     "close": "Close"
   },
   "homePage": {
+    "adsLabel": "Restaurant offers",
+    "adOpen": "Open the offer",
     "featured": "Popular",
     "seeAll": "See all",
     "platDuJour": "Dish of the day",

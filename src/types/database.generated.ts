@@ -1,36 +1,6 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: '14.1';
-  };
-  graphql_public: {
-    Tables: {
-      [_ in never]: never;
-    };
-    Views: {
-      [_ in never]: never;
-    };
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json;
-          operationName?: string;
-          query?: string;
-          variables?: Json;
-        };
-        Returns: Json;
-      };
-    };
-    Enums: {
-      [_ in never]: never;
-    };
-    CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
   public: {
     Tables: {
       account_deletion_requests: {
@@ -140,6 +110,33 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      adresses_email_bloquees: {
+        Row: {
+          created_at: string;
+          email_hash: string;
+          evenement_id: string | null;
+          id: string;
+          raison: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          email_hash: string;
+          evenement_id?: string | null;
+          id?: string;
+          raison: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          email_hash?: string;
+          evenement_id?: string | null;
+          id?: string;
+          raison?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       ads: {
         Row: {
@@ -261,6 +258,21 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      alertes_nouvelle_connexion: {
+        Row: {
+          derniere_alerte_at: string;
+          user_id: string;
+        };
+        Insert: {
+          derniere_alerte_at?: string;
+          user_id: string;
+        };
+        Update: {
+          derniere_alerte_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
       };
       announcements: {
         Row: {
@@ -620,6 +632,81 @@ export type Database = {
           },
           {
             foreignKeyName: 'dish_photo_drafts_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      email_unsubscribes: {
+        Row: {
+          email_normalized: string;
+          unsubscribed_at: string;
+        };
+        Insert: {
+          email_normalized: string;
+          unsubscribed_at?: string;
+        };
+        Update: {
+          email_normalized?: string;
+          unsubscribed_at?: string;
+        };
+        Relationships: [];
+      };
+      flutterwave_anomalies: {
+        Row: {
+          amount: number | null;
+          currency: string | null;
+          detected_at: string;
+          flw_transaction_id: number;
+          id: string;
+          kind: string;
+          payment_id: string | null;
+          reason: string;
+          resolution_note: string | null;
+          resolved_at: string | null;
+          tenant_id: string | null;
+          tx_ref: string | null;
+        };
+        Insert: {
+          amount?: number | null;
+          currency?: string | null;
+          detected_at?: string;
+          flw_transaction_id: number;
+          id?: string;
+          kind: string;
+          payment_id?: string | null;
+          reason: string;
+          resolution_note?: string | null;
+          resolved_at?: string | null;
+          tenant_id?: string | null;
+          tx_ref?: string | null;
+        };
+        Update: {
+          amount?: number | null;
+          currency?: string | null;
+          detected_at?: string;
+          flw_transaction_id?: number;
+          id?: string;
+          kind?: string;
+          payment_id?: string | null;
+          reason?: string;
+          resolution_note?: string | null;
+          resolved_at?: string | null;
+          tenant_id?: string | null;
+          tx_ref?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'flutterwave_anomalies_payment_id_fkey';
+            columns: ['payment_id'];
+            isOneToOne: false;
+            referencedRelation: 'flutterwave_payments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'flutterwave_anomalies_tenant_id_fkey';
             columns: ['tenant_id'];
             isOneToOne: false;
             referencedRelation: 'tenants';
@@ -2506,6 +2593,7 @@ export type Database = {
           reference_id: string | null;
           supplier_id: string | null;
           tenant_id: string;
+          unit_cost: number | null;
         };
         Insert: {
           created_at?: string;
@@ -2519,6 +2607,7 @@ export type Database = {
           reference_id?: string | null;
           supplier_id?: string | null;
           tenant_id: string;
+          unit_cost?: number | null;
         };
         Update: {
           created_at?: string;
@@ -2532,6 +2621,7 @@ export type Database = {
           reference_id?: string | null;
           supplier_id?: string | null;
           tenant_id?: string;
+          unit_cost?: number | null;
         };
         Relationships: [
           {
@@ -3280,6 +3370,7 @@ export type Database = {
           p_notes?: string;
           p_supplier_id?: string;
           p_tenant_id: string;
+          p_unit_cost?: number;
         };
         Returns: number;
       };
@@ -3511,6 +3602,7 @@ export type Database = {
           total_qty: number;
         }[];
       };
+      get_my_inventory_tenant_ids: { Args: never; Returns: string[] };
       get_my_tenant_ids: { Args: never; Returns: string[] };
       get_my_tenant_ids_array: { Args: never; Returns: string[] };
       get_order_summary: {
@@ -3673,6 +3765,14 @@ export type Database = {
           unit: string;
         }[];
       };
+      get_storefront_ads: {
+        Args: { p_tenant_id: string };
+        Returns: {
+          id: string;
+          image_url: string;
+          link: string;
+        }[];
+      };
       get_tenant_by_slug: {
         Args: { p_slug: string };
         Returns: {
@@ -3785,6 +3885,7 @@ export type Database = {
         Returns: boolean;
       };
       is_tenant_name_taken: { Args: { p_name: string }; Returns: boolean };
+      mfa_satisfait: { Args: never; Returns: boolean };
       mon_restaurant_a_le_stock: {
         Args: { p_tenant_id: string };
         Returns: boolean;
@@ -3868,14 +3969,6 @@ export type Database = {
         Args: { p_rows: Json; p_tenant_id: string };
         Returns: number;
       };
-      reorder_categories: {
-        Args: { p_tenant_id: string; p_updates: Json };
-        Returns: number;
-      };
-      reorder_menus: {
-        Args: { p_ordered_ids: string[]; p_tenant_id: string };
-        Returns: number;
-      };
       reminder_coach_items: {
         Args: {
           p_since: string;
@@ -3915,11 +4008,20 @@ export type Database = {
           sent: number;
         }[];
       };
-      request_account_deletion: { Args: never; Returns: string };
       rendre_coupon_commande: {
         Args: { p_order_id: string; p_tenant_id: string };
         Returns: boolean;
       };
+      reorder_categories: {
+        Args: { p_tenant_id: string; p_updates: Json };
+        Returns: number;
+      };
+      reorder_menus: {
+        Args: { p_ordered_ids: string[]; p_tenant_id: string };
+        Returns: number;
+      };
+      request_account_deletion: { Args: never; Returns: string };
+      reserver_alerte_nouvelle_connexion: { Args: never; Returns: boolean };
       reset_tenant_data: {
         Args: { p_reset_type: string; p_tenant_id: string };
         Returns: Json;
@@ -4092,9 +4194,6 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },
