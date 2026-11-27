@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 const { sendTrialIdleEmail, sendTrialEndgameEmail, emailConfigured } = vi.hoisted(() => ({
@@ -37,6 +37,17 @@ describe('isTrialIdle (B104)', () => {
 });
 
 describe('determineTrialEventKey (B104)', () => {
+  // determineTrialEventKey lit l'heure reelle (getTrialDaysRemaining). Sans
+  // horloge figee sur NOW, "fin d'essai dans 2 jours" est devenue une date
+  // passee le 2026-11-26 et le test a casse tout seul.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(NOW);
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('ne rend plus jamais la relance d inactivite pendant une visite', () => {
     // Un nouvel inscrit (aucune visite enregistree) la recevait des sa premiere visite.
     expect(determineTrialEventKey({ trialEndsAt: inDays(10), activationEvents: {} })).toBeNull();
