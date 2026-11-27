@@ -7,6 +7,11 @@ import { FeatureUpgradeWall } from '@/components/admin/FeatureUpgradeWall';
 import { canAccessFeature } from '@/lib/plans/features';
 import { resolveTenantTimezone } from '@/lib/timezones';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('sidebar', 'navVenueReports');
+}
 
 export const dynamic = 'force-dynamic';
 

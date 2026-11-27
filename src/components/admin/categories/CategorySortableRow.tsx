@@ -1,7 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { GripVertical, Utensils, Edit2, Trash2, Wine, Shuffle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
@@ -85,6 +85,8 @@ export function SortableRow({ cat, onEdit, onDelete }: SortableRowProps) {
             variant="ghost"
             size="sm"
             onClick={() => onEdit(cat)}
+            aria-label={tc('edit')}
+            title={tc('edit')}
             className="h-9 w-9 p-0 text-accent hover:text-accent hover:bg-accent/10"
           >
             <Edit2 className="w-4 h-4" />

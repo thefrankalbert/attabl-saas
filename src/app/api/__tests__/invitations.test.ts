@@ -38,6 +38,16 @@ vi.mock('@/services/invitation.service', () => ({
   createInvitationService: vi.fn(),
 }));
 
+// Journal d'audit: l'ecriture elle-meme est testee dans audit.service; ici on
+// verifie QUI et QUOI la route lui transmet.
+const { mockAuditLog, mockCreateAuditService } = vi.hoisted(() => {
+  const log = vi.fn().mockResolvedValue(undefined);
+  return { mockAuditLog: log, mockCreateAuditService: vi.fn(() => ({ log })) };
+});
+vi.mock('@/services/audit.service', () => ({
+  createAuditService: mockCreateAuditService,
+}));
+
 vi.mock('@/services/email.service', () => ({
   sendInvitationEmail: vi.fn().mockResolvedValue(undefined),
 }));
@@ -155,6 +165,7 @@ function createMockSupabase(overrides?: {
     c.eq = vi.fn().mockImplementation(() => c);
     c.in = vi.fn().mockImplementation(() => c);
     c.neq = vi.fn().mockImplementation(() => c);
+    c.is = vi.fn().mockImplementation(() => c);
     return c;
   };
 
@@ -197,6 +208,7 @@ function createMockDeleteSupabase(overrides?: {
       c.eq = vi.fn().mockImplementation(() => c);
       c.in = vi.fn().mockImplementation(() => c);
       c.neq = vi.fn().mockImplementation(() => c);
+      c.is = vi.fn().mockImplementation(() => c);
       return c;
     };
     return { select: vi.fn().mockImplementation(() => chain()) };
@@ -584,6 +596,49 @@ describe('POST /api/invitations', () => {
     expect(res.status).toBe(201);
     expect(canAddAdmin).toHaveBeenCalledTimes(1);
     expect(canAddStaff).not.toHaveBeenCalled();
+  });
+});
+
+describe('POST /api/invitations - journal d audit', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('journalise la creation avec le bon auteur et le bon restaurant, sans le jeton', async () => {
+    mockRateLimit(true);
+    vi.mocked(createClient).mockResolvedValue(createMockSupabase() as never);
+    setupMockAdminClient();
+
+    const res = await POST(buildPostRequest({ email: 'new@test.com', role: 'admin' }));
+    expect(res.status).toBe(201);
+
+    expect(mockCreateAuditService).toHaveBeenCalledWith(expect.anything(), {
+      tenantId: 'tenant-1',
+      userId: 'user-1',
+      userEmail: 'admin@test.com',
+      userRole: 'owner',
+    });
+    expect(mockAuditLog).toHaveBeenCalledTimes(1);
+    const entry = mockAuditLog.mock.calls[0][0] as Record<string, unknown>;
+    expect(entry).toMatchObject({
+      action: 'create',
+      entityType: 'user',
+      entityId: TEST_INVITATION_ID,
+      metadata: { event: 'invitation_created', invitation_id: TEST_INVITATION_ID },
+    });
+    expect(JSON.stringify(entry)).not.toContain('secret');
+    expect(JSON.stringify(entry)).not.toContain('token');
+  });
+
+  it('temoin negatif: un refus (403) ne journalise rien', async () => {
+    mockRateLimit(true);
+    vi.mocked(createClient).mockResolvedValue(createMockSupabase() as never);
+    setupMockAdminClient();
+    mockResolvePermission.mockResolvedValue({ allowed: false, role: 'admin' });
+
+    const res = await POST(buildPostRequest({ email: 'new@test.com', role: 'admin' }));
+    expect(res.status).toBe(403);
+    expect(mockAuditLog).not.toHaveBeenCalled();
   });
 });
 

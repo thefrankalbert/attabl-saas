@@ -367,7 +367,10 @@ export default function CartPage() {
         router.push(`/sites/${tenantSlug}/order-confirmed?orderId=${data.orderId}`);
       } else {
         // Queued offline: confirm optimistically; the outbox will sync it.
-        router.push(`/sites/${tenantSlug}/order-confirmed?queued=1`);
+        // After a timeout the server may already hold the order: say "checking".
+        router.push(
+          `/sites/${tenantSlug}/order-confirmed?queued=1${result.unconfirmed ? '&check=1' : ''}`,
+        );
       }
     } catch (err) {
       logger.error('Order submission error:', err);

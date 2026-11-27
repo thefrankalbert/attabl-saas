@@ -14,11 +14,11 @@
 name: pgTAP (privileges et RLS)
 
 on:
+  # Sur CHAQUE pull request, sans filtre de chemins: ce controle est un
+  # controle REQUIS de la branche main (audit K1.11). Un controle requis qui ne
+  # se lance pas pour une PR ne rend jamais de statut, et la PR attend pour
+  # toujours. Le job prend quelques minutes, c'est le prix d'une RLS gardee.
   pull_request:
-    paths:
-      - 'supabase/**'
-      - 'scripts/run-pgtap.sh'
-      - '.github/workflows/pgtap.yml'
   push:
     branches: [main]
     paths:

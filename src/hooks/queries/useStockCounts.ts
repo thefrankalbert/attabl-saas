@@ -16,6 +16,8 @@ export function useStockCounts(tenantId: string) {
       return createInventoryService(supabase).listStockCounts(tenantId);
     },
     enabled: !!tenantId,
+    // Une seule reprise: la liste affiche l'erreur et "Reessayer" au lieu de rester vide.
+    retry: 1,
     staleTime: 30 * 1000,
   });
 }
@@ -31,6 +33,7 @@ export function useStockCount(tenantId: string, countId: string) {
       return createInventoryService(supabase).getStockCount(tenantId, countId);
     },
     enabled: !!tenantId && !!countId,
+    retry: 1,
     staleTime: 30 * 1000,
   });
 }

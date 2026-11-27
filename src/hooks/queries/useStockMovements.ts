@@ -4,6 +4,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { mapStockMovementRow } from '@/services/inventory.service';
 import type { StockMovement } from '@/types/inventory.types';
+import { queryTimeoutSignal } from './query-timeout';
 
 const PAGE_SIZE = 200;
 
@@ -25,11 +26,14 @@ export function useStockMovements(tenantId: string) {
     initialPageParam: 0,
     queryFn: async ({ pageParam }): Promise<StockMovementsPage> => {
       const supabase = createClient();
-      const { data, error } = await supabase.rpc('get_stock_movements_page', {
+      let request = supabase.rpc('get_stock_movements_page', {
         p_tenant_id: tenantId,
         p_limit: PAGE_SIZE,
         p_offset: (pageParam as number) * PAGE_SIZE,
       });
+      const signal = queryTimeoutSignal();
+      if (signal) request = request.abortSignal(signal);
+      const { data, error } = await request;
 
       if (error) throw error;
       const rawRows = (data as Record<string, unknown>[]) ?? [];
@@ -45,6 +49,8 @@ export function useStockMovements(tenantId: string) {
     getNextPageParam: (lastPage, allPages) =>
       lastPage.rows.length === PAGE_SIZE ? allPages.length : undefined,
     enabled: !!tenantId,
+    // Une seule reprise: l'erreur et "Reessayer" apparaissent vite.
+    retry: 1,
     staleTime: 2 * 60 * 1000,
   });
 

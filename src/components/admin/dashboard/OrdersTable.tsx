@@ -51,8 +51,8 @@ export function OrdersTable({
   onStatusChange,
 }: OrdersTableProps) {
   const t = useTranslations('admin');
-  const tc = useTranslations('common');
   const to = useTranslations('orders');
+  const tc = useTranslations('common');
   const searchParams = useSearchParams();
   const range = searchParams.get('range') || 'today';
 

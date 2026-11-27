@@ -10,10 +10,17 @@ interface SupplierCardProps {
   supplier: Supplier;
   openEdit: (supplier: Supplier) => void;
   onToggleActive: (supplier: Supplier) => void;
+  /** `inventory.edit`: sans lui, la carte est en lecture seule (pas de modifier/desactiver). */
+  canEdit: boolean;
 }
 
 // Mobile card view for a single supplier (ResponsiveDataTable mobileConfig.renderCard).
-export default function SupplierCard({ supplier, openEdit, onToggleActive }: SupplierCardProps) {
+export default function SupplierCard({
+  supplier,
+  openEdit,
+  onToggleActive,
+  canEdit,
+}: SupplierCardProps) {
   const t = useTranslations('suppliers');
 
   return (
@@ -45,25 +52,27 @@ export default function SupplierCard({ supplier, openEdit, onToggleActive }: Sup
       </div>
 
       {/* Row 3: Actions */}
-      <div className="flex justify-end gap-1 pt-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => openEdit(supplier)}
-          className="gap-1 text-xs min-h-[44px]"
-        >
-          <Pencil className="w-3 h-3" />
-          {t('edit')}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onToggleActive(supplier)}
-          className="text-xs min-h-[44px]"
-        >
-          {supplier.is_active ? t('disable') : t('enable')}
-        </Button>
-      </div>
+      {canEdit && (
+        <div className="flex justify-end gap-1 pt-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => openEdit(supplier)}
+            className="gap-1 text-xs min-h-[44px]"
+          >
+            <Pencil className="w-3 h-3" />
+            {t('edit')}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onToggleActive(supplier)}
+            className="text-xs min-h-[44px]"
+          >
+            {supplier.is_active ? t('disable') : t('enable')}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

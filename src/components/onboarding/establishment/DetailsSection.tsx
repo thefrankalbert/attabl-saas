@@ -32,7 +32,7 @@ export function DetailsSection({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Left: Address */}
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-5">
+        <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-5">
           {t('addressLabel')}
         </p>
 
@@ -48,6 +48,7 @@ export function DetailsSection({
             <Input
               id="address"
               type="text"
+              autoComplete="street-address"
               placeholder={t('addressPlaceholder')}
               value={data.address}
               onChange={(e) => updateData({ address: e.target.value })}
@@ -66,6 +67,7 @@ export function DetailsSection({
               <Input
                 id="city"
                 type="text"
+                autoComplete="address-level2"
                 placeholder={t('cityPlaceholder')}
                 value={data.city}
                 onChange={(e) => updateData({ city: e.target.value })}
@@ -82,6 +84,7 @@ export function DetailsSection({
               <Input
                 id="country"
                 type="text"
+                autoComplete="country-name"
                 placeholder={t('countryLabel')}
                 value={data.country}
                 onChange={(e) => updateData({ country: e.target.value })}
@@ -101,9 +104,12 @@ export function DetailsSection({
             <Input
               id="phone"
               type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              maxLength={20}
               placeholder={t('phonePlaceholder')}
               value={data.phone}
-              onChange={(e) => updateData({ phone: e.target.value })}
+              onChange={(e) => updateData({ phone: e.target.value.replace(/[^0-9+()\-.\s]/g, '') })}
               className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-base md:text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
             />
           </div>
@@ -112,7 +118,7 @@ export function DetailsSection({
 
       {/* Right: Configuration */}
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-5">
+        <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-5">
           {t('configurationLabel')}
         </p>
 
@@ -182,8 +188,8 @@ export function DetailsSection({
                   (Burkina, Senegal, Cote d'Ivoire), XAF en Afrique centrale
                   (Cameroun, Tchad).
                 */}
-                <SelectItem value="XOF">XOF - FCFA (Afrique de l&apos;Ouest)</SelectItem>
-                <SelectItem value="XAF">XAF - FCFA (Afrique centrale)</SelectItem>
+                <SelectItem value="XOF">{t('currencyXofOption')}</SelectItem>
+                <SelectItem value="XAF">{t('currencyXafOption')}</SelectItem>
                 <SelectItem value="EUR">EUR ({'\u20ac'})</SelectItem>
                 <SelectItem value="USD">USD ($)</SelectItem>
               </SelectContent>
@@ -193,7 +199,7 @@ export function DetailsSection({
           {/* Type-specific fields */}
           {data.establishmentType && (
             <div className="pt-2 border-t border-app-border">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-3">
                 {t('typeSpecificLabel')}
               </p>
 

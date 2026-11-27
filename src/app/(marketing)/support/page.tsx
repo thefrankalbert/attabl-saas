@@ -18,6 +18,7 @@ import { getTranslations } from 'next-intl/server';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { BlurFade } from '@/components/ui/blur-fade';
+import { WHATSAPP_LINK } from '@/components/marketing/home/whatsapp';
 import {
   Accordion,
   AccordionContent,
@@ -35,13 +36,15 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+// Chaque carte mene a la reponse la plus proche sur cette page. "Stock" n'a pas
+// de question dediee dans la FAQ: sa carte mene aux canaux de contact.
 const CATEGORIES = [
-  { key: 'start', Icon: Rocket },
-  { key: 'pos', Icon: Receipt },
-  { key: 'stock', Icon: Package },
-  { key: 'billing', Icon: Wallet },
-  { key: 'team', Icon: Users },
-  { key: 'network', Icon: WifiOff },
+  { key: 'start', Icon: Rocket, href: '#guides' },
+  { key: 'pos', Icon: Receipt, href: '#faq-q3' },
+  { key: 'stock', Icon: Package, href: '#contact' },
+  { key: 'billing', Icon: Wallet, href: '#faq-q4' },
+  { key: 'team', Icon: Users, href: '#faq-q5' },
+  { key: 'network', Icon: WifiOff, href: '#faq-q2' },
 ] as const;
 
 const FAQ_KEYS = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6'] as const;
@@ -109,24 +112,22 @@ export default async function SupportPage() {
       <section className="border-t border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
         <div className="mx-auto max-w-[1120px] px-5 py-16 sm:px-7 sm:py-20">
           <div className="grid grid-cols-1 gap-[18px] sm:grid-cols-2 lg:grid-cols-3">
-            {CATEGORIES.map(({ key, Icon }) => (
-              <BlurFade
-                key={key}
-                inView
-                offset={20}
-                blur="0px"
-                duration={0.7}
-                className="rounded-2xl border border-zinc-200 bg-zinc-50 p-[26px] dark:border-zinc-800 dark:bg-zinc-900/40"
-              >
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-950">
-                  <Icon className="h-5 w-5 text-zinc-900 dark:text-zinc-100" strokeWidth={2} />
-                </span>
-                <div className="mt-4 text-[17px] font-semibold tracking-[-0.015em] text-zinc-950 dark:text-zinc-50">
-                  {t(`categories.${key}.title`)}
-                </div>
-                <p className="mt-2 text-sm leading-[1.55] text-zinc-600 dark:text-zinc-400">
-                  {t(`categories.${key}.body`)}
-                </p>
+            {CATEGORIES.map(({ key, Icon, href }) => (
+              <BlurFade key={key} inView offset={20} blur="0px" duration={0.7}>
+                <a
+                  href={href}
+                  className="block h-full rounded-2xl border border-zinc-200 bg-zinc-50 p-[26px] transition-colors hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900/40 dark:hover:border-zinc-700"
+                >
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-950">
+                    <Icon className="h-5 w-5 text-zinc-900 dark:text-zinc-100" strokeWidth={2} />
+                  </span>
+                  <div className="mt-4 text-[17px] font-semibold tracking-[-0.015em] text-zinc-950 dark:text-zinc-50">
+                    {t(`categories.${key}.title`)}
+                  </div>
+                  <p className="mt-2 text-sm leading-[1.55] text-zinc-600 dark:text-zinc-400">
+                    {t(`categories.${key}.body`)}
+                  </p>
+                </a>
               </BlurFade>
             ))}
           </div>
@@ -155,7 +156,8 @@ export default async function SupportPage() {
               <AccordionItem
                 key={k}
                 value={`item-${i}`}
-                className="overflow-hidden rounded-[14px] border border-zinc-200 bg-white px-6 dark:border-zinc-800 dark:bg-zinc-950"
+                id={`faq-${k}`}
+                className="scroll-mt-24 overflow-hidden rounded-[14px] border border-zinc-200 bg-white px-6 dark:border-zinc-800 dark:bg-zinc-950"
               >
                 <AccordionTrigger className="py-5 text-left text-[17px] font-medium tracking-[-0.01em] text-zinc-950 hover:no-underline dark:text-zinc-50">
                   {t(`faq.items.${k}.q`)}
@@ -170,7 +172,10 @@ export default async function SupportPage() {
       </section>
 
       {/* Guides */}
-      <section className="border-t border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+      <section
+        id="guides"
+        className="scroll-mt-24 border-t border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"
+      >
         <div className="mx-auto max-w-[1120px] px-5 py-16 sm:px-7 sm:py-20">
           <BlurFade inView offset={20} blur="0px" duration={0.7} className="mb-11 max-w-[560px]">
             <h2 className="text-[32px] font-semibold leading-[1.1] tracking-[-0.025em] text-zinc-950 dark:text-zinc-50">
@@ -225,7 +230,10 @@ export default async function SupportPage() {
       </section>
 
       {/* Contact channels */}
-      <section className="border-t border-zinc-200 bg-zinc-50 px-5 py-16 sm:px-7 sm:py-20 dark:border-zinc-800 dark:bg-zinc-900/30">
+      <section
+        id="contact"
+        className="scroll-mt-24 border-t border-zinc-200 bg-zinc-50 px-5 py-16 sm:px-7 sm:py-20 dark:border-zinc-800 dark:bg-zinc-900/30"
+      >
         <div className="mx-auto max-w-[1120px]">
           <BlurFade inView offset={20} blur="0px" duration={0.7} className="mb-9 max-w-[560px]">
             <h2 className="text-[32px] font-semibold leading-[1.1] tracking-[-0.025em] text-zinc-950 dark:text-zinc-50">
@@ -237,8 +245,10 @@ export default async function SupportPage() {
             </p>
           </BlurFade>
           <div className="grid grid-cols-1 gap-[18px] sm:grid-cols-3">
-            <Link
-              href="/contact"
+            <a
+              href={WHATSAPP_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
               className="group rounded-2xl border border-zinc-200 bg-white p-[26px] transition-colors hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"
             >
               <MessageCircle
@@ -251,7 +261,7 @@ export default async function SupportPage() {
               <p className="mt-1.5 text-sm leading-[1.5] text-zinc-600 dark:text-zinc-400">
                 {t('contact.whatsapp.body')}
               </p>
-            </Link>
+            </a>
             <a
               href="mailto:support@attabl.com"
               className="group rounded-2xl border border-zinc-200 bg-white p-[26px] transition-colors hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { Check } from 'lucide-react';
-import { PLAN_AMOUNTS, PLAN_TOTALS } from '@/lib/billing/pricing';
+import { PLAN_AMOUNTS, PLAN_TOTALS, approxPricePerDay } from '@/lib/billing/pricing';
 import { cn } from '@/lib/utils';
 import type { BillingPeriod } from '../pricing-data';
 
@@ -36,7 +36,7 @@ export function PlanCards({ effectivePeriod }: { effectivePeriod: BillingPeriod 
             const paid = plan.key !== 'enterprise';
             const perMonth = paid ? PLAN_AMOUNTS[plan.key as PaidKey][effectivePeriod] : null;
             const total = paid ? PLAN_TOTALS[plan.key as PaidKey][effectivePeriod] : null;
-            const perDay = perMonth != null ? Math.round(perMonth / 30 / 50) * 50 : null;
+            const perDay = perMonth != null ? approxPricePerDay(perMonth) : null;
             const feats = Array.from({ length: plan.featCount }, (_, i) => `f${i + 1}`);
 
             return (

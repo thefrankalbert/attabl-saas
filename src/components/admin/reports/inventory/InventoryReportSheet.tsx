@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import {
   Table,
   TableHeader,
@@ -42,6 +43,7 @@ export function InventoryReportSheet({
   table,
   orientation,
 }: InventoryReportSheetProps) {
+  const t = useTranslations('inventory');
   const addressLine = [tenant.address, tenant.city, tenant.country].filter(Boolean).join(', ');
   const alignClass = (a: 'left' | 'right') => (a === 'right' ? 'text-right' : 'text-left');
 
@@ -78,8 +80,8 @@ export function InventoryReportSheet({
             </div>
           </div>
           <div className="shrink-0 text-right">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
-              Rapport de stock
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-zinc-500">
+              {t('stockReportLabel')}
             </p>
             <p className="mt-1 text-xl font-bold tracking-tight text-zinc-900">{title}</p>
             <p className="mt-1 text-[11px] text-zinc-500">{subtitle}</p>
@@ -91,70 +93,75 @@ export function InventoryReportSheet({
             FCFA" meme a 1440 px. Sur telephone le tableau defile de cote dans
             l'enveloppe overflow-auto du composant Table. */}
 
-        <Table className="mt-7 w-full text-xs">
-          {/* Proportional column widths: the ingredient name gets the most room,
+        {/* min-w-min: le defilement lateral sur telephone est porte par le conteneur
+            focalisable de StockReportClient, pas par l'enveloppe du Table. */}
+        <div className="min-w-min print:min-w-0">
+          <Table className="mt-7 w-full text-xs">
+            {/* Proportional column widths: the ingredient name gets the most room,
               other text columns a medium share, numeric columns the least. */}
-          <colgroup>
-            {(() => {
-              const weights = table.columns.map((c, i) =>
-                i === 0 ? 2.4 : c.align === 'right' ? 1 : 1.4,
-              );
-              const sum = weights.reduce((a, b) => a + b, 0);
-              return table.columns.map((c, i) => (
-                <col key={c.key} style={{ width: `${((weights[i] / sum) * 100).toFixed(2)}%` }} />
-              ));
-            })()}
-          </colgroup>
-          <TableHeader>
-            <TableRow className="border-zinc-200 hover:bg-transparent">
-              {table.columns.map((c) => (
-                <TableHead
-                  key={c.key}
-                  className={`h-auto py-2 text-[10px] font-semibold uppercase tracking-[0.06em] text-zinc-400 ${alignClass(c.align)}`}
-                >
-                  {c.label}
-                </TableHead>
+            <colgroup>
+              {(() => {
+                const weights = table.columns.map((c, i) =>
+                  i === 0 ? 2.4 : c.align === 'right' ? 1 : 1.4,
+                );
+                const sum = weights.reduce((a, b) => a + b, 0);
+                return table.columns.map((c, i) => (
+                  <col key={c.key} style={{ width: `${((weights[i] / sum) * 100).toFixed(2)}%` }} />
+                ));
+              })()}
+            </colgroup>
+            {/* Feuille papier: fonds explicites, sinon le theme sombre peint l'en-tete et le corps (texte zinc sur #262626, 1.44:1). */}
+            <TableHeader className="bg-zinc-100">
+              <TableRow className="border-zinc-200 hover:bg-transparent">
+                {table.columns.map((c) => (
+                  <TableHead
+                    key={c.key}
+                    className={`h-auto py-2 text-[10px] font-semibold uppercase tracking-[0.06em] text-zinc-600 ${alignClass(c.align)}`}
+                  >
+                    {c.label}
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody className="bg-white">
+              {table.rows.map((row, ri) => (
+                <TableRow key={ri} className="border-zinc-100 hover:bg-transparent">
+                  {row.map((cell, ci) => (
+                    <TableCell
+                      key={ci}
+                      className={`py-2 align-top text-zinc-700 tabular-nums ${
+                        table.columns[ci]?.align === 'right'
+                          ? 'whitespace-nowrap text-right'
+                          : 'break-words text-left'
+                      }`}
+                    >
+                      {cell || '\u00a0'}
+                    </TableCell>
+                  ))}
+                </TableRow>
               ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {table.rows.map((row, ri) => (
-              <TableRow key={ri} className="border-zinc-100 hover:bg-transparent">
-                {row.map((cell, ci) => (
-                  <TableCell
-                    key={ci}
-                    className={`py-2 align-top text-zinc-700 tabular-nums ${
-                      table.columns[ci]?.align === 'right'
-                        ? 'whitespace-nowrap text-right'
-                        : 'break-words text-left'
-                    }`}
-                  >
-                    {cell || '\u00a0'}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-          {table.totals && (
-            <TableFooter className="bg-transparent">
-              <TableRow className="border-t-2 border-zinc-900 hover:bg-transparent">
-                {table.totals.map((cell, ci) => (
-                  <TableCell
-                    key={ci}
-                    className={`whitespace-nowrap py-2 font-bold text-zinc-900 tabular-nums ${alignClass(
-                      table.columns[ci]?.align ?? 'left',
-                    )}`}
-                  >
-                    {cell || '\u00a0'}
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableFooter>
-          )}
-        </Table>
+            </TableBody>
+            {table.totals && (
+              <TableFooter className="bg-transparent">
+                <TableRow className="border-t-2 border-zinc-900 hover:bg-transparent">
+                  {table.totals.map((cell, ci) => (
+                    <TableCell
+                      key={ci}
+                      className={`whitespace-nowrap py-2 font-bold text-zinc-900 tabular-nums ${alignClass(
+                        table.columns[ci]?.align ?? 'left',
+                      )}`}
+                    >
+                      {cell || '\u00a0'}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </TableFooter>
+            )}
+          </Table>
+        </div>
 
         {table.rows.length === 0 && (
-          <p className="mt-8 text-center text-sm text-zinc-400">{subtitle}</p>
+          <p className="mt-8 text-center text-sm text-zinc-500">{subtitle}</p>
         )}
       </div>
     </div>

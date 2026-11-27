@@ -3,6 +3,7 @@ import 'server-only';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { AuthError } from '@/lib/auth/get-session';
+import { hasStrongSession } from '@/lib/auth/mfa-guard';
 
 export interface SuperAdminContext {
   user: { id: string; email: string };
@@ -61,6 +62,13 @@ export async function requireSuperAdmin(): Promise<SuperAdminContext> {
   if (!(await isSuperAdmin(supabase, user.id))) {
     logger.warn('Non-super-admin attempted a platform action', { userId: user.id });
     throw new AuthError('Acces reserve au super administrateur', 403);
+  }
+
+  // Le super administrateur DOIT etre en double authentification (audit
+  // K6.13): sans facteur ou en session aal1, aucune operation "mode dieu".
+  if (!(await hasStrongSession(supabase, user))) {
+    logger.warn('Super-admin platform action without MFA session', { userId: user.id });
+    throw new AuthError('Double authentification requise', 403);
   }
 
   return { user: { id: user.id, email: user.email ?? '' }, supabase };

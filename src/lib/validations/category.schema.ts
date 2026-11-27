@@ -2,6 +2,27 @@ import { z } from 'zod';
 import { renderableImageUrlSchema } from './image-url.schema';
 
 /**
+ * Nom d'une categorie, en francais et en anglais: 100 caracteres au plus, comme
+ * le nom d'une carte (menu.schema.ts). La colonne `categories.name` est un
+ * `text` sans borne: sans cette limite, un nom de 408 caracteres etait accepte
+ * (audit de mise en production du 2026-11-23). Meme valeur en `maxLength` sur
+ * les champs du formulaire.
+ */
+export const CATEGORY_NAME_MAX = 100;
+
+export const categoryNameSchema = z
+  .string()
+  .trim()
+  .min(1, 'Le nom est obligatoire.')
+  .max(CATEGORY_NAME_MAX, `Maximum ${CATEGORY_NAME_MAX} caractères`);
+
+export const categoryNameEnSchema = z
+  .string()
+  .trim()
+  .max(CATEGORY_NAME_MAX, `Maximum ${CATEGORY_NAME_MAX} caractères`)
+  .nullish();
+
+/**
  * Validation des ecritures de rubriques (categories), audit B41.
  *
  * Avant, `actionCreateCategory` / `actionUpdateCategory` ne validaient que
@@ -15,8 +36,8 @@ import { renderableImageUrlSchema } from './image-url.schema';
  * l'edition d'une ligne existante.
  */
 const categoryWriteSchema = z.object({
-  name: z.string().trim().min(1).max(100),
-  name_en: z.string().trim().max(100).nullish(),
+  name: categoryNameSchema,
+  name_en: categoryNameEnSchema,
   icon: z.string().max(100).nullish(),
   // Rendue par next/image sur la carte client: un hote etranger ferait tomber
   // la vitrine (image-url.schema.ts).

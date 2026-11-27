@@ -68,7 +68,7 @@ export function MicroRow({
           onClick={onAlertsClick}
           className="h-auto min-h-[44px] flex-col items-start gap-1 rounded-[12px] border border-[var(--cc-border)] bg-[var(--cc-surface)] p-3 text-left hover:border-[var(--cc-border-strong)]"
         >
-          <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--cc-text-3)]">
+          <span className="text-xs font-semibold uppercase tracking-[0.06em] text-[var(--cc-text-3)]">
             {t('alerts')}
           </span>
           <span
@@ -95,7 +95,7 @@ export function MicroRow({
 function StatCard({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex min-w-0 flex-col rounded-[12px] border border-[var(--cc-border)] bg-[var(--cc-surface)] p-3">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--cc-text-3)]">
+      <div className="text-xs font-semibold uppercase tracking-[0.06em] text-[var(--cc-text-3)]">
         {label}
       </div>
       <div className="mt-1">{children}</div>

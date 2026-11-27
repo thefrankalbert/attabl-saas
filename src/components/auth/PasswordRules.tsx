@@ -7,7 +7,7 @@ import {
   missingPasswordRules,
   parsePasswordIssue,
   PASSWORD_RULES,
-} from '@/lib/validations/common.schema';
+} from '@/lib/validations/password-rules';
 
 /**
  * Traduit un message de `passwordSchema` (un code, voir common.schema.ts) en

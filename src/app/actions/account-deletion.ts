@@ -1,5 +1,6 @@
 'use server';
 
+import { isMfaSatisfied } from '@/lib/auth/mfa-assurance';
 import { headers } from 'next/headers';
 import { revalidateTag } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
@@ -56,6 +57,7 @@ async function run(input: unknown, kind: 'owner' | 'staff'): Promise<AccountDele
     error: authError,
   } = await supabase.auth.getUser();
   if (authError || !user) return { success: false, error: 'forbidden' };
+  if (!(await isMfaSatisfied(supabase, user))) return { success: false, error: 'forbidden' };
 
   const { slug, trusted } = readTenantSlug(await headers());
   if (kind === 'owner' && (!slug || !trusted)) return { success: false, error: 'forbidden' };

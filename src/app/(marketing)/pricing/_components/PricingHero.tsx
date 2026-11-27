@@ -46,6 +46,7 @@ export function PricingHero({
             type="button"
             variant="ghost"
             onClick={() => setPeriod('monthly')}
+            aria-pressed={effectivePeriod === 'monthly'}
             className={cn(PILL, effectivePeriod === 'monthly' ? PILL_ON : PILL_OFF)}
           >
             {t('billing.monthly')}
@@ -54,6 +55,7 @@ export function PricingHero({
             type="button"
             variant="ghost"
             onClick={() => setPeriod('yearly')}
+            aria-pressed={effectivePeriod === 'yearly'}
             className={cn(PILL, effectivePeriod === 'yearly' ? PILL_ON : PILL_OFF)}
           >
             {t('billing.yearly')}

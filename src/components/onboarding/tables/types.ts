@@ -9,6 +9,9 @@ export interface ZoneData {
 
 export type ConfigMode = 'complete' | 'minimum' | 'skip';
 
+/** Limite du serveur par zone (onboarding.schema.ts, tableZoneSchema). */
+export const MAX_TABLES_PER_ZONE = 200;
+
 export const capacityOptions = [2, 4, 6, 8, 10, 12];
 
 /**

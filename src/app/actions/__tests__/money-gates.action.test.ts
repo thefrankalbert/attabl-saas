@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ServiceError } from '@/services/errors';
 
 /**
  * Decision du proprietaire (2026-11-09):
@@ -24,6 +25,9 @@ vi.mock('next/server', async (importActual) => ({
   after: () => {},
 }));
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }));
+vi.mock('next-intl/server', () => ({
+  getTranslations: async () => (key: string) => `traduit:${key}`,
+}));
 vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
@@ -187,6 +191,16 @@ describe('statut: avancer oui, annuler non, pour le serveur et le chef', () => {
     const res = await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, 'cancelled');
     expect(res.success).toBe(true);
     expect(mockCancelOrder).toHaveBeenCalled();
+  });
+
+  it('un acompte au registre refuse au caissier: message traduit, pas le texte brut', async () => {
+    member.role = 'cashier';
+    mockCancelOrder.mockRejectedValueOnce(
+      new ServiceError('texte brut', 'CONFLICT', { reason: 'cancel_needs_money_authority' }),
+    );
+    const { actionUpdateOrderStatus } = await import('@/app/actions/orders');
+    const res = await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, 'cancelled');
+    expect(res.error).toBe('traduit:cancelNeedsMoneyAuthority');
   });
 });
 

@@ -116,7 +116,7 @@ export function InstallPrompt({ className, label }: { className?: string; label:
       </div>
       <p className="flex-1 text-sm text-app-text">{label}</p>
       <Button size="sm" onClick={install} className="h-9 shrink-0">
-        Installer
+        {t('install')}
       </Button>
       <Button
         variant="ghost"

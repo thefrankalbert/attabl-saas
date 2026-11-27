@@ -78,63 +78,73 @@ export function FeatureComparison() {
           {t('compareSubtitle')}
         </p>
 
-        <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-b border-zinc-200 bg-zinc-50 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/40 dark:hover:bg-zinc-900/40">
-                <TableHead className="w-[40%] px-5 py-4 text-left text-[13px] font-semibold text-zinc-900 dark:text-zinc-100">
-                  {t('comparison.featureColumn')}
-                </TableHead>
-                {PLAN_NAMES.map((name) => (
-                  <TableHead
-                    key={name}
-                    className={cn(
-                      'w-[15%] px-2 py-4 text-center text-[13px] font-semibold text-zinc-900 dark:text-zinc-100',
-                      name === 'Pro' && PRO_HL,
-                    )}
-                  >
-                    {name}
+        <div
+          tabIndex={0}
+          role="region"
+          aria-label={t('comparison.regionLabel')}
+          className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800"
+        >
+          {/* min-w-min: c'est ce conteneur, focalisable, qui defile, et non
+              l'enveloppe interne du composant Table (qu'on ne peut pas rendre
+              focalisable). */}
+          <div className="min-w-min">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-b border-zinc-200 bg-zinc-50 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/40 dark:hover:bg-zinc-900/40">
+                  <TableHead className="w-[40%] px-5 py-4 text-left text-[13px] font-semibold text-zinc-900 dark:text-zinc-100">
+                    {t('comparison.featureColumn')}
                   </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {featureCategories.map((cat) => (
-                <Fragment key={cat.key}>
-                  <TableRow className="border-0 hover:bg-transparent">
-                    <TableCell
-                      colSpan={5}
-                      className="px-5 pb-3 pt-8 text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400"
+                  {PLAN_NAMES.map((name) => (
+                    <TableHead
+                      key={name}
+                      className={cn(
+                        'w-[15%] px-2 py-4 text-center text-[13px] font-semibold text-zinc-900 dark:text-zinc-100',
+                        name === 'Pro' && PRO_HL,
+                      )}
                     >
-                      {t(`comparison.categories.${cat.key}.title`)}
-                    </TableCell>
-                  </TableRow>
-                  {cat.features.map((f) => (
-                    <TableRow
-                      key={f.labelKey}
-                      className="border-b border-zinc-100 hover:bg-transparent dark:border-zinc-800/60"
-                    >
-                      <TableCell className="px-5 py-3 text-sm text-zinc-700 dark:text-zinc-300">
-                        {t(`comparison.categories.${cat.key}.features.${f.labelKey}`)}
-                      </TableCell>
-                      {values(f).map((v, i) => (
-                        <TableCell
-                          key={i}
-                          className={cn('px-2 py-3 text-center', i === 1 && PRO_HL)}
-                        >
-                          <FeatureCell
-                            value={v}
-                            unlimitedLabel={unlimitedLabel}
-                            supportLabels={supportLabels}
-                          />
-                        </TableCell>
-                      ))}
-                    </TableRow>
+                      {name}
+                    </TableHead>
                   ))}
-                </Fragment>
-              ))}
-            </TableBody>
-          </Table>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {featureCategories.map((cat) => (
+                  <Fragment key={cat.key}>
+                    <TableRow className="border-0 hover:bg-transparent">
+                      <TableCell
+                        colSpan={5}
+                        className="px-5 pb-3 pt-8 text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400"
+                      >
+                        {t(`comparison.categories.${cat.key}.title`)}
+                      </TableCell>
+                    </TableRow>
+                    {cat.features.map((f) => (
+                      <TableRow
+                        key={f.labelKey}
+                        className="border-b border-zinc-100 hover:bg-transparent dark:border-zinc-800/60"
+                      >
+                        <TableCell className="px-5 py-3 text-sm text-zinc-700 dark:text-zinc-300">
+                          {t(`comparison.categories.${cat.key}.features.${f.labelKey}`)}
+                        </TableCell>
+                        {values(f).map((v, i) => (
+                          <TableCell
+                            key={i}
+                            className={cn('px-2 py-3 text-center', i === 1 && PRO_HL)}
+                          >
+                            <FeatureCell
+                              value={v}
+                              unlimitedLabel={unlimitedLabel}
+                              supportLabels={supportLabels}
+                            />
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </Fragment>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </div>
     </section>

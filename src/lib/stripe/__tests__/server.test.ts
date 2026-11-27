@@ -21,11 +21,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 /** Constructeur Stripe factice: on ne veut ni reseau, ni cle reelle. */
 const constructeurStripe = vi.fn();
+const optionsStripe = vi.fn();
 vi.mock('stripe', () => ({
   default: class {
     marqueur = 'instance-stripe';
-    constructor(cle: string) {
+    constructor(cle: string, options?: unknown) {
       constructeurStripe(cle);
+      optionsStripe(options);
     }
   },
 }));
@@ -65,6 +67,37 @@ describe('getStripe', () => {
     getStripe();
 
     expect(constructeurStripe).toHaveBeenCalledWith('sk_test_123');
+  });
+
+  it('fixe la version d API explicitement (audit E10) et garde le delai de 10 s', async () => {
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
+
+    const { getStripe, STRIPE_API_VERSION } = await chargerModule();
+    getStripe();
+
+    expect(optionsStripe).toHaveBeenCalledWith({
+      apiVersion: STRIPE_API_VERSION,
+      timeout: 10_000,
+    });
+  });
+
+  it('la version fixee est EXACTEMENT celle qu epingle le SDK installe (pas devinee)', async () => {
+    // Lue dans le paquet installe, pas recopiee: une montee du SDK qui change
+    // de version fait echouer ce test (et le typage de STRIPE_API_VERSION).
+    const { readFileSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const source = readFileSync(
+      join(process.cwd(), 'node_modules', 'stripe', 'esm', 'apiVersion.js'),
+      'utf8',
+    );
+    const epinglee = /ApiVersion = '([^']+)'/.exec(source)?.[1];
+
+    const { STRIPE_API_VERSION } = await chargerModule();
+
+    expect(epinglee).toMatch(/^\d{4}-\d{2}-\d{2}\.[a-z]+$/);
+    expect(STRIPE_API_VERSION).toBe(epinglee);
+    // Temoin negatif: une autre version datee ne passe pas pour celle-ci.
+    expect(STRIPE_API_VERSION).not.toBe('2025-01-27.acacia');
   });
 
   it('reutilise la meme instance aux appels suivants', async () => {

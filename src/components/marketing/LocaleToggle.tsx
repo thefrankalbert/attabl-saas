@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
  */
 export function LocaleToggle({ className, label }: { className?: string; label?: string }) {
   const locale = useLocale();
-  const tc = useTranslations('common');
+  const t = useTranslations('common');
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const next = locale.startsWith('fr') ? 'en-US' : 'fr-FR';
@@ -29,9 +29,9 @@ export function LocaleToggle({ className, label }: { className?: string; label?:
       variant="outline"
       onClick={switchLocale}
       disabled={pending}
-      aria-label={tc(next.startsWith('en') ? 'aria.switchToEnglish' : 'aria.switchToFrench')}
+      aria-label={next.startsWith('en') ? t('switchToEnglish') : t('switchToFrench')}
       className={cn(
-        'h-auto min-h-11 min-w-11 rounded-lg border-zinc-200 bg-transparent px-2.5 py-[5px] text-[13px] font-semibold text-zinc-600 shadow-none hover:border-zinc-300 hover:bg-transparent hover:text-zinc-900 dark:border-zinc-800 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:text-zinc-50',
+        'h-auto rounded-lg border-zinc-200 bg-transparent px-2.5 py-[5px] text-[13px] font-semibold text-zinc-600 shadow-none hover:border-zinc-300 hover:bg-transparent hover:text-zinc-900 dark:border-zinc-800 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:text-zinc-50',
         className,
       )}
     >

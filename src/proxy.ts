@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { buildCspHeader } from '@/lib/csp';
 import { permissionForAdminSubPath } from '@/lib/auth/admin-route-permissions';
-import { isAdminRouteDenied } from '@/lib/auth/admin-route-guard';
+import { isAdminMemberDenied, isAdminRouteDenied } from '@/lib/auth/admin-route-guard';
 import { TENANT_SLUG_HEADER, TENANT_SLUG_HINT_HEADER } from '@/lib/auth/tenant-header';
 
 // Routes qui nécessitent une authentification
@@ -58,6 +58,12 @@ const APP_ROOT_ONLY_PREFIXES = [
   // subdomains - exactly where the offline tablets live.
   '/offline',
 ];
+
+/**
+ * Chemin volontairement SANS route: y reecrire fait rendre la page introuvable
+ * du site avec un vrai statut 404 (voir `reponseRestaurantIntrouvable`).
+ */
+const TENANT_NOT_FOUND_PATH = '/restaurant-introuvable';
 
 function isAppRootOnlyPath(pathname: string): boolean {
   return APP_ROOT_ONLY_PREFIXES.some(
@@ -376,22 +382,27 @@ export async function proxy(request: NextRequest) {
     // (orders, kitchen, menus, ...) stay open to all members.
     // Meme resolution que la garde B2 ci-dessus (B-1: une seule definition de
     // "quel tenant, quelle sous-route" pour les deux gardes).
+    //
+    // Une route SANS permission reste ouverte a tout membre, mais a un MEMBRE
+    // seulement: sans ce second test, le compte d'un autre restaurant passait
+    // le proxy et n'etait refuse que par la page, apres le debut du flux
+    // (statut 200 puis redirection dans le corps). Le refus se fait ici, en 307.
     if (user && adminGate) {
       const requiredPermission = permissionForAdminSubPath(adminGate.subPath);
-      if (requiredPermission) {
-        const gateTenant = await getCachedTenant(adminGate.slug);
-        if (
-          gateTenant &&
-          (await isAdminRouteDenied(supabase, user.id, gateTenant.id, requiredPermission))
-        ) {
-          const mainDomain = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
-          const unauthorizedUrl = new URL('/unauthorized', mainDomain);
-          const redirectResponse = NextResponse.redirect(unauthorizedUrl);
-          sessionResponse.cookies.getAll().forEach((cookie) => {
-            redirectResponse.cookies.set(cookie);
-          });
-          return redirectResponse;
-        }
+      const gateTenant = await getCachedTenant(adminGate.slug);
+      if (
+        gateTenant &&
+        (requiredPermission
+          ? await isAdminRouteDenied(supabase, user.id, gateTenant.id, requiredPermission)
+          : await isAdminMemberDenied(supabase, user.id, gateTenant.id))
+      ) {
+        const mainDomain = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
+        const unauthorizedUrl = new URL('/unauthorized', mainDomain);
+        const redirectResponse = NextResponse.redirect(unauthorizedUrl);
+        sessionResponse.cookies.getAll().forEach((cookie) => {
+          redirectResponse.cookies.set(cookie);
+        });
+        return redirectResponse;
       }
     }
   }
@@ -444,13 +455,39 @@ export async function proxy(request: NextRequest) {
    * met le resultat en cache, y compris l'absence, et le proxy fait deja cette
    * verification pour les chemins admin.
    */
-  async function poserEnteteTenant(request: NextRequest, slug: string): Promise<void> {
+  async function poserEnteteTenant(request: NextRequest, slug: string): Promise<boolean> {
     const tenant = await getCachedTenant(slug);
     if (tenant) {
       request.headers.set(TENANT_SLUG_HEADER, slug);
-      return;
+      return true;
     }
     request.headers.set(TENANT_SLUG_HINT_HEADER, slug);
+    return false;
+  }
+
+  /**
+   * Reponse pour une PAGE d'un restaurant qui n'existe pas: un vrai 404.
+   *
+   * La page rendait deja "Page introuvable", mais avec le statut 200: le
+   * `notFound()` du layout arrive apres le debut du flux et ne peut plus
+   * changer le statut. Les moteurs de recherche et les sondes lisaient donc
+   * une page valide pour n'importe quel sous-domaine invente. Reecrire vers un
+   * chemin sans route fait rendre la page introuvable du site AVEC le statut
+   * 404. Les routes /api/ ne passent pas ici: elles relisent le restaurant et
+   * repondent elles-memes.
+   */
+  function reponseRestaurantIntrouvable(request: NextRequest): NextResponse {
+    const url = request.nextUrl.clone();
+    url.pathname = TENANT_NOT_FOUND_PATH;
+    url.search = '';
+    const response = NextResponse.rewrite(url, {
+      request: { headers: request.headers },
+    });
+    sessionResponse.cookies.getAll().forEach((cookie) => {
+      response.cookies.set(cookie);
+    });
+    response.headers.set('Content-Security-Policy', buildCspHeader(nonce));
+    return response;
   }
 
   // 6b. Direct /sites/{slug}/... access on main domain - set x-tenant-slug header
@@ -458,7 +495,9 @@ export async function proxy(request: NextRequest) {
   const sitesMatch = pathname.match(/^\/sites\/([^/]+)(\/.*)?$/);
   if (sitesMatch) {
     const tenantSlug = sitesMatch[1];
-    await poserEnteteTenant(request, tenantSlug);
+    if (!(await poserEnteteTenant(request, tenantSlug))) {
+      return reponseRestaurantIntrouvable(request);
+    }
     const response = NextResponse.next({
       request: { headers: request.headers },
     });
@@ -503,7 +542,9 @@ export async function proxy(request: NextRequest) {
     url.pathname = `/sites/${subdomain}${pathname}`;
 
     // Set x-tenant-slug on REQUEST headers so server components can read it via headers()
-    await poserEnteteTenant(request, subdomain);
+    if (!(await poserEnteteTenant(request, subdomain))) {
+      return reponseRestaurantIntrouvable(request);
+    }
 
     // Créer la réponse de rewrite avec les cookies de session
     const response = NextResponse.rewrite(url, {

@@ -1,3 +1,4 @@
+import { isMfaSatisfied, MFA_REQUIRED_CODE, MFA_REQUIRED_MESSAGE } from '@/lib/auth/mfa-assurance';
 import { createClient } from '@/lib/supabase/server';
 import { readTenantSlug } from '@/lib/auth/tenant-header';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -12,6 +13,7 @@ import {
 } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createInvitationService } from '@/services/invitation.service';
+import { createAuditService } from '@/services/audit.service';
 import { canGrantRole } from '@/lib/auth/role-hierarchy';
 import { createInvitationSchema } from '@/lib/validations/invitation.schema';
 import { sendInvitationEmail } from '@/services/email.service';
@@ -43,6 +45,13 @@ export async function GET(request: Request) {
       } = await supabase.auth.getUser();
       if (!user) {
         return NextResponse.json({ error: 'Non autorise' }, { status: 401 });
+      }
+
+      if (!(await isMfaSatisfied(supabase, user))) {
+        return NextResponse.json(
+          { error: MFA_REQUIRED_MESSAGE, code: MFA_REQUIRED_CODE },
+          { status: 403 },
+        );
       }
 
       // Scope to the tenant being managed (middleware-injected header), then verify
@@ -149,6 +158,13 @@ export async function POST(request: Request) {
       } = await supabase.auth.getUser();
       if (!user) {
         return NextResponse.json({ error: 'Non autorise' }, { status: 401 });
+      }
+
+      if (!(await isMfaSatisfied(supabase, user))) {
+        return NextResponse.json(
+          { error: MFA_REQUIRED_MESSAGE, code: MFA_REQUIRED_CODE },
+          { status: 403 },
+        );
       }
 
       // B3: un corps illisible est une requete invalide (400), pas une panne (500).
@@ -284,6 +300,21 @@ export async function POST(request: Request) {
         // user.id is the auth user id; use the actor's membership-row PK.
         invitedBy: adminUser.id,
         customPermissions: parsed.data.custom_permissions,
+      });
+
+      // Journal d'audit: l'auteur est le membre qui invite, dans CE restaurant.
+      // Le jeton d'invitation n'y figure jamais.
+      await createAuditService(adminClient, {
+        tenantId,
+        userId: user.id,
+        userEmail: user.email ?? undefined,
+        userRole: adminUser.role,
+      }).log({
+        action: 'create',
+        entityType: 'user',
+        entityId: invitation.id,
+        newData: { email: invitation.email, role: invitation.role, status: invitation.status },
+        metadata: { event: 'invitation_created', invitation_id: invitation.id },
       });
 
       // Send invitation email only if the invitation is pending (not direct-add).

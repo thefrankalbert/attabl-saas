@@ -44,7 +44,7 @@ export interface DerivablePayment {
 }
 
 /** Signed major-unit value of one ledger row (+ received, - refunded). */
-export function paymentMajorAmount(p: DerivablePayment): number {
+function paymentMajorAmount(p: DerivablePayment): number {
   return fromMinorUnits(
     ledgerValue({ amount: toAmount(p.amount), status: p.status }),
     p.display_currency,

@@ -90,7 +90,7 @@ export async function POST(request: Request) {
     }
 
     // Validate bucket (whitelist)
-    const allowedBuckets = ['logos', 'menu-items'];
+    const allowedBuckets = ['logos', 'menu-items', 'images'];
     if (!allowedBuckets.includes(bucket)) {
       return NextResponse.json({ error: "Destination d'envoi inconnue." }, { status: 400 });
     }
@@ -101,8 +101,14 @@ export async function POST(request: Request) {
     // les photos de plats ET le logo envoye depuis la page Reglages: l'un ou
     // l'autre des deux droits y suffit.
     const admin = createAdminClient();
+    // Le bucket `images` recoit les bannieres publicitaires (droit menu.edit,
+    // le meme que les actions de src/app/actions/ads.ts).
     const droits =
-      bucket === 'logos' ? (['settings.edit'] as const) : (['menu.edit', 'settings.edit'] as const);
+      bucket === 'logos'
+        ? (['settings.edit'] as const)
+        : bucket === 'images'
+          ? (['menu.edit'] as const)
+          : (['menu.edit', 'settings.edit'] as const);
     let peutEnvoyer = false;
     for (const droit of droits) {
       const { allowed: accorde } = await resolveAdminPermission(

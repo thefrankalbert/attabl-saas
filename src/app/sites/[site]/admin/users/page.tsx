@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
+import { getTranslations } from 'next-intl/server';
 import UsersClient from '@/components/admin/UsersClient';
 import TenantNotFound from '@/components/admin/TenantNotFound';
 import {
@@ -11,6 +12,11 @@ import {
 import type { AdminUser, AdminRole } from '@/types/admin.types';
 import type { PermissionMap } from '@/types/permission.types';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('sidebar', 'navUsers');
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +39,7 @@ export default async function UsersPage({
     return <TenantNotFound />;
   }
 
+  const tErr = await getTranslations('errors');
   const supabase = await createClient();
 
   // 1. Get Current User & Role
@@ -41,7 +48,7 @@ export default async function UsersPage({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return <div>Non autorisé</div>;
+    return <div>{tErr('notAuthenticated')}</div>;
   }
 
   const { data: currentUserData } = await supabase
@@ -52,7 +59,7 @@ export default async function UsersPage({
     .single();
 
   if (!currentUserData) {
-    return <div>Accès refusé</div>;
+    return <div>{tErr('permissionDenied')}</div>;
   }
 
   const { page, pageSize } = paginationQuerySchema.parse({

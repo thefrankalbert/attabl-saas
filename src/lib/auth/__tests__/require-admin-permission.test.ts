@@ -77,7 +77,14 @@ vi.mock('@/lib/supabase/server', () => ({
   }),
 }));
 
-import { requireAdminPermission, getAdminPermission } from '../require-admin-permission';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+import {
+  requireAdminPermission,
+  requireAdminMember,
+  getAdminPermission,
+} from '../require-admin-permission';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -285,5 +292,49 @@ describe('getAdminPermission', () => {
     hasPermission.mockReturnValue(false);
 
     expect(await getAdminPermission('resto', 'reports.view')).toBe(false);
+  });
+});
+
+describe('requireAdminMember', () => {
+  it('laisse passer un membre meme sans la permission', async () => {
+    // Le serveur ouvre la cuisine ou la carte: aucune permission n'est exigee.
+    reponses.admin_users = [{ data: { role: 'server', custom_permissions: null } }];
+    hasPermission.mockReturnValue(false);
+
+    expect(await requireAdminMember('resto')).toEqual({ tenantId: 'tenant-1', role: 'server' });
+  });
+
+  it('refuse le membre d un AUTRE restaurant', async () => {
+    reponses.admin_users = [{ data: null }, { data: null }];
+
+    await expect(requireAdminMember('resto')).rejects.toBeInstanceOf(RedirectUnauthorized);
+  });
+
+  it('renvoie vers /login sans session', async () => {
+    getUser.mockResolvedValue({ data: { user: null }, error: null });
+
+    await expect(requireAdminMember('resto')).rejects.toBeInstanceOf(RedirectLogin);
+  });
+
+  it('laisse passer un super admin non membre', async () => {
+    reponses.admin_users = [{ data: null }, { data: { id: 'sa-1' } }];
+
+    expect(await requireAdminMember('resto')).toEqual({ tenantId: 'tenant-1', role: 'owner' });
+  });
+});
+
+describe('toutes les pages admin portent une garde serveur', () => {
+  const racine = join(process.cwd(), 'src/app/sites/[site]/admin');
+  const pages = (readdirSync(racine, { recursive: true }) as string[]).filter((f) =>
+    /(^|[\\/])page\.tsx$/.test(f),
+  );
+
+  it('trouve bien les pages (temoin: la liste n est pas vide)', () => {
+    expect(pages.length).toBeGreaterThan(30);
+  });
+
+  it.each(pages)('%s', (page) => {
+    const source = readFileSync(join(racine, page), 'utf8');
+    expect(source).toMatch(/await requireAdmin(Permission|Member)\(/);
   });
 });

@@ -6,7 +6,7 @@ const saveSupportContact = vi.fn();
 vi.mock('@/lib/auth/require-super-admin', () => ({ requireSuperAdmin }));
 vi.mock('@/services/platform-settings.service', () => ({ saveSupportContact }));
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => ({}) }));
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }));
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), updateTag: vi.fn() }));
 vi.mock('@/lib/logger', () => ({ logger: { error: vi.fn() } }));
 
 const { actionUpdateSupportContact } = await import('../platform-admin');

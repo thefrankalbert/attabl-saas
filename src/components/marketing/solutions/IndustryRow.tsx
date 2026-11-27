@@ -102,7 +102,7 @@ export async function IndustryRow({
               </Link>
               <Link
                 href="/features"
-                className="text-sm font-semibold text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-50 dark:hover:text-zinc-300"
+                className="inline-flex min-h-11 items-center text-sm font-semibold text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-50 dark:hover:text-zinc-300"
               >
                 {t('exploreFeatures')} &rarr;
               </Link>

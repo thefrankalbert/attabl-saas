@@ -9,6 +9,12 @@ import {
   type ServerListPagination,
 } from '@/lib/pagination';
 import type { Category, Menu } from '@/types/admin.types';
+import { requireAdminMember } from '@/lib/auth/require-admin-permission';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('sidebar', 'navCategories');
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +27,7 @@ export default async function CategoriesPage({
 }) {
   const { site } = await params;
   const sp = await searchParams;
+  await requireAdminMember(site);
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 

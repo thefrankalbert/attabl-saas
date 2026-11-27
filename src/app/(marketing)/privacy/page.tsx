@@ -13,6 +13,9 @@ const PROCESSOR_IDS = [
   'cloudflare',
   'stripe',
   'push',
+  'anthropic',
+  'exchangerate',
+  'flutterwave',
 ] as const;
 
 const COOKIE_KEYS = [
@@ -82,7 +85,6 @@ export default async function PrivacyPage() {
     t('retentionClosed', { days: RETENTION.closedTenantAnonymizeDays }),
     t('retentionAccounting'),
     t('retentionContact', { months: daysToMonths(RETENTION.contactMailDays) }),
-    t('retentionNewsletter'),
   ];
 
   return (

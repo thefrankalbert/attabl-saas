@@ -1,5 +1,6 @@
 'use client';
 
+import { useId } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -26,6 +27,7 @@ function SectionHeader({ title }: { title: string }) {
 
 export function ChevaletControls({ config, unit, onUnitChange, onChange }: ChevaletControlsProps) {
   const t = useTranslations('sidebar.supports');
+  const uid = useId();
 
   return (
     <div className="flex flex-col gap-5 px-4 py-4 h-full">
@@ -54,7 +56,7 @@ export function ChevaletControls({ config, unit, onUnitChange, onChange }: Cheva
         <SectionHeader title={t('sectionBackground')} />
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label className="text-xs text-app-text-secondary mb-1 block">
+            <Label htmlFor={`${uid}-bg`} className="text-xs text-app-text-secondary mb-1 block">
               {t('labelBackground')}
             </Label>
             <div className="flex items-center gap-2">
@@ -63,6 +65,7 @@ export function ChevaletControls({ config, unit, onUnitChange, onChange }: Cheva
                 style={{ backgroundColor: config.background }}
               />
               <Input
+                id={`${uid}-bg`}
                 value={config.background}
                 onChange={(e) => onChange({ background: e.target.value })}
                 className="h-8 text-base md:text-xs font-mono bg-app-elevated/50 border-app-border rounded-lg"
@@ -70,13 +73,16 @@ export function ChevaletControls({ config, unit, onUnitChange, onChange }: Cheva
             </div>
           </div>
           <div>
-            <Label className="text-xs text-app-text-secondary mb-1 block">{t('labelAccent')}</Label>
+            <Label htmlFor={`${uid}-accent`} className="text-xs text-app-text-secondary mb-1 block">
+              {t('labelAccent')}
+            </Label>
             <div className="flex items-center gap-2">
               <div
                 className="w-7 h-7 rounded-lg border border-app-border shrink-0"
                 style={{ backgroundColor: config.accentColor }}
               />
               <Input
+                id={`${uid}-accent`}
                 value={config.accentColor}
                 onChange={(e) => onChange({ accentColor: e.target.value })}
                 className="h-8 text-base md:text-xs font-mono bg-app-elevated/50 border-app-border rounded-lg"
@@ -91,10 +97,13 @@ export function ChevaletControls({ config, unit, onUnitChange, onChange }: Cheva
         <SectionHeader title={t('sectionLogo')} />
         <div className="flex items-center gap-2 mb-3">
           <Switch
+            id={`${uid}-logo-visible`}
             checked={config.logo.visible}
             onCheckedChange={(v) => onChange({ logo: { ...config.logo, visible: v } })}
           />
-          <Label className="text-xs text-app-text-secondary">{t('labelVisible')}</Label>
+          <Label htmlFor={`${uid}-logo-visible`} className="text-xs text-app-text-secondary">
+            {t('labelVisible')}
+          </Label>
         </div>
         {config.logo.visible && (
           <div className="grid grid-cols-3 gap-2">
@@ -129,16 +138,25 @@ export function ChevaletControls({ config, unit, onUnitChange, onChange }: Cheva
         <SectionHeader title={t('sectionName')} />
         <div className="flex items-center gap-2 mb-3">
           <Switch
+            id={`${uid}-name-visible`}
             checked={config.name.visible}
             onCheckedChange={(v) => onChange({ name: { ...config.name, visible: v } })}
           />
-          <Label className="text-xs text-app-text-secondary">{t('labelVisible')}</Label>
+          <Label htmlFor={`${uid}-name-visible`} className="text-xs text-app-text-secondary">
+            {t('labelVisible')}
+          </Label>
         </div>
         {config.name.visible && (
           <div className="space-y-2">
             <div>
-              <Label className="text-xs text-app-text-secondary mb-1 block">{t('labelText')}</Label>
+              <Label
+                htmlFor={`${uid}-name-text`}
+                className="text-xs text-app-text-secondary mb-1 block"
+              >
+                {t('labelText')}
+              </Label>
               <Input
+                id={`${uid}-name-text`}
                 value={config.name.text}
                 onChange={(e) => onChange({ name: { ...config.name, text: e.target.value } })}
                 maxLength={100}
@@ -160,10 +178,14 @@ export function ChevaletControls({ config, unit, onUnitChange, onChange }: Cheva
                 maxCm={11}
               />
               <div>
-                <Label className="text-xs text-app-text-secondary mb-1 block">
+                <Label
+                  htmlFor={`${uid}-name-size`}
+                  className="text-xs text-app-text-secondary mb-1 block"
+                >
                   {t('labelFontSize')} (pt)
                 </Label>
                 <Input
+                  id={`${uid}-name-size`}
                   type="number"
                   value={config.name.fontSize}
                   min={6}
@@ -186,16 +208,25 @@ export function ChevaletControls({ config, unit, onUnitChange, onChange }: Cheva
         <SectionHeader title={t('sectionTagline')} />
         <div className="flex items-center gap-2 mb-3">
           <Switch
+            id={`${uid}-tagline-visible`}
             checked={config.tagline.visible}
             onCheckedChange={(v) => onChange({ tagline: { ...config.tagline, visible: v } })}
           />
-          <Label className="text-xs text-app-text-secondary">{t('labelVisible')}</Label>
+          <Label htmlFor={`${uid}-tagline-visible`} className="text-xs text-app-text-secondary">
+            {t('labelVisible')}
+          </Label>
         </div>
         {config.tagline.visible && (
           <div className="space-y-2">
             <div>
-              <Label className="text-xs text-app-text-secondary mb-1 block">{t('labelText')}</Label>
+              <Label
+                htmlFor={`${uid}-tagline-text`}
+                className="text-xs text-app-text-secondary mb-1 block"
+              >
+                {t('labelText')}
+              </Label>
               <Input
+                id={`${uid}-tagline-text`}
                 value={config.tagline.text}
                 onChange={(e) => onChange({ tagline: { ...config.tagline, text: e.target.value } })}
                 maxLength={200}
@@ -217,10 +248,14 @@ export function ChevaletControls({ config, unit, onUnitChange, onChange }: Cheva
                 maxCm={11}
               />
               <div>
-                <Label className="text-xs text-app-text-secondary mb-1 block">
+                <Label
+                  htmlFor={`${uid}-tagline-size`}
+                  className="text-xs text-app-text-secondary mb-1 block"
+                >
                   {t('labelFontSize')} (pt)
                 </Label>
                 <Input
+                  id={`${uid}-tagline-size`}
                   type="number"
                   value={config.tagline.fontSize}
                   min={6}

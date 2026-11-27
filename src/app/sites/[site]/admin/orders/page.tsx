@@ -12,6 +12,11 @@ import {
   type ServerListPagination,
 } from '@/lib/pagination';
 import type { Order, ItemStatus, Course } from '@/types/admin.types';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('sidebar', 'navOrders');
+}
 
 export const dynamic = 'force-dynamic';
 

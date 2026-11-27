@@ -34,7 +34,7 @@ export function effectivePaymentMethod(
 }
 
 /** Choix initial: especes quand elles sont proposees, sinon le premier moyen. */
-export function defaultPaymentMethod(choices: readonly PaymentMethodId[]): PaymentMethodId {
+function defaultPaymentMethod(choices: readonly PaymentMethodId[]): PaymentMethodId {
   return choices.includes('cash') ? 'cash' : (choices[0] ?? 'cash');
 }
 

@@ -31,13 +31,13 @@ import { loadCoachFacts, loadStockFacts } from './reminder-facts';
 import { createReminderDelivery, type ReminderGroup } from './reminder-delivery';
 
 /** Au-dela, ce n'est plus un probleme de service en cours mais de l'historique. */
-export const LIVE_WINDOW_MIN = 180;
+const LIVE_WINDOW_MIN = 180;
 /**
  * Un rappel de service encore ouvert apres 6 h (commande jamais marquee
  * servie) n'est plus reverifie: sa notification quitte la cloche, il reste
  * compte "non regle" dans les mesures. Borne la taille des lectures.
  */
-export const STALE_AFTER_MIN = 360;
+const STALE_AFTER_MIN = 360;
 /** Taille des lots d'identifiants (une URL GET trop longue est refusee). */
 const ID_BATCH = 200;
 

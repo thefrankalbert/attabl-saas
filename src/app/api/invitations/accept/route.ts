@@ -1,3 +1,4 @@
+import { isMfaSatisfied, MFA_REQUIRED_CODE, MFA_REQUIRED_MESSAGE } from '@/lib/auth/mfa-assurance';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
@@ -6,6 +7,7 @@ import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { invitationAcceptLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createInvitationService } from '@/services/invitation.service';
+import { createAuditService } from '@/services/audit.service';
 import { acceptInvitationSchema } from '@/lib/validations/invitation.schema';
 import { createPlanEnforcementService, STAFF_ROLES } from '@/services/plan-enforcement.service';
 import type { Tenant } from '@/types/admin.types';
@@ -68,6 +70,13 @@ export async function POST(request: Request) {
     const {
       data: { user: sessionUser },
     } = await sessionClient.auth.getUser();
+    // Double authentification: un compte qui a un facteur n'accepte qu'en aal2.
+    if (sessionUser && !(await isMfaSatisfied(sessionClient, sessionUser))) {
+      return NextResponse.json(
+        { error: MFA_REQUIRED_MESSAGE, code: MFA_REQUIRED_CODE },
+        { status: 403 },
+      );
+    }
 
     const adminClient = createAdminClient();
     const service = createInvitationService(adminClient);
@@ -119,8 +128,11 @@ export async function POST(request: Request) {
     // redirect lands in their space instead of the login screen. Best effort:
     // the account exists either way, and the login screen still works.
     const motDePasse = parsed.data.password;
+    // Identite du membre qui vient d'entrer: la session deja ouverte, ou celle
+    // que la connexion automatique ci-dessous vient d'ouvrir.
+    let memberUserId: string | undefined = sessionUser?.id;
     if (motDePasse && sessionUser?.email?.toLowerCase() !== invitation.email.toLowerCase()) {
-      const { error: signInError } = await sessionClient.auth.signInWithPassword({
+      const { data: signInData, error: signInError } = await sessionClient.auth.signInWithPassword({
         email: invitation.email,
         password: motDePasse,
       });
@@ -128,8 +140,46 @@ export async function POST(request: Request) {
         logger.warn('Invitation accepted but automatic sign-in failed', {
           code: signInError.code,
         });
+      } else {
+        memberUserId = signInData?.user?.id ?? memberUserId;
+        // Premiere connexion: sans elle le membre restait "Jamais connecte" sur
+        // la page Equipe (la connexion par mot de passe, /api/login, l'ecrit deja).
+        // Meilleur effort: un compteur en echec ne bloque jamais l'acceptation.
+        try {
+          const { data: membership } = await sessionClient
+            .from('admin_users')
+            .select('id')
+            .eq('user_id', memberUserId ?? '')
+            .eq('tenant_id', invitation.tenant_id)
+            .maybeSingle();
+          if (membership) {
+            const { error: trackError } = await sessionClient.rpc('increment_login_count', {
+              admin_user_id: membership.id,
+            });
+            if (trackError) {
+              logger.warn('Invitation login tracking failed', { error: String(trackError) });
+            }
+          }
+        } catch (trackError) {
+          logger.warn('Invitation login tracking failed', { error: String(trackError) });
+        }
       }
     }
+
+    // Journal d'audit: le membre qui accepte est l'auteur. Ni le jeton ni le
+    // mot de passe n'y figurent.
+    await createAuditService(adminClient, {
+      tenantId: invitation.tenant_id,
+      userId: memberUserId,
+      userEmail: invitation.email,
+      userRole: invitation.role,
+    }).log({
+      action: 'create',
+      entityType: 'user',
+      entityId: invitation.id,
+      newData: { email: invitation.email, role: invitation.role },
+      metadata: { event: 'invitation_accepted', invitation_id: invitation.id },
+    });
 
     return NextResponse.json({ success: true, tenantSlug });
   } catch (error) {

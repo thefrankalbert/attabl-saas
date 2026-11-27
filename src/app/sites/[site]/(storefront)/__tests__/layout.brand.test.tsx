@@ -19,6 +19,8 @@ const tenant = vi.hoisted(() => ({
 }));
 
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }));
+// The layout sends the convive messages subset; its content does not matter here.
+vi.mock('@/i18n/storefront-messages', () => ({ getStorefrontMessages: async () => ({}) }));
 vi.mock('@/lib/cache', () => ({
   getCachedTenant: async () => tenant.current,
   toPublicTenant: (t: unknown) => t,

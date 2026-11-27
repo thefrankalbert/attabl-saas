@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidatePath, revalidateTag } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireSuperAdmin } from '@/lib/auth/require-super-admin';
 import { AuthError } from '@/lib/auth/get-session';
@@ -38,8 +38,10 @@ function toMessage(err: unknown, fallback: string): string {
 
 /** Bust every tenant-config cache so convive/admin reflect the change at once. */
 function bustTenantCaches() {
-  revalidateTag(CACHE_TAG_TENANT_CONFIG, 'max');
-  revalidateTag(CACHE_TAG_TENANT_DOMAIN, 'max');
+  // updateTag (et non revalidateTag 'max'): expiration immediate, sinon la
+  // premiere visite apres une suspension sert encore la carte en cache.
+  updateTag(CACHE_TAG_TENANT_CONFIG);
+  updateTag(CACHE_TAG_TENANT_DOMAIN);
   revalidatePath('/admin/tenants');
 }
 

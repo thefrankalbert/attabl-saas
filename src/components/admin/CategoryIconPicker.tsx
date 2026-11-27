@@ -15,7 +15,7 @@ interface CategoryIconPickerProps {
 }
 
 export function CategoryIconPicker({ value, usedIcons, onChange }: CategoryIconPickerProps) {
-  const tc = useTranslations('common');
+  const t = useTranslations('categories');
   const [search, setSearch] = useState('');
 
   const filtered = search.trim()
@@ -43,7 +43,7 @@ export function CategoryIconPicker({ value, usedIcons, onChange }: CategoryIconP
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder={tc('searchIconPlaceholder')}
+          placeholder={t('iconSearchPlaceholder')}
           className="pl-9 h-8 text-base md:text-sm"
         />
       </div>
@@ -76,7 +76,7 @@ export function CategoryIconPicker({ value, usedIcons, onChange }: CategoryIconP
           );
         })}
         {filtered.length === 0 && (
-          <p className="col-span-6 text-center text-xs text-app-text-muted py-4">Aucune icone</p>
+          <p className="col-span-6 text-center text-xs text-app-text-muted py-4">{t('noIcon')}</p>
         )}
       </div>
     </div>

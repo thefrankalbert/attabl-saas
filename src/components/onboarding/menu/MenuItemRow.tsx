@@ -1,6 +1,6 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -58,7 +58,15 @@ export function MenuItemRow({
           </div>
         ) : item.imageUrl ? (
           <div className="relative h-9 w-9">
-            <img src={item.imageUrl} alt="" className="h-9 w-9 rounded-lg object-cover" />
+            <Image
+              src={item.imageUrl}
+              alt=""
+              width={36}
+              height={36}
+              // Apercu local (blob:, data:) ou hote de developpement http: pas d'optimiseur.
+              unoptimized={!item.imageUrl.startsWith('https://')}
+              className="h-9 w-9 rounded-lg object-cover"
+            />
             <Button
               type="button"
               variant="destructive"
@@ -81,6 +89,7 @@ export function MenuItemRow({
       </div>
       <Input
         placeholder={t('articleNamePlaceholder')}
+        maxLength={200}
         value={item.name}
         onChange={(e) => updateArticle(categoryId, item.id, 'name', e.target.value)}
         className="h-10 flex-1 rounded-lg border-app-border bg-app-elevated px-3.5 text-base md:text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"

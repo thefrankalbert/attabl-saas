@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, Search, Utensils } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
@@ -8,6 +9,13 @@ const POPULAR = [
   { key: 'solutions', href: '/solutions' },
   { key: 'support', href: '/support' },
 ] as const;
+
+// Titre propre a la page introuvable (le gabarit "%s | ATTABL" du layout
+// racine s'applique). Sans lui, l'onglet affichait le titre de l'accueil.
+export const metadata: Metadata = {
+  title: 'Page introuvable',
+  robots: { index: false, follow: false },
+};
 
 export default async function NotFound() {
   const t = await getTranslations('common');
@@ -24,7 +32,7 @@ export default async function NotFound() {
         </span>
       </Link>
 
-      <p className="text-sm font-semibold uppercase tracking-[0.14em] text-orange-600 dark:text-orange-400">
+      <p className="text-sm font-semibold uppercase tracking-[0.14em] text-orange-700 dark:text-orange-400">
         404
       </p>
       <h1 className="mt-3 max-w-[520px] text-[32px] font-semibold leading-[1.1] tracking-[-0.03em] text-zinc-950 sm:text-[40px] dark:text-zinc-50">
@@ -52,7 +60,7 @@ export default async function NotFound() {
       </div>
 
       <div className="mt-12">
-        <p className="text-[13px] font-semibold uppercase tracking-[0.1em] text-zinc-400 dark:text-zinc-500">
+        <p className="text-[13px] font-semibold uppercase tracking-[0.1em] text-zinc-600 dark:text-zinc-400">
           {t('notFoundPopular')}
         </p>
         <div className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">

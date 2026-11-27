@@ -15,6 +15,7 @@ interface RecipeImportResult {
   recipesRemoved: number;
   recipesUnchanged: number;
   ingredientsCreated: number;
+  ingredientsCreatedNames: string[];
   itemsSkipped: number;
   errors: Array<{ row: number; message: string }>;
 }
@@ -102,6 +103,7 @@ export default function RecipeImportExcel({ onImportComplete, onCancel }: Recipe
           recipesRemoved: 0,
           recipesUnchanged: 0,
           ingredientsCreated: 0,
+          ingredientsCreatedNames: [],
           itemsSkipped: 0,
           errors: data.errors || [],
         });
@@ -114,6 +116,9 @@ export default function RecipeImportExcel({ onImportComplete, onCancel }: Recipe
         recipesRemoved: data.recipesRemoved ?? 0,
         recipesUnchanged: data.recipesUnchanged ?? 0,
         ingredientsCreated: data.ingredientsCreated ?? 0,
+        ingredientsCreatedNames: Array.isArray(data.ingredientsCreatedNames)
+          ? data.ingredientsCreatedNames
+          : [],
         itemsSkipped: data.itemsSkipped ?? 0,
         errors: data.errors ?? [],
       };
@@ -217,9 +222,18 @@ export default function RecipeImportExcel({ onImportComplete, onCancel }: Recipe
             </div>
           )}
           {importResult.ingredientsCreated > 0 && (
-            <div className="flex items-center gap-2 text-sm text-status-info">
-              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-              {t('ingredientsCreated', { count: importResult.ingredientsCreated })}
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-sm text-status-info">
+                <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                {t('ingredientsCreated', { count: importResult.ingredientsCreated })}
+              </div>
+              {importResult.ingredientsCreatedNames.length > 0 && (
+                <p className="pl-6 text-xs text-app-text-secondary">
+                  {t('ingredientsCreatedNames', {
+                    names: importResult.ingredientsCreatedNames.join(', '),
+                  })}
+                </p>
+              )}
             </div>
           )}
           {importResult.itemsSkipped > 0 && (

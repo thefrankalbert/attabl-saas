@@ -15,10 +15,12 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { getRoleConfig } from '@/lib/role-config';
-import type { AdminUser } from '@/types/admin.types';
+import { canActOnUser } from '@/lib/auth/role-hierarchy';
+import type { AdminUser, AdminRole } from '@/types/admin.types';
 
 interface UsersTableProps {
   users: AdminUser[];
+  currentUserRole: AdminRole;
   canManageUsers: boolean;
   onToggleStatus: (user: AdminUser) => Promise<void>;
   onDeleteUser: (userId: string) => Promise<void>;
@@ -30,6 +32,7 @@ interface UsersTableProps {
 
 export default function UsersTable({
   users,
+  currentUserRole,
   canManageUsers,
   onToggleStatus,
   onDeleteUser,
@@ -104,7 +107,11 @@ export default function UsersTable({
                   )}
                 </div>
 
-                {canManageUsers && (
+                {/* Meme regle que le serveur (canActOnUser): aucune action sur un
+                    rang egal ou superieur, donc ni sur soi-meme ni sur le
+                    proprietaire. Supprimer le dernier membre supprimerait le
+                    restaurant. */}
+                {canManageUsers && canActOnUser(currentUserRole, user.role) && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button

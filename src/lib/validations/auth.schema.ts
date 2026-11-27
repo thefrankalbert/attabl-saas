@@ -10,11 +10,16 @@ export const signupSchema = z.object({
   restaurantName: z
     .string()
     .min(2, 'Le nom du restaurant doit contenir au moins 2 caractères')
-    .max(100, 'Le nom du restaurant ne doit pas dépasser 100 caractères'),
+    .max(100, 'Le nom du restaurant ne doit pas dépasser 100 caractères')
+    .refine((name) => !/[<>]/.test(name), 'Le nom du restaurant ne peut pas contenir < ou >'),
   email: z.string().email('Email invalide'),
   password: passwordSchema,
   phone: z.string().max(20).optional(),
-  plan: z.enum(['starter', 'pro', 'business']).optional(),
+  plan: z
+    .enum(['starter', 'pro', 'business'], {
+      error: 'Plan inconnu : choisissez Starter, Pro ou Business',
+    })
+    .optional(),
 });
 
 export const resendConfirmationSchema = z.object({

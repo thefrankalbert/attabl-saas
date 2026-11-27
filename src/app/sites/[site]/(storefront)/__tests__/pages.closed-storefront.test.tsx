@@ -34,6 +34,12 @@ vi.mock('@/lib/supabase/server', () => {
         state.from(table);
         return builder;
       },
+      // Une fonction lue (annonces) compte comme une lecture de donnees: la
+      // vitrine fermee ne doit pas l'appeler non plus.
+      rpc: (name: string) => {
+        state.from(`rpc:${name}`);
+        return builder;
+      },
     }),
   };
 });

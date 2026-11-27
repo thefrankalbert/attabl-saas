@@ -21,6 +21,10 @@ interface TableOccupiedNoticeProps {
  * device already placed an order for this tenant - in which case the open session
  * is the customer's OWN and the warning would be wrong.
  *
+ * Colors are solid and have NO dark: variant on purpose: the storefront surface
+ * stays light in dark mode, so light-on-light text (amber-100 on white = 1.11:1)
+ * was unreadable. amber-900 on amber-50 = 8.7:1, amber-800 on amber-50 = 6.8:1.
+ *
  * Occupancy is passed in from the server (no client data fetch - the storefront
  * has no React Query provider); only the own-order suppression reads localStorage.
  */
@@ -54,9 +58,9 @@ export function TableOccupiedNotice({
   return (
     <div
       role="status"
-      className="mx-3 mt-3 flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-amber-900 dark:text-amber-100"
+      className="mx-3 mt-3 flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5 text-amber-900"
     >
-      <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" aria-hidden />
+      <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden />
       <p className="flex-1 text-xs leading-snug">
         {t('tableOccupiedNotice', { table: tableNumber })}
       </p>
@@ -64,7 +68,7 @@ export function TableOccupiedNotice({
         type="button"
         variant="ghost"
         size="icon"
-        className="h-6 w-6 shrink-0 text-amber-700 hover:bg-amber-500/20 dark:text-amber-200"
+        className="h-6 w-6 shrink-0 text-amber-800 hover:bg-amber-200"
         aria-label={t('tableOccupiedDismiss')}
         onClick={() => setDismissed(true)}
       >

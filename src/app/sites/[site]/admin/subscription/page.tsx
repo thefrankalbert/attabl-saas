@@ -9,6 +9,11 @@ import { getTranslations } from 'next-intl/server';
 import { isFlutterwaveConfigured, isFlutterwaveCurrency } from '@/lib/billing/flutterwave/config';
 import { FlutterwaveReturnHandler } from '@/components/tenant/subscription/FlutterwaveReturnHandler';
 import AdminSrTitle from '@/components/admin/AdminSrTitle';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('sidebar', 'navSubscription');
+}
 
 export const dynamic = 'force-dynamic';
 

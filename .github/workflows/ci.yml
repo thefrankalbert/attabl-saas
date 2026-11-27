@@ -265,7 +265,7 @@ jobs:
   #
   # Les jobs Stripe (parcours 01 et 06) restent NOCTURNES, jamais sur PR: le
   # compte Stripe a une limite de Test Clocks actives, et deux PR concurrentes
-  # se casseraient mutuellement.
+  # se casseraient mutuellement. Ils tournent dans parcours-nocturnes.yml.
   journeys:
     name: Journeys (BOLA + commande + permissions)
     # Fige sur 24.04: GitHub a bascule `ubuntu-latest` sur Ubuntu 26.04 le

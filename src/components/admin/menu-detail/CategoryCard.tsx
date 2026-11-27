@@ -1,7 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { Utensils, Edit2, Trash2, Eye, EyeOff, ChevronDown } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { Category } from '@/types/admin.types';
@@ -72,6 +72,8 @@ export function CategoryCard({ vm, cat }: Props) {
               variant="outline"
               size="sm"
               onClick={() => openEditCategoryModal(cat)}
+              aria-label={tc('edit')}
+              title={tc('edit')}
               className="text-xs h-8"
             >
               <Edit2 className="w-3.5 h-3.5" />

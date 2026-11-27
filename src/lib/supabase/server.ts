@@ -22,6 +22,10 @@ export async function createClient() {
               // carries the auth cookies; 'strict' would break exchangeCodeForSession.
               options.sameSite = 'lax';
             }
+            // Audit K3.9: `@supabase/ssr` ne pose pas `Secure` de lui-meme. En
+            // production le site est servi en HTTPS seulement; hors production
+            // (http://localhost) l'attribut est laisse tel quel.
+            if (process.env.NODE_ENV === 'production') options.secure = true;
             cookieStore.set({ name, value, ...options });
           } catch (error) {
             // Server Components cannot set cookies - this is expected.
@@ -39,6 +43,7 @@ export async function createClient() {
             if (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_APP_DOMAIN) {
               options.domain = `.${process.env.NEXT_PUBLIC_APP_DOMAIN}`;
             }
+            if (process.env.NODE_ENV === 'production') options.secure = true;
             cookieStore.set({ name, value: '', ...options });
           } catch (error) {
             if (process.env.NODE_ENV === 'production') {
