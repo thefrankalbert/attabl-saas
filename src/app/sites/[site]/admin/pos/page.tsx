@@ -3,6 +3,11 @@ import { headers } from 'next/headers';
 import POSClient from '@/components/admin/POSClient';
 import TenantNotFound from '@/components/admin/TenantNotFound';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('sidebar', 'navPos');
+}
 
 export const dynamic = 'force-dynamic';
 

@@ -31,19 +31,22 @@ export default async function ConfirmEmailChangePage({
 }) {
   const { token, done } = await searchParams;
   const t = await getTranslations('auth.emailChange');
-  const claims = done === 'current' ? null : readClaims(token);
+  const claims = readClaims(token);
+  // "Accord enregistre" seulement avec un jeton valide de l'etape `current`.
+  const showDone = done === 'current' && claims?.step === 'current';
+  const showConfirm = done !== 'current' && claims !== null && Boolean(token);
 
   return (
     <AuthShell scene="emailChange">
       <div className="w-full">
         <AuthCard>
           <div className="flex flex-col gap-3 py-2 text-center">
-            {done === 'current' ? (
+            {showDone ? (
               <>
                 <h1 className="auth-serif auth-title">{t('doneTitle')}</h1>
                 <p className="text-sm text-[var(--secondary)]">{t('doneCurrentBody')}</p>
               </>
-            ) : claims && token ? (
+            ) : showConfirm && claims && token ? (
               <>
                 <h1 className="auth-serif auth-title">{t('title')}</h1>
                 <p className="text-sm text-[var(--secondary)]">

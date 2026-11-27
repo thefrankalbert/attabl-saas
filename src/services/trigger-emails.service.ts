@@ -148,7 +148,7 @@ export function determineTrialEventKey(params: TrialTriggerParams): string | nul
 }
 
 /** Silence au-dela duquel un essai est dit inactif. */
-export const TRIAL_IDLE_AFTER_HOURS = 48;
+const TRIAL_IDLE_AFTER_HOURS = 48;
 /** Plafond de relances par passage (meilleur effort, la suite au passage suivant). */
 const TRIAL_IDLE_MAX_PER_RUN = 50;
 

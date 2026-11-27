@@ -290,6 +290,9 @@ describe('POST /api/login - ce qui borne les essais', () => {
     const res = await POST(requete());
 
     expect(res.status).toBe(403);
+    // Le formulaire lit `code` (stable) pour proposer "Renvoyer", jamais la
+    // phrase traduite de `error`.
+    expect(((await res.json()) as { code?: string }).code).toBe('email_not_confirmed');
   });
 
   /**
@@ -304,5 +307,49 @@ describe('POST /api/login - ce qui borne les essais', () => {
 
     const clesDeCouple = compteur.cles.filter((c) => c.startsWith('empreinte:'));
     expect(new Set(clesDeCouple).size).toBe(2);
+  });
+});
+
+/**
+ * Double authentification (K6.13): un compte avec un facteur VERIFIE sort de
+ * la connexion par mot de passe en session aal1; la route le signale pour que
+ * le formulaire passe par /auth/mfa. Un facteur jamais confirme ne compte pas.
+ */
+describe('POST /api/login double authentification', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  async function loginWithFactors(factors: Array<{ status: string }>) {
+    const supabase = mockSupabase([
+      {
+        id: 'au-1',
+        tenant_id: 't1',
+        is_super_admin: false,
+        role: 'owner',
+        tenants: { slug: 'resto', onboarding_completed: true },
+      },
+    ]);
+    supabase.auth.signInWithPassword.mockResolvedValue({
+      data: { user: { id: 'user-1', factors } },
+      error: null,
+    });
+    vi.mocked(createClient).mockResolvedValue(supabase as never);
+    const res = await POST(buildRequest());
+    return { status: res.status, json: (await res.json()) as { mfaRequired?: boolean } };
+  }
+
+  it('facteur verifie: mfaRequired = true', async () => {
+    const { status, json } = await loginWithFactors([{ status: 'verified' }]);
+    expect(status).toBe(200);
+    expect(json.mfaRequired).toBe(true);
+  });
+
+  it('aucun facteur: mfaRequired = false', async () => {
+    const { json } = await loginWithFactors([]);
+    expect(json.mfaRequired).toBe(false);
+  });
+
+  it('facteur non verifie (activation abandonnee): mfaRequired = false', async () => {
+    const { json } = await loginWithFactors([{ status: 'unverified' }]);
+    expect(json.mfaRequired).toBe(false);
   });
 });

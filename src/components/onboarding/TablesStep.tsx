@@ -3,7 +3,13 @@
 import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import type { OnboardingData } from '@/app/onboarding/page';
-import { withUniquePrefixes, zonesForDraft, type ConfigMode, type ZoneData } from './tables/types';
+import {
+  MAX_TABLES_PER_ZONE,
+  withUniquePrefixes,
+  zonesForDraft,
+  type ConfigMode,
+  type ZoneData,
+} from './tables/types';
 import { findZoneIssues, type ZoneIssue } from '@/lib/validations/onboarding.schema';
 import { ModeSelector } from './tables/ModeSelector';
 import { SkipState } from './tables/SkipState';
@@ -22,7 +28,16 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
   const [zones, setZones] = useState<ZoneData[]>(
     data.tableZones && data.tableZones.length > 0
       ? data.tableZones
-      : [{ name: '', prefix: '', tableCount: 10, defaultCapacity: 2 }],
+      : // La premiere zone reprend le nombre de tables deja donne a l'ecran
+        // Adresse: la meme question ne doit pas recevoir deux reponses.
+        [
+          {
+            name: '',
+            prefix: '',
+            tableCount: Math.min(MAX_TABLES_PER_ZONE, Math.max(1, data.tableCount || 10)),
+            defaultCapacity: 2,
+          },
+        ],
   );
 
   const defaultName = useCallback((number: number) => t('zoneDefaultName', { number }), [t]);
@@ -68,7 +83,10 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
       // Saisi a la main; vide = retour au prefixe automatique.
       updated[index] = { ...updated[index], prefix, prefixManual: prefix !== '' };
     } else if (field === 'tableCount') {
-      updated[index] = { ...updated[index], tableCount: Math.max(1, Number(value)) };
+      updated[index] = {
+        ...updated[index],
+        tableCount: Math.min(MAX_TABLES_PER_ZONE, Math.max(1, Number(value))),
+      };
     } else if (field === 'defaultCapacity') {
       updated[index] = { ...updated[index], defaultCapacity: Number(value) };
     }

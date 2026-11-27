@@ -72,7 +72,7 @@ describe('Suppression groupee des commandes (owner/admin)', () => {
   it('le gerant ne voit pas la corbeille', () => {
     withRole('manager', bar);
     expect(screen.queryByLabelText('delete')).toBeNull();
-    expect(screen.getByLabelText('Next')).toBeInTheDocument();
+    expect(screen.getByLabelText('aria.next')).toBeInTheDocument();
   });
   it('l admin la voit', () => {
     withRole('admin', bar);

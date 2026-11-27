@@ -189,6 +189,10 @@ export interface ReceiveStockInput {
   inPurchaseUnit: boolean;
   supplier_id?: string | null;
   notes?: string;
+  // Purchase price per ENTERED unit (purchase unit when inPurchaseUnit, base
+  // unit otherwise). When set, the product cost becomes the weighted average
+  // cost (adjust_ingredient_stock_tx); absent, the cost does not change.
+  unit_cost?: number;
 }
 
 export interface RecipeLineInput {
@@ -203,6 +207,9 @@ export interface AdjustStockInput {
   movement_type: MovementType;
   notes?: string;
   supplier_id?: string;
+  // Purchase price per base unit, receipts (manual_add) only: recalculates the
+  // weighted average cost. Absent, the cost does not change.
+  unit_cost?: number;
 }
 
 export interface RecordLossInput {
@@ -264,6 +271,12 @@ export interface RecipeImportResult {
   /** Lines identical to the stored recipe: not rewritten. */
   recipesUnchanged: number;
   ingredientsCreated: number;
+  /**
+   * Noms des produits crees par l'import, tels qu'ecrits dans le fichier. Un
+   * nom mal orthographie cree un doublon: l'ecran les nomme pour que la faute
+   * se voie tout de suite.
+   */
+  ingredientsCreatedNames: string[];
   itemsSkipped: number;
   errors: ImportRowError[];
 }

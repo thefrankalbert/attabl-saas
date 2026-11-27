@@ -73,10 +73,14 @@ export default function LossesReportClient({
           {/* Date-range filter */}
           <div className="flex flex-wrap items-end gap-3">
             <div>
-              <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+              <Label
+                htmlFor="losses-start-date"
+                className="text-xs font-medium text-app-text-secondary mb-1 block"
+              >
                 {t('from')}
               </Label>
               <Input
+                id="losses-start-date"
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
@@ -84,10 +88,14 @@ export default function LossesReportClient({
               />
             </div>
             <div>
-              <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+              <Label
+                htmlFor="losses-end-date"
+                className="text-xs font-medium text-app-text-secondary mb-1 block"
+              >
                 {t('to')}
               </Label>
               <Input
+                id="losses-end-date"
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}

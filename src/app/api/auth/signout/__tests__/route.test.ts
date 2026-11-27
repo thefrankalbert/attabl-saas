@@ -11,9 +11,31 @@ vi.mock('@/lib/logger', () => ({ logger: { error: vi.fn() } }));
 
 import { POST } from '../route';
 
-const req = () => new Request('https://demo.attabl.com/api/auth/signout', { method: 'POST' });
+const req = (query = '') =>
+  new Request(`https://demo.attabl.com/api/auth/signout${query}`, { method: 'POST' });
 
 describe('POST /api/auth/signout', () => {
+  it('par defaut: ne ferme que cet appareil (scope local)', async () => {
+    signOut.mockReset();
+    signOut.mockResolvedValue({ error: null });
+    await POST(req());
+    expect(signOut).toHaveBeenCalledWith({ scope: 'local' });
+  });
+
+  it('?scope=global: ferme toutes les sessions du compte', async () => {
+    signOut.mockReset();
+    signOut.mockResolvedValue({ error: null });
+    await POST(req('?scope=global'));
+    expect(signOut).toHaveBeenCalledWith({ scope: 'global' });
+  });
+
+  it('une portee inconnue retombe sur cet appareil seul, jamais sur global', async () => {
+    signOut.mockReset();
+    signOut.mockResolvedValue({ error: null });
+    await POST(req('?scope=others'));
+    expect(signOut).toHaveBeenCalledWith({ scope: 'local' });
+  });
+
   it('revocation reussie: redirige vers /login', async () => {
     signOut.mockResolvedValue({ error: null });
     const res = await POST(req());

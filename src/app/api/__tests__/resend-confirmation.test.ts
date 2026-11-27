@@ -252,18 +252,26 @@ describe('POST /api/resend-confirmation', () => {
     expect(json.success).toBe(true);
   });
 
-  it('returns 500 when generateLink fails with a server error', async () => {
+  // Une adresse inconnue sort de GoTrue en `validation_failed`: un 500 ici, la
+  // ou un compte existant recoit 200, disait quelles adresses ont un compte.
+  it('repond la MEME reponse neutre quand generateLink echoue pour une autre raison', async () => {
     mockRateLimit(true);
+    const neutre = createMockAdminClient({
+      generateLinkResult: { data: null, error: { message: 'User already registered' } },
+    });
+    vi.mocked(createAdminClient).mockReturnValue(neutre as never);
+    const temoin = await POST(buildRequest({ email: 'existe@test.com' }));
+    const corpsTemoin = await temoin.text();
+
     const mock = createMockAdminClient({
-      generateLinkResult: { data: null, error: { message: 'Internal server error' } },
+      generateLinkResult: { data: null, error: { message: 'validation_failed' } },
     });
     vi.mocked(createAdminClient).mockReturnValue(mock as never);
+    const res = await POST(buildRequest({ email: 'inconnu@test.com' }));
 
-    const res = await POST(buildRequest({ email: 'fail@test.com' }));
-    const json = (await res.json()) as { error: string };
-
-    expect(res.status).toBe(500);
-    expect(json.error).toBeDefined();
+    expect(res.status).toBe(temoin.status);
+    expect(res.status).toBe(200);
+    expect(await res.text()).toBe(corpsTemoin);
   });
 
   it('does not call listUsers (scalability fix)', async () => {

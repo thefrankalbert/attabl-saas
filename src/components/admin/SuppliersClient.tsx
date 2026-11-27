@@ -15,6 +15,7 @@ import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import SupplierImportExcel from '@/components/features/inventory/SupplierImportExcel';
 import { actionUpdateSupplier, actionDeleteSupplier } from '@/app/actions/suppliers';
 import RoleGuard from '@/components/admin/RoleGuard';
+import { usePermissions } from '@/hooks/usePermissions';
 import type { Supplier } from '@/types/supplier.types';
 import { useSupplierForm } from './suppliers/useSupplierForm';
 import { useSupplierColumns } from './suppliers/useSupplierColumns';
@@ -58,6 +59,11 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
   const loadSuppliers = () => {
     queryClient.invalidateQueries({ queryKey: ['suppliers', tenantId] });
   };
+
+  // Modifier, desactiver, supprimer, ajouter et importer = `inventory.edit` cote
+  // serveur. Le chef (inventory.view) consulte les fournisseurs sans boutons qui
+  // finissent en "Permissions insuffisantes".
+  const canEdit = usePermissions().can('inventory.edit');
 
   const form = useSupplierForm(tenantId, loadSuppliers);
   const { openAdd, openEdit } = form;
@@ -108,6 +114,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
     handleDelete,
     deleteConfirm,
     setDeleteConfirm,
+    canEdit,
   });
 
   return (
@@ -154,19 +161,23 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                   </a>
                 </Button>
 
-                <Button
-                  onClick={() => setShowImportModal(true)}
-                  variant="outline"
-                  className="gap-2 shrink-0"
-                >
-                  <Upload className="w-4 h-4" />
-                  {t('importExcel')}
-                </Button>
+                {canEdit && (
+                  <Button
+                    onClick={() => setShowImportModal(true)}
+                    variant="outline"
+                    className="gap-2 shrink-0"
+                  >
+                    <Upload className="w-4 h-4" />
+                    {t('importExcel')}
+                  </Button>
+                )}
 
-                <Button onClick={openAdd} variant="default" className="gap-2 shrink-0">
-                  <Plus className="w-4 h-4" />
-                  {t('addSupplier')}
-                </Button>
+                {canEdit && (
+                  <Button onClick={openAdd} variant="default" className="gap-2 shrink-0">
+                    <Plus className="w-4 h-4" />
+                    {t('addSupplier')}
+                  </Button>
+                )}
               </>
             }
           />
@@ -199,6 +210,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                       supplier={supplier}
                       openEdit={openEdit}
                       onToggleActive={handleToggleActive}
+                      canEdit={canEdit}
                     />
                   ),
                 }}

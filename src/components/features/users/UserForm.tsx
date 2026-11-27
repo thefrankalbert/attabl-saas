@@ -61,10 +61,11 @@ export default function UserForm({
       {/* Seul chemin pour faire entrer du personnel: l'invitation (le titulaire du compte choisit son mot de passe). */}
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label>{t('memberEmail')}</Label>
+          <Label htmlFor="invite-email">{t('memberEmail')}</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-3 h-4 w-4 text-app-text-muted" />
             <Input
+              id="invite-email"
               className="pl-9"
               type="email"
               placeholder={seg.emailPlaceholder}

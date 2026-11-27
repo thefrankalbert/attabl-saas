@@ -197,10 +197,15 @@ export async function POST(request: Request) {
         // Plafond par DESTINATAIRE (3 par heure, cle = empreinte de l'adresse): la
         // route ne doit pas servir a arroser la boite d'un tiers. Au-dela, on
         // n'envoie rien, en silence, et la reponse reste identique.
+        // `emailDelivered` suit l'envoi REEL, comme pour un compte cree: code en
+        // dur a `true`, il trahissait l'existence du compte des que le
+        // fournisseur d'e-mails etait en panne (compte neuf: false, compte
+        // existant: true).
+        let delivered = true;
         if (signupEmail && (await signupExistsEmailAllowed(signupEmail))) {
           // Meme travail cote serveur que pour un compte cree (un envoi). Meilleur effort.
           const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
-          await refusNeutre(signupEmail, appUrl).catch((err: unknown) => {
+          delivered = await refusNeutre(signupEmail, appUrl).catch((err: unknown) => {
             logger.warn('Signup: courriel de refus neutre non envoye', {
               code: error.message,
               error: String(err),
@@ -208,7 +213,7 @@ export async function POST(request: Request) {
             return false;
           });
         }
-        return NextResponse.json(signupAcceptedBody(true, t));
+        return NextResponse.json(signupAcceptedBody(delivered, t));
       } else if (error.code === 'CONFLICT' && error.message === 'RESTAURANT_NAME_TAKEN') {
         errorMessage = t('restaurantNameTaken');
         code = 'RESTAURANT_NAME_TAKEN';

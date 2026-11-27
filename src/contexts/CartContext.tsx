@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { useTenant } from './TenantContext';
 import { calculateOrderTotal } from '@/lib/pricing/tax';
 import { logger } from '@/lib/logger';
+import { MAX_ITEM_QTY } from '@/lib/utils/cart-display';
 import type {
   ServiceType,
   PricingBreakdown,
@@ -303,10 +304,14 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         setCurrentRestaurantId(restaurantId);
       }
 
+      // La quantite choisie par l'appelant (fenetre d'options: 2, 3...) est
+      // conservee. Les appelants unitaires passent quantity: 1.
+      const addedQty = Math.min(MAX_ITEM_QTY, Math.max(1, Math.floor(newItem.quantity || 1)));
+
       setItems((prevItems) => {
         // Si on doit vider le panier (changement de restaurant confirmé)
         if (shouldClearCart) {
-          return [{ ...newItem, quantity: 1, restaurant_id: restaurantId }];
+          return [{ ...newItem, quantity: addedQty, restaurant_id: restaurantId }];
         }
 
         // Vérifier si l'item existe déjà (avec même option/variante/modifiers)
@@ -315,11 +320,13 @@ export const CartProvider = ({ children }: CartProviderProps) => {
 
         if (existingItem) {
           return prevItems.map((i) =>
-            getCartItemKey(i) === cartItemKey ? { ...i, quantity: i.quantity + 1 } : i,
+            getCartItemKey(i) === cartItemKey
+              ? { ...i, quantity: Math.min(MAX_ITEM_QTY, i.quantity + addedQty) }
+              : i,
           );
         }
 
-        return [...prevItems, { ...newItem, quantity: 1, restaurant_id: restaurantId }];
+        return [...prevItems, { ...newItem, quantity: addedQty, restaurant_id: restaurantId }];
       });
     },
     [canAddToCart, items.length],

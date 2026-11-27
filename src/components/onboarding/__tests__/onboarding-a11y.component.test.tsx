@@ -67,7 +67,8 @@ describe('accessibilite de l onboarding', () => {
       { labelKey: 'phaseIdentity', icon: Palette, subScreens: ['establishment'] },
       { labelKey: 'phaseMenu', icon: Palette, subScreens: ['menu'] },
     ];
-    render(
+    // Fournisseur de traductions: le bouton de deconnexion lit `common`.
+    wrap(
       <OnboardingTopNav
         phases={phases}
         phase={1}

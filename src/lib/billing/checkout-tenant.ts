@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
+import { isMfaSatisfied, MFA_REQUIRED_MESSAGE } from '@/lib/auth/mfa-assurance';
 import { refusDEtat } from './tenant-billing-state';
 
 type CheckoutTenantRow = {
@@ -91,6 +92,10 @@ export async function resolveCheckoutTenant(options?: {
 
   if (authError || !user) {
     return { ok: false, status: 401, error: 'Non authentifie' };
+  }
+
+  if (!(await isMfaSatisfied(supabase, user))) {
+    return { ok: false, status: 403, error: MFA_REQUIRED_MESSAGE };
   }
 
   if (!user.email) {

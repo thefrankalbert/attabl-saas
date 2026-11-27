@@ -55,7 +55,7 @@ export default function OrdersBulkActionBar({
         <Button
           variant="ghost"
           size="icon"
-          aria-label="Next"
+          aria-label={tc('aria.next')}
           onClick={() => {
             const ids = Array.from(selectedIds);
             const selectedOrders = ids

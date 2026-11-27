@@ -16,7 +16,7 @@ interface AddRestaurantInput {
   plan: string;
 }
 
-export type TrialMode = 'started' | 'shared' | 'none';
+type TrialMode = 'started' | 'shared' | 'none';
 
 interface AddRestaurantResult {
   tenantId: string;

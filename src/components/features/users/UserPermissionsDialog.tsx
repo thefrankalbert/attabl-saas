@@ -71,7 +71,8 @@ export default function UserPermissionsDialog({
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Persist the whole custom_permissions map (replaced wholesale; null = follow
-  // the role). Silent on success (inline status shows it), toast on error.
+  // the role). Toast on success AND on error, plus the inline status: the
+  // inline "Enregistre" alone went unnoticed (verification test 2026-11-24).
   const persist = useCallback(
     async (next: PermissionMap): Promise<boolean> => {
       setSaving(true);
@@ -85,6 +86,7 @@ export default function UserPermissionsDialog({
         }
         savedOnceRef.current = true;
         setSaved(true);
+        toast({ title: t('saved') });
         return true;
       } catch {
         toast({ title: tc('error'), variant: 'destructive' });
@@ -93,7 +95,7 @@ export default function UserPermissionsDialog({
         setSaving(false);
       }
     },
-    [tenantId, user.id, toast, tc],
+    [tenantId, user.id, toast, tc, t],
   );
 
   // Auto-save: debounce rapid toggles into a single write (matches the per-role

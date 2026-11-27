@@ -86,6 +86,14 @@ export interface RenewalReminderEmailData {
   planLabel: string;
 }
 
+/** Alerte de connexion depuis un appareil inconnu (audit Q19). */
+export interface NewLoginEmailData {
+  /** Date et heure deja formatees, fuseau compris. */
+  dateLabel: string;
+  methode: 'mot_de_passe' | 'google' | 'autre';
+  changePasswordUrl: string;
+}
+
 // ---------------------------------------------------------------------------
 // Factory contract
 // ---------------------------------------------------------------------------
@@ -111,6 +119,7 @@ export interface EmailService {
   sendFirstOrderTriggerEmail(to: string, data: MarketingEmailData): Promise<EmailResult>;
   sendTenthOrderTriggerEmail(to: string, data: MarketingEmailData): Promise<EmailResult>;
   sendTrialIdleEmail(to: string, data: MarketingEmailData): Promise<EmailResult>;
-  sendTrialEndgameEmail(to: string, data: TrialEndgameEmailData): Promise<EmailResult>;
   sendRenewalReminderEmail(to: string, data: RenewalReminderEmailData): Promise<EmailResult>;
+  sendTrialEndgameEmail(to: string, data: TrialEndgameEmailData): Promise<EmailResult>;
+  sendNewLoginEmail(to: string, data: NewLoginEmailData): Promise<EmailResult>;
 }

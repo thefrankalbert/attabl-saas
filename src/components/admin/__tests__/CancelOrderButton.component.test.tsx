@@ -54,7 +54,7 @@ describe('CancelOrderButton', () => {
   afterEach(cleanup);
 
   it.each(['refunded', 'partial', 'pending'] as const)(
-    'visible pour une commande servie au statut de paiement %s',
+    'visible (gerant) pour une commande servie au statut de paiement %s',
     (payment_status) => {
       renderButton({ payment_status });
       expect(cancelButton()).toBeInTheDocument();
@@ -84,7 +84,7 @@ describe('CancelOrderButton', () => {
 
   // Quatrieme contre-audit: la base refuse au caissier (orders.pay sans
   // autorite sur l'argent) l'annulation d'une commande remboursee ou offerte.
-  it.each(['refunded', 'comp'] as const)(
+  it.each(['refunded', 'comp', 'partial'] as const)(
     'caissier (sans autorite sur l argent) + %s: absent',
     (payment_status) => {
       renderButton({ payment_status }, true, vi.fn(), false);
@@ -92,12 +92,12 @@ describe('CancelOrderButton', () => {
     },
   );
 
-  it('caissier + partial: present', () => {
-    renderButton({ payment_status: 'partial' }, true, vi.fn(), false);
+  it('caissier + acompte: le bouton reste pour une commande impayee', () => {
+    renderButton({ payment_status: 'pending' }, true, vi.fn(), false);
     expect(cancelButton()).toBeInTheDocument();
   });
 
-  it.each(['refunded', 'comp'] as const)(
+  it.each(['refunded', 'comp', 'partial'] as const)(
     'gerant (autorite sur l argent) + %s: present',
     (payment_status) => {
       renderButton({ payment_status }, true, vi.fn(), true);

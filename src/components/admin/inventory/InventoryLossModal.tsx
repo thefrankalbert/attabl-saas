@@ -85,10 +85,14 @@ export default function InventoryLossModal({
             </div>
 
             <div>
-              <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+              <Label
+                htmlFor="loss-quantity"
+                className="text-xs font-medium text-app-text-secondary mb-1 block"
+              >
                 {t('lossQty')}
               </Label>
               <Input
+                id="loss-quantity"
                 type="number"
                 step="0.01"
                 value={lossQty}
@@ -107,10 +111,14 @@ export default function InventoryLossModal({
             </div>
 
             <div>
-              <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+              <Label
+                htmlFor="loss-notes"
+                className="text-xs font-medium text-app-text-secondary mb-1 block"
+              >
                 {t('lossNotes')}
               </Label>
               <Textarea
+                id="loss-notes"
                 value={lossNotes}
                 onChange={(e) => setLossNotes(e.target.value)}
                 placeholder={t('notesOptional')}

@@ -105,10 +105,14 @@ export default function InventoryFormModal({
     >
       <div className="space-y-4">
         <div>
-          <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+          <Label
+            htmlFor="ingredient-form-name"
+            className="text-xs font-medium text-app-text-secondary mb-1 block"
+          >
             {tc('name')}
           </Label>
           <Input
+            id="ingredient-form-name"
             value={formName}
             onChange={(e) => setFormName(e.target.value)}
             placeholder={t('ingredientNamePlaceholder')}
@@ -157,10 +161,14 @@ export default function InventoryFormModal({
           </div>
           {mode === 'add' && (
             <div>
-              <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+              <Label
+                htmlFor="ingredient-form-stock"
+                className="text-xs font-medium text-app-text-secondary mb-1 block"
+              >
                 {t('currentStock')}
               </Label>
               <Input
+                id="ingredient-form-stock"
                 type="number"
                 step="0.01"
                 value={formStock}
@@ -173,10 +181,14 @@ export default function InventoryFormModal({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+            <Label
+              htmlFor="ingredient-form-min-alert"
+              className="text-xs font-medium text-app-text-secondary mb-1 block"
+            >
               {t('minAlert')}
             </Label>
             <Input
+              id="ingredient-form-min-alert"
               type="number"
               step="0.01"
               value={formMinAlert}
@@ -185,10 +197,14 @@ export default function InventoryFormModal({
             />
           </div>
           <div>
-            <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+            <Label
+              htmlFor="ingredient-form-cost"
+              className="text-xs font-medium text-app-text-secondary mb-1 block"
+            >
               {t('costPerUnit')}
             </Label>
             <Input
+              id="ingredient-form-cost"
               type="number"
               step="0.01"
               value={formCostPerUnit}
@@ -199,10 +215,14 @@ export default function InventoryFormModal({
         </div>
 
         <div>
-          <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+          <Label
+            htmlFor="ingredient-form-category"
+            className="text-xs font-medium text-app-text-secondary mb-1 block"
+          >
             {t('categoryOptional')}
           </Label>
           <Input
+            id="ingredient-form-category"
             value={formCategory}
             onChange={(e) => setFormCategory(e.target.value)}
             placeholder={t('categoryPlaceholder')}
@@ -211,10 +231,14 @@ export default function InventoryFormModal({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+            <Label
+              htmlFor="ingredient-form-purchase-unit"
+              className="text-xs font-medium text-app-text-secondary mb-1 block"
+            >
               {t('purchaseUnitOptional')}
             </Label>
             <Input
+              id="ingredient-form-purchase-unit"
               value={formPurchaseUnit}
               onChange={(e) => setFormPurchaseUnit(e.target.value)}
               placeholder={t('purchaseUnit')}
@@ -222,10 +246,14 @@ export default function InventoryFormModal({
             />
           </div>
           <div>
-            <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+            <Label
+              htmlFor="ingredient-form-units-per-purchase"
+              className="text-xs font-medium text-app-text-secondary mb-1 block"
+            >
               {t('unitsPerPurchase')}
             </Label>
             <Input
+              id="ingredient-form-units-per-purchase"
               type="number"
               step="0.001"
               min="0"

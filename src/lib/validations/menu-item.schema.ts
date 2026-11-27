@@ -35,7 +35,7 @@ const menuItemWriteSchema = z.object({
   is_spicy: z.boolean().optional(),
   is_drink: z.boolean().optional(),
   allergens: z.array(z.string()).nullish(),
-  calories: z.number().nullish(),
+  calories: z.number().nonnegative().nullish(),
   category_id: z.string().uuid(),
   display_order: z.number().int().nonnegative().optional(),
 });

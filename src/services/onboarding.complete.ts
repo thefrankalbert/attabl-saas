@@ -168,7 +168,7 @@ async function runLaunch(
     city: data.city,
     country: data.country,
     phone: data.phone,
-    table_count: data.tableCount,
+    table_count: effectiveTableCount(data),
     logo_url: data.logoUrl,
     primary_color: data.primaryColor,
     secondary_color: data.secondaryColor,
@@ -328,6 +328,19 @@ async function createTablesIfMissing(
   } else {
     await tableService.createDefaultConfig(tenantId, venueId, data.tableCount || 10);
   }
+}
+
+/**
+ * Nombre de tables enregistre sur le restaurant. Quand des zones sont
+ * configurees, c'est leur total: ce sont elles qui creent les tables. Avant,
+ * le chiffre de l'ecran Adresse etait garde tel quel (13) alors que les zones
+ * creaient 7 tables: deux reponses a la meme question.
+ */
+export function effectiveTableCount(data: OnboardingCompleteData): number | undefined {
+  if (data.tableZones && data.tableZones.length > 0 && data.tableConfigMode !== 'skip') {
+    return data.tableZones.reduce((total, zone) => total + zone.tableCount, 0);
+  }
+  return data.tableCount;
 }
 
 async function createMenuIfMissing(

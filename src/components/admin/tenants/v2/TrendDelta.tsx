@@ -20,8 +20,7 @@ interface TrendDeltaProps {
  * Pure SVG icons, no hooks - safe to render inside a server component.
  */
 export function TrendDelta({ current, previous, className, label, newLabel }: TrendDeltaProps) {
-  const baseClass =
-    `cc-mono inline-flex items-center gap-0.5 text-[10px] ${className ?? ''}`.trim();
+  const baseClass = `cc-mono inline-flex items-center gap-0.5 text-xs ${className ?? ''}`.trim();
 
   // No usable baseline: neutral dash.
   if (previous === 0 && current === 0) {

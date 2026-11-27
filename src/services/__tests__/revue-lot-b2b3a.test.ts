@@ -242,15 +242,11 @@ describe('B41: validation des rubriques et du reordonnancement', () => {
 // --- B52: inventaire ------------------------------------------------------
 
 describe('B52: inventaire, methodes mortes et erreur de lecture du plat', () => {
-  it('les 4 methodes mortes et setOpeningStock ne sont plus exposees', () => {
+  // setOpeningStock reste expose: l'ecran "stock d'ouverture" l'appelle de
+  // nouveau (verification de mise en production du 2026-11-24).
+  it('les 4 methodes mortes ne sont plus exposees', () => {
     const svc = createInventoryService(fakeDb().client);
-    for (const name of [
-      'getIngredients',
-      'verifyLedger',
-      'reconcileLedger',
-      'getStockMovements',
-      'setOpeningStock',
-    ]) {
+    for (const name of ['getIngredients', 'verifyLedger', 'reconcileLedger', 'getStockMovements']) {
       expect(name in svc).toBe(false);
     }
   });

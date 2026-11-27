@@ -1,6 +1,16 @@
 import Stripe from 'stripe';
 import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
 
+/**
+ * Version d'API Stripe EXPLICITE (audit E10): celle qu'epingle le SDK installe
+ * (`stripe` 20.3.1, `node_modules/stripe/esm/apiVersion.js`), donc celle que le
+ * code a toujours utilisee implicitement. Typee `LatestApiVersion`: une montee
+ * du SDK qui change de version casse le typage ici, et oblige a relire les
+ * notes de migration avant de suivre. Garder alignee la version de l'endpoint
+ * webhook dans le tableau de bord Stripe.
+ */
+export const STRIPE_API_VERSION: Stripe.LatestApiVersion = '2026-01-28.clover';
+
 // Client Stripe cote serveur - lazy initialized to avoid crash if env var is missing at import time
 let _stripeInstance: Stripe | null = null;
 
@@ -12,7 +22,7 @@ export function getStripe(): Stripe {
     }
     // Delai maximum par requete: le disjoncteur abandonne l'attente a 10 s mais
     // n'annule pas l'appel; ce delai ferme reellement la connexion.
-    _stripeInstance = new Stripe(key, { timeout: 10_000 });
+    _stripeInstance = new Stripe(key, { apiVersion: STRIPE_API_VERSION, timeout: 10_000 });
   }
   return _stripeInstance;
 }

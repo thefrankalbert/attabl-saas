@@ -3,61 +3,25 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-
-type Article = {
-  slug: string;
-  title: string;
-  excerpt: string;
-  category: string;
-  date: string;
-  readTime: string;
-};
-
-// FR article content (real blog posts, kept as content). EN blog content is a future pass.
-const ARTICLES: Article[] = [
-  {
-    slug: 'gestion-stock-commerce-afrique',
-    title: 'Gestion de stock en Afrique : le guide complet pour les commerçants',
-    excerpt:
-      'Comment digitaliser la gestion de vos stocks pour éviter les ruptures et optimiser vos commandes fournisseurs.',
-    category: 'Gestion',
-    date: '12 mars 2026',
-    readTime: '8 min',
-  },
-  {
-    slug: 'menu-qr-code-restaurant',
-    title: 'Menu QR code : pourquoi chaque restaurant devrait en avoir un',
-    excerpt:
-      "Du papier au digital : comment le menu QR transforme l'expérience client et simplifie la gestion.",
-    category: 'Restauration',
-    date: '8 mars 2026',
-    readTime: '6 min',
-  },
-  {
-    slug: 'pos-mobile-money-afrique',
-    title: 'POS et Mobile Money : encaisser sans friction en Afrique',
-    excerpt:
-      'Cash, carte, mobile money - comment proposer tous les moyens de paiement à vos clients avec un seul outil.',
-    category: 'Paiements',
-    date: '3 mars 2026',
-    readTime: '5 min',
-  },
-];
+import { ARTICLES, ARTICLE_DATE_FORMAT, type ArticleMeta } from './articles';
 
 const ALL = '__all__';
 const CATEGORIES = Array.from(new Set(ARTICLES.map((a) => a.category)));
 
-function Meta({ article, readingSuffix }: { article: Article; readingSuffix: string }) {
+function Meta({ article }: { article: ArticleMeta }) {
+  const t = useTranslations('marketing.blog');
+  const format = useFormatter();
   return (
     <span className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.06em] text-zinc-500 dark:text-zinc-400">
       <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
-      {article.category}
+      {t(`categories.${article.category}`)}
       <span className="text-zinc-300 dark:text-zinc-600">-</span>
       <span className="font-medium normal-case tracking-normal text-zinc-500 dark:text-zinc-400">
-        {article.date} - {article.readTime} {readingSuffix}
+        {format.dateTime(new Date(article.date), ARTICLE_DATE_FORMAT)} -{' '}
+        {t('readTime', { minutes: article.minutes })}
       </span>
     </span>
   );
@@ -65,11 +29,11 @@ function Meta({ article, readingSuffix }: { article: Article; readingSuffix: str
 
 export default function BlogPage() {
   const t = useTranslations('marketing.blog');
+  const format = useFormatter();
   const [cat, setCat] = useState(ALL);
   const list = cat === ALL ? ARTICLES : ARTICLES.filter((a) => a.category === cat);
   const featured = list[0];
   const rest = list.slice(1);
-  const readingSuffix = t('readingSuffix');
 
   return (
     <>
@@ -100,7 +64,7 @@ export default function BlogPage() {
                     : 'border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-900',
                 )}
               >
-                {c === ALL ? t('all') : c}
+                {c === ALL ? t('all') : t(`categories.${c}`)}
               </Button>
             ))}
           </div>
@@ -116,12 +80,12 @@ export default function BlogPage() {
               className="group grid grid-cols-1 overflow-hidden rounded-2xl border border-zinc-200 bg-white lg:grid-cols-[1.1fr_1fr] dark:border-zinc-800 dark:bg-zinc-950"
             >
               <div className="flex flex-col justify-center p-8 sm:p-11">
-                <Meta article={featured} readingSuffix={readingSuffix} />
+                <Meta article={featured} />
                 <h2 className="mt-4 text-[28px] font-semibold leading-[1.12] tracking-[-0.03em] text-zinc-950 transition-colors group-hover:text-zinc-600 sm:text-[32px] dark:text-zinc-50 dark:group-hover:text-zinc-300">
-                  {featured.title}
+                  {t(`articles.${featured.key}.title`)}
                 </h2>
                 <p className="mt-3.5 text-base leading-[1.55] text-zinc-600 dark:text-zinc-400">
-                  {featured.excerpt}
+                  {t(`articles.${featured.key}.excerpt`)}
                 </p>
                 <div className="mt-6 flex items-center gap-3">
                   <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-zinc-900 text-[13px] font-semibold text-zinc-50 dark:bg-zinc-100 dark:text-zinc-900">
@@ -132,7 +96,8 @@ export default function BlogPage() {
                       {t('author')}
                     </div>
                     <div className="text-zinc-500 dark:text-zinc-400">
-                      {featured.date} - {featured.readTime} {t('readingSuffix')}
+                      {format.dateTime(new Date(featured.date), ARTICLE_DATE_FORMAT)} -{' '}
+                      {t('readTime', { minutes: featured.minutes })}
                     </div>
                   </div>
                 </div>
@@ -166,12 +131,12 @@ export default function BlogPage() {
                 >
                   <div className="aspect-[16/9] bg-gradient-to-br from-zinc-900 to-zinc-700" />
                   <div className="flex flex-1 flex-col p-6">
-                    <Meta article={a} readingSuffix={readingSuffix} />
+                    <Meta article={a} />
                     <h3 className="mt-3 text-lg font-semibold leading-[1.2] tracking-[-0.02em] text-zinc-950 transition-colors group-hover:text-zinc-600 dark:text-zinc-50 dark:group-hover:text-zinc-300">
-                      {a.title}
+                      {t(`articles.${a.key}.title`)}
                     </h3>
                     <p className="mt-2 text-sm leading-[1.55] text-zinc-600 dark:text-zinc-400">
-                      {a.excerpt}
+                      {t(`articles.${a.key}.excerpt`)}
                     </p>
                   </div>
                 </Link>

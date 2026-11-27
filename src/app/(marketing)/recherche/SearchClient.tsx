@@ -45,7 +45,7 @@ export function SearchClient({
           onChange={(e) => setQuery(e.target.value)}
           placeholder={placeholder}
           aria-label={label}
-          autoFocus
+          autoFocus={initialQuery === ''}
           className="h-auto rounded-none border-0 border-b-2 border-zinc-200 bg-transparent px-0 pb-4 pl-[46px] pt-1.5 text-[26px] font-medium tracking-[-0.02em] text-zinc-950 shadow-none focus-visible:border-zinc-900 focus-visible:ring-0 sm:text-[30px] dark:border-zinc-700 dark:text-zinc-50 dark:focus-visible:border-zinc-300"
         />
       </div>

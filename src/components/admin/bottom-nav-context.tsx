@@ -29,7 +29,7 @@ export function BottomNavProvider({ value, children }: { value: boolean; childre
   return <BottomNavContext.Provider value={value}>{children}</BottomNavContext.Provider>;
 }
 
-export function useBottomNavVisible(): boolean {
+function useBottomNavVisible(): boolean {
   return useContext(BottomNavContext);
 }
 

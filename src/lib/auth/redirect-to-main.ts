@@ -16,6 +16,14 @@ export function redirectToLoginAfterAccountDeletion(): never {
   redirect(`${mainDomain}/login?deleted=true`);
 }
 
+/**
+ * Double authentification a faire (code ou activation) avant `next`, un chemin
+ * interne du domaine principal. /auth/mfa revalide `next` de son cote.
+ */
+export function redirectToMfa(next: string): never {
+  redirect(`${mainDomain}/auth/mfa?next=${encodeURIComponent(next)}`);
+}
+
 export function redirectToUnauthorized(): never {
   redirect(`${mainDomain}/unauthorized`);
 }

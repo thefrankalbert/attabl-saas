@@ -190,5 +190,3 @@ export function createFlutterwaveRenewalService(
     },
   };
 }
-
-export type FlutterwaveRenewalService = ReturnType<typeof createFlutterwaveRenewalService>;

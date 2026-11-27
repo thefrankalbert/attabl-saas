@@ -95,7 +95,7 @@ export default function KitchenFilters({
             <Button
               variant="ghost"
               size="icon"
-              aria-label="Close search"
+              aria-label={tc('aria.closeSearch')}
               onClick={() => {
                 onSearchChange('');
                 setSearchOpen(false);

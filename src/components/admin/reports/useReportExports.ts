@@ -7,6 +7,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { logger } from '@/lib/logger';
 import { fromMinorUnits } from '@/lib/utils/money';
 import { csvCell } from '@/lib/utils/csv';
+import { pdfSafe } from '@/lib/receipt/receipt-pdf';
 import type { CurrencyCode } from '@/types/admin.types';
 import type {
   CurrencyFormatter,
@@ -51,6 +52,9 @@ export function useReportExports({
       const { jsPDF } = await import('jspdf');
       const autoTable = (await import('jspdf-autotable')).default;
       const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      // Helvetica (WinAnsi) rend l'espace fine insecable des milliers en "/":
+      // tout montant ecrit dans le PDF passe par pdfSafe.
+      const fmtPdf = (minor: number): string => pdfSafe(fmt(minor));
 
       // Neutral document palette (matches the print documents).
       const INK: [number, number, number] = [24, 24, 27];
@@ -81,10 +85,10 @@ export function useReportExports({
 
       // --- Summary stats (one column per figure) ---
       const stats: Array<[string, string]> = [
-        [t('revenueLabel'), fmt(summary.revenue)],
+        [t('revenueLabel'), fmtPdf(summary.revenue)],
         [t('orders'), String(summary.orders)],
-        [t('averageBasket'), fmt(summary.avgBasket)],
-        [t('tipsLabel'), fmt(summary.tips)],
+        [t('averageBasket'), fmtPdf(summary.avgBasket)],
+        [t('tipsLabel'), fmtPdf(summary.tips)],
       ];
       const colW = (RIGHT - M) / stats.length;
       stats.forEach(([label, value], i) => {
@@ -136,12 +140,12 @@ export function useReportExports({
         startY: sectionTitle(t('top5Products'), y),
         theme: 'plain',
         margin: { left: M, right: M },
-        head: [['#', 'Nom', t('orders'), t('revenueLabel')]],
+        head: [['#', t('colName'), t('orders'), t('revenueLabel')]],
         body: topItems.map((item, i) => [
           String(i + 1),
           item.name,
           String(item.quantity),
-          fmt(item.revenue),
+          fmtPdf(item.revenue),
         ]),
         styles: bodyStyles,
         headStyles,
@@ -162,8 +166,8 @@ export function useReportExports({
           startY: sectionTitle(t('categoryBreakdown'), y),
           theme: 'plain',
           margin: { left: M, right: M },
-          head: [['Categorie', t('revenueLabel'), '%']],
-          body: categories.map((cat) => [cat.category, fmt(cat.revenue), `${cat.percentage}%`]),
+          head: [[t('colCategory'), t('revenueLabel'), '%']],
+          body: categories.map((cat) => [cat.category, fmtPdf(cat.revenue), `${cat.percentage}%`]),
           styles: bodyStyles,
           headStyles,
           columnStyles: {
@@ -211,18 +215,18 @@ export function useReportExports({
         `${toMajor(summary.revenue)},${summary.orders},${toMajor(summary.avgBasket)},${toMajor(summary.tips)}`,
       );
       rows.push('');
-      rows.push(`Date,${t('revenueLabel')},${t('orders')}`);
+      rows.push(`${t('colDate')},${t('revenueLabel')},${t('orders')}`);
       dailyStats.forEach((d) => rows.push(`${d.date},${toMajor(d.revenue)},${d.orders}`));
       rows.push('');
       rows.push(`${t('top5Products')}`);
-      rows.push(`#,Name,${t('salesCount', { count: 0 })},${t('revenueLabel')}`);
+      rows.push(`#,${t('colName')},${t('colSales')},${t('revenueLabel')}`);
       topItems.forEach((item, i) =>
         rows.push(`${i + 1},${csvCell(item.name)},${item.quantity},${toMajor(item.revenue)}`),
       );
       if (categories.length > 0) {
         rows.push('');
         rows.push(t('categoryBreakdown'));
-        rows.push(`Category,${t('revenueLabel')},%`);
+        rows.push(`${t('colCategory')},${t('revenueLabel')},%`);
         categories.forEach((cat) =>
           rows.push(`${csvCell(cat.category)},${toMajor(cat.revenue)},${cat.percentage}%`),
         );

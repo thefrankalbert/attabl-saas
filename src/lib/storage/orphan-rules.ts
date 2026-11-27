@@ -5,7 +5,7 @@
  */
 
 /** Un fichier plus jeune que ca n'est jamais efface par un balayage (envoi en cours). */
-export const MIN_AGE_MS = 24 * 60 * 60 * 1000;
+const MIN_AGE_MS = 24 * 60 * 60 * 1000;
 
 /**
  * UNE seule liste des colonnes qui peuvent referencer un fichier du stockage.

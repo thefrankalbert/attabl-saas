@@ -1,11 +1,22 @@
+import type { Metadata } from 'next';
+import { storefrontPageMetadata } from '@/lib/storefront-page-metadata';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { getMessages } from 'next-intl/server';
+import { getStorefrontMessages } from '@/i18n/storefront-messages';
 import { NextIntlClientProvider } from 'next-intl';
 import { getCachedTenant } from '@/lib/cache';
 import { computeOpeningState } from '@/lib/opening-hours';
 import { resolveTenantTimezone } from '@/lib/timezones';
 import WelcomeSplash from '@/components/tenant/client/WelcomeSplash';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ site: string }>;
+}): Promise<Metadata> {
+  const { site } = await params;
+  return storefrontPageMetadata(site, 'pageTitleWelcome');
+}
 
 export default async function WelcomePage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
@@ -15,7 +26,7 @@ export default async function WelcomePage({ params }: { params: Promise<{ site: 
   const tenant = await getCachedTenant(tenantSlug);
   if (!tenant) return notFound();
 
-  const messages = await getMessages();
+  const messages = await getStorefrontMessages();
   const { isOpen } = computeOpeningState(
     tenant.opening_hours,
     new Date(),

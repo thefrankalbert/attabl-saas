@@ -6,9 +6,16 @@ import { getTenant } from '@/lib/cache';
 import { createClient } from '@/lib/supabase/server';
 import { supportPhoneLink, supportWhatsAppLink } from '@/lib/support-contact';
 import { loadSupportContact } from '@/services/platform-settings.service';
+import { requireAdminMember } from '@/lib/auth/require-admin-permission';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('sidebar', 'navSupport');
+}
 
 export default async function SupportPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
+  await requireAdminMember(site);
   const t = await getTranslations('adminSupport');
   const [tenant, contact] = await Promise.all([
     getTenant(site),

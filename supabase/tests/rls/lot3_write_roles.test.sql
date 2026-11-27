@@ -63,6 +63,16 @@ insert into public.suppliers (id, tenant_id, name)
 values ('c6666666-6666-6666-6666-666666666666', 'c3333333-3333-3333-3333-333333333333',
         'Fournisseur temoin');
 
+-- Depuis 20261124210200 le waiter ne LIT plus les fournisseurs (inventory.view
+-- exige, comme la page). L etat apres sa tentative est donc lu par le
+-- proprietaire de la base: sinon "0 ligne lue" passerait pour "ligne intacte".
+create function public.test_lot3_fournisseur() returns table (nom text, n int)
+language sql security definer as $$
+  select max(name), count(*)::int from public.suppliers
+  where id = 'c6666666-6666-6666-6666-666666666666';
+$$;
+grant execute on function public.test_lot3_fournisseur() to authenticated;
+
 -- orders.manage (de l argent)
 insert into public.house_accounts (id, tenant_id, name)
 values ('c7777777-7777-7777-7777-777777777777', 'c3333333-3333-3333-3333-333333333333',
@@ -111,7 +121,7 @@ select is(
 update public.suppliers set name = 'pirate'
 where id = 'c6666666-6666-6666-6666-666666666666';
 select is(
-  (select name from public.suppliers where id = 'c6666666-6666-6666-6666-666666666666'),
+  (select nom from public.test_lot3_fournisseur()),
   'Fournisseur temoin',
   'lot3: un waiter ne peut PAS modifier un fournisseur'
 );
@@ -151,8 +161,7 @@ select is(
 
 delete from public.suppliers where id = 'c6666666-6666-6666-6666-666666666666';
 select is(
-  (select count(*)::int from public.suppliers
-   where id = 'c6666666-6666-6666-6666-666666666666'),
+  (select n from public.test_lot3_fournisseur()),
   1,
   'lot3: un waiter ne peut PAS supprimer un fournisseur'
 );

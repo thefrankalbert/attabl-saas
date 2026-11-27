@@ -24,8 +24,13 @@ export async function HomeHero() {
           src={HERO_POSTER}
           alt=""
           fill
-          priority
-          fetchPriority="high"
+          // Pas de prechargement prioritaire (mesure du 2026-11-24, mobile 4G
+          // lente) : ce n'est pas l'element LCP (c'est le sous-titre), et ses
+          // 85 Ko precharges en priorite haute partageaient le debit avec la
+          // feuille de style qui bloque le premier affichage. Le texte du hero
+          // s'affichait donc apres la photo. Chargee tout de suite, mais apres.
+          loading="eager"
+          fetchPriority="low"
           // object-cover : en portrait, c'est la hauteur qui fixe la largeur utile.
           // Pas d'unite svh ici : le prechargement la lisait autrement que
           // l'image et telechargeait une deuxieme taille (117 Ko de trop).

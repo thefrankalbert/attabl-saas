@@ -1,9 +1,20 @@
+import type { Metadata } from 'next';
+import { storefrontPageMetadata } from '@/lib/storefront-page-metadata';
 import { getCachedTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import ClientOrders from '@/components/tenant/ClientOrders';
 import OrdersTabs from '@/components/tenant/OrdersTabs';
 import { getTranslations } from 'next-intl/server';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ site: string }>;
+}): Promise<Metadata> {
+  const { site } = await params;
+  return storefrontPageMetadata(site, 'ordersTitle');
+}
 
 export default async function OrdersPage({
   params,

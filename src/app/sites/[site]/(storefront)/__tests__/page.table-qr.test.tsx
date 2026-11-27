@@ -37,7 +37,7 @@ vi.mock('@/lib/supabase/server', () => {
   }
   builder.then = (resolve: (v: typeof result) => unknown) => resolve(result);
   // The client itself must not be thenable, or `await createClient()` unwraps it.
-  return { createClient: async () => ({ from: () => builder }) };
+  return { createClient: async () => ({ from: () => builder, rpc: () => builder }) };
 });
 vi.mock('@/lib/cache', () => ({
   getCachedTenant: async () => ({
