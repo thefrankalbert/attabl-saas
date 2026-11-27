@@ -2144,8 +2144,7 @@
           "orderCancelled": "Commande #{number} annulée",
           "siteOffline": "Site désactivé",
           "title": "À surveiller",
-          "empty": "Tout roule, aucune alerte",
-          "viewSite": "Ouvrir {name}"
+          "empty": "Tout roule, aucune alerte"
         },
         "chart": {
           "hourly": "Heure par heure",
@@ -2178,14 +2177,16 @@
           "empty": "Aucune commande encore",
           "statusDelivered": "Livrée",
           "statusPreparing": "En préparation",
-          "statusPending": "En attente"
+          "statusPending": "En attente",
+          "statusConfirmed": "Confirmée",
+          "statusReady": "Prête",
+          "statusCancelled": "Annulée"
         },
         "establishments": {
           "title": "Établissements",
           "seeAll": "Tout voir",
           "empty": "Aucun établissement",
           "add": "Ajouter un établissement",
-          "openDashboard": "Ouvrir le dashboard de {name}",
           "openMenu": "Ouvrir le menu client de {name}",
           "ordersShort": "cmd.",
           "trendLabel": "vs hier",

@@ -2144,8 +2144,7 @@
           "orderCancelled": "Order #{number} cancelled",
           "siteOffline": "Site offline",
           "title": "Needs attention",
-          "empty": "All clear, no alerts",
-          "viewSite": "Open {name}"
+          "empty": "All clear, no alerts"
         },
         "chart": {
           "hourly": "Hour by hour",
@@ -2178,14 +2177,16 @@
           "empty": "No orders yet",
           "statusDelivered": "Delivered",
           "statusPreparing": "Preparing",
-          "statusPending": "Pending"
+          "statusPending": "Pending",
+          "statusConfirmed": "Confirmed",
+          "statusReady": "Ready",
+          "statusCancelled": "Cancelled"
         },
         "establishments": {
           "title": "Establishments",
           "seeAll": "See all",
           "empty": "No establishments",
           "add": "Add an establishment",
-          "openDashboard": "Open {name} dashboard",
           "openMenu": "Open {name} customer menu",
           "ordersShort": "ord.",
           "trendLabel": "vs yesterday",
