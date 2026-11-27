@@ -1424,5 +1424,42 @@ describe('OrderService', () => {
         code: 'UNAUTHORIZED',
       });
     });
+
+    // Money still in the ledger: the database guard (migration 20261124210000)
+    // refuses with a HINT; the service turns it into a clear refusal instead
+    // of the generic permission message, without reading the ledger itself.
+    it('maps the deposit refusal (money authority needed) to the translatable reason', async () => {
+      const m = makeSupabase({
+        order: { id: 'o1', status: 'preparing', payment_status: 'partial', coupon_id: null },
+        updateError: {
+          code: '42501',
+          message: 'exige l autorite sur l argent',
+          hint: 'orders_annulation_exige_autorite_argent',
+        },
+      });
+      const service = createOrderService(m.client);
+
+      await expect(service.cancelOrder('o1', 'tenant-123')).rejects.toMatchObject({
+        code: 'CONFLICT',
+        details: { reason: 'cancel_needs_money_authority' },
+      });
+      expect(m.rpc).not.toHaveBeenCalled();
+    });
+
+    it('maps the refund-first refusal (ledger covers the due) to CONFLICT', async () => {
+      const m = makeSupabase({
+        order: { id: 'o1', status: 'preparing', payment_status: 'partial', coupon_id: null },
+        updateError: {
+          code: '42501',
+          message: 'il faut d abord la rembourser',
+          hint: 'orders_annulation_exige_remboursement',
+        },
+      });
+      const service = createOrderService(m.client);
+
+      const err = await service.cancelOrder('o1', 'tenant-123').catch((e: unknown) => e);
+      expect(err).toMatchObject({ code: 'CONFLICT' });
+      expect((err as { details?: { reason?: string } }).details?.reason).toBeUndefined();
+    });
   });
 });

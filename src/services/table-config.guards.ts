@@ -1,6 +1,16 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError } from './errors';
+import { logger } from '@/lib/logger';
 import type { ZoneOwnershipRow, TableOwnershipRow } from './table-config.types';
+
+/**
+ * Audit B66: the Postgres message stays in the server log, the browser reads a
+ * fixed sentence.
+ */
+function guardReadError(message: string, error: { message: string }): ServiceError {
+  logger.error(message, { error: error.message });
+  return new ServiceError(message, 'INTERNAL', error);
+}
 
 /**
  * Normalize the tenant_id out of a possibly-array embedded relation.
@@ -43,7 +53,7 @@ export function createTableConfigGuards(supabase: SupabaseClient): TableConfigGu
         .maybeSingle();
 
       if (error) {
-        throw new ServiceError(`Erreur verification venue: ${error.message}`, 'INTERNAL', error);
+        throw guardReadError('Erreur verification venue', error);
       }
       if (!data) {
         throw new ServiceError('Venue introuvable pour ce tenant', 'NOT_FOUND');
@@ -63,7 +73,7 @@ export function createTableConfigGuards(supabase: SupabaseClient): TableConfigGu
         .maybeSingle<ZoneOwnershipRow>();
 
       if (error) {
-        throw new ServiceError(`Erreur verification zone: ${error.message}`, 'INTERNAL', error);
+        throw guardReadError('Erreur verification zone', error);
       }
       if (!data || extractTenantId(data.venue) !== tenantId) {
         throw new ServiceError('Zone introuvable pour ce tenant', 'NOT_FOUND');
@@ -83,7 +93,7 @@ export function createTableConfigGuards(supabase: SupabaseClient): TableConfigGu
         .maybeSingle<TableOwnershipRow>();
 
       if (error) {
-        throw new ServiceError(`Erreur verification table: ${error.message}`, 'INTERNAL', error);
+        throw guardReadError('Erreur verification table', error);
       }
 
       const zone = data?.zone;

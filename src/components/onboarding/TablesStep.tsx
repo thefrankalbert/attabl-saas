@@ -3,7 +3,14 @@
 import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import type { OnboardingData } from '@/app/onboarding/page';
-import { derivePrefix, type ConfigMode, type ZoneData } from './tables/types';
+import {
+  MAX_TABLES_PER_ZONE,
+  withUniquePrefixes,
+  zonesForDraft,
+  type ConfigMode,
+  type ZoneData,
+} from './tables/types';
+import { findZoneIssues, type ZoneIssue } from '@/lib/validations/onboarding.schema';
 import { ModeSelector } from './tables/ModeSelector';
 import { SkipState } from './tables/SkipState';
 import { MinimumZones } from './tables/MinimumZones';
@@ -21,56 +28,83 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
   const [zones, setZones] = useState<ZoneData[]>(
     data.tableZones && data.tableZones.length > 0
       ? data.tableZones
-      : [{ name: '', prefix: '', tableCount: 10, defaultCapacity: 2 }],
+      : // La premiere zone reprend le nombre de tables deja donne a l'ecran
+        // Adresse: la meme question ne doit pas recevoir deux reponses.
+        [
+          {
+            name: '',
+            prefix: '',
+            tableCount: Math.min(MAX_TABLES_PER_ZONE, Math.max(1, data.tableCount || 10)),
+            defaultCapacity: 2,
+          },
+        ],
   );
+
+  const defaultName = useCallback((number: number) => t('zoneDefaultName', { number }), [t]);
 
   const syncToParent = useCallback(
     (newZones: ZoneData[], newMode: ConfigMode) => {
       updateData({
         tableConfigMode: newMode,
-        tableZones: newZones,
+        // B28: chaque zone transmise porte un prefixe utilisable et unique, et
+        // un nom (par defaut "Salle n", le premier libre).
+        tableZones: zonesForDraft(newZones, newMode, defaultName),
       });
     },
-    [updateData],
+    [updateData, defaultName],
   );
+
+  // Contre-audit 3: les doublons (prefixe ou nom) se voient DES cette etape,
+  // sous le champ concerne, avec la regle exacte du lancement.
+  const draftZones = zonesForDraft(zones, mode, defaultName);
+  const issues: ZoneIssue[] = mode === 'skip' ? [] : findZoneIssues(draftZones);
+
+  // Prefixes recalcules a chaque changement: les automatiques suivent les noms
+  // et les prefixes saisis du moment. Contre-audit 4: l'etat LOCAL garde les
+  // prefixes saisis (un aller-retour par le mode rapide les retrouve); seul le
+  // brouillon envoye en mode rapide les recalcule tous (syncToParent).
+  const apply = (updated: ZoneData[], newMode: ConfigMode) => {
+    const next = withUniquePrefixes(updated, 'complete');
+    setZones(next);
+    syncToParent(next, newMode);
+  };
 
   const handleModeChange = (newMode: ConfigMode) => {
     setMode(newMode);
-    syncToParent(zones, newMode);
+    apply(zones, newMode);
   };
 
   const updateZone = (index: number, field: keyof ZoneData, value: string | number) => {
     const updated = [...zones];
     if (field === 'name') {
+      updated[index] = { ...updated[index], name: value as string };
+    } else if (field === 'prefix') {
+      const prefix = (value as string).toUpperCase();
+      // Saisi a la main; vide = retour au prefixe automatique.
+      updated[index] = { ...updated[index], prefix, prefixManual: prefix !== '' };
+    } else if (field === 'tableCount') {
       updated[index] = {
         ...updated[index],
-        name: value as string,
-        prefix: derivePrefix(value as string),
+        tableCount: Math.min(MAX_TABLES_PER_ZONE, Math.max(1, Number(value))),
       };
-    } else if (field === 'prefix') {
-      updated[index] = { ...updated[index], prefix: (value as string).toUpperCase() };
-    } else if (field === 'tableCount') {
-      updated[index] = { ...updated[index], tableCount: Math.max(1, Number(value)) };
     } else if (field === 'defaultCapacity') {
       updated[index] = { ...updated[index], defaultCapacity: Number(value) };
     }
-    setZones(updated);
-    syncToParent(updated, mode);
+    apply(updated, mode);
   };
 
   const addZone = () => {
     if (zones.length < 20) {
-      const newZones = [...zones, { name: '', prefix: '', tableCount: 5, defaultCapacity: 2 }];
-      setZones(newZones);
-      syncToParent(newZones, mode);
+      apply([...zones, { name: '', prefix: '', tableCount: 5, defaultCapacity: 2 }], mode);
     }
   };
 
   const removeZone = (index: number) => {
     if (zones.length > 1) {
-      const newZones = zones.filter((_, i) => i !== index);
-      setZones(newZones);
-      syncToParent(newZones, mode);
+      apply(
+        zones.filter((_, i) => i !== index),
+        mode,
+      );
     }
   };
 
@@ -97,6 +131,8 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
             {mode === 'minimum' && (
               <MinimumZones
                 zones={zones}
+                previewPrefixes={draftZones.map((z) => z.prefix)}
+                issues={issues}
                 updateZone={updateZone}
                 addZone={addZone}
                 removeZone={removeZone}
@@ -107,6 +143,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
             {mode === 'complete' && (
               <CompleteZones
                 zones={zones}
+                issues={issues}
                 updateZone={updateZone}
                 addZone={addZone}
                 removeZone={removeZone}

@@ -78,13 +78,6 @@ export interface PlanEnforcementService {
   canAddMenu(tenant: Tenant): Promise<void>;
   canAddItems(tenant: Tenant, batchSize: number): Promise<void>;
   remainingItemSlots(tenant: Tenant): Promise<number>;
-  getUsageCounts(tenantId: string): Promise<{
-    admins: number;
-    items: number;
-    venues: number;
-    menus: number;
-    categories: number;
-  }>;
 }
 
 export function createPlanEnforcementService(supabase: SupabaseClient): PlanEnforcementService {
@@ -300,52 +293,6 @@ export function createPlanEnforcementService(supabase: SupabaseClient): PlanEnfo
       }
 
       return Math.max(0, limits.maxItems - (count || 0));
-    },
-
-    /**
-     * Get current usage counts for a tenant (for display)
-     */
-    async getUsageCounts(tenantId: string): Promise<{
-      admins: number;
-      items: number;
-      venues: number;
-      menus: number;
-      categories: number;
-    }> {
-      const [adminsRes, itemsRes, venuesRes, menusRes, categoriesRes] = await Promise.all([
-        supabase
-          .from('admin_users')
-          .select('id', { count: 'exact', head: true })
-          .eq('tenant_id', tenantId)
-          .eq('is_active', true),
-        supabase
-          .from('menu_items')
-          .select('id', { count: 'exact', head: true })
-          .eq('tenant_id', tenantId)
-          .is('deleted_at', null),
-        supabase
-          .from('venues')
-          .select('id', { count: 'exact', head: true })
-          .eq('tenant_id', tenantId)
-          .eq('is_active', true),
-        supabase
-          .from('menus')
-          .select('id', { count: 'exact', head: true })
-          .eq('tenant_id', tenantId)
-          .eq('is_active', true),
-        supabase
-          .from('categories')
-          .select('id', { count: 'exact', head: true })
-          .eq('tenant_id', tenantId),
-      ]);
-
-      return {
-        admins: adminsRes.count || 0,
-        items: itemsRes.count || 0,
-        venues: venuesRes.count || 0,
-        menus: menusRes.count || 0,
-        categories: categoriesRes.count || 0,
-      };
     },
   };
 }

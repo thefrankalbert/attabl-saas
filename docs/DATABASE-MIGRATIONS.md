@@ -17,7 +17,7 @@ diff, back up, and let CI apply - never a laptop against live data.
 
 | Env        | Supabase project                                 | Env file                      | Who applies              |
 | ---------- | ------------------------------------------------ | ----------------------------- | ------------------------ |
-| local      | `supabase start` (local Postgres)                | n/a                           | you, `supabase db reset` |
+| local      | throwaway Postgres (see below)                   | n/a                           | you, psql                |
 | staging    | dedicated staging project (or a Supabase Branch) | `.env.staging`                | CI on push to `main`     |
 | production | the live project                                 | `.env.local` (read-only here) | psql, by hand, see below |
 
@@ -39,9 +39,13 @@ an ephemeral preview database and migrations are tested automatically per-branch
 # 1. Write the migration locally
 supabase migration new my_change        # or hand-author supabase/migrations/<ts>_*.sql
 
-# 2. Test it against a local throwaway DB
-supabase start
-supabase db reset                        # replays ALL migrations from scratch
+# 2. Test it against a local throwaway DB.
+#    The migration chain does NOT rebuild an empty database on its own
+#    (`supabase db reset` stops at 20260207000000_complete.sql, which assumes
+#    tables created before migrations were tracked). A database is rebuilt as
+#    supabase/schema.sql (the production schema) + the migrations newer than it.
+#    scripts/run-pgtap.sh does exactly that on a throwaway Postgres 17:
+scripts/run-pgtap.sh --db-url "postgresql://postgres:postgres@127.0.0.1:<port>/postgres"
 
 # 3. See exactly what is pending on a target (read-only, no apply)
 scripts/db-migrate.sh --target staging --dry-run

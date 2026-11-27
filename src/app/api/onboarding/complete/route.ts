@@ -40,11 +40,14 @@ export async function POST(request: Request) {
 
     const parseResult = onboardingCompleteSchema.safeParse(body);
     if (!parseResult.success) {
-      const fieldErrors = parseResult.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`);
-      return NextResponse.json(
-        { error: 'Validation failed', details: fieldErrors },
-        { status: 400 },
-      );
+      // Contre-audit 3: chemin et message separes, l'interface en fait une
+      // phrase lisible (la zone par son nom ou son numero affiche), au lieu de
+      // coller "data.tableZones.3.prefix: ..." dans la notification.
+      const details = parseResult.error.issues.map((i) => ({
+        path: i.path.map(String),
+        message: i.message,
+      }));
+      return NextResponse.json({ error: 'Validation failed', details }, { status: 400 });
     }
 
     const { data } = parseResult.data;

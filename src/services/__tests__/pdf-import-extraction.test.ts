@@ -12,6 +12,9 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 vi.mock('@/lib/logger', () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
 
 const state = vi.hoisted(() => ({
+  // B73: lecture en echec et compte des liberations du lecteur.
+  failRead: false,
+  destroyed: 0,
   pdfText: 'Carte du restaurant\nPoulet DG 4500',
   reply: { content: [{ type: 'text', text: '[]' }], stop_reason: 'end_turn' } as {
     content: Array<{ type: string; text: string }>;
@@ -22,9 +25,12 @@ const state = vi.hoisted(() => ({
 vi.mock('pdf-parse', () => ({
   PDFParse: class {
     async getText() {
+      if (state.failRead) throw new Error('corrupt pdf');
       return { text: state.pdfText, pages: [{}] };
     }
-    async destroy() {}
+    async destroy() {
+      state.destroyed += 1;
+    }
   },
 }));
 vi.mock('@anthropic-ai/sdk', () => ({
@@ -45,6 +51,22 @@ describe('extractFromPdf', () => {
   beforeEach(() => {
     process.env.ANTHROPIC_API_KEY = 'test';
     state.pdfText = 'Carte du restaurant\nPoulet DG 4500';
+    state.failRead = false;
+    state.destroyed = 0;
+  });
+
+  it('B73: lecture du PDF en echec -> le lecteur est quand meme libere', async () => {
+    state.failRead = true;
+    await expect(service().extractFromPdf(Buffer.from('x'), 'XAF')).rejects.toMatchObject({
+      code: 'VALIDATION',
+    });
+    expect(state.destroyed).toBe(1);
+  });
+
+  it('B73 temoin: lecture reussie -> le lecteur est libere une seule fois', async () => {
+    replyWith([{ category: 'Plats', name: 'Riz', description: null, price: 1000 }]);
+    await service().extractFromPdf(Buffer.from('x'), 'XAF');
+    expect(state.destroyed).toBe(1);
   });
 
   it('B71: reponse coupee par la limite de jetons -> message clair (carte trop longue)', async () => {

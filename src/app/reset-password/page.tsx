@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ import { Loader2, Eye, EyeOff, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation';
 import { logger } from '@/lib/logger';
 import { resetPasswordSchema, type ResetPasswordInput } from '@/lib/validations/auth.schema';
+import { PasswordRulesList, usePasswordIssueText } from '@/components/auth/PasswordRules';
 
 const inputClass =
   'auth-input placeholder:text-[var(--muted)] focus-visible:border-[var(--fg)] focus-visible:ring-[3px] focus-visible:ring-[var(--ring)] focus-visible:ring-offset-0';
@@ -61,10 +62,22 @@ function ResetPasswordContent() {
   // If the URL already contains ?error=invalid_token the token is known-invalid - skip checking.
   const [checking, setChecking] = useState(searchParams.get('error') !== 'invalid_token');
 
+  const passwordIssueText = usePasswordIssueText();
+  // Le schema rend des codes pour le mot de passe (common.schema.ts): traduits
+  // ici, pour que le message sous le champ soit dans la langue de l'interface.
+  const resolver: Resolver<ResetPasswordInput> = async (values, context, options) => {
+    const result = await zodResolver(resetPasswordSchema)(values, context, options);
+    const passwordError = result.errors.password;
+    const translated = passwordIssueText(passwordError?.message);
+    if (passwordError && translated) passwordError.message = translated;
+    return result;
+  };
   const form = useForm<ResetPasswordInput>({
-    resolver: zodResolver(resetPasswordSchema),
+    resolver,
     defaultValues: { accountEmail: '', password: '', confirmPassword: '' },
   });
+  const passwordValue = useWatch({ control: form.control, name: 'password' }) ?? '';
+  const confirmValue = useWatch({ control: form.control, name: 'confirmPassword' }) ?? '';
 
   // Detect recovery session via two mechanisms:
   // 1. Primary: PASSWORD_RECOVERY event from onAuthStateChange (client-side token in URL hash)
@@ -131,6 +144,11 @@ function ResetPasswordContent() {
       }
       if (code === 'NO_RECOVERY') {
         setSessionReady(false);
+        return;
+      }
+      if (code === 'MFA_REQUIRED') {
+        // Compte protege par un code: on le demande, puis /auth/mfa revient ici.
+        router.push('/auth/mfa?next=/reset-password');
         return;
       }
       if (code === 'SAME_PASSWORD') {
@@ -212,7 +230,6 @@ function ResetPasswordContent() {
                             type="email"
                             autoComplete="email"
                             placeholder={t('accountEmailPlaceholder')}
-                            autoFocus
                             className={inputClass}
                             {...field}
                           />
@@ -229,33 +246,34 @@ function ResetPasswordContent() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className={labelClass}>{t('newPasswordLabel')}</FormLabel>
-                        <FormControl>
-                          <div className="relative">
+                        <div className="relative">
+                          <FormControl>
                             <Input
                               type={showPassword ? 'text' : 'password'}
+                              autoComplete="new-password"
                               placeholder={t('newPasswordPlaceholder')}
                               className={`${inputClass} pr-10`}
                               {...field}
                             />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              aria-label={
-                                showPassword ? tForm('hidePassword') : tForm('showPassword')
-                              }
-                              aria-pressed={showPassword}
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-[var(--muted)] hover:bg-transparent hover:text-[var(--fg)]"
-                            >
-                              {showPassword ? (
-                                <EyeOff className="h-4 w-4" />
-                              ) : (
-                                <Eye className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </div>
-                        </FormControl>
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label={
+                              showPassword ? tForm('hidePassword') : tForm('showPassword')
+                            }
+                            aria-pressed={showPassword}
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-[var(--muted)] hover:bg-transparent hover:text-[var(--fg)]"
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -270,6 +288,7 @@ function ResetPasswordContent() {
                         <FormControl>
                           <Input
                             type={showPassword ? 'text' : 'password'}
+                            autoComplete="new-password"
                             placeholder={t('confirmPasswordPlaceholder')}
                             className={inputClass}
                             {...field}
@@ -280,28 +299,18 @@ function ResetPasswordContent() {
                     )}
                   />
 
-                  {/* Password strength hints - read directly from form values to avoid form.watch() */}
-                  <div className="flex gap-2 text-xs">
-                    <span
-                      className={
-                        (form.getValues('password') ?? '').length >= 8
+                  {/* Les cinq regles, cochees au fil de la saisie, puis la confirmation. */}
+                  <div className="space-y-1">
+                    <PasswordRulesList password={passwordValue} />
+                    <p
+                      className={`text-[11.5px] ${
+                        passwordValue === confirmValue && confirmValue.length > 0
                           ? 'text-[var(--ok-fg)]'
                           : 'text-[var(--muted)]'
-                      }
-                    >
-                      {t('strengthLength')}
-                    </span>
-                    <span className="text-[var(--border)]">|</span>
-                    <span
-                      className={
-                        form.getValues('password') === form.getValues('confirmPassword') &&
-                        (form.getValues('confirmPassword') ?? '').length > 0
-                          ? 'text-[var(--ok-fg)]'
-                          : 'text-[var(--muted)]'
-                      }
+                      }`}
                     >
                       {t('strengthMatch')}
-                    </span>
+                    </p>
                   </div>
 
                   <Button

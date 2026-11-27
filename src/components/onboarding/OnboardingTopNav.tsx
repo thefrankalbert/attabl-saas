@@ -1,6 +1,8 @@
 'use client';
 
-import { Loader2, LayoutGrid, Check, CloudOff } from 'lucide-react';
+import { useState } from 'react';
+import { Loader2, LayoutGrid, Check, CloudOff, LogOut } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
@@ -27,6 +29,20 @@ export function OnboardingTopNav({
   phaseIsComplete,
   goToPhase,
 }: OnboardingTopNavProps) {
+  const tc = useTranslations('common');
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  // Se deconnecter ou changer de compte sans finir le parcours: le brouillon
+  // est deja enregistre cote serveur, la reprise se fera a la prochaine
+  // connexion. Rechargement complet voulu pour vider l'etat du navigateur.
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    await fetch('/api/auth/signout', { method: 'POST' }).catch(() => undefined);
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- rechargement complet voulu a la deconnexion, comme ShellAccountMenu (2026-11-24)
+    window.location.assign('/login');
+  };
+
   return (
     /* --- Floating top navigation strip --- */
     <header className="shrink-0 h-14 bg-app-card border-b border-app-border flex items-center px-4 sm:px-6 z-10">
@@ -35,7 +51,8 @@ export function OnboardingTopNav({
         <Link
           href="/"
           className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-app-hover transition-colors shrink-0"
-          title="Accueil"
+          title={t('home')}
+          aria-label={t('home')}
         >
           <LayoutGrid className="w-4 h-4 text-app-text-muted" />
         </Link>
@@ -69,6 +86,7 @@ export function OnboardingTopNav({
                     : 'text-app-text-muted opacity-40 cursor-default'
               }`}
               disabled={isFuture}
+              aria-label={t(phaseDef.labelKey)}
             >
               {isCompleted ? <Check className="w-3.5 h-3.5" /> : <Icon className="w-3.5 h-3.5" />}
               <span className="hidden sm:inline">{t(phaseDef.labelKey)}</span>
@@ -85,13 +103,13 @@ export function OnboardingTopNav({
       {/* Right: auto-save status + theme toggle */}
       <div className="flex items-center gap-2 shrink-0">
         {autoSaveStatus === 'saving' && (
-          <span className="text-[10px] text-app-text-muted flex items-center gap-1">
+          <span className="text-xs text-app-text-secondary flex items-center gap-1">
             <Loader2 className="w-3 h-3 animate-spin" />
             <span className="hidden sm:inline">{t('autoSaving')}</span>
           </span>
         )}
         {autoSaveStatus === 'saved' && (
-          <span className="text-[10px] text-accent flex items-center gap-1">
+          <span className="text-xs text-accent flex items-center gap-1">
             <Check className="w-3 h-3" />
             <span className="hidden sm:inline">{t('autoSaved')}</span>
           </span>
@@ -103,6 +121,18 @@ export function OnboardingTopNav({
           </span>
         )}
         <ThemeToggle />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={handleLogout}
+          disabled={loggingOut}
+          aria-label={tc('logout')}
+          title={tc('logout')}
+          className="text-app-text-muted hover:text-app-text"
+        >
+          {loggingOut ? <Loader2 className="animate-spin" /> : <LogOut />}
+        </Button>
       </div>
     </header>
   );

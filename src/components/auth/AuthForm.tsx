@@ -13,21 +13,10 @@ import { GoogleIcon } from './GoogleIcon';
 import { AuthCard } from './AuthCard';
 import { ConfirmationSentScreen } from './ConfirmationSentScreen';
 import { useAuthForm } from './useAuthForm';
+import { PasswordStrengthLine } from './PasswordRules';
 
 interface AuthFormProps {
   mode: 'login' | 'signup';
-}
-
-// ponytail: 4-level strength meter matching the prototype's 3-segment bar
-// (0 = empty, 1-2 = weak/medium, 3 = strong). Pure heuristic, no lib needed.
-function getPasswordStrength(password: string): 0 | 1 | 2 | 3 {
-  if (!password) return 0;
-  let score = 0;
-  if (password.length >= 8) score++;
-  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++;
-  if (/[0-9]/.test(password) || /[^A-Za-z0-9]/.test(password)) score++;
-  if (score >= 3 && password.length >= 12) return 3;
-  return score === 0 ? 1 : (score as 1 | 2);
 }
 
 // Hauteurs et marges resserrees sur ecran court (tablette paysage): la regle 12
@@ -81,8 +70,6 @@ function AuthForm({ mode }: AuthFormProps) {
       />
     );
   }
-
-  const strength = getPasswordStrength(password);
 
   return (
     <div className="w-full">
@@ -159,7 +146,7 @@ function AuthForm({ mode }: AuthFormProps) {
         </Button>
 
         {/* Divider */}
-        <div className="relative my-5 [@media(max-height:819px)]:my-3">
+        <div className="relative my-5 [@media(max-height:939px)]:my-3">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-[var(--border)]" />
           </div>
@@ -172,7 +159,7 @@ function AuthForm({ mode }: AuthFormProps) {
         <form
           method="post"
           onSubmit={handleSubmit}
-          className="space-y-4 [@media(max-height:819px)]:space-y-3"
+          className="space-y-4 [@media(max-height:939px)]:space-y-3"
         >
           <div
             className="pointer-events-none absolute h-0 w-0 overflow-hidden opacity-0"
@@ -220,12 +207,14 @@ function AuthForm({ mode }: AuthFormProps) {
               id="email"
               type="email"
               name="email"
-              autoComplete={isLogin ? 'email' : 'off'}
+              autoComplete="email"
               placeholder={tForm('emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               aria-required="true"
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? 'auth-form-error' : undefined}
               className={inputClass}
             />
           </div>
@@ -247,7 +236,12 @@ function AuthForm({ mode }: AuthFormProps) {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 aria-required="true"
-                minLength={isLogin ? undefined : 8}
+                aria-invalid={error ? true : undefined}
+                aria-describedby={
+                  [error ? 'auth-form-error' : null, isLogin || !password ? null : 'password-rules']
+                    .filter(Boolean)
+                    .join(' ') || undefined
+                }
                 className={`${inputClass} pr-10`}
               />
               <Button
@@ -273,33 +267,17 @@ function AuthForm({ mode }: AuthFormProps) {
               )}
             </div>
 
+            {/* Contre-audit 4 (regle 12): une seule ligne, comme la jauge d'avant,
+                qui nomme TOUTES les regles manquantes; rien tant que le champ est
+                vide, pour que la page tienne sur ecran court. */}
             {!isLogin && password.length > 0 && (
-              <div className="flex items-center gap-1.5 pt-0.5">
-                {[1, 2, 3].map((segment) => (
-                  <span
-                    key={segment}
-                    className={`h-1 flex-1 rounded-full ${
-                      segment > strength
-                        ? 'bg-[var(--border)]'
-                        : strength === 3
-                          ? 'bg-[var(--ok-fg)]'
-                          : 'bg-amber-500'
-                    }`}
-                  />
-                ))}
-                <span className="ml-1 text-[11px] text-[var(--muted)]">
-                  {strength === 3
-                    ? tForm('strengthStrong')
-                    : strength === 2
-                      ? tForm('strengthMedium')
-                      : tForm('strengthWeak')}
-                </span>
-              </div>
+              <PasswordStrengthLine id="password-rules" password={password} />
             )}
           </div>
 
           {error && (
             <Alert
+              id="auth-form-error"
               variant="destructive"
               className="rounded-lg border-[var(--err-border)] bg-[var(--err-bg)] text-[var(--err-fg)] [&>svg]:text-[var(--err-fg)]"
             >
@@ -354,10 +332,22 @@ function AuthForm({ mode }: AuthFormProps) {
             />
           )}
 
+          {/* Remplace l'ancienne ligne "14 jours gratuits": deja dit par le titre, et la
+              page doit tenir sans defilement sur ecran court (regle 12). */}
           {!isLogin && (
-            // Deja dit par le titre ("14 jours gratuits"): masque sur ecran court.
-            <p className="text-center text-xs text-[var(--muted)] [@media(max-height:719px)]:hidden">
-              {tForm('trialNote')}
+            <p className="text-center text-[11.5px] leading-snug text-[var(--muted)]">
+              {tForm.rich('termsNote', {
+                terms: (chunks) => (
+                  <Link href="/legal" className="auth-link">
+                    {chunks}
+                  </Link>
+                ),
+                privacy: (chunks) => (
+                  <Link href="/privacy" className="auth-link">
+                    {chunks}
+                  </Link>
+                ),
+              })}
             </p>
           )}
         </form>

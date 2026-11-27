@@ -89,8 +89,13 @@ export function useSupplierForm(tenantId: string, loadSuppliers: () => void) {
       setModalMode(null);
       resetForm();
       loadSuppliers();
-    } catch {
-      toast({ title: tc('error'), variant: 'destructive' });
+    } catch (err) {
+      // Le serveur dit pourquoi (telephone invalide, nom trop long...): on l'affiche.
+      toast({
+        title: tc('error'),
+        description: err instanceof Error ? err.message : undefined,
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }

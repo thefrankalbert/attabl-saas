@@ -21,6 +21,7 @@ import { suggestIconForName, getLucideIcon } from '@/lib/config/lucide-food-icon
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import type { Menu, PreparationZone } from '@/types/admin.types';
 import type { CategoryWithCount } from './types';
+import { CATEGORY_NAME_MAX } from '@/lib/validations/category.schema';
 
 const FEATURED_LIMIT = 8;
 
@@ -109,6 +110,7 @@ export function CategoryFormModal({
                 }
               }}
               placeholder={t('nameFrPlaceholder')}
+              maxLength={CATEGORY_NAME_MAX}
               className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
               required
             />
@@ -122,6 +124,7 @@ export function CategoryFormModal({
               value={nameEn}
               onChange={(e) => setNameEn(e.target.value)}
               placeholder={t('nameEnPlaceholder')}
+              maxLength={CATEGORY_NAME_MAX}
               className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
             />
           </div>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { zoneSchema, tableConfigSchema, addTablesSchema } from '../table-config.schema';
+import { zoneSchema, addTablesSchema } from '../table-config.schema';
 
 describe('zoneSchema', () => {
   it('accepts valid zone', () => {
@@ -46,33 +46,6 @@ describe('zoneSchema', () => {
       defaultCapacity: 6,
     });
     expect(result.success).toBe(true);
-  });
-});
-
-describe('tableConfigSchema', () => {
-  it('accepts array of zones', () => {
-    const result = tableConfigSchema.safeParse({
-      zones: [
-        { name: 'Interieur', prefix: 'INT', tableCount: 10 },
-        { name: 'Terrasse', prefix: 'TER', tableCount: 8 },
-      ],
-    });
-    expect(result.success).toBe(true);
-  });
-
-  it('rejects empty zones array', () => {
-    const result = tableConfigSchema.safeParse({ zones: [] });
-    expect(result.success).toBe(false);
-  });
-
-  it('rejects more than 20 zones', () => {
-    const zones = Array.from({ length: 21 }, (_, i) => ({
-      name: `Zone ${i}`,
-      prefix: `Z${i}`,
-      tableCount: 1,
-    }));
-    const result = tableConfigSchema.safeParse({ zones });
-    expect(result.success).toBe(false);
   });
 });
 

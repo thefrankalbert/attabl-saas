@@ -111,7 +111,15 @@ export function createSignupService(supabase: SupabaseClient) {
       });
 
       if (adminError) {
-        throw new ServiceError(`Erreur Admin: ${adminError.message}`, 'INTERNAL', adminError);
+        // B66: le message Postgres reste au journal, le navigateur recoit un texte fixe.
+        logger.error('createAdminUser: rattachement du proprietaire refuse', adminError, {
+          tenantId: input.tenantId,
+        });
+        throw new ServiceError(
+          'Erreur lors du rattachement de votre compte au restaurant',
+          'INTERNAL',
+          adminError,
+        );
       }
     },
 
@@ -132,7 +140,13 @@ export function createSignupService(supabase: SupabaseClient) {
       // call in a try/catch (venue may legitimately exist), which was dead code
       // while this insert swallowed its error.
       if (venueError) {
-        throw new ServiceError(`Erreur Venue: ${venueError.message}`, 'INTERNAL', venueError);
+        // B66: le message Postgres reste au journal, le navigateur recoit un texte fixe.
+        logger.error('createDefaultVenue: creation de la salle refusee', venueError, { tenantId });
+        throw new ServiceError(
+          'Erreur lors de la creation de la salle principale',
+          'INTERNAL',
+          venueError,
+        );
       }
     },
 
@@ -167,10 +181,31 @@ export function createSignupService(supabase: SupabaseClient) {
       });
 
       if (authError) {
-        if (isEmailAlreadyRegisteredAuthError(authError)) {
+        // GoTrue teste l'adresse AVANT le reste: tout autre refus ne tombe que
+        // pour une adresse NEUVE. Une reponse a part disait donc si une adresse
+        // a un compte (contre-audits 2 et 4). Seul le doublon d'adresse reste
+        // tel quel; tout le reste prend le meme chemin neutre dans la route
+        // (meme reponse, meme plafond, un courriel), detail au journal.
+        // `weak_password` est teste AVANT le doublon: GoTrue le rend en 422, que
+        // isEmailAlreadyRegisteredAuthError prendrait pour un compte existant.
+        if (authError.code !== 'weak_password' && isEmailAlreadyRegisteredAuthError(authError)) {
           throw new ServiceError('EMAIL_ALREADY_REGISTERED', 'CONFLICT', authError);
         }
-        throw new ServiceError(`Erreur Auth: ${authError.message}`, 'VALIDATION', authError);
+        // Refus du mot de passe: force (`weak_password`, HIBP compris) ou
+        // longueur au-dela de 72 octets (`validation_failed`, password.go:32).
+        const passwordRefused =
+          authError.code === 'weak_password' ||
+          (authError.code === 'validation_failed' && /password/i.test(authError.message ?? ''));
+        logger.warn('Signup: creation du compte refusee par Auth, reponse neutre', {
+          code: authError.code,
+          status: authError.status,
+          message: authError.message,
+        });
+        throw new ServiceError(
+          passwordRefused ? 'PASSWORD_REJECTED_BY_AUTH' : 'SIGNUP_REJECTED_BY_AUTH',
+          'CONFLICT',
+          authError,
+        );
       }
 
       const userId = authData.user?.id;

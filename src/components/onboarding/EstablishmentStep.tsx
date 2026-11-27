@@ -32,7 +32,7 @@ export function EstablishmentStep({
                 {showDetails ? t('addressLabel') : t('establishmentTitle')}
               </h1>
               <p className="text-sm text-app-text-secondary">
-                {showDetails ? t('phoneLabel') : t('establishmentSubtitle')}
+                {showDetails ? t('detailsSubtitle') : t('establishmentSubtitle')}
               </p>
             </div>
 

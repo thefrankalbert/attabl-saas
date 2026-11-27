@@ -38,6 +38,7 @@ describe('loadCronHeartbeats', () => {
       'reconcile-payments',
       'flutterwave-renewals',
       'flutterwave-reconcile',
+      'trial-idle-emails',
     ]);
     expect(res.every((h) => h.needsAttention && h.lastRunAt === null)).toBe(true);
   });
@@ -69,6 +70,12 @@ describe('loadCronHeartbeats', () => {
           last_run_at: ago(350),
           last_status: 'ok',
           last_duration_ms: 9,
+        },
+        {
+          job: 'trial-idle-emails',
+          last_run_at: ago(600),
+          last_status: 'ok',
+          last_duration_ms: 30,
         },
       ]),
       NOW,
@@ -105,10 +112,16 @@ describe('loadCronHeartbeats', () => {
           last_status: 'ok',
           last_duration_ms: 9,
         },
+        {
+          job: 'trial-idle-emails',
+          last_run_at: ago(600),
+          last_status: 'ok',
+          last_duration_ms: 30,
+        },
       ]),
       NOW,
     );
-    expect(res.map((h) => h.needsAttention)).toEqual([true, true, true, false, true]);
+    expect(res.map((h) => h.needsAttention)).toEqual([true, true, true, false, true, false]);
   });
 });
 

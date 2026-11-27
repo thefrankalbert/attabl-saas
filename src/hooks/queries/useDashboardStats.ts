@@ -20,18 +20,9 @@ import type {
   SparklinePoint,
 } from '@/types/admin.types';
 
-interface StockItem {
-  id: string;
-  name: string;
-  unit: string;
-  current_stock: number;
-  min_stock_alert: number;
-}
-
 interface DashboardData {
   stats: DashboardStats;
   recentOrders: Order[];
-  stockItems: StockItem[];
   categoryBreakdown: CategoryBreakdown[];
   hourlyOrders: HourlyOrderCount[];
   revenueSparkline: SparklinePoint[];
@@ -94,87 +85,74 @@ export function useDashboardStats(
       const sevenDaysAgo = dayStart(timeZone, 7);
 
       // -- Fire all queries in parallel with individual error isolation --
-      const [ordersRes, itemsRes, venuesRes, recentRes, stockRes, yesterdayRes, weekRes] =
-        await Promise.all([
-          // Today's orders for stats
-          safeQuery(
-            () =>
-              supabase
-                .from('orders')
-                // Colonnes d'argent lues seulement par qui a le droit de les voir.
-                .select('id, status, payment_status, created_at')
-                .eq('tenant_id', tenantId)
-                .gte('created_at', today.toISOString()),
-            'todayOrders',
-          ),
-          // Active items count
-          safeQuery(
-            () =>
-              supabase
-                .from('menu_items')
-                .select('id', { count: 'exact', head: true })
-                .eq('tenant_id', tenantId)
-                .eq('is_available', true),
-            'activeItems',
-          ),
-          // Active venues count
-          safeQuery(
-            () =>
-              supabase
-                .from('venues')
-                .select('id', { count: 'exact', head: true })
-                .eq('tenant_id', tenantId)
-                .eq('is_active', true),
-            'activeVenues',
-          ),
-          // Recent orders with items
-          safeQuery(
-            () =>
-              supabase
-                .from('orders')
-                .select(
-                  `id, order_number, table_number, status, total, tip_amount, created_at, service_type, payment_status,
+      const [ordersRes, itemsRes, venuesRes, recentRes, yesterdayRes, weekRes] = await Promise.all([
+        // Today's orders for stats
+        safeQuery(
+          () =>
+            supabase
+              .from('orders')
+              // Colonnes d'argent lues seulement par qui a le droit de les voir.
+              .select('id, status, payment_status, created_at')
+              .eq('tenant_id', tenantId)
+              .gte('created_at', today.toISOString()),
+          'todayOrders',
+        ),
+        // Active items count
+        safeQuery(
+          () =>
+            supabase
+              .from('menu_items')
+              .select('id', { count: 'exact', head: true })
+              .eq('tenant_id', tenantId)
+              .eq('is_available', true),
+          'activeItems',
+        ),
+        // Active venues count
+        safeQuery(
+          () =>
+            supabase
+              .from('venues')
+              .select('id', { count: 'exact', head: true })
+              .eq('tenant_id', tenantId)
+              .eq('is_active', true),
+          'activeVenues',
+        ),
+        // Recent orders with items
+        safeQuery(
+          () =>
+            supabase
+              .from('orders')
+              .select(
+                `id, order_number, table_number, status, total, tip_amount, created_at, service_type, payment_status,
                  order_items(id, quantity, price_at_order, menu_items(name))`,
-                )
-                .eq('tenant_id', tenantId)
-                .order('created_at', { ascending: false })
-                .limit(12),
-            'recentOrders',
-          ),
-          // Low stock items
-          safeQuery(
-            () =>
-              supabase
-                .from('ingredients')
-                .select('id, name, unit, current_stock, min_stock_alert')
-                .eq('tenant_id', tenantId)
-                .eq('is_active', true)
-                .order('current_stock', { ascending: true })
-                .limit(10),
-            'stockItems',
-          ),
-          // Yesterday's orders for trend comparison
-          safeQuery(
-            () =>
-              supabase
-                .from('orders')
-                .select('id, status, payment_status')
-                .eq('tenant_id', tenantId)
-                .gte('created_at', yesterday.toISOString())
-                .lt('created_at', today.toISOString()),
-            'yesterdayOrders',
-          ),
-          // Last 7 days for sparklines
-          safeQuery(
-            () =>
-              supabase
-                .from('orders')
-                .select('id, created_at, status, payment_status')
-                .eq('tenant_id', tenantId)
-                .gte('created_at', sevenDaysAgo.toISOString()),
-            'weekOrders',
-          ),
-        ]);
+              )
+              .eq('tenant_id', tenantId)
+              .order('created_at', { ascending: false })
+              .limit(12),
+          'recentOrders',
+        ),
+        // Yesterday's orders for trend comparison
+        safeQuery(
+          () =>
+            supabase
+              .from('orders')
+              .select('id, status, payment_status')
+              .eq('tenant_id', tenantId)
+              .gte('created_at', yesterday.toISOString())
+              .lt('created_at', today.toISOString()),
+          'yesterdayOrders',
+        ),
+        // Last 7 days for sparklines
+        safeQuery(
+          () =>
+            supabase
+              .from('orders')
+              .select('id, created_at, status, payment_status')
+              .eq('tenant_id', tenantId)
+              .gte('created_at', sevenDaysAgo.toISOString()),
+          'weekOrders',
+        ),
+      ]);
 
       // Money received (payments ledger, owner decision C-041 - see
       // src/lib/orders/revenue.ts). Not even requested without `reports.view`.
@@ -256,8 +234,6 @@ export function useDashboardStats(
           ),
         }),
       );
-
-      const stockItems = ((stockRes.data as StockItem[]) || []) as StockItem[];
 
       // -- Trend calculations --
       const yesterdayOrders = (yesterdayRes.data || []) as unknown as Array<
@@ -357,7 +333,6 @@ export function useDashboardStats(
       return {
         stats,
         recentOrders,
-        stockItems,
         categoryBreakdown,
         hourlyOrders,
         revenueSparkline,

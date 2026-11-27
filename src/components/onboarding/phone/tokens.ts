@@ -9,6 +9,12 @@ export const C = {
   text: '#1A1A1A',
   textSecondary: '#737373',
   textMuted: '#B0B0B0',
+  /**
+   * Texte factice du champ de recherche de l'apercu: 4,5:1 au moins sur
+   * `surface` (axe le controle meme sous aria-hidden). Le reste de l'apercu
+   * garde les couleurs de la vitrine.
+   */
+  searchPlaceholder: '#6B6B6B',
   cartBg: '#1A1A1A',
   cartText: '#FFFFFF',
   iconInactive: '#B0B0B0',

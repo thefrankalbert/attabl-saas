@@ -6,6 +6,11 @@ import { redirectToLogin } from '@/lib/auth/redirect-to-main';
 import { PermissionsClient } from '@/components/admin/settings/PermissionsClient';
 import type { PermissionMap } from '@/types/permission.types';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('sidebar', 'navPermissions');
+}
 
 export const dynamic = 'force-dynamic';
 

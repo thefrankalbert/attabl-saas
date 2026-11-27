@@ -46,7 +46,9 @@ export function createAuditService(
       metadata,
     }: LogAuditInput): Promise<void> {
       try {
-        await supabase.from('audit_log').insert({
+        // B30: PostgREST rend un refus (RLS, contrainte) dans `error` sans lever:
+        // non lu, la ligne d'audit disparaissait sans trace.
+        const { error } = await supabase.from('audit_log').insert({
           tenant_id: context.tenantId,
           user_id: context.userId || null,
           user_email: context.userEmail || null,
@@ -58,6 +60,9 @@ export function createAuditService(
           new_data: newData || null,
           metadata: metadata || null,
         });
+        if (error) {
+          logger.error('Audit log insert refused', error, { action, entityType, entityId });
+        }
       } catch (error) {
         // Audit logging should NEVER fail the parent operation
         logger.error('Audit log insert failed', error, { action, entityType, entityId });

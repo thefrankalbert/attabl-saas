@@ -39,6 +39,8 @@ const getUserMock = vi.fn(async () => ({ data: { user: mockUser } }));
 let mockAdminRole = 'owner';
 let mockCustomPermissions: Record<string, boolean> | null = null;
 let mockIsSuperAdmin = false;
+// false = l'utilisateur n'a AUCUNE ligne admin_users (ni membre, ni super-admin).
+let mockIsMember = true;
 
 type QueryBuilder = {
   select: () => QueryBuilder;
@@ -56,6 +58,7 @@ function makeQueryBuilder(table: string): QueryBuilder {
     limit: () => qb,
     maybeSingle: async () => {
       if (table === 'admin_users') {
+        if (!mockIsMember) return { data: null };
         return {
           data: {
             role: mockAdminRole,
@@ -164,6 +167,7 @@ beforeEach(() => {
   mockAdminRole = 'owner';
   mockCustomPermissions = null;
   mockIsSuperAdmin = false;
+  mockIsMember = true;
   getUserMock.mockClear();
   getCachedTenantByDomainMock.mockClear();
   getCachedTenantMock.mockClear();
@@ -178,6 +182,48 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllEnvs();
+});
+
+// ===========================================================================
+// 0. Restaurant inexistant: un vrai 404, pas une page 200 "introuvable"
+// ===========================================================================
+describe('proxy - restaurant inexistant', () => {
+  it('reecrit une page d un sous-domaine inconnu vers le chemin sans route (404)', async () => {
+    getCachedTenantMock.mockResolvedValue(null);
+    for (const path of ['/', '/menu', '/cart', '/admin']) {
+      mockUser = {
+        id: 'u-1',
+        email_confirmed_at: '2026-01-01T00:00:00Z',
+        app_metadata: { provider: 'email' },
+      };
+      const res = await proxy(makeRequest('restaurant-invente.attabl.com', path));
+      expect(rewriteTarget(res), path).toBe('/restaurant-introuvable');
+      expect(res.headers.get('Content-Security-Policy'), path).toBeTruthy();
+    }
+  });
+
+  it('fait de meme pour /sites/<slug> inconnu sur le domaine principal', async () => {
+    getCachedTenantMock.mockResolvedValue(null);
+    const res = await proxy(makeRequest('attabl.com', '/sites/restaurant-invente/menu?x=1'));
+    expect(rewriteTarget(res)).toBe('/restaurant-introuvable');
+    expect(isPassThrough(res)).toBe(false);
+  });
+
+  it('ne touche pas aux routes /api/ ni aux chemins de la racine (login)', async () => {
+    getCachedTenantMock.mockResolvedValue(null);
+    for (const path of ['/api/menu-search', '/login']) {
+      const res = await proxy(makeRequest('restaurant-invente.attabl.com', path));
+      expect(rewriteTarget(res), path).toBeNull();
+      expect(isPassThrough(res), path).toBe(true);
+    }
+  });
+
+  it('temoin: un restaurant qui existe est servi normalement', async () => {
+    const res = await proxy(makeRequest('radisson.attabl.com', '/menu'));
+    expect(rewriteTarget(res)).toBe('/sites/radisson/menu');
+    const main = await proxy(makeRequest('attabl.com', '/sites/radisson/menu'));
+    expect(isPassThrough(main)).toBe(true);
+  });
 });
 
 // ===========================================================================
@@ -232,6 +278,19 @@ describe('proxy - subdomain extraction', () => {
     expect(getCachedTenantByDomainMock).toHaveBeenCalledWith('menu.monresto.com');
     expect(rewriteTarget(res)).toBe('/sites/monresto/carte');
     expect(injectedTenantSlug(res)).toBe('monresto');
+  });
+
+  it('B19: sur un domaine personnalise, le manifest et start_url ne sont pas prefixes deux fois', async () => {
+    getCachedTenantByDomainMock.mockResolvedValue('theblutable');
+    const manifest = await proxy(
+      makeRequest('theblutable.com', '/sites/theblutable/manifest.webmanifest'),
+    );
+    expect(rewriteTarget(manifest)).toBe('/sites/theblutable/manifest.webmanifest');
+    const start = await proxy(makeRequest('theblutable.com', '/sites/theblutable/welcome'));
+    expect(rewriteTarget(start)).toBe('/sites/theblutable/welcome');
+    // Le chemin d'un AUTRE restaurant reste confine sous celui du domaine.
+    const other = await proxy(makeRequest('theblutable.com', '/sites/autre/welcome'));
+    expect(rewriteTarget(other)).toBe('/sites/theblutable/sites/autre/welcome');
   });
 
   it('un domaine a trois parties non enregistre ne sert le restaurant de personne', async () => {
@@ -715,6 +774,36 @@ describe('proxy - RBAC route gate', () => {
     mockAdminRole = 'chef';
     expect((await go('/sites/radisson/admin/pos')).status).toBe(307); // pos.use = false
     expect((await go('/sites/radisson/admin/inventory')).status).not.toBe(307); // inventory.view = true
+  });
+
+  it('refuse en 307 un compte SANS appartenance sur les routes ouvertes a tout membre', async () => {
+    authed('etranger-1');
+    mockIsMember = false;
+    for (const sub of [
+      '',
+      '/items',
+      '/categories',
+      '/menus',
+      '/qr-codes',
+      '/kitchen',
+      '/service',
+    ]) {
+      const res = await go(`/sites/radisson/admin${sub}`);
+      expect(res.status, sub).toBe(307);
+      expect(new URL(res.headers.get('location')!).pathname, sub).toBe('/unauthorized');
+    }
+    const sousDomaine = await proxy(makeRequest('radisson.attabl.com', '/admin/items'));
+    expect(sousDomaine.status).toBe(307);
+    expect(new URL(sousDomaine.headers.get('location')!).pathname).toBe('/unauthorized');
+  });
+
+  it('temoin: un membre sans droit particulier (serveur) garde ces routes ouvertes', async () => {
+    authed('w-1');
+    mockAdminRole = 'waiter';
+    for (const sub of ['', '/items', '/kitchen', '/service', '/support']) {
+      const res = await go(`/sites/radisson/admin${sub}`);
+      expect(res.status, sub).not.toBe(307);
+    }
   });
 
   it('only gates the tenant admin area (super_admin platform area is unaffected)', async () => {

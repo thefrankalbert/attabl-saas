@@ -25,11 +25,13 @@ function renderAs(role: AdminRole) {
 describe('Zone dangereuse: proprietaire seulement', () => {
   it('le proprietaire la voit', () => {
     renderAs('owner');
-    expect(screen.getByText('dangerZone')).toBeInTheDocument();
+    expect(screen.getByText('reset_all_title')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'resetAction' })).toHaveLength(3);
   });
 
   it('un admin ne la voit pas', () => {
     renderAs('admin');
-    expect(screen.queryByText('dangerZone')).toBeNull();
+    expect(screen.queryByText('reset_all_title')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'resetAction' })).toBeNull();
   });
 });

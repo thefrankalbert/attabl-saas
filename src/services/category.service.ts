@@ -50,7 +50,8 @@ interface UpdateCategoryInput {
   icon?: string | null;
   image_url?: string | null;
   tenant_id: string;
-  menu_id?: string | null;
+  // Requis: le controle de doublon au renommage compare dans cette carte.
+  menu_id: string | null;
 }
 
 export interface CategoryService {
@@ -65,7 +66,6 @@ export interface CategoryService {
     tenantId: string,
     updates: { id: string; display_order: number }[],
   ): Promise<void>;
-  isCategoryLinkedToMenu(categoryId: string, tenantId: string): Promise<boolean>;
 }
 
 /**
@@ -118,29 +118,53 @@ export function createCategoryService(supabase: SupabaseClient): CategoryService
       // Double-scope the write: filter by id AND the tenant_id carried in the
       // validated payload (the caller sets data.tenant_id to the session tenant).
       // Belt-and-suspenders alongside RLS.
-      const { error } = await supabase
+      // Audit B33: un renommage refuse le doublon comme la creation (meme
+      // carte), sans compter la categorie elle-meme.
+      await assertNameAvailable(supabase, {
+        table: 'categories',
+        tenantId: data.tenant_id,
+        name: data.name,
+        message: 'Une catégorie porte déjà ce nom.',
+        scope: { column: 'menu_id', value: data.menu_id },
+        excludeId: categoryId,
+      });
+      const { error, count } = await supabase
         .from('categories')
-        .update(pickCategoryColumns(data as unknown as Record<string, unknown>))
+        .update(pickCategoryColumns(data as unknown as Record<string, unknown>), {
+          count: 'exact',
+        })
         .eq('id', categoryId)
         .eq('tenant_id', data.tenant_id);
 
       if (error) {
         throw new ServiceError('Erreur lors de la mise a jour de la categorie', 'INTERNAL', error);
       }
+      // Un UPDATE qui ne touche rien ne rend aucune erreur: categorie supprimee
+      // entre-temps, ou d'un autre restaurant.
+      if (count === 0) throw new ServiceError('Categorie introuvable', 'NOT_FOUND');
     },
 
     /**
      * Delete a category by ID, scoped to tenant.
      */
     async deleteCategory(categoryId: string, tenantId: string): Promise<void> {
-      const { error } = await supabase
+      // `count: 'exact'`: PostgREST ne leve AUCUNE erreur sur un DELETE qui ne
+      // touche rien (identifiant d'un autre restaurant, deja supprime, ligne
+      // masquee par RLS). Sans le compte, l'action annoncait un succes.
+      const { error, count } = await supabase
         .from('categories')
-        .delete()
+        .delete({ count: 'exact' })
         .eq('id', categoryId)
         .eq('tenant_id', tenantId);
 
       if (error) {
         throw new ServiceError('Erreur lors de la suppression de la categorie', 'INTERNAL', error);
+      }
+      if (count === 0) {
+        throw new ServiceError(
+          "Cette categorie n'existe plus ou n'appartient pas a votre restaurant",
+          'NOT_FOUND',
+        );
       }
     },
 
@@ -164,50 +188,35 @@ export function createCategoryService(supabase: SupabaseClient): CategoryService
     },
 
     /**
-     * Update the display_order of many categories in a single batch.
+     * Update the display_order of many categories in ONE atomic write.
      * Only the categories whose order actually changed need to be passed.
+     *
+     * Audit B32: une ecriture par ligne en parallele laissait un ordre a moitie
+     * applique quand l'une echouait. La fonction SQL `reorder_categories` fait
+     * un seul UPDATE filtre par tenant et l'annule si une ligne manque.
      */
     async reorderCategories(
       tenantId: string,
       updates: { id: string; display_order: number }[],
     ): Promise<void> {
-      const promises = updates.map(({ id, display_order }) =>
-        supabase
-          .from('categories')
-          .update({ display_order })
-          .eq('id', id)
-          .eq('tenant_id', tenantId),
-      );
-      const results = await Promise.all(promises);
-      const error = results.find((r) => r.error)?.error;
+      if (updates.length === 0) return;
+      const { error } = await supabase.rpc('reorder_categories', {
+        p_tenant_id: tenantId,
+        p_updates: updates,
+      });
       if (error) {
+        if (error.code === 'P0002') {
+          throw new ServiceError(
+            'Une categorie a ete modifiee ou supprimee entre-temps. Rechargez la page.',
+            'CONFLICT',
+          );
+        }
         throw new ServiceError(
           'Erreur lors du re-ordonnancement des categories',
           'INTERNAL',
           error,
         );
       }
-    },
-
-    /**
-     * Returns true when the category is assigned to a menu (categories.menu_id).
-     */
-    async isCategoryLinkedToMenu(categoryId: string, tenantId: string): Promise<boolean> {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('menu_id')
-        .eq('id', categoryId)
-        .eq('tenant_id', tenantId)
-        .maybeSingle();
-
-      if (error) {
-        throw new ServiceError(
-          'Erreur lors de la verification du menu de la categorie',
-          'INTERNAL',
-          error,
-        );
-      }
-      return data?.menu_id != null;
     },
   };
 }

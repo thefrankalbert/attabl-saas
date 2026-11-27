@@ -50,8 +50,11 @@ export async function POST(request: Request) {
     const { domain } = parseResult.data;
 
     // 3. Check if CNAME is pointing to Vercel
+    // Hote fixe (dns.google). Delai de 5 s: une reponse lente ne doit pas garder la
+    // fonction ouverte; 'error' refuse toute redirection.
     const response = await fetch(
       `https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=CNAME`,
+      { signal: AbortSignal.timeout(5000), redirect: 'error' },
     );
     const data = await response.json();
 

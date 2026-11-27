@@ -1,5 +1,6 @@
 'use client';
 
+import { useId } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { UnitSystem } from '@/types/supports.types';
@@ -37,6 +38,7 @@ export function UnitInput({
   step,
   className,
 }: UnitInputProps) {
+  const inputId = useId();
   const displayValue = cmToUnit(valueCm, unit);
   const displayMin = cmToUnit(minCm, unit);
   const displayMax = cmToUnit(maxCm, unit);
@@ -46,8 +48,11 @@ export function UnitInput({
 
   return (
     <div className={className}>
-      <Label className="text-xs text-app-text-secondary mb-1 block">{label}</Label>
+      <Label htmlFor={inputId} className="text-xs text-app-text-secondary mb-1 block">
+        {label}
+      </Label>
       <Input
+        id={inputId}
         type="number"
         value={displayValue}
         min={displayMin}

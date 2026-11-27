@@ -10,7 +10,7 @@ function mockSupabase(result: {
 }) {
   const calls: Array<[string, ...unknown[]]> = [];
   const builder: Record<string, unknown> = {};
-  for (const m of ['select', 'eq', 'ilike', 'is']) {
+  for (const m of ['select', 'eq', 'ilike', 'is', 'neq']) {
     builder[m] = vi.fn((...args: unknown[]) => {
       calls.push([m, ...args]);
       return builder;
@@ -56,6 +56,46 @@ describe('assertNameAvailable', () => {
     ).rejects.toBeInstanceOf(ServiceError);
     expect(calls).toContainEqual(['eq', 'category_id', 'cat-1']);
     expect(calls).toContainEqual(['is', 'deleted_at', null]);
+  });
+
+  it('B37: parent nul -> compare aux seules lignes sans parent, pas a tout le restaurant', async () => {
+    const { client, calls } = mockSupabase({ data: [], error: null });
+    await assertNameAvailable(client, {
+      ...base,
+      table: 'categories',
+      scope: { column: 'menu_id', value: null },
+    });
+    expect(calls).toContainEqual(['is', 'menu_id', null]);
+    expect(calls.some(([m, col]) => m === 'eq' && col === 'menu_id')).toBe(false);
+  });
+
+  it('B37 temoin: parent renseigne -> filtre egalite sur ce parent', async () => {
+    const { client, calls } = mockSupabase({ data: [], error: null });
+    await assertNameAvailable(client, {
+      ...base,
+      table: 'categories',
+      scope: { column: 'menu_id', value: 'menu-1' },
+    });
+    expect(calls).toContainEqual(['eq', 'menu_id', 'menu-1']);
+    expect(calls.some(([m, col]) => m === 'is' && col === 'menu_id')).toBe(false);
+  });
+
+  it('temoin: sans scope, aucun filtre de parent', async () => {
+    const { client, calls } = mockSupabase({ data: [], error: null });
+    await assertNameAvailable(client, base);
+    expect(calls.some(([m, col]) => (m === 'is' || m === 'eq') && col === 'menu_id')).toBe(false);
+  });
+
+  it('B33: renommage -> la ligne modifiee ne compte pas comme son propre doublon', async () => {
+    const { client, calls } = mockSupabase({ data: [], error: null });
+    await assertNameAvailable(client, { ...base, excludeId: 'menu-7' });
+    expect(calls).toContainEqual(['neq', 'id', 'menu-7']);
+  });
+
+  it('B33 temoin: creation -> aucun neq', async () => {
+    const { client, calls } = mockSupabase({ data: [], error: null });
+    await assertNameAvailable(client, base);
+    expect(calls.some(([m]) => m === 'neq')).toBe(false);
   });
 
   it('ne bloque pas la creation si la lecture echoue', async () => {

@@ -1,6 +1,6 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { Check, Layout } from 'lucide-react';
 import type { OnboardingData } from '@/app/onboarding/page';
@@ -8,7 +8,8 @@ import type { OnboardingData } from '@/app/onboarding/page';
 interface LaunchSummaryCardProps {
   data: OnboardingData;
   accentColor: string;
-  completedItems: Array<{ label: string; done: boolean }>;
+  /** `blocked`: le lancement sera refuse tant que ce point n'est pas corrige. */
+  completedItems: Array<{ label: string; done: boolean; blocked?: boolean }>;
 }
 
 export function LaunchSummaryCard({ data, accentColor, completedItems }: LaunchSummaryCardProps) {
@@ -22,7 +23,15 @@ export function LaunchSummaryCard({ data, accentColor, completedItems }: LaunchS
           style={{ backgroundColor: accentColor }}
         >
           {data.logoUrl ? (
-            <img src={data.logoUrl} alt="Logo" className="h-full w-full rounded-xl object-cover" />
+            <Image
+              src={data.logoUrl}
+              alt="Logo"
+              width={56}
+              height={56}
+              // Apercu local (blob:, data:) ou hote de developpement http: pas d'optimiseur.
+              unoptimized={!data.logoUrl.startsWith('https://')}
+              className="h-full w-full rounded-xl object-cover"
+            />
           ) : (
             <Layout className="h-7 w-7 text-white" />
           )}
@@ -48,7 +57,17 @@ export function LaunchSummaryCard({ data, accentColor, completedItems }: LaunchS
             >
               <Check className="h-3 w-3" />
             </div>
-            <span className={`text-sm ${item.done ? 'text-app-text' : 'text-app-text-muted'}`}>
+            {/* Contre-audit 4: un point non fait porte une information, il garde un
+                contraste AA (text-app-text-secondary, plus text-app-text-muted). */}
+            <span
+              className={`text-sm ${
+                item.done
+                  ? 'text-app-text'
+                  : item.blocked
+                    ? 'text-status-error'
+                    : 'text-app-text-secondary'
+              }`}
+            >
               {item.label}
             </span>
           </div>

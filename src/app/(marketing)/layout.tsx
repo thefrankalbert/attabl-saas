@@ -1,4 +1,7 @@
 import type { Metadata } from 'next';
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages } from 'next-intl/server';
+import { MARKETING_CLIENT_NAMESPACES, pickMessages } from '@/i18n/client-messages';
 import Header from '@/components/marketing/Header';
 import Footer from '@/components/marketing/Footer';
 
@@ -34,20 +37,26 @@ const organizationLd = {
   areaServed: ['Burkina Faso', "Cote d'Ivoire", 'Senegal', 'Cameroun', 'Gabon', 'Tchad', 'Congo'],
 };
 
-export default function MarketingLayout({ children }: { children: React.ReactNode }) {
+export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
+  // Only the messages the marketing client components read (see
+  // src/i18n/client-messages.ts): the full catalog was three quarters of the HTML.
+  const messages = pickMessages(await getMessages(), MARKETING_CLIENT_NAMESPACES);
+
   return (
-    <div className="marketing-shell overflow-x-clip bg-white font-[family-name:var(--font-geist-sans)] text-zinc-950 antialiased dark:bg-zinc-950 dark:text-zinc-50">
-      <script
-        type="application/ld+json"
-        // Static, app-controlled data - safe to inline (not user-generated).
-        // Escape "<" so no string could ever break out of the script tag.
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(organizationLd).replace(/</g, '\\u003c'),
-        }}
-      />
-      <Header />
-      <main>{children}</main>
-      <Footer />
-    </div>
+    <NextIntlClientProvider messages={messages}>
+      <div className="marketing-shell overflow-x-clip bg-white font-[family-name:var(--font-geist-sans)] text-zinc-950 antialiased dark:bg-zinc-950 dark:text-zinc-50">
+        <script
+          type="application/ld+json"
+          // Static, app-controlled data - safe to inline (not user-generated).
+          // Escape "<" so no string could ever break out of the script tag.
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationLd).replace(/</g, '\\u003c'),
+          }}
+        />
+        <Header />
+        <main>{children}</main>
+        <Footer />
+      </div>
+    </NextIntlClientProvider>
   );
 }

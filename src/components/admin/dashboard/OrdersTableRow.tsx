@@ -40,6 +40,7 @@ export function OrdersTableRow({
   formatValue,
 }: OrdersTableRowProps) {
   const t = useTranslations('admin');
+  const tc = useTranslations('common');
   const v = useOrderRowView(o, locale, nowMs);
   const StatusIcon = v.meta.icon;
   return (
@@ -48,7 +49,7 @@ export function OrdersTableRow({
         <Checkbox
           checked={selected}
           onCheckedChange={() => onToggle(o.id)}
-          aria-label="Select order"
+          aria-label={tc('aria.selectOrder')}
         />
       </TableCell>
       <TableCell className={CELL_CLS}>

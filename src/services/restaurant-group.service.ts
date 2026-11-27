@@ -4,6 +4,7 @@ import type { Tenant } from '@/types/admin.types';
 import { createPlanEnforcementService } from './plan-enforcement.service';
 import { createTableConfigGuards } from './table-config.guards';
 import { createSlugService } from './slug.service';
+import { logger } from '@/lib/logger';
 
 interface AddRestaurantInput {
   groupId: string;
@@ -15,7 +16,7 @@ interface AddRestaurantInput {
   plan: string;
 }
 
-export type TrialMode = 'started' | 'shared' | 'none';
+type TrialMode = 'started' | 'shared' | 'none';
 
 interface AddRestaurantResult {
   tenantId: string;
@@ -46,16 +47,21 @@ export function createRestaurantGroupService(supabase: SupabaseClient): Restaura
      * Idempotent: safe to call multiple times.
      */
     async getOrCreateGroup(userId: string): Promise<{ id: string }> {
-      // Try to find existing group
-      const { data: existing } = await supabase
-        .from('restaurant_groups')
-        .select('id')
-        .eq('owner_user_id', userId)
-        .single();
+      const readGroup = async (): Promise<{ id: string } | null> => {
+        const { data, error } = await supabase
+          .from('restaurant_groups')
+          .select('id')
+          .eq('owner_user_id', userId)
+          .maybeSingle();
+        if (error) {
+          logger.error('getOrCreateGroup: lecture du groupe impossible', error, { userId });
+          throw new ServiceError('Erreur lors de la lecture de votre groupe', 'INTERNAL', error);
+        }
+        return data ? { id: data.id as string } : null;
+      };
 
-      if (existing) {
-        return { id: existing.id };
-      }
+      const existing = await readGroup();
+      if (existing) return existing;
 
       // Create new group
       const { data: created, error } = await supabase
@@ -64,12 +70,16 @@ export function createRestaurantGroupService(supabase: SupabaseClient): Restaura
         .select('id')
         .single();
 
+      // B89: deux ajouts simultanes d'un proprietaire sans groupe. Le second
+      // heurte `restaurant_groups_owner_unique`: le groupe existe, on le reprend.
+      if (error?.code === '23505') {
+        const winner = await readGroup();
+        if (winner) return winner;
+      }
       if (error || !created) {
-        throw new ServiceError(
-          `Erreur création groupe: ${error?.message || 'Données manquantes'}`,
-          'INTERNAL',
-          error,
-        );
+        // B66: le message Postgres reste au journal, jamais dans la reponse.
+        logger.error('getOrCreateGroup: creation du groupe impossible', error, { userId });
+        throw new ServiceError('Erreur lors de la creation de votre groupe', 'INTERNAL', error);
       }
 
       return { id: created.id };

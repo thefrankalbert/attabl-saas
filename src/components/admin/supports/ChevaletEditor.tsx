@@ -110,12 +110,7 @@ export function ChevaletEditor({ tenant, savedConfig }: ChevaletEditorProps) {
       const res = await fetch('/api/supports/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          config,
-          format: 'pdf',
-          menuUrl: tenant.menuUrl,
-          tenantSlug: tenant.slug,
-        }),
+        body: JSON.stringify({ config }),
       });
       if (!res.ok) {
         // 429: limite d'exports par minute, le dire au lieu d'une erreur vague.

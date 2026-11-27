@@ -171,4 +171,28 @@ describe('POST /api/domain-verify', () => {
     expect(res.status).toBe(200);
     expect(json.verified).toBe(false);
   });
+
+  it("appelle le service DNS avec un delai d'expiration et sans suivre de redirection", async () => {
+    mockRateLimit(true);
+    vi.mocked(getAuthenticatedUserWithTenant).mockResolvedValue({} as never);
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ json: vi.fn().mockResolvedValue({ Answer: [] }) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await POST(buildRequest({ domain: 'menu.restaurant.com' }));
+
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(init.redirect).toBe('error');
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it('repond verified: false quand le service DNS ne repond pas a temps', async () => {
+    mockRateLimit(true);
+    vi.mocked(getAuthenticatedUserWithTenant).mockResolvedValue({} as never);
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new DOMException('timeout', 'TimeoutError')));
+
+    const res = await POST(buildRequest({ domain: 'menu.restaurant.com' }));
+    expect(await res.json()).toEqual({ verified: false });
+  });
 });

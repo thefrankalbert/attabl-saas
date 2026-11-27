@@ -1,121 +1,19 @@
-'use client';
+import type { Metadata } from 'next';
 
-import { Suspense, useEffect, useState } from 'react';
-import { logger } from '@/lib/logger';
-import { useSearchParams } from 'next/navigation';
-import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle, Clock } from 'lucide-react';
-import { CenteredSkeleton } from '@/components/shared/CenteredSkeleton';
-import { Button } from '@/components/ui/button';
-import { useTranslations } from 'next-intl';
-import Link from 'next/link';
+import { createClient } from '@/lib/supabase/server';
 
-function CheckoutSuccessContent() {
-  const searchParams = useSearchParams();
-  const sessionId = searchParams.get('session_id');
-  const [loading, setLoading] = useState(true);
-  const [tenantSlug, setTenantSlug] = useState<string | null>(null);
-  const t = useTranslations('checkout');
+import { CheckoutSuccessClient } from './CheckoutSuccessClient';
 
-  useEffect(() => {
-    async function verifySession() {
-      if (!sessionId) {
-        setLoading(false);
-        return;
-      }
+export const metadata: Metadata = {
+  title: 'Votre abonnement - ATTABL',
+  robots: { index: false, follow: false },
+};
 
-      // Poll for up to 30 seconds (15 attempts, 2s apart)
-      for (let attempt = 0; attempt < 15; attempt++) {
-        try {
-          const response = await fetch(`/api/verify-checkout?session_id=${sessionId}`);
-          const data = await response.json();
+export default async function CheckoutSuccessPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-          if (data.slug) {
-            setTenantSlug(data.slug);
-            setLoading(false);
-            return;
-          }
-        } catch (error) {
-          logger.error('Checkout verification error', error);
-        }
-
-        // Wait 2 seconds before next attempt
-        if (attempt < 14) {
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-        }
-      }
-
-      // After all attempts, stop loading (show fallback UI)
-      setLoading(false);
-    }
-
-    verifySession();
-  }, [sessionId]);
-
-  const getDashboardUrl = (slug: string) => `/sites/${slug}/admin`;
-
-  if (loading) {
-    return (
-      <div className="min-h-dvh flex items-center justify-center">
-        <CenteredSkeleton />
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-dvh flex items-center justify-center bg-app-bg px-4">
-      <Card className="w-full max-w-md">
-        <CardContent className="pt-6 text-center">
-          {/* "Paiement reussi" seulement quand la verification l'a CONFIRME.
-              Sans identifiant de session, ou si la confirmation n'arrive pas,
-              la page annoncait quand meme un succes (audit 2026-11-10, C-036). */}
-          {tenantSlug ? (
-            <>
-              <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="h-8 w-8 text-green-600" />
-              </div>
-              <h2 className="text-2xl font-bold mb-2">{t('successTitle')}</h2>
-              <p className="text-app-text-muted mb-6">{t('successDescription')}</p>
-            </>
-          ) : (
-            <>
-              <div className="h-16 w-16 bg-app-elevated rounded-full flex items-center justify-center mx-auto mb-4">
-                <Clock className="h-8 w-8 text-app-text-muted" />
-              </div>
-              <h2 className="text-2xl font-bold mb-2">{t('unverifiedTitle')}</h2>
-              <p className="text-app-text-muted mb-6">{t('unverifiedDescription')}</p>
-            </>
-          )}
-          <div className="space-y-3">
-            {tenantSlug ? (
-              <Button asChild size="lg" className="w-full">
-                <Link href={getDashboardUrl(tenantSlug)}>{t('goToDashboard')}</Link>
-              </Button>
-            ) : (
-              <Button asChild size="lg" className="w-full">
-                <Link href="/login">{t('login')}</Link>
-              </Button>
-            )}
-            <Button asChild variant="outline" className="w-full">
-              <Link href="/">{t('backToHome')}</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-export default function CheckoutSuccessPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-dvh flex items-center justify-center">
-          <CenteredSkeleton />
-        </div>
-      }
-    >
-      <CheckoutSuccessContent />
-    </Suspense>
-  );
+  return <CheckoutSuccessClient isAuthenticated={user !== null} />;
 }

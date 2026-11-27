@@ -28,6 +28,7 @@ import { getTenantUrl } from '@/lib/constants';
 import { usePermissions } from '@/hooks/usePermissions';
 import { canOpenAdminSubPath } from '@/lib/auth/admin-route-permissions';
 import DeleteAccountSection from '@/components/features/settings/DeleteAccountSection';
+import { MfaSettingsSection } from '@/components/shared/mfa/MfaSettingsSection';
 
 export type SettingsTab = 'compte' | 'etablissement' | 'imprimantes' | 'tva' | 'personnel';
 
@@ -57,6 +58,7 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   const t = useTranslations('admin');
   const tSidebar = useTranslations('sidebar');
+  const tc = useTranslations('common');
   const clientUrl = getTenantUrl(tenant.slug);
   // Aucun plan gratuit: sans plan enregistre, c'est Starter (repli de getEffectivePlan).
   // Essai actif: le layout transmet 'trial'.
@@ -111,7 +113,7 @@ export function SettingsDialog({
             variant="ghost"
             size="icon"
             onClick={() => onOpenChange(false)}
-            aria-label="Fermer"
+            aria-label={tc('aria.close')}
             className="ml-auto size-[30px] rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--accent)] hover:text-[var(--foreground)]"
           >
             <X className="size-4" />
@@ -152,6 +154,7 @@ export function SettingsDialog({
                 {canOpen('/subscription') && (
                   <div>{linkBtn(`${basePath}/subscription`, t('setManageSub'))}</div>
                 )}
+                <MfaSettingsSection />
                 {/* Suppression du compte, rendue ICI et pas seulement dans
                     Parametres: un restaurant gele est renvoye sur /subscription
                     par le proxy, et ce volet y reste ouvert. */}

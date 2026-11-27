@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Check, Rss } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BlurFade } from '@/components/ui/blur-fade';
 import { BrowserFrame } from '@/components/marketing/BrowserFrame';
@@ -95,13 +95,6 @@ export default function NouveautesPage() {
           <p className="mt-4 max-w-[540px] text-[19px] leading-[1.5] text-zinc-600 dark:text-zinc-400">
             {t('subtitle')}
           </p>
-          <Link
-            href="/signup"
-            className="mt-[22px] inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-100 px-[15px] py-[9px] text-sm font-semibold text-zinc-900 transition-colors hover:border-zinc-300 hover:bg-zinc-200 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
-          >
-            <Rss className="h-[15px] w-[15px]" strokeWidth={2} />
-            {t('subscribe')}
-          </Link>
           <div className="mt-7 flex flex-wrap gap-2">
             {FILTERS.map((f) => (
               <Button

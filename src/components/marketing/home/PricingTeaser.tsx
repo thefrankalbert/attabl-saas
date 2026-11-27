@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { getLocale, getTranslations } from 'next-intl/server';
-import { PLAN_AMOUNTS } from '@/lib/billing/pricing';
+import { PLAN_AMOUNTS, approxPricePerDay } from '@/lib/billing/pricing';
 import { cn } from '@/lib/utils';
 import { AnimatedWords } from './AnimatedWords';
 
@@ -33,7 +33,7 @@ export async function PricingTeaser() {
             const detail =
               k === 'business'
                 ? t('plans.business.note')
-                : t('perDay', { perDay: `${fmt.format(Math.round(monthly / 30))} FCFA` });
+                : t('perDay', { perDay: `${fmt.format(approxPricePerDay(monthly))} FCFA` });
             return (
               <div key={k} data-monte className="border-white/20 md:border-l md:px-8">
                 {k === 'pro' ? (

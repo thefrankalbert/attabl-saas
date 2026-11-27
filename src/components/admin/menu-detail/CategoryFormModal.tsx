@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AdminModal from '@/components/admin/AdminModal';
 import type { MenuDetailVM } from './use-menu-detail';
+import { CATEGORY_NAME_MAX } from '@/lib/validations/category.schema';
 
 interface Props {
   vm: MenuDetailVM;
@@ -39,6 +40,7 @@ export function CategoryFormModal({ vm }: Props) {
             value={catName}
             onChange={(e) => setCatName(e.target.value)}
             placeholder={t('nameFrPlaceholder')}
+            maxLength={CATEGORY_NAME_MAX}
             required
           />
         </div>

@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { X, Mail, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { BURKINA_PHONE_DIGITS, BURKINA_PHONE_DISPLAY } from '@/components/marketing/home/whatsapp';
 import { SettingsRow } from './SettingsPrimitives';
 
 export function HelpModal({ tenantName, onClose }: { tenantName: string; onClose: () => void }) {
@@ -55,9 +56,9 @@ export function HelpModal({ tenantName, onClose }: { tenantName: string; onClose
           <SettingsRow
             icon={<Phone className="h-[18px] w-[18px]" strokeWidth={1.5} />}
             label={t('helpCallBurkinaLabel')}
-            subtitle={t('helpCallBurkinaSubtitle')}
+            subtitle={BURKINA_PHONE_DISPLAY}
             onClick={() => {
-              window.location.href = 'tel:+22665565411';
+              window.location.href = `tel:+${BURKINA_PHONE_DIGITS}`;
               onClose();
             }}
           />

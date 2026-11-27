@@ -130,17 +130,50 @@ describe('fiches techniques: recharger', () => {
     expect(result.errors[0].message).toMatch(/Unité incompatible pour "Poulet".*kg.*pièce/);
   });
 
-  it('quantite 0 retire l ingredient du plat', async () => {
-    const { supabase, rpcCalls, deletes } = makeRecipeDb(RESTO);
+  it('quantite 0 retire l ingredient du plat, dans la transaction de l import (B84)', async () => {
+    const { supabase, rpcCalls, deletes } = makeRecipeDb({
+      ...RESTO,
+      rpcResult: {
+        data: {
+          recipes_created: 0,
+          recipes_updated: 0,
+          ingredients_created: 0,
+          recipes_removed: 1,
+        },
+        error: null,
+      },
+    });
     const file = await buildXlsx([HEADERS, ['Plats', 'Poulet DG', 'Plantain', '', 0, '']]);
     const result = await createRecipeImportService(supabase).importFromExcel('t1', file);
 
     expect(result.errors).toEqual([]);
-    expect(rpcCalls).toHaveLength(0);
-    expect(deletes).toEqual([
-      { table: 'recipes', tenant_id: 't1', menu_item_id: 'm-poulet', ingredient_id: 'i-plantain' },
-    ]);
+    // Plus aucune suppression hors transaction: le retrait part dans l'appel
+    // `import_recipes_tx`, tout ou rien avec les ecritures.
+    expect(deletes).toHaveLength(0);
+    expect(rpcCalls).toHaveLength(1);
+    expect(rpcCalls[0].fn).toBe('import_recipes_tx');
+    expect(rpcCalls[0].args).toEqual({
+      p_tenant_id: 't1',
+      p_rows: [],
+      p_removals: [{ menu_item_id: 'm-poulet', ingredient_id: 'i-plantain' }],
+    });
     expect(result.recipesRemoved).toBe(1);
+  });
+
+  it('B84: un retrait refuse par la base fait echouer tout l import', async () => {
+    const { supabase, deletes } = makeRecipeDb({
+      ...RESTO,
+      rpcResult: { data: null, error: { message: 'boom', code: 'XX000' } },
+    });
+    const file = await buildXlsx([
+      HEADERS,
+      ['Plats', 'Poulet DG', 'Poulet', 'kg', 0.4, ''],
+      ['Plats', 'Poulet DG', 'Plantain', '', 0, ''],
+    ]);
+    await expect(
+      createRecipeImportService(supabase).importFromExcel('t1', file),
+    ).rejects.toMatchObject({ code: 'INTERNAL' });
+    expect(deletes).toHaveLength(0);
   });
 
   it('quantite 0 sur un ingredient absent du plat ne supprime rien', async () => {

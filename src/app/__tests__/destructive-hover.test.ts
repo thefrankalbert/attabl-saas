@@ -29,8 +29,8 @@ const allRedFills = walk(join(process.cwd(), 'src')).flatMap((file) =>
 const usages = allRedFills.filter((u) => u.cls.includes('hover:'));
 
 describe('boutons destructifs: le fond reste rouge au survol', () => {
-  it('temoin: les huit usages B128 sont trouves', () => {
-    expect(usages).toHaveLength(8);
+  it('temoin: les neuf usages B128 sont trouves (dont la suppression de rubrique de l onboarding)', () => {
+    expect(usages).toHaveLength(9);
   });
 
   // Un fond rouge SANS classe de survol n'est permis que pour un element non

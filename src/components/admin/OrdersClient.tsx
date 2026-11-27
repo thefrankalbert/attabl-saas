@@ -312,7 +312,7 @@ export default function OrdersClient({
               onClick={() => handleOrdersPageChange(Math.max(0, page - 1))}
               disabled={page === 0}
             >
-              {tc('previous') || 'Precedent'}
+              {tc('previous') || 'Précédent'}
             </Button>
             <span className="text-xs text-app-text-muted">
               {t('pageOf', { page: page + 1 }) || `Page ${page + 1}`}

@@ -48,3 +48,14 @@ export function filledCompanyFields(
     .map((key) => ({ key, value: company[key].trim() }))
     .filter((field) => field.value.length > 0);
 }
+
+/**
+ * Ligne de pied des e-mails. Meme source que la politique de confidentialite:
+ * tant que la raison sociale et le siege ne sont pas renseignes ci-dessus, le pied
+ * ne porte que le nom du produit (aucune forme juridique ni ville inventee).
+ */
+export function emailFooterLine(company: CompanyIdentity = COMPANY): string {
+  const name = company.legalName.trim() || 'ATTABL';
+  const place = company.headOffice.trim();
+  return place ? `${name} - ${place}` : name;
+}

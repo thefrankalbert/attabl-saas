@@ -4,6 +4,11 @@ import HouseAccountsClient from '@/components/admin/HouseAccountsClient';
 import TenantNotFound from '@/components/admin/TenantNotFound';
 import type { CurrencyCode } from '@/types/admin.types';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('houseAccount', 'title');
+}
 
 export const dynamic = 'force-dynamic';
 

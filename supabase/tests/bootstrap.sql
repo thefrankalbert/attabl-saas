@@ -84,6 +84,29 @@ create table if not exists auth.users (
   updated_at         timestamptz default now()
 );
 
+-- Facteurs de double authentification (GoTrue). Meme principe: seules les
+-- colonnes que les tests et `public.mfa_satisfait()` lisent ou renseignent,
+-- avec les memes types enumeres que GoTrue (lus sur une pile Supabase locale).
+do $t$ begin
+  create type auth.factor_type as enum ('totp', 'webauthn', 'phone');
+exception when duplicate_object then null;
+end $t$;
+do $t$ begin
+  create type auth.factor_status as enum ('unverified', 'verified');
+exception when duplicate_object then null;
+end $t$;
+create table if not exists auth.mfa_factors (
+  id            uuid primary key,
+  user_id       uuid not null references auth.users (id) on delete cascade,
+  friendly_name text,
+  factor_type   auth.factor_type not null,
+  status        auth.factor_status not null,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now(),
+  secret        text
+);
+create index if not exists mfa_factors_user_id_idx on auth.mfa_factors (user_id);
+
 -- ------------------------------------------------------ les fonctions auth.*
 -- Fideles au comportement de production: elles lisent le JWT depuis le reglage
 -- de session `request.jwt.claims`, exactement comme sur une instance Supabase.

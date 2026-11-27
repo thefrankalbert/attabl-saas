@@ -45,15 +45,18 @@ export function createModifierService(supabase: SupabaseClient): ModifierService
      * Delete an item modifier by ID, scoped to tenant.
      */
     async deleteModifier(modifierId: string, tenantId: string): Promise<void> {
-      const { error } = await supabase
+      // Audit B44: un DELETE/UPDATE qui ne touche rien ne rend aucune erreur
+      // (supplement supprime entre-temps, ou d'un autre restaurant).
+      const { error, count } = await supabase
         .from('item_modifiers')
-        .delete()
+        .delete({ count: 'exact' })
         .eq('id', modifierId)
         .eq('tenant_id', tenantId);
 
       if (error) {
         throw new ServiceError('Erreur lors de la suppression du modificateur', 'INTERNAL', error);
       }
+      if (count === 0) throw new ServiceError('Supplement introuvable', 'NOT_FOUND');
     },
 
     /**
@@ -64,9 +67,9 @@ export function createModifierService(supabase: SupabaseClient): ModifierService
       isAvailable: boolean,
       tenantId: string,
     ): Promise<void> {
-      const { error } = await supabase
+      const { error, count } = await supabase
         .from('item_modifiers')
-        .update({ is_available: isAvailable })
+        .update({ is_available: isAvailable }, { count: 'exact' })
         .eq('id', modifierId)
         .eq('tenant_id', tenantId);
 
@@ -77,6 +80,7 @@ export function createModifierService(supabase: SupabaseClient): ModifierService
           error,
         );
       }
+      if (count === 0) throw new ServiceError('Supplement introuvable', 'NOT_FOUND');
     },
   };
 }

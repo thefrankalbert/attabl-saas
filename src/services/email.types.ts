@@ -27,6 +27,14 @@ export interface AccountExistsEmailData {
   loginUrl: string;
   forgotPasswordUrl: string;
 }
+/** Inscription refusee par la politique de mot de passe (trop simple, trop long ou pirate). */
+export interface SignupPasswordRejectedEmailData {
+  signupUrl: string;
+}
+/** Inscription non aboutie pour une autre raison cote Auth (panne passagere comprise). */
+export interface SignupFailedEmailData {
+  signupUrl: string;
+}
 export interface EmailChangeEmailData {
   confirmUrl: string;
 }
@@ -38,15 +46,6 @@ export interface TeamInvitationEmailData {
   restaurantName: string;
   role: string;
   inviteUrl: string;
-}
-
-export interface OrderConfirmationEmailData {
-  orderNumber: string;
-  restaurantName: string;
-  items: { name: string; quantity: number; price: number }[];
-  total: number;
-  currency?: string;
-  tableNumber?: string;
 }
 
 export interface LowStockAlertEmailData {
@@ -67,6 +66,14 @@ export interface RenewalReminderEmailData {
   planLabel: string;
 }
 
+/** Alerte de connexion depuis un appareil inconnu (audit Q19). */
+export interface NewLoginEmailData {
+  /** Date et heure deja formatees, fuseau compris. */
+  dateLabel: string;
+  methode: 'mot_de_passe' | 'google' | 'autre';
+  changePasswordUrl: string;
+}
+
 // ---------------------------------------------------------------------------
 // Factory contract
 // ---------------------------------------------------------------------------
@@ -81,8 +88,12 @@ export interface EmailService {
     data: EmailChangeApprovalEmailData,
   ): Promise<EmailResult>;
   sendAccountExistsEmail(to: string, data: AccountExistsEmailData): Promise<EmailResult>;
+  sendSignupPasswordRejectedEmail(
+    to: string,
+    data: SignupPasswordRejectedEmailData,
+  ): Promise<EmailResult>;
+  sendSignupFailedEmail(to: string, data: SignupFailedEmailData): Promise<EmailResult>;
   sendTeamInvitationEmail(to: string, data: TeamInvitationEmailData): Promise<EmailResult>;
-  sendOrderConfirmationEmail(to: string, data: OrderConfirmationEmailData): Promise<EmailResult>;
   sendLowStockAlertEmail(to: string | string[], data: LowStockAlertEmailData): Promise<EmailResult>;
   sendFirstOrderTriggerEmail(
     to: string,
@@ -101,4 +112,5 @@ export interface EmailService {
     to: string,
     data: { restaurantName: string; dashboardUrl: string; ordersCount: number; daysLeft: number },
   ): Promise<EmailResult>;
+  sendNewLoginEmail(to: string, data: NewLoginEmailData): Promise<EmailResult>;
 }

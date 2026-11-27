@@ -15,7 +15,10 @@ import {
 } from './stripe-webhook/invoice';
 import { handleDisputeClosed, handleDisputeCreated } from './stripe-webhook/dispute';
 import { handleChargeRefunded } from './stripe-webhook/refund';
-import { handleEarlyFraudWarning, handleInvoiceFinalizationFailed } from './stripe-webhook/alertes';
+import {
+  handleEarlyFraudWarningCreated,
+  handleInvoiceFinalizationFailed,
+} from './stripe-webhook/alertes';
 
 /**
  * L'AIGUILLAGE des evenements Stripe, et rien d'autre.
@@ -69,10 +72,13 @@ export function createStripeWebhookService(supabase: SupabaseClient, stripe: Str
           return handleInvoicePaid(deps, event.data.object as Stripe.Invoice);
 
         case 'invoice.finalization_failed':
-          return handleInvoiceFinalizationFailed(event.data.object as Stripe.Invoice);
+          return handleInvoiceFinalizationFailed(deps, event.data.object as Stripe.Invoice);
 
         case 'radar.early_fraud_warning.created':
-          return handleEarlyFraudWarning(event.data.object as Stripe.Radar.EarlyFraudWarning);
+          return handleEarlyFraudWarningCreated(
+            deps,
+            event.data.object as Stripe.Radar.EarlyFraudWarning,
+          );
 
         default:
           logger.info('Unhandled Stripe event type', { eventType: event.type });

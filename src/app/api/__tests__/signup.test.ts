@@ -67,7 +67,7 @@ function validBody() {
   return {
     restaurantName: 'Le Petit Bistrot',
     email: 'owner@bistrot.com',
-    password: 'securePass123',
+    password: 'securePass-123!',
     [HONEYPOT_FIELD]: '',
   };
 }
@@ -150,6 +150,27 @@ describe('POST /api/signup', () => {
     expect(JSON.stringify(existingJson)).not.toMatch(/already|deja|EMAIL_ALREADY_REGISTERED/i);
   });
 
+  // Fournisseur d'e-mails en panne: la reponse reste identique dans les deux
+  // cas. `emailDelivered` etait code en dur a `true` pour un compte existant.
+  it('reste identique a une inscription reussie quand aucun e-mail ne part', async () => {
+    mockCompleteEmailSignup.mockResolvedValueOnce({
+      slug: 'le-petit-bistrot',
+      tenantId: 'tenant-uuid-123',
+      emailDelivered: false,
+    });
+    const created = await POST(makeRequest(validBody()));
+    const createdJson = (await created.json()) as Record<string, unknown>;
+
+    mockAccountExistsEmail.mockResolvedValueOnce(false);
+    mockCompleteEmailSignup.mockRejectedValueOnce(
+      new ServiceError('EMAIL_ALREADY_REGISTERED', 'CONFLICT'),
+    );
+    const existing = await POST(makeRequest(validBody()));
+
+    expect(createdJson.emailDelivered).toBe(false);
+    expect(await existing.json()).toEqual(createdJson);
+  });
+
   // A-08 (contre-audit H1): le refus "nom pris" ne depend pas de l'adresse.
   it('answers a taken restaurant name identically for a new and an existing email (A-08)', async () => {
     mockNameTaken.mockResolvedValue(true);
@@ -218,6 +239,13 @@ describe('POST /api/signup', () => {
   });
 
   // 4b. Other conflicts still map to their HTTP status
+  it('contre-audit 3: un message CONFLICT nomme toString n est pas un refus neutre', async () => {
+    mockCompleteEmailSignup.mockRejectedValueOnce(new ServiceError('toString', 'CONFLICT'));
+    const res = await POST(makeRequest(validBody()));
+    expect(res.status).toBe(409);
+    expect(mockAccountExistsEmail).not.toHaveBeenCalled();
+  });
+
   it('still maps RESTAURANT_NAME_TAKEN to 409', async () => {
     mockCompleteEmailSignup.mockRejectedValueOnce(
       new ServiceError('RESTAURANT_NAME_TAKEN', 'CONFLICT'),
@@ -266,7 +294,8 @@ describe('POST /api/signup', () => {
 
     expect(res.status).toBe(400);
     const json = (await res.json()) as { error: string };
-    expect(json.error).toMatch(/mot de passe/i);
+    // Un code (toutes les regles manquantes), traduit par l'ecran d'inscription.
+    expect(json.error).toBe('PASSWORD_RULES:length,upper,digit,symbol');
   });
 
   // 8. Invalid email rejected

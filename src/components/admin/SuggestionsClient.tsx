@@ -44,6 +44,8 @@ export default function SuggestionsClient({
   const [targetItemId, setTargetItemId] = useState('');
   const [suggestionType, setSuggestionType] = useState<SuggestionType>('pairing');
   const [description, setDescription] = useState('');
+  // Audit B97: bouton desactive pendant l'envoi (double clic = doublon).
+  const [adding, setAdding] = useState(false);
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
@@ -112,24 +114,30 @@ export default function SuggestionsClient({
       return;
     }
 
-    const result = await actionCreateSuggestion(tenantId, {
-      tenant_id: tenantId,
-      menu_item_id: sourceItemId,
-      suggested_item_id: targetItemId,
-      suggestion_type: suggestionType,
-      description: description.trim() || null,
-      display_order: suggestions.length,
-    });
-    if (result.error) {
-      toast({ title: tc('error'), description: result.error, variant: 'destructive' });
-      return;
+    if (adding) return;
+    setAdding(true);
+    try {
+      const result = await actionCreateSuggestion(tenantId, {
+        tenant_id: tenantId,
+        menu_item_id: sourceItemId,
+        suggested_item_id: targetItemId,
+        suggestion_type: suggestionType,
+        description: description.trim() || null,
+        display_order: suggestions.length,
+      });
+      if (result.error) {
+        toast({ title: tc('error'), description: result.error, variant: 'destructive' });
+        return;
+      }
+      toast({ title: t('suggestionAdded') });
+      setShowAdd(false);
+      setSourceItemId('');
+      setTargetItemId('');
+      setDescription('');
+      loadData();
+    } finally {
+      setAdding(false);
     }
-    toast({ title: t('suggestionAdded') });
-    setShowAdd(false);
-    setSourceItemId('');
-    setTargetItemId('');
-    setDescription('');
-    loadData();
   };
 
   const handleDelete = async (id: string) => {
@@ -256,6 +264,7 @@ export default function SuggestionsClient({
             description={description}
             onDescriptionChange={setDescription}
             onSubmit={handleAdd}
+            submitting={adding}
           />
           {ConfirmDialog}
         </>

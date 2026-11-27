@@ -146,7 +146,11 @@ const writes: Call[] = [
 
   ['actionToggleCategoryActive', () => categories.actionToggleCategoryActive(T, X, true)],
   ['actionCreateCategory', () => categories.actionCreateCategory(T, categoryPayload)],
-  ['actionUpdateCategory', () => categories.actionUpdateCategory(T, X, categoryPayload)],
+  [
+    'actionUpdateCategory',
+    // La carte est requise a la modification (controle de doublon, audit B33).
+    () => categories.actionUpdateCategory(T, X, { ...categoryPayload, menu_id: null }),
+  ],
   ['actionDeleteCategory', () => categories.actionDeleteCategory(T, X)],
   ['actionReorderCategories', () => categories.actionReorderCategories(T, [])],
   ['actionAssignCategoryToMenu', () => categories.actionAssignCategoryToMenu(T, X, Y)],
@@ -301,6 +305,7 @@ describe('restaurant coupe: aucune ecriture par Server Action (A-02)', () => {
       'actionGetPaymentSummary',
       'actionListOrderNotes',
       'actionListHouseAccounts',
+      'actionGetMfaStatus',
     ]);
     // Retirer ou desactiver un membre reste permis restaurant coupe (securite).
     // Couper un rappel pour soi: etat personnel, comme "lu" (notifications.ts).
@@ -313,6 +318,11 @@ describe('restaurant coupe: aucune ecriture par Server Action (A-02)', () => {
       'actionSendTestAlert',
       'actionDeleteOwnerAccount',
       'actionDeleteStaffAccount',
+      // Double authentification (K6.13): securite du COMPTE, sans restaurant;
+      // un restaurant coupe ne doit pas empecher de proteger son compte.
+      'actionStartMfaEnrollment',
+      'actionVerifyMfaCode',
+      'actionDisableMfa',
     ]);
     // Ecritures verrouillees, prouvees par un autre fichier de test (avec la
     // garde simulee) ou deja existantes: la source doit appeler la garde.

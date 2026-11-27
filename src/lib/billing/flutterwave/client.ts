@@ -40,7 +40,7 @@ export class FlutterwaveApiError extends Error {
   }
 }
 
-export interface CreatePaymentLinkInput {
+interface CreatePaymentLinkInput {
   txRef: string;
   /** Unites entieres: XOF et XAF n'ont pas de decimales. */
   amount: number;

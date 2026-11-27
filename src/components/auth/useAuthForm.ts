@@ -7,11 +7,16 @@ import { useSearchParams } from 'next/navigation';
 import { logger } from '@/lib/logger';
 import { HONEYPOT_FIELD } from '@/lib/honeypot';
 import { prepareLogoutInBrowser } from '@/lib/offline/browser-logout-cleanup';
+import { resolvePostLoginRedirect } from '@/lib/auth/post-login-redirect';
+import { usePasswordIssueText } from './PasswordRules';
+import { passwordIssueMessage } from '@/lib/validations/password-rules';
 
 type AuthMode = 'login' | 'signup';
 
 export function useAuthForm(mode: AuthMode) {
   const tErr = useTranslations('auth.errors');
+  // Les refus du mot de passe arrivent en codes (common.schema.ts): traduits ici.
+  const passwordIssueText = usePasswordIssueText();
 
   const searchParams = useSearchParams();
   const urlEmail = searchParams.get('email') || '';
@@ -87,6 +92,16 @@ export function useAuthForm(mode: AuthMode) {
           return;
         }
 
+        // Contre-audit 4: plus de bulle native du navigateur (dans sa langue a
+        // lui); l'envoi est bloque ici, avec la phrase traduite qui nomme tout
+        // ce qui manque. Memes regles que le serveur.
+        const passwordIssue = passwordIssueMessage(password);
+        if (passwordIssue) {
+          setError(passwordIssueText(passwordIssue) ?? tErr('signupGeneric'));
+          setLoading(false);
+          return;
+        }
+
         const hpValue = honeypotRef.current?.value?.trim() ?? '';
         const signupBody: Record<string, string> = {
           restaurantName: trimmedRestaurant,
@@ -116,7 +131,7 @@ export function useAuthForm(mode: AuthMode) {
               : data.code === 'CAPTCHA_FAILED'
                 ? tErr('captchaFailed')
                 : typeof data.error === 'string' && data.error.length > 0
-                  ? data.error
+                  ? (passwordIssueText(data.error) ?? data.error)
                   : tErr('signupGeneric');
           throw new Error(apiError);
         }
@@ -139,17 +154,31 @@ export function useAuthForm(mode: AuthMode) {
           }),
         });
 
-        const data = (await response.json()) as { error?: string; redirect?: string };
+        const data = (await response.json()) as {
+          error?: string;
+          code?: string;
+          redirect?: string;
+          mfaRequired?: boolean;
+        };
 
         if (!response.ok) {
-          if (data.error === 'email_not_confirmed') {
+          if (data.code === 'email_not_confirmed') {
             throw new Error('Email not confirmed');
           }
           throw new Error(data.error || tErr('loginGeneric'));
         }
 
-        // Redirect based on server response
-        window.location.href = data.redirect || '/admin/tenants';
+        // Destination du serveur, ou la page demandee avant la connexion
+        // (`?redirect=`) si elle est interne et coherente avec ce compte.
+        // Compte en double authentification: le code d'abord, la destination
+        // ensuite (gardee dans `next`).
+        const destination = resolvePostLoginRedirect(
+          data.redirect || '/admin/tenants',
+          searchParams.get('redirect'),
+        );
+        window.location.href = data.mfaRequired
+          ? `/auth/mfa?next=${encodeURIComponent(destination)}`
+          : destination;
       }
     } catch (err) {
       logger.error('Auth form submit failed', err);

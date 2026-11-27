@@ -8,6 +8,13 @@ import { ServiceError } from '@/services/errors';
 import { pickOnboardingTenantIndex } from '@/lib/onboarding/select-onboarding-tenant';
 import { mapMembershipRows, postLoginDestination } from '@/lib/auth/post-login-destination';
 import {
+  APPAREIL_CONNU_COOKIE,
+  cookieAppareilDeLaRequete,
+  optionsCookieAppareil,
+} from '@/lib/auth/appareil-connu';
+import { traiterConnexionReussie } from '@/lib/auth/alerte-nouvelle-connexion';
+import { hasVerifiedFactor } from '@/lib/auth/mfa-assurance';
+import {
   RECOVERY_MARKER_COOKIE,
   RECOVERY_MARKER_TTL_SECONDS,
   signRecoveryMarker,
@@ -41,8 +48,6 @@ export async function GET(request: Request) {
   const code = requestUrl.searchParams.get('code');
   const tokenHash = requestUrl.searchParams.get('token_hash');
   const type = requestUrl.searchParams.get('type');
-  const plan = requestUrl.searchParams.get('plan');
-  const restaurantName = requestUrl.searchParams.get('restaurant_name');
 
   // Handle token_hash-based recovery (custom password reset email flow)
   if (tokenHash && type === 'recovery') {
@@ -79,9 +84,8 @@ export async function GET(request: Request) {
         origin: requestUrl.origin,
         hasCode: !!code,
       });
-      return NextResponse.redirect(
-        `${requestUrl.origin}/login?error=oauth_failed&reason=${encodeURIComponent(error.message)}`,
-      );
+      // B66: le message brut de GoTrue reste au journal, jamais dans l'URL.
+      return NextResponse.redirect(`${requestUrl.origin}/login?error=oauth_failed`);
     }
 
     // No recovery branch here on purpose: every reset link the app sends uses
@@ -151,9 +155,32 @@ export async function GET(request: Request) {
         // annuaire de ses etablissements (ou reprise d'onboarding), tout autre
         // role -> l'espace de son etablissement. Avant, cette branche envoyait
         // TOUT LE MONDE sur `/admin/tenants`, qui refuse les non-proprietaires.
-        return NextResponse.redirect(
-          `${requestUrl.origin}${postLoginDestination(mapMembershipRows(existingAdminRows))}`,
+        //
+        // Double authentification (audit K6.13): un compte avec facteur verifie
+        // sort de l'echange OAuth en session aal1 et passe d'abord par
+        // /auth/mfa, qui garde la destination dans `next`.
+        const destination = postLoginDestination(mapMembershipRows(existingAdminRows));
+        const response = NextResponse.redirect(
+          hasVerifiedFactor(session.user)
+            ? `${requestUrl.origin}/auth/mfa?next=${encodeURIComponent(destination)}`
+            : `${requestUrl.origin}${destination}`,
         );
+
+        // Alerte "nouvelle connexion" si l'appareil est inconnu (audit Q19).
+        // Meilleur effort: ne leve jamais, l'e-mail part apres la reponse.
+        const provider = session.user.app_metadata?.provider;
+        const cookieAppareil = await traiterConnexionReussie({
+          supabase,
+          userId: session.user.id,
+          email: session.user.email,
+          compteCreeLe: session.user.created_at,
+          cookieAppareil: cookieAppareilDeLaRequete(request),
+          methode: provider === 'google' ? 'google' : 'autre',
+        });
+        if (cookieAppareil) {
+          response.cookies.set(APPAREIL_CONNU_COOKIE, cookieAppareil, optionsCookieAppareil());
+        }
+        return response;
       }
 
       // User has no tenant - create one directly in-process.
@@ -161,9 +188,11 @@ export async function GET(request: Request) {
       // session.user here. A loopback fetch to an API route (the former
       // /api/signup-oauth, now removed) cannot work: it forwards no
       // Origin/Referer (CSRF 403) and no auth cookies (getUser 401).
-      // Restrict plan to known values; query params are attacker-controllable.
-      const signupPlan = plan === 'pro' || plan === 'business' ? plan : 'starter';
-      const signupName = (restaurantName || 'Mon Établissement').slice(0, 100);
+      // B18: aucun lien n'envoie `plan` ni `restaurant_name` (useAuthForm ne
+      // passe que /auth/callback): l'inscription Google part toujours de la
+      // formule de depart et d'un nom provisoire, modifie a l'onboarding.
+      const signupPlan = 'starter';
+      const signupName = 'Mon Établissement';
 
       try {
         const adminSupabase = createAdminClient();

@@ -11,6 +11,7 @@ import { formatUnitCost } from '@/lib/utils/currency';
 import { INGREDIENT_UNITS } from '@/types/inventory.types';
 import type { Ingredient } from '@/types/inventory.types';
 import type { CurrencyCode } from '@/types/admin.types';
+import { formatQuantity } from '@/lib/inventory/quantity-format';
 import { getStockBadge } from './stock-badge';
 
 export function useInventoryColumns(
@@ -56,10 +57,10 @@ export function useInventoryColumns(
           </SortableHeader>
         ),
         cell: ({ row }) => {
-          const ing = row.original;
+          // Jusqu'a 3 decimales (la base en garde 3): 0.123 ne s'affiche plus 0.12.
           return (
             <span className="font-mono font-bold text-app-text">
-              {ing.current_stock.toFixed(ing.unit === 'pièce' || ing.unit === 'bouteille' ? 0 : 2)}
+              {formatQuantity(row.original.current_stock)}
             </span>
           );
         },

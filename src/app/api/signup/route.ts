@@ -16,7 +16,11 @@ import { getTranslations } from 'next-intl/server';
 import { HONEYPOT_FIELD, isDevAuthBypassEnabled, isHoneypotTriggered } from '@/lib/honeypot';
 import { verifyTurnstileToken } from '@/lib/turnstile';
 import { isRestaurantNameTaken } from '@/services/restaurant-name.service';
-import { sendSignupAccountExistsEmail } from '@/services/email.service';
+import {
+  sendSignupAccountExistsEmail,
+  sendSignupPasswordRejectedEmail,
+  sendSignupFailedEmail,
+} from '@/services/email.service';
 
 /**
  * Corps de reponse unique pour "inscription acceptee". Le meme objet sert au
@@ -44,6 +48,35 @@ async function signupExistsEmailAllowed(email: string): Promise<boolean> {
   );
   return success;
 }
+
+/**
+ * Refus qui recoivent la reponse d'une inscription reussie (aucun oracle), et
+ * le courriel envoye a l'adresse a la place.
+ */
+// Une Map, pas un objet: un message nomme `toString` ou `constructor` ne doit
+// rien trouver (contre-audit 3).
+const NEUTRAL_REFUSALS = new Map<string, (email: string, appUrl: string) => Promise<boolean>>([
+  // Le titulaire est prevenu qu'on a essaye son adresse.
+  [
+    'EMAIL_ALREADY_REGISTERED',
+    (email, appUrl) =>
+      sendSignupAccountExistsEmail(email, {
+        loginUrl: `${appUrl}/login`,
+        forgotPasswordUrl: `${appUrl}/forgot-password`,
+      }),
+  ],
+  // Adresse neuve, mot de passe trop simple ou pirate: dire quoi changer.
+  [
+    'PASSWORD_REJECTED_BY_AUTH',
+    (email, appUrl) => sendSignupPasswordRejectedEmail(email, { signupUrl: `${appUrl}/signup` }),
+  ],
+  // Contre-audit 4: tout autre refus d'Auth (panne passagere, HIBP injoignable
+  // en echec ferme...) ne tombe aussi que pour une adresse neuve: meme chemin.
+  [
+    'SIGNUP_REJECTED_BY_AUTH',
+    (email, appUrl) => sendSignupFailedEmail(email, { signupUrl: `${appUrl}/signup` }),
+  ],
+]);
 
 export async function POST(request: Request) {
   const t = await getTranslations('errors');
@@ -147,30 +180,40 @@ export async function POST(request: Request) {
     if (error instanceof ServiceError) {
       let errorMessage = error.message;
       let code: string = error.code;
-      if (error.code === 'CONFLICT' && error.message === 'EMAIL_ALREADY_REGISTERED') {
+      const refusNeutre =
+        error.code === 'CONFLICT' ? NEUTRAL_REFUSALS.get(error.message) : undefined;
+      if (refusNeutre) {
         // A-08: meme reponse qu'une inscription reussie. Dire "cette adresse a
         // deja un compte" faisait de ce formulaire un oracle d'enumeration des
         // comptes (les limites de debit et l'anti-robot ralentissent, elles
         // n'empechent pas de sonder une liste d'adresses).
-        logger.info('Signup: adresse deja inscrite, reponse neutre', {
-          code: 'EMAIL_ALREADY_REGISTERED',
-        });
+        //
+        // Contre-audit 2: le mot de passe refuse par la politique Auth suit le
+        // MEME chemin. GoTrue teste l'adresse avant le mot de passe, donc ce
+        // refus ne tombe que pour une adresse neuve: une reponse a part aurait
+        // dit qu'une adresse n'a pas de compte. Meme reponse, meme plafond par
+        // destinataire, un envoi; seul le contenu du courriel change.
+        logger.info('Signup: refus neutre', { code: error.message });
         // Plafond par DESTINATAIRE (3 par heure, cle = empreinte de l'adresse): la
         // route ne doit pas servir a arroser la boite d'un tiers. Au-dela, on
         // n'envoie rien, en silence, et la reponse reste identique.
+        // `emailDelivered` suit l'envoi REEL, comme pour un compte cree: code en
+        // dur a `true`, il trahissait l'existence du compte des que le
+        // fournisseur d'e-mails etait en panne (compte neuf: false, compte
+        // existant: true).
+        let delivered = true;
         if (signupEmail && (await signupExistsEmailAllowed(signupEmail))) {
-          // Meme travail cote serveur que pour un compte cree (un envoi), et le
-          // titulaire est prevenu qu'on a essaye son adresse. Meilleur effort.
+          // Meme travail cote serveur que pour un compte cree (un envoi). Meilleur effort.
           const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
-          await sendSignupAccountExistsEmail(signupEmail, {
-            loginUrl: `${appUrl}/login`,
-            forgotPasswordUrl: `${appUrl}/forgot-password`,
-          }).catch((err: unknown) => {
-            logger.warn('Signup: courriel "compte existant" non envoye', { error: String(err) });
+          delivered = await refusNeutre(signupEmail, appUrl).catch((err: unknown) => {
+            logger.warn('Signup: courriel de refus neutre non envoye', {
+              code: error.message,
+              error: String(err),
+            });
             return false;
           });
         }
-        return NextResponse.json(signupAcceptedBody(true, t));
+        return NextResponse.json(signupAcceptedBody(delivered, t));
       } else if (error.code === 'CONFLICT' && error.message === 'RESTAURANT_NAME_TAKEN') {
         errorMessage = t('restaurantNameTaken');
         code = 'RESTAURANT_NAME_TAKEN';

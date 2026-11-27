@@ -83,7 +83,7 @@ export function HomeHeaderClient({
             </div>
             <Link
               href={`/sites/${site}/settings`}
-              className="flex min-w-0 items-center gap-1 text-[14px] font-semibold leading-tight tracking-[-0.02em] text-[var(--color-ink)]"
+              className="-my-3.5 flex min-w-0 items-center gap-1 py-3.5 text-[14px] font-semibold leading-tight tracking-[-0.02em] text-[var(--color-ink)]"
             >
               <span className="truncate">{tenantName}</span>
               {tableNum && (
@@ -117,7 +117,7 @@ export function HomeHeaderClient({
             type="button"
             variant="ghost"
             onClick={openSearch}
-            className="h-auto flex-1 justify-start p-0 text-[13.5px] font-normal tracking-[-0.01em] text-[var(--color-ink-muted)] hover:bg-transparent"
+            className="h-full flex-1 justify-start p-0 text-[13.5px] font-normal tracking-[-0.01em] text-[var(--color-ink-muted)] hover:bg-transparent"
           >
             {t('searchPlaceholder')}
           </Button>
@@ -127,7 +127,7 @@ export function HomeHeaderClient({
             size="icon"
             onClick={() => setIsQROpen(true)}
             aria-label={t('scanQR')}
-            className="h-[26px] w-[26px] rounded-lg bg-[var(--color-ink)] p-0 hover:bg-[var(--color-ink)]"
+            className="relative h-[26px] w-[26px] rounded-lg bg-[var(--color-ink)] p-0 before:absolute before:-inset-[9px] before:content-[''] hover:bg-[var(--color-ink)]"
           >
             <QrCode className="h-3.5 w-3.5 text-white" strokeWidth={2} />
           </Button>

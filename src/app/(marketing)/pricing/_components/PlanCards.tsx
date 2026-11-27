@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { Check } from 'lucide-react';
-import { PLAN_AMOUNTS, PLAN_TOTALS } from '@/lib/billing/pricing';
+import { PLAN_AMOUNTS, PLAN_TOTALS, approxPricePerDay } from '@/lib/billing/pricing';
 import { cn } from '@/lib/utils';
 import type { BillingPeriod } from '../pricing-data';
 
@@ -36,7 +36,7 @@ export function PlanCards({ effectivePeriod }: { effectivePeriod: BillingPeriod 
             const paid = plan.key !== 'enterprise';
             const perMonth = paid ? PLAN_AMOUNTS[plan.key as PaidKey][effectivePeriod] : null;
             const total = paid ? PLAN_TOTALS[plan.key as PaidKey][effectivePeriod] : null;
-            const perDay = perMonth != null ? Math.round(perMonth / 30 / 50) * 50 : null;
+            const perDay = perMonth != null ? approxPricePerDay(perMonth) : null;
             const feats = Array.from({ length: plan.featCount }, (_, i) => `f${i + 1}`);
 
             return (
@@ -71,7 +71,7 @@ export function PlanCards({ effectivePeriod }: { effectivePeriod: BillingPeriod 
                   className={cn(
                     'mt-1.5 min-h-[38px] text-[13px] leading-[1.45]',
                     plan.dark
-                      ? 'text-zinc-400 dark:text-zinc-500'
+                      ? 'text-zinc-400 dark:text-zinc-600'
                       : 'text-zinc-500 dark:text-zinc-400',
                   )}
                 >
@@ -96,7 +96,7 @@ export function PlanCards({ effectivePeriod }: { effectivePeriod: BillingPeriod 
                         className={cn(
                           'whitespace-nowrap text-sm font-medium',
                           plan.dark
-                            ? 'text-zinc-400 dark:text-zinc-500'
+                            ? 'text-zinc-400 dark:text-zinc-600'
                             : 'text-zinc-500 dark:text-zinc-400',
                         )}
                       >
@@ -107,7 +107,7 @@ export function PlanCards({ effectivePeriod }: { effectivePeriod: BillingPeriod 
                       className={cn(
                         'mt-1 text-xs',
                         plan.dark
-                          ? 'text-zinc-400 dark:text-zinc-500'
+                          ? 'text-zinc-400 dark:text-zinc-600'
                           : 'text-zinc-500 dark:text-zinc-400',
                       )}
                     >
@@ -119,7 +119,7 @@ export function PlanCards({ effectivePeriod }: { effectivePeriod: BillingPeriod 
                       className={cn(
                         'mt-0.5 text-xs',
                         plan.dark
-                          ? 'text-zinc-400 dark:text-zinc-500'
+                          ? 'text-zinc-400 dark:text-zinc-600'
                           : 'text-zinc-500 dark:text-zinc-400',
                       )}
                     >
@@ -183,7 +183,7 @@ export function PlanCards({ effectivePeriod }: { effectivePeriod: BillingPeriod 
             );
           })}
         </div>
-        <p className="mt-[22px] text-[13px] text-zinc-400 dark:text-zinc-500">{t('priceNote')}</p>
+        <p className="mt-[22px] text-[13px] text-zinc-500 dark:text-zinc-400">{t('priceNote')}</p>
       </div>
     </section>
   );

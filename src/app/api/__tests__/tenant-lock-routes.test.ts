@@ -271,12 +271,18 @@ describe('classement de toutes les routes API', () => {
     'billing/flutterwave/checkout',
     'billing/flutterwave/confirm',
     'webhooks/flutterwave',
+    // Rebonds et plaintes Resend: plateforme, aucun restaurant (signature Svix).
+    'webhooks/resend',
+    // Rapports de violation CSP des navigateurs: journalise, n'ecrit rien.
+    'csp-report',
     'cron/flutterwave-renewals',
     'cron/flutterwave-reconcile',
     'cron/freeze-expired-trials',
     'cron/reconcile-payments',
     // Ne lit que les restaurants actifs (is_active, suspended_at), n'ecrit que ses rappels.
     'cron/reminders',
+    // Ne lit que les essais actifs non suspendus; n'ecrit que le creneau de relance.
+    'cron/trial-idle-emails',
     'dev/simulate-subscription',
     // Publiques / authentification / convive.
     'auth/[...supabase]',
@@ -294,6 +300,8 @@ describe('classement de toutes les routes API', () => {
     'orders/preview',
     'health',
     'version',
+    // Taux de change public, aucune donnee de restaurant.
+    'exchange-rate',
   ];
 
   function routes(dir: string, base = ''): string[] {

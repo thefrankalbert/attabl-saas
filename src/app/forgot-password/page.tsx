@@ -111,6 +111,7 @@ export default function ForgotPasswordPage() {
                         <FormControl>
                           <Input
                             type="email"
+                            autoComplete="email"
                             placeholder={t('emailPlaceholder')}
                             autoFocus
                             className={inputClass}

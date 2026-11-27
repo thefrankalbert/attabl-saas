@@ -6,7 +6,7 @@ import type { StaffMember } from './rules';
 import type { ReminderMessage } from './messages';
 
 /** Une personne ne recoit pas deux rappels de la meme regle a moins de 2 min: on groupe. */
-export const BATCH_INTERVAL_MIN = 2;
+const BATCH_INTERVAL_MIN = 2;
 const MINUTE = 60_000;
 
 export interface ReminderGroup {
@@ -20,17 +20,26 @@ export interface ReminderGroup {
 
 /** Envoi des rappels: anti-doublon en base, cloche de l'application, push. */
 export function createReminderDelivery(supabase: SupabaseClient, push: ServicePush) {
-  /** Rappel a heure fixe deja parti pour ce jour/cette semaine: ne rien recalculer. */
-  async function alreadySent(tenantId: string, rule: ReminderRule, subject: string) {
+  /**
+   * Destinataires qui ont DEJA recu ce rappel a heure fixe (ce jour, cette
+   * semaine). B86: la reprise se fait destinataire par destinataire. L'ancien
+   * test "une ligne existe pour ce sujet" sautait tout l'envoi au passage
+   * suivant des que la cloche d'UN destinataire avait reussi: celui dont la
+   * livraison avait echoue ne recevait jamais le rappel.
+   */
+  async function recipientsAlreadySent(
+    tenantId: string,
+    rule: ReminderRule,
+    subject: string,
+  ): Promise<Set<string>> {
     const { data, error } = await supabase
       .from('reminders')
-      .select('id')
+      .select('recipient_id')
       .eq('tenant_id', tenantId)
       .eq('rule', rule)
-      .eq('subject_key', subject)
-      .limit(1);
+      .eq('subject_key', subject);
     if (error) throw error;
-    return (data?.length ?? 0) > 0;
+    return new Set((data ?? []).map((r) => r.recipient_id as string));
   }
 
   /** Envoie un groupe: reserve les lignes (anti-doublon), puis cloche, puis push. */
@@ -76,7 +85,14 @@ export function createReminderDelivery(supabase: SupabaseClient, push: ServicePu
     // le rappel pour toujours. Le prochain passage reessaiera.
     const release = async (reason: string, error: unknown) => {
       logger.warn(`Reminders: ${reason}, claim released for retry`, { error, rule });
-      await supabase.from('reminders').delete().in('id', claimedIds);
+      // B86: une liberation ratee laisse la cle unique bloquer ce rappel; le dire.
+      const { error: dErr } = await supabase.from('reminders').delete().in('id', claimedIds);
+      if (dErr) {
+        logger.error('Reminders: claim release failed, reminder blocked until cleanup', dErr, {
+          rule,
+          tenantId: tenant.id,
+        });
+      }
       return false;
     };
 
@@ -121,5 +137,5 @@ export function createReminderDelivery(supabase: SupabaseClient, push: ServicePu
     return true;
   }
 
-  return { alreadySent, sendGroup };
+  return { recipientsAlreadySent, sendGroup };
 }

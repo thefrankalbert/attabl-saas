@@ -8,6 +8,7 @@ import { formatUnitCost } from '@/lib/utils/currency';
 import { INGREDIENT_UNITS } from '@/types/inventory.types';
 import type { Ingredient } from '@/types/inventory.types';
 import type { CurrencyCode } from '@/types/admin.types';
+import { formatQuantity } from '@/lib/inventory/quantity-format';
 import { getStockBadge } from './stock-badge';
 
 interface InventoryMobileCardProps {
@@ -47,7 +48,7 @@ export default function InventoryMobileCard({
         <span className="text-app-text-secondary">
           {t('currentStock')}:{' '}
           <span className="font-mono font-bold text-app-text">
-            {ing.current_stock.toFixed(ing.unit === 'pièce' || ing.unit === 'bouteille' ? 0 : 2)}
+            {formatQuantity(ing.current_stock)}
           </span>{' '}
           {unitLabel}
         </span>

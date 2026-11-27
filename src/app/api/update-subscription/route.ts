@@ -1,3 +1,4 @@
+import { isMfaSatisfied, MFA_REQUIRED_CODE, MFA_REQUIRED_MESSAGE } from '@/lib/auth/mfa-assurance';
 import { NextResponse } from 'next/server';
 import { readTenantSlug } from '@/lib/auth/tenant-header';
 import { stripe, getStripePriceId } from '@/lib/stripe/server';
@@ -36,6 +37,13 @@ export async function POST(request: Request) {
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Non authentifie' }, { status: 401 });
+    }
+
+    if (!(await isMfaSatisfied(supabase, user))) {
+      return NextResponse.json(
+        { error: MFA_REQUIRED_MESSAGE, code: MFA_REQUIRED_CODE },
+        { status: 403 },
+      );
     }
 
     // 2. Resolve the ACTIVE tenant from the middleware-injected slug (multi-tenant safe),

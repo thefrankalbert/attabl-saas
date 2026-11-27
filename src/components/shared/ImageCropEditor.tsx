@@ -88,7 +88,7 @@ export default function ImageCropEditor({
             type="button"
             variant="ghost"
             size="icon"
-            aria-label="Zoom out"
+            aria-label={tc('aria.zoomOut')}
             onClick={() => setZoom((z) => Math.max(1, z - 0.2))}
             className="p-2 rounded-lg text-app-text-secondary hover:text-app-text hover:bg-app-elevated transition-colors h-9 w-9"
           >
@@ -108,7 +108,7 @@ export default function ImageCropEditor({
             type="button"
             variant="ghost"
             size="icon"
-            aria-label="Zoom in"
+            aria-label={tc('aria.zoomIn')}
             onClick={() => setZoom((z) => Math.min(3, z + 0.2))}
             className="p-2 rounded-lg text-app-text-secondary hover:text-app-text hover:bg-app-elevated transition-colors h-9 w-9"
           >
@@ -121,13 +121,13 @@ export default function ImageCropEditor({
             type="button"
             variant="ghost"
             size="icon"
-            aria-label="Reset"
+            aria-label={tc('aria.reset')}
             onClick={() => {
               setCrop({ x: 0, y: 0 });
               setZoom(1);
             }}
             className="p-2 rounded-lg text-app-text-secondary hover:text-app-text hover:bg-app-elevated transition-colors h-9 w-9"
-            title="Reinitialiser"
+            title={tc('aria.reset')}
           >
             <RotateCcw className="h-4 w-4" />
           </Button>

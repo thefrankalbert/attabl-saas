@@ -26,7 +26,7 @@ export function SectionHeader({ title, subtitle, seeAllHref, seeAllLabel }: Prop
       {seeAllHref && seeAllLabel && (
         <Link
           href={seeAllHref}
-          className="flex shrink-0 items-center gap-0.5 text-[13px] font-medium text-[var(--color-accent)]"
+          className="-my-3.5 flex shrink-0 items-center gap-0.5 py-3.5 text-[13px] font-medium text-[var(--color-accent)]"
         >
           {seeAllLabel} <ChevronRight className="h-3.5 w-3.5" strokeWidth={2} />
         </Link>

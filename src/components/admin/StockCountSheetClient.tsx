@@ -23,10 +23,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 
 import { cn } from '@/lib/utils';
+import { formatQuantity, roundQuantity } from '@/lib/inventory/quantity-format';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useStockCount } from '@/hooks/queries/useStockCounts';
 import {
@@ -71,6 +82,7 @@ export default function StockCountSheetClient({ tenantId, countId }: StockCountS
   const [isCommitting, setIsCommitting] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [showCommitDialog, setShowCommitDialog] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   // Lecture seule aussi sans `inventory.edit` (le chef par defaut): le serveur
   // refuserait l'enregistrement et la validation du comptage.
@@ -89,7 +101,8 @@ export default function StockCountSheetClient({ tenantId, countId }: StockCountS
   const getVariance = (ingredientId: string, theoretical: number): number | null => {
     const counted = getDisplayQty(ingredientId);
     if (counted === null) return null;
-    return counted - theoretical;
+    // Arrondi: 12 - 13.225 donnait -1.2249999999999996 a l'ecran.
+    return roundQuantity(counted - theoretical);
   };
 
   const linesWithVariance =
@@ -97,6 +110,19 @@ export default function StockCountSheetClient({ tenantId, countId }: StockCountS
       const v = getVariance(l.ingredient_id, l.theoretical_qty);
       return v !== null && v !== 0;
     }).length ?? 0;
+
+  // Nombre de lignes avec une quantite saisie (comptee ou en cours de saisie).
+  const countedLinesCount =
+    data?.lines.filter((l) => getDisplayQty(l.ingredient_id) !== null).length ?? 0;
+
+  function handleCommitClick() {
+    // Valider un comptage vide ne change rien au stock mais ferme l'inventaire.
+    if (countedLinesCount === 0) {
+      toast({ title: t('countNothingEntered'), variant: 'destructive' });
+      return;
+    }
+    setShowCommitDialog(true);
+  }
 
   async function invalidateAll() {
     await Promise.all([
@@ -170,6 +196,7 @@ export default function StockCountSheetClient({ tenantId, countId }: StockCountS
     }
 
     await invalidateAll();
+    toast({ title: t('countCancelled') });
   }
 
   if (isLoading) {
@@ -223,7 +250,7 @@ export default function StockCountSheetClient({ tenantId, countId }: StockCountS
             variant="outline"
             size="sm"
             className="min-h-[44px] text-destructive"
-            onClick={() => void handleCancel()}
+            onClick={() => setShowCancelDialog(true)}
             disabled={isCancelling}
           >
             {t('cancelCount')}
@@ -253,11 +280,13 @@ export default function StockCountSheetClient({ tenantId, countId }: StockCountS
                     <div className="text-xs text-app-text-muted">{line.ingredient?.unit ?? ''}</div>
                   </TableCell>
                   <TableCell className="text-right tabular-nums text-sm">
-                    {line.theoretical_qty}
+                    {formatQuantity(line.theoretical_qty)}
                   </TableCell>
                   <TableCell className="text-right">
                     {isReadOnly ? (
-                      <span className="tabular-nums text-sm">{line.counted_qty ?? '-'}</span>
+                      <span className="tabular-nums text-sm">
+                        {line.counted_qty === null ? '-' : formatQuantity(line.counted_qty)}
+                      </span>
                     ) : (
                       <Input
                         type="number"
@@ -289,7 +318,11 @@ export default function StockCountSheetClient({ tenantId, countId }: StockCountS
                       'text-app-text-muted': variance === null || variance === 0,
                     })}
                   >
-                    {variance === null ? '-' : variance > 0 ? `+${variance}` : variance}
+                    {variance === null
+                      ? '-'
+                      : variance > 0
+                        ? `+${formatQuantity(variance)}`
+                        : formatQuantity(variance)}
                   </TableCell>
                 </TableRow>
               );
@@ -313,13 +346,29 @@ export default function StockCountSheetClient({ tenantId, countId }: StockCountS
           <Button
             size="sm"
             className="min-h-[44px]"
-            onClick={() => setShowCommitDialog(true)}
+            onClick={handleCommitClick}
             disabled={isSaving || isCommitting}
           >
             {t('commitCount')}
           </Button>
         </div>
       )}
+
+      {/* Cancel confirmation: annuler perd les quantites saisies et ne se rouvre pas */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('cancelCountConfirmTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('cancelCountConfirmBody')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('cancelCountKeep')}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void handleCancel()}>
+              {t('cancelCount')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Commit confirmation dialog */}
       <Dialog open={showCommitDialog} onOpenChange={setShowCommitDialog}>

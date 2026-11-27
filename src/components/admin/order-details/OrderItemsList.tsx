@@ -30,7 +30,7 @@ export function OrderItemsList({
   return (
     <div
       data-testid="order-items-card"
-      className="rounded-xl border border-app-border overflow-hidden flex flex-col lg:min-h-0 lg:flex-1"
+      className="rounded-xl border border-app-border overflow-hidden flex flex-col"
     >
       <div className="px-3 py-2 bg-app-bg border-b border-app-border flex items-center justify-between shrink-0">
         <p className="text-[10px] font-medium text-app-text-secondary uppercase tracking-wider">
@@ -40,7 +40,7 @@ export function OrderItemsList({
           {itemCount} {tc('items')}
         </p>
       </div>
-      <div className="overflow-y-auto flex-1 divide-y divide-app-border">
+      <div className="divide-y divide-app-border">
         {(order.items || []).map((item, i) => (
           <div key={i} className="flex justify-between items-start px-3 py-2">
             <div className="flex gap-2 min-w-0 flex-1">

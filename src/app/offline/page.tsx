@@ -20,8 +20,8 @@ export default function OfflinePage() {
       <div className="space-y-2">
         <h1 className="text-xl font-semibold text-foreground">Pas de connexion</h1>
         <p className="max-w-sm text-sm text-muted-foreground">
-          Vous etes hors ligne. Les commandes que vous prenez sont sauvegardees sur cet appareil et
-          partent toutes seules des que le reseau revient.
+          Vous êtes hors ligne. Les commandes que vous prenez sont sauvegardées sur cet appareil et
+          partent toutes seules dès que le réseau revient.
         </p>
       </div>
       <OfflineActions />

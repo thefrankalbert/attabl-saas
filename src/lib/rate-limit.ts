@@ -50,7 +50,7 @@ if (!isConfigured) {
 
 // --- Rate limit result type ---
 
-export interface RateLimitResult {
+interface RateLimitResult {
   success: boolean;
   limit: number;
   remaining: number;
@@ -763,6 +763,17 @@ export const billingPortalLimiter = createLimiter(
 export const revalidateMenuLimiter = createLimiter(
   'revalidate-menu',
   Ratelimit.slidingWindow(20, '1 m'),
+);
+
+/**
+ * Taux de change public (GET /api/exchange-rate): 60 par minute et par adresse.
+ * Lecture sans effet de bord, deja gardee une heure par le reseau de diffusion:
+ * le plafond ne sert qu'a borner un appelant qui contourne ce cache. En cas de
+ * panne Redis la requete passe (lecture anodine).
+ */
+export const exchangeRateLimiter = createLimiter(
+  'exchange-rate',
+  Ratelimit.slidingWindow(60, '1 m'),
 );
 
 // --- IP extraction helpers ---

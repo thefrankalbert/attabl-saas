@@ -60,7 +60,7 @@ export async function IndustryRow({
 
           {/* Text */}
           <div className={cn(reverse ? 'lg:order-2' : 'lg:order-1')}>
-            <span className="text-xs font-semibold uppercase tracking-[0.1em] text-zinc-400 dark:text-zinc-500">
+            <span className="text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500 dark:text-zinc-400">
               {num} - {ti('tag')}
             </span>
             <h2 className="mt-3 text-[32px] font-semibold leading-[1.1] tracking-[-0.03em] text-zinc-950 dark:text-zinc-50">
@@ -102,7 +102,7 @@ export async function IndustryRow({
               </Link>
               <Link
                 href="/features"
-                className="text-sm font-semibold text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-50 dark:hover:text-zinc-300"
+                className="inline-flex min-h-11 items-center text-sm font-semibold text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-50 dark:hover:text-zinc-300"
               >
                 {t('exploreFeatures')} &rarr;
               </Link>

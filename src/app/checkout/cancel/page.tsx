@@ -1,8 +1,14 @@
+import type { Metadata } from 'next';
 import { Card, CardContent } from '@/components/ui/card';
 import { XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+  title: 'Paiement annulé - ATTABL',
+  robots: { index: false, follow: false },
+};
 
 export default async function CheckoutCancelPage() {
   const t = await getTranslations('checkout');

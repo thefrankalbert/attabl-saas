@@ -81,7 +81,7 @@ export function MenuItemRow({ vm, item }: Props) {
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Edit"
+            aria-label={t('editItem')}
             onClick={() => openEditItemModal(item)}
             title={t('editItem')}
           >
@@ -90,7 +90,7 @@ export function MenuItemRow({ vm, item }: Props) {
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Settings"
+            aria-label={t('manageModifiers')}
             onClick={(e) => {
               e.stopPropagation();
               setEditingModifiersItem(item);

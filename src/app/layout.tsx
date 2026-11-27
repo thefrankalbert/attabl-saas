@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import { headers } from 'next/headers';
+import { pickMessages, ROOT_CLIENT_NAMESPACES } from '@/i18n/client-messages';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -100,7 +101,9 @@ export default async function RootLayout({
         )}
         suppressHydrationWarning
       >
-        <NextIntlClientProvider messages={messages}>
+        {/* Only what the root's own client components read: each area's layout
+            provides its messages (see src/i18n/client-messages.ts). */}
+        <NextIntlClientProvider messages={pickMessages(messages, ROOT_CLIENT_NAMESPACES)}>
           <ThemeProvider
             attribute="class"
             defaultTheme="system"

@@ -90,46 +90,6 @@ describe('InventoryService', () => {
 
   // --- Ingredients --------------------------------------
 
-  describe('getIngredients', () => {
-    it('should return list of ingredients for tenant', async () => {
-      const mockIngredients = [
-        { id: 'ing-1', name: 'Farine', unit: 'kg', tenant_id: 't1' },
-        { id: 'ing-2', name: 'Sel', unit: 'g', tenant_id: 't1' },
-      ];
-
-      // Build the exact chain: .from('ingredients').select('*').eq(...).eq(...).order(...)
-      const orderFn = vi.fn().mockResolvedValue({ data: mockIngredients, error: null });
-      const eqIsActive = vi.fn().mockReturnValue({ order: orderFn });
-      const eqTenant = vi.fn().mockReturnValue({ eq: eqIsActive });
-      const selectFn = vi.fn().mockReturnValue({ eq: eqTenant });
-      supabase.from = vi.fn().mockReturnValue({ select: selectFn });
-
-      const result = await service.getIngredients('t1');
-
-      expect(supabase.from).toHaveBeenCalledWith('ingredients');
-      expect(selectFn).toHaveBeenCalledWith(
-        'id, tenant_id, name, unit, current_stock, min_stock_alert, cost_per_unit, category, is_active, purchase_unit, units_per_purchase, created_at, updated_at',
-      );
-      expect(eqTenant).toHaveBeenCalledWith('tenant_id', 't1');
-      expect(eqIsActive).toHaveBeenCalledWith('is_active', true);
-      expect(orderFn).toHaveBeenCalledWith('name');
-      expect(result).toEqual(mockIngredients);
-    });
-
-    it('should throw INTERNAL ServiceError on DB error', async () => {
-      const orderFn = vi.fn().mockResolvedValue({ data: null, error: { message: 'DB failure' } });
-      const eqIsActive = vi.fn().mockReturnValue({ order: orderFn });
-      const eqTenant = vi.fn().mockReturnValue({ eq: eqIsActive });
-      const selectFn = vi.fn().mockReturnValue({ eq: eqTenant });
-      supabase.from = vi.fn().mockReturnValue({ select: selectFn });
-
-      await expect(service.getIngredients('t1')).rejects.toThrow(ServiceError);
-      await expect(service.getIngredients('t1')).rejects.toMatchObject({
-        code: 'INTERNAL',
-      });
-    });
-  });
-
   describe('createIngredient', () => {
     it('should create ingredient with defaults (current_stock=0, min_stock_alert=0, cost_per_unit=0)', async () => {
       const createdIngredient = {
@@ -539,6 +499,26 @@ describe('InventoryService', () => {
     });
   });
 
+  describe('adjustStock: depassement de quantite', () => {
+    it("dit que la quantite est trop grande au lieu d'une erreur generique", async () => {
+      supabase.rpc = vi.fn().mockResolvedValue({
+        data: null,
+        error: { code: '22003', message: 'numeric field overflow' },
+      });
+
+      await expect(
+        service.adjustStock('t1', {
+          ingredient_id: 'ing-1',
+          quantity: 99999999999,
+          movement_type: 'manual_add',
+        }),
+      ).rejects.toMatchObject({
+        code: 'VALIDATION',
+        message: expect.stringContaining('trop grande'),
+      });
+    });
+  });
+
   describe('receiveStock', () => {
     function mockIngredientFetch(ingredient: Record<string, unknown> | null) {
       const maybeSingleFn = vi.fn().mockResolvedValue({ data: ingredient, error: null });
@@ -699,6 +679,148 @@ describe('InventoryService', () => {
     });
   });
 
+  describe('prix d achat a la reception (cout moyen pondere)', () => {
+    function mockIngredientFetch(ingredient: Record<string, unknown>) {
+      const maybeSingleFn = vi.fn().mockResolvedValue({ data: ingredient, error: null });
+      const eqTenant = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn });
+      const eqId = vi.fn().mockReturnValue({ eq: eqTenant });
+      supabase.from = vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ eq: eqId }) });
+    }
+
+    it('adjustStock: transmet le prix par unite de stock pour une reception', async () => {
+      const rpc = vi.fn().mockResolvedValue({ data: 20, error: null });
+      supabase.rpc = rpc;
+
+      await service.adjustStock('t1', {
+        ingredient_id: 'ing-1',
+        quantity: 5,
+        movement_type: 'manual_add',
+        unit_cost: 1600,
+      });
+
+      expect(rpc).toHaveBeenCalledWith(
+        'adjust_ingredient_stock_tx',
+        expect.objectContaining({ p_delta: 5, p_unit_cost: 1600 }),
+      );
+    });
+
+    it('adjustStock: sans prix, p_unit_cost reste absent (le cout ne change pas)', async () => {
+      const rpc = vi.fn().mockResolvedValue({ data: 20, error: null });
+      supabase.rpc = rpc;
+
+      await service.adjustStock('t1', {
+        ingredient_id: 'ing-1',
+        quantity: 5,
+        movement_type: 'manual_add',
+      });
+
+      const [, args] = rpc.mock.calls[0];
+      expect(args.p_unit_cost).toBeUndefined();
+      // Temoin: la cle disparait du JSON envoye, donc le code en ligne reste compatible.
+      expect(JSON.parse(JSON.stringify(args))).not.toHaveProperty('p_unit_cost');
+    });
+
+    it('adjustStock: refuse un prix sur un retrait sans appeler la base', async () => {
+      const rpc = vi.fn();
+      supabase.rpc = rpc;
+
+      await expect(
+        service.adjustStock('t1', {
+          ingredient_id: 'ing-1',
+          quantity: 1,
+          movement_type: 'manual_remove',
+          unit_cost: 900,
+        }),
+      ).rejects.toMatchObject({ code: 'VALIDATION' });
+      expect(rpc).not.toHaveBeenCalled();
+    });
+
+    it('adjustStock: INVALID_UNIT_COST de la base devient une erreur de saisie', async () => {
+      supabase.rpc = vi.fn().mockResolvedValue({
+        data: null,
+        error: { code: '22023', message: 'INVALID_UNIT_COST: 0' },
+      });
+
+      await expect(
+        service.adjustStock('t1', {
+          ingredient_id: 'ing-1',
+          quantity: 1,
+          movement_type: 'manual_add',
+          unit_cost: 1,
+        }),
+      ).rejects.toMatchObject({
+        code: 'VALIDATION',
+        message: expect.stringContaining("Prix d'achat"),
+      });
+    });
+
+    it('receiveStock: un prix par casier est converti en prix par bouteille', async () => {
+      mockIngredientFetch({
+        id: 'ing-1',
+        unit: 'bouteille',
+        purchase_unit: 'casier',
+        units_per_purchase: 24,
+      });
+      const rpc = vi.fn().mockResolvedValue({ data: 48, error: null });
+      supabase.rpc = rpc;
+
+      await service.receiveStock('t1', {
+        ingredient_id: 'ing-1',
+        quantity: 2,
+        inPurchaseUnit: true,
+        unit_cost: 12000,
+      });
+
+      expect(rpc).toHaveBeenCalledWith(
+        'adjust_ingredient_stock_tx',
+        expect.objectContaining({ p_delta: 48, p_unit_cost: 500 }),
+      );
+    });
+
+    it('receiveStock: en unite de base, le prix passe tel quel', async () => {
+      mockIngredientFetch({
+        id: 'ing-1',
+        unit: 'kg',
+        purchase_unit: 'sac',
+        units_per_purchase: 50,
+      });
+      const rpc = vi.fn().mockResolvedValue({ data: 5, error: null });
+      supabase.rpc = rpc;
+
+      await service.receiveStock('t1', {
+        ingredient_id: 'ing-1',
+        quantity: 5,
+        inPurchaseUnit: false,
+        unit_cost: 1600,
+      });
+
+      expect(rpc).toHaveBeenCalledWith(
+        'adjust_ingredient_stock_tx',
+        expect.objectContaining({ p_delta: 5, p_unit_cost: 1600 }),
+      );
+    });
+
+    it('receiveStock: sans prix, p_unit_cost reste absent', async () => {
+      mockIngredientFetch({
+        id: 'ing-1',
+        unit: 'bouteille',
+        purchase_unit: 'casier',
+        units_per_purchase: 24,
+      });
+      const rpc = vi.fn().mockResolvedValue({ data: 48, error: null });
+      supabase.rpc = rpc;
+
+      await service.receiveStock('t1', {
+        ingredient_id: 'ing-1',
+        quantity: 2,
+        inPurchaseUnit: true,
+      });
+
+      const [, args] = rpc.mock.calls[0];
+      expect(args.p_unit_cost).toBeUndefined();
+    });
+  });
+
   describe('recordLoss', () => {
     it('calls record_loss_tx with abs(quantity), reason, notes and audit user', async () => {
       const rpc = vi.fn().mockResolvedValue({ data: 4, error: null });
@@ -848,6 +970,33 @@ describe('InventoryService', () => {
         p_created_by: 'user-1',
       });
     });
+
+    it("envoie la quantite saisie telle quelle (REMPLACE le stock, ne s'ajoute pas)", async () => {
+      // La fonction SQL set_opening_stock ecrit current_stock = p_quantity et le
+      // mouvement `opening` pour l'ECART (p_quantity - stock avant). Le service ne
+      // doit donc jamais convertir en delta lui-meme: 10 puis ouverture 5 = 5.
+      supabase.rpc = vi.fn().mockResolvedValue({ data: null, error: null });
+
+      await service.setOpeningStock('t1', 'ing-1', 5);
+
+      const rpc = supabase.rpc as unknown as ReturnType<typeof vi.fn>;
+      expect(rpc).toHaveBeenCalledTimes(1);
+      expect(rpc.mock.calls[0][0]).toBe('set_opening_stock');
+      expect(rpc.mock.calls[0][1]).toMatchObject({ p_quantity: 5 });
+      expect(rpc.mock.calls[0][1]).not.toHaveProperty('p_delta');
+    });
+
+    it('dit que la quantite est trop grande quand la colonne deborde', async () => {
+      supabase.rpc = vi.fn().mockResolvedValue({
+        data: null,
+        error: { code: '22003', message: 'numeric field overflow' },
+      });
+
+      await expect(service.setOpeningStock('t1', 'ing-1', 99999999999)).rejects.toMatchObject({
+        code: 'VALIDATION',
+        message: expect.stringContaining('trop grande'),
+      });
+    });
   });
 
   // --- Stock Status & Movements -------------------------
@@ -866,42 +1015,6 @@ describe('InventoryService', () => {
         p_tenant_id: 't1',
       });
       expect(result).toEqual(mockStatus);
-    });
-  });
-
-  describe('getStockMovements', () => {
-    it('should apply filters (ingredientId, date range)', async () => {
-      const mockMovements = [
-        { id: 'mv-1', ingredient_id: 'ing-1', movement_type: 'manual_add', quantity: 5 },
-      ];
-
-      // Build the full chain: .from().select().eq().order().limit() then optional .eq().gte().lte()
-      const lteFn = vi.fn().mockResolvedValue({ data: mockMovements, error: null });
-      const gteFn = vi.fn().mockReturnValue({ lte: lteFn });
-      const eqIngredient = vi.fn().mockReturnValue({ gte: gteFn });
-      const limitFn = vi.fn().mockReturnValue({ eq: eqIngredient });
-      const orderFn = vi.fn().mockReturnValue({ limit: limitFn });
-      const eqTenant = vi.fn().mockReturnValue({ order: orderFn });
-      const selectFn = vi.fn().mockReturnValue({ eq: eqTenant });
-      supabase.from = vi.fn().mockReturnValue({ select: selectFn });
-
-      const result = await service.getStockMovements('t1', {
-        ingredientId: 'ing-1',
-        startDate: '2026-01-01',
-        endDate: '2026-01-31',
-      });
-
-      expect(supabase.from).toHaveBeenCalledWith('stock_movements');
-      expect(selectFn).toHaveBeenCalledWith(
-        '*, ingredient:ingredients(name, unit), supplier:suppliers(id, name)',
-      );
-      expect(eqTenant).toHaveBeenCalledWith('tenant_id', 't1');
-      expect(orderFn).toHaveBeenCalledWith('created_at', { ascending: false });
-      expect(limitFn).toHaveBeenCalledWith(200);
-      expect(eqIngredient).toHaveBeenCalledWith('ingredient_id', 'ing-1');
-      expect(gteFn).toHaveBeenCalledWith('created_at', '2026-01-01');
-      expect(lteFn).toHaveBeenCalledWith('created_at', '2026-01-31');
-      expect(result).toEqual(mockMovements);
     });
   });
 
