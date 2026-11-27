@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AuthFrame } from '@/components/auth/AuthFrame';
 import { useTranslations } from 'next-intl';
-import { passwordSchema } from '@/lib/validations/common.schema';
+import { passwordIssueMessage } from '@/lib/validations/password-rules';
 import { PasswordRulesList, usePasswordIssueText } from '@/components/auth/PasswordRules';
 
 // --- Accept Invite Form ---
@@ -177,10 +177,9 @@ function AcceptInviteForm() {
 
     // Memes regles que le serveur et que la politique Auth (12 caracteres,
     // minuscule, majuscule, chiffre, symbole): le message nomme TOUT ce qui manque.
-    const passwordCheck = passwordSchema.safeParse(password);
-    if (!passwordCheck.success) {
-      const message = passwordCheck.error.issues[0]?.message;
-      setError(passwordIssueText(message) ?? t('acceptError'));
+    const passwordIssue = passwordIssueMessage(password);
+    if (passwordIssue) {
+      setError(passwordIssueText(passwordIssue) ?? t('acceptError'));
       return;
     }
 
