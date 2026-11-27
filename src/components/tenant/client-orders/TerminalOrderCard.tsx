@@ -14,7 +14,7 @@ interface TerminalOrderCardProps {
   order: OrderRecord;
   tenantSlug: string;
   currency: string;
-  onReorder: (order: OrderRecord) => void;
+  onReorder: (order: OrderRecord) => void | Promise<void>;
 }
 
 export function TerminalOrderCard({

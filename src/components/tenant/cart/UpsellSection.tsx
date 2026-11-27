@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { getTranslatedContent } from '@/lib/utils/translate';
 import type { CurrencyCode } from '@/types/admin.types';
 import type { UpsellItem } from '@/hooks/useCartSuggestions';
+import { TOUCH_EXTEND_5 } from '@/components/tenant/touch-zone';
 
 const UPSELL_PLUS_SHADOW =
   'shadow-[0_4px_6px_-1px_rgba(26,26,26,0.06),0_2px_4px_-2px_rgba(26,26,26,0.04)]';
@@ -104,7 +105,7 @@ export function UpsellSection({
                       <Button
                         size="icon"
                         onClick={() => onAdd(item)}
-                        className={`absolute bottom-2 right-2 z-10 h-[34px] w-[34px] rounded-full bg-white p-0 hover:bg-white active:scale-90 ${UPSELL_PLUS_SHADOW}`}
+                        className={`absolute bottom-2 right-2 z-10 h-[34px] w-[34px] rounded-full bg-white p-0 hover:bg-white active:scale-90 ${UPSELL_PLUS_SHADOW} ${TOUCH_EXTEND_5}`}
                         aria-label={labels.ariaAdd(item.name)}
                       >
                         <Plus

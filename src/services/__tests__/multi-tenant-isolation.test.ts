@@ -286,6 +286,11 @@ describe('coupon.service multi-tenant isolation', () => {
   beforeEach(() => {
     db = createArgAwareSupabaseMock();
     // SAME code on BOTH tenants, different discount values.
+    // Codes promo actives chez les deux restaurants (reglage lu par validateCoupon).
+    db.seed('tenants', [
+      { id: TENANT_A, enable_coupons: true },
+      { id: TENANT_B, enable_coupons: true },
+    ]);
     db.seed('coupons', [
       {
         id: 'coupon-A',

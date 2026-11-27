@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { getTranslatedContent } from '@/lib/utils/translate';
 import { MAX_ITEM_QTY } from '@/lib/utils/cart-display';
 import type { CurrencyCode } from '@/types/admin.types';
+import { TOUCH_EXTEND_9 } from '@/components/tenant/touch-zone';
 
 interface CartListItem {
   id: string;
@@ -154,7 +155,7 @@ export function CartItemsList({
                       : updateQuantity(itemKey, item.quantity - 1)
                   }
                   aria-label={item.quantity <= 1 ? labels.remove : labels.decrease}
-                  className="h-[26px] w-[26px] rounded-full bg-white p-0 shadow-[0_1px_2px_0_rgba(26,26,26,0.04)] hover:bg-white"
+                  className={`h-[26px] w-[26px] rounded-full bg-white p-0 shadow-[0_1px_2px_0_rgba(26,26,26,0.04)] hover:bg-white relative ${TOUCH_EXTEND_9}`}
                 >
                   <Minus className="h-3 w-3 text-[var(--color-ink)]" strokeWidth={2.4} />
                 </Button>
@@ -169,7 +170,7 @@ export function CartItemsList({
                   }
                   disabled={item.quantity >= MAX_ITEM_QTY}
                   aria-label={labels.increase}
-                  className="h-[26px] w-[26px] rounded-full bg-[var(--color-ink)] p-0 hover:bg-[var(--color-ink)] disabled:opacity-40"
+                  className={`h-[26px] w-[26px] rounded-full bg-[var(--color-ink)] p-0 hover:bg-[var(--color-ink)] disabled:opacity-40 relative ${TOUCH_EXTEND_9}`}
                 >
                   <Plus className="h-3 w-3 text-white" strokeWidth={2.4} />
                 </Button>

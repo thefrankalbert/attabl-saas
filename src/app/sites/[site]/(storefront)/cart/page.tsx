@@ -34,6 +34,7 @@ import { UpsellSection } from '@/components/tenant/cart/UpsellSection';
 import { PromoSection } from '@/components/tenant/cart/PromoSection';
 import { TipSection, type TipPreset } from '@/components/tenant/cart/TipSection';
 import { OrderSummary } from '@/components/tenant/cart/OrderSummary';
+import { TOUCH_EXTEND_3 } from '@/components/tenant/touch-zone';
 
 const NOTES_MAX_LENGTH = 200;
 
@@ -481,7 +482,7 @@ export default function CartPage() {
             variant="ghost"
             size="icon"
             onClick={() => router.back()}
-            className="h-[38px] w-[38px] shrink-0 rounded-full bg-[var(--color-surface-alt)] text-[var(--color-ink)]"
+            className={`h-[38px] w-[38px] shrink-0 rounded-full bg-[var(--color-surface-alt)] text-[var(--color-ink)] relative ${TOUCH_EXTEND_3}`}
             aria-label={t('ariaGoBack')}
           >
             <ChevronLeft className="w-5 h-5" />
@@ -630,30 +631,34 @@ export default function CartPage() {
           />
         )}
 
-        {/* PROMO CODE */}
-        <PromoSection
-          appliedCoupon={appliedCoupon}
-          promoOpen={promoOpen}
-          setPromoOpen={setPromoOpen}
-          promoInput={promoInput}
-          setPromoInput={setPromoInput}
-          promoError={promoError}
-          setPromoError={setPromoError}
-          promoApplying={promoApplying}
-          promoJustApplied={promoJustApplied}
-          onApply={handleApplyPromo}
-          onRemove={handleRemovePromo}
-          currencyCode={currencyCode}
-          formatDisplayPrice={formatDisplayPrice}
-          labels={{
-            promoCode: t('promoCode'),
-            promoCodePlaceholder: t('promoCodePlaceholder'),
-            apply: t('apply'),
-            promoApplied: t('promoApplied'),
-            ariaRemovePromo: t('ariaRemovePromo'),
-            close: t('close'),
-          }}
-        />
+        {/* PROMO CODE: seulement si le restaurant accepte les codes promo. Un code
+            deja applique reste visible pour pouvoir le retirer, sinon le panier
+            serait refuse sans issue apres une coupure du reglage. */}
+        {(tenant?.enable_coupons || appliedCoupon) && (
+          <PromoSection
+            appliedCoupon={appliedCoupon}
+            promoOpen={promoOpen}
+            setPromoOpen={setPromoOpen}
+            promoInput={promoInput}
+            setPromoInput={setPromoInput}
+            promoError={promoError}
+            setPromoError={setPromoError}
+            promoApplying={promoApplying}
+            promoJustApplied={promoJustApplied}
+            onApply={handleApplyPromo}
+            onRemove={handleRemovePromo}
+            currencyCode={currencyCode}
+            formatDisplayPrice={formatDisplayPrice}
+            labels={{
+              promoCode: t('promoCode'),
+              promoCodePlaceholder: t('promoCodePlaceholder'),
+              apply: t('apply'),
+              promoApplied: t('promoApplied'),
+              ariaRemovePromo: t('ariaRemovePromo'),
+              close: t('close'),
+            }}
+          />
+        )}
 
         {/* TIP SELECTOR */}
         {tipsEnabled && (

@@ -1,5 +1,5 @@
 import { createMiddlewareClient } from '@/lib/supabase/middleware';
-import { getCachedTenantByDomain, getCachedTenant } from '@/lib/cache';
+import { getCachedTenantByDomain, getCachedTenant, getCachedTenantOrThrow } from '@/lib/cache';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { buildCspHeader } from '@/lib/csp';
@@ -455,14 +455,29 @@ export async function proxy(request: NextRequest) {
    * met le resultat en cache, y compris l'absence, et le proxy fait deja cette
    * verification pour les chemins admin.
    */
-  async function poserEnteteTenant(request: NextRequest, slug: string): Promise<boolean> {
-    const tenant = await getCachedTenant(slug);
+  async function poserEnteteTenant(
+    request: NextRequest,
+    slug: string,
+  ): Promise<'trouve' | 'inconnu' | 'indisponible'> {
+    // BASE INDISPONIBLE != RESTAURANT INCONNU (audit d'equipe du 2026-11-27,
+    // convive C37). `getCachedTenant` rendait `null` dans les deux cas, et le
+    // client d'un vrai restaurant voyait "Page introuvable" pendant une panne
+    // de la base. En panne, l'en-tete reste un simple indice (rien n'est
+    // prouve) et la page est rendue: le layout de la vitrine leve alors a son
+    // tour, et `sites/[site]/error.tsx` propose de reessayer.
+    let tenant: Awaited<ReturnType<typeof getCachedTenantOrThrow>>;
+    try {
+      tenant = await getCachedTenantOrThrow(slug);
+    } catch {
+      request.headers.set(TENANT_SLUG_HINT_HEADER, slug);
+      return 'indisponible';
+    }
     if (tenant) {
       request.headers.set(TENANT_SLUG_HEADER, slug);
-      return true;
+      return 'trouve';
     }
     request.headers.set(TENANT_SLUG_HINT_HEADER, slug);
-    return false;
+    return 'inconnu';
   }
 
   /**
@@ -495,7 +510,7 @@ export async function proxy(request: NextRequest) {
   const sitesMatch = pathname.match(/^\/sites\/([^/]+)(\/.*)?$/);
   if (sitesMatch) {
     const tenantSlug = sitesMatch[1];
-    if (!(await poserEnteteTenant(request, tenantSlug))) {
+    if ((await poserEnteteTenant(request, tenantSlug)) === 'inconnu') {
       return reponseRestaurantIntrouvable(request);
     }
     const response = NextResponse.next({
@@ -542,7 +557,7 @@ export async function proxy(request: NextRequest) {
     url.pathname = `/sites/${subdomain}${pathname}`;
 
     // Set x-tenant-slug on REQUEST headers so server components can read it via headers()
-    if (!(await poserEnteteTenant(request, subdomain))) {
+    if ((await poserEnteteTenant(request, subdomain)) === 'inconnu') {
       return reponseRestaurantIntrouvable(request);
     }
 

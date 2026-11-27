@@ -128,11 +128,21 @@ export function toPublicTenant(t: Tenant): Tenant {
   };
 }
 
+/**
+ * Cached tenant config. `null` = restaurant inconnu ou supprime; LEVE si la
+ * base ne repond pas. La vitrine s'en sert pour ne pas annoncer "Page
+ * introuvable" a un client quand la base est seulement indisponible (audit
+ * d'equipe du 2026-11-27, convive C37): l'erreur remonte a la page d'erreur du
+ * restaurant, qui propose de reessayer.
+ */
+export async function getCachedTenantOrThrow(slug: string): Promise<Tenant | null> {
+  return getOrCreateTenantCache(slug)(slug);
+}
+
 /** Cached tenant config. Returns null on failure instead of crashing the page. */
 export async function getCachedTenant(slug: string): Promise<Tenant | null> {
   try {
-    const cacheFn = getOrCreateTenantCache(slug);
-    return await cacheFn(slug);
+    return await getCachedTenantOrThrow(slug);
   } catch (err) {
     logger.error('getCachedTenant: all attempts failed', err, { slug });
     return null;
@@ -310,10 +320,17 @@ function getOrCreateMenuDataCache(tenantId: string): CachedMenuDataFn {
               id, tenant_id, category_id, name, name_en, description, description_en,
               price, image_url, images, is_available, is_featured, allergens, calories, created_at,
               category:categories(id, tenant_id, name, name_en, created_at),
+              options:item_options(id, tenant_id, menu_item_id, name_fr, name_en, is_default, display_order, created_at),
+              price_variants:item_price_variants(id, tenant_id, menu_item_id, variant_name_fr, variant_name_en, price, prices, display_order:sort_order, created_at),
               modifiers:item_modifiers(id, tenant_id, menu_item_id, name, name_en, price, is_available, display_order, created_at)
             `,
             )
             .eq('tenant_id', id)
+            // Client service_role (aucune RLS): les jointures sont bornees au
+            // restaurant, comme les sous-cartes (audit B24).
+            .eq('options.tenant_id', id)
+            .eq('price_variants.tenant_id', id)
+            .eq('modifiers.tenant_id', id)
             .is('deleted_at', null)
             // Include currently-unavailable items so the storefront can render them
             // greyed ("Indisponible") and flip them live via realtime, instead of

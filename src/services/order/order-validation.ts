@@ -149,6 +149,18 @@ export function createValidationMethods(supabase: SupabaseClient) {
           continue;
         }
 
+        // Un plat a tailles exige une taille: sans elle, la ligne passait au prix
+        // de base (audit d'equipe du 2026-11-27, convive #61). Le prix de base
+        // d'un plat a tailles n'est pas un prix de vente.
+        if (!item.selectedVariant && variantsByItem.has(item.id)) {
+          issues.push({
+            itemId: item.id,
+            message: `Choisissez une taille pour "${menuItem.name}"`,
+            removeFromCart: false,
+          });
+          continue;
+        }
+
         // Determine server-verified price: variant price from DB, or base item price
         let expectedPrice = menuItem.price;
         if (item.selectedVariant) {

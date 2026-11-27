@@ -1,11 +1,12 @@
 import { cache } from 'react';
-import { getCachedTenant } from '@/lib/cache';
+import { getCachedTenantOrThrow } from '@/lib/cache';
 import type { Tenant } from '@/types/admin.types';
 import { storefrontAccessForTenant } from './lapsed-trial';
 import type { StorefrontAccess } from './storefront-access';
 
 export interface StorefrontTenant {
-  /** `null`: slug inconnu ou supprime. L'appelant repond 404 lui-meme. */
+  /** `null`: slug inconnu ou supprime. L'appelant repond 404 lui-meme.
+   * Une base indisponible LEVE au lieu de rendre `null`. */
   tenant: Tenant | null;
   access: StorefrontAccess;
 }
@@ -23,7 +24,9 @@ export interface StorefrontTenant {
  * d'une valeur choisie par le client.
  */
 export const getStorefrontTenant = cache(async (slug: string): Promise<StorefrontTenant> => {
-  const tenant = await getCachedTenant(slug);
+  // Base indisponible: l'erreur remonte a `sites/[site]/error.tsx` ("Reessayer"),
+  // et non plus a un 404 "Page introuvable" (audit convive C37).
+  const tenant = await getCachedTenantOrThrow(slug);
   if (!tenant) return { tenant: null, access: 'closed' };
   return { tenant, access: await storefrontAccessForTenant(tenant.id, tenant) };
 });

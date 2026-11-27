@@ -1,11 +1,15 @@
 /** Donnees et statuts de la page de suivi d'une commande (vitrine). */
 
+import type { TrackedLineModifier } from '@/lib/utils/order-line-display';
+
 interface DetailItem {
   name: string;
   quantity: number;
   price: number;
   menu_item_id?: string | null;
   image_url?: string | null;
+  modifiers: TrackedLineModifier[];
+  notes: string | null;
 }
 
 export interface OrderDetailData {
@@ -36,6 +40,8 @@ export interface TrackedDetailRow {
     price_at_order: number;
     menu_item_id: string | null;
     image_url: string | null;
+    modifiers?: unknown;
+    customer_notes?: string | null;
   }> | null;
 }
 

@@ -3889,6 +3889,9 @@
     "ownerOnlyHint": "Only the restaurant owner can change permissions."
   },
   "coupons": {
+    "disabledTitle": "Your customers cannot use these codes.",
+    "disabledBody": "Promo codes are turned off in your settings. Turn them on so customers can enter one in their cart.",
+    "disabledLink": "Turn on in settings",
     "title": "Coupons",
     "addCoupon": "Add coupon",
     "editCoupon": "Edit coupon",
@@ -4767,6 +4770,8 @@
     "hidePassword": "Hide password"
   },
   "tenant": {
+    "reorderUnavailable": "Could not load the menu. Try again in a moment.",
+    "reorderChooseAgain": "Please choose these dishes again (size or menu changed): {items}",
     "tableOccupiedNotice": "Table {table} looks already taken. You can keep going, or check with the staff for another table.",
     "tableOccupiedDismiss": "Dismiss",
     "closedNow": "Closed now",

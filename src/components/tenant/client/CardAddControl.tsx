@@ -8,6 +8,7 @@ import { useTenant } from '@/contexts/TenantContext';
 import { getCartItemKey } from '@/components/tenant/cart/CartItemsList';
 import { MAX_ITEM_QTY } from '@/lib/utils/cart-display';
 import type { MenuItem } from '@/types/admin.types';
+import { TOUCH_EXTEND_9 } from '@/components/tenant/touch-zone';
 
 // ZONE TACTILE des deux boutons du compteur de quantite. Ils mesurent 26px,
 // la regle du depot (.claude/rules/03) en demande 44 au doigt. Les tailles
@@ -15,8 +16,7 @@ import type { MenuItem } from '@/types/admin.types';
 // sensible avec un pseudo-element transparent. 26 + 9 + 9 = 44, et les deux
 // zones ne se chevauchent pas puisque le nombre qui les separe fait au moins
 // 22px de large.
-const ZONE_TACTILE =
-  " relative before:absolute before:-inset-[9px] before:rounded-full before:content-['']";
+const ZONE_TACTILE = ` relative ${TOUCH_EXTEND_9}`;
 
 const PLUS_SHADOW =
   'shadow-[0_4px_6px_-1px_rgba(26,26,26,0.06),0_2px_4px_-2px_rgba(26,26,26,0.04)]';
