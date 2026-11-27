@@ -58,9 +58,32 @@ describe('signupSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should reject invalid plan value', () => {
+  it('should reject invalid plan value with a French message', () => {
     const result = signupSchema.safeParse({ ...validInput, plan: 'enterprise' });
     expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe(
+        'Plan inconnu : choisissez Starter, Pro ou Business',
+      );
+    }
+  });
+
+  it.each(['<b>Chez Ama</b>', 'Chez <Ama', 'Chez Ama>'])(
+    'should reject a restaurant name containing < or > (%s)',
+    (restaurantName) => {
+      const result = signupSchema.safeParse({ ...validInput, restaurantName });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe(
+          'Le nom du restaurant ne peut pas contenir < ou >',
+        );
+      }
+    },
+  );
+
+  it('should keep accepting apostrophes, accents and ampersands in the name', () => {
+    const result = signupSchema.safeParse({ ...validInput, restaurantName: "L'été & Co" });
+    expect(result.success).toBe(true);
   });
 
   it('should accept when plan is not provided', () => {

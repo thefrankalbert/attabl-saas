@@ -4,8 +4,6 @@
  * Data shapes and the public EmailService interface consumed by the factory.
  */
 
-import type { UnsubscribeLinks } from '@/lib/email/unsubscribe-token';
-
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -68,20 +66,12 @@ export interface RenewalReminderEmailData {
   planLabel: string;
 }
 
-/**
- * E-mails de RELANCE (premiere et dixieme commande, inactivite, fin d'essai):
- * non transactionnels, ils portent toujours un lien de desinscription (pied de
- * l'e-mail) et les en-tetes List-Unsubscribe (RFC 2369 / 8058). R5/T9.
- */
-export interface LifecycleEmailData {
-  restaurantName: string;
-  dashboardUrl: string;
-  unsubscribe: UnsubscribeLinks;
-}
-
-export interface TrialEndgameEmailData extends LifecycleEmailData {
-  ordersCount: number;
-  daysLeft: number;
+/** Alerte de connexion depuis un appareil inconnu (audit Q19). */
+export interface NewLoginEmailData {
+  /** Date et heure deja formatees, fuseau compris. */
+  dateLabel: string;
+  methode: 'mot_de_passe' | 'google' | 'autre';
+  changePasswordUrl: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -105,9 +95,22 @@ export interface EmailService {
   sendSignupFailedEmail(to: string, data: SignupFailedEmailData): Promise<EmailResult>;
   sendTeamInvitationEmail(to: string, data: TeamInvitationEmailData): Promise<EmailResult>;
   sendLowStockAlertEmail(to: string | string[], data: LowStockAlertEmailData): Promise<EmailResult>;
-  sendFirstOrderTriggerEmail(to: string, data: LifecycleEmailData): Promise<EmailResult>;
-  sendTenthOrderTriggerEmail(to: string, data: LifecycleEmailData): Promise<EmailResult>;
-  sendTrialIdleEmail(to: string, data: LifecycleEmailData): Promise<EmailResult>;
+  sendFirstOrderTriggerEmail(
+    to: string,
+    data: { restaurantName: string; dashboardUrl: string },
+  ): Promise<EmailResult>;
+  sendTenthOrderTriggerEmail(
+    to: string,
+    data: { restaurantName: string; dashboardUrl: string },
+  ): Promise<EmailResult>;
+  sendTrialIdleEmail(
+    to: string,
+    data: { restaurantName: string; dashboardUrl: string },
+  ): Promise<EmailResult>;
   sendRenewalReminderEmail(to: string, data: RenewalReminderEmailData): Promise<EmailResult>;
-  sendTrialEndgameEmail(to: string, data: TrialEndgameEmailData): Promise<EmailResult>;
+  sendTrialEndgameEmail(
+    to: string,
+    data: { restaurantName: string; dashboardUrl: string; ordersCount: number; daysLeft: number },
+  ): Promise<EmailResult>;
+  sendNewLoginEmail(to: string, data: NewLoginEmailData): Promise<EmailResult>;
 }

@@ -128,7 +128,12 @@ export function StockReportClient({
       </div>
 
       {/* Sheet preview */}
-      <div className="overflow-x-auto rounded-xl border border-app-border bg-app-elevated p-4 print:border-0 print:bg-transparent print:p-0">
+      <div
+        tabIndex={0}
+        role="region"
+        aria-label={t('stockReportTitle')}
+        className="overflow-x-auto rounded-xl border border-app-border bg-app-elevated p-4 print:overflow-visible print:border-0 print:bg-transparent print:p-0"
+      >
         <InventoryReportSheet
           tenant={tenant}
           title={t('stockReportTitle')}

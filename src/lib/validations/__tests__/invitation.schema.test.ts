@@ -85,7 +85,7 @@ describe('acceptInvitationSchema', () => {
   //    ("refuse un nouveau compte sans nom ni mot de passe");
   //  - le motif d'origine de l'exigence (un appel vide au montage de la page
   //    qui brulait un jeton du limiteur d'acceptation) est couvert par
-  //    validateInvitationSchema / GET /api/invitations/validate, qui a son
+  //    validateInvitationSchema / POST /api/invitations/validate, qui a son
   //    propre limiteur - cas verifies dans le describe suivant;
   //  - les bornes restent appliquees des que les champs sont fournis (voir
   //    "rejects short password" ci-dessus et les deux cas ci-dessous).

@@ -18,7 +18,7 @@ export interface FlutterwaveConfig {
 }
 
 /** Devises encaissables: XOF (Burkina Faso, Cote d'Ivoire, Senegal) et XAF (Cameroun, Tchad). */
-export const FLUTTERWAVE_CURRENCIES = ['XOF', 'XAF'] as const;
+const FLUTTERWAVE_CURRENCIES = ['XOF', 'XAF'] as const;
 export type FlutterwaveCurrency = (typeof FLUTTERWAVE_CURRENCIES)[number];
 
 export function isFlutterwaveCurrency(value: unknown): value is FlutterwaveCurrency {

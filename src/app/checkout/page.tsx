@@ -39,7 +39,7 @@ function CheckoutError() {
 interface SessionResponse {
   status: number;
   ok: boolean;
-  data: { clientSecret?: string; error?: unknown; detail?: unknown };
+  data: { clientSecret?: string; error?: unknown };
 }
 
 function CheckoutWithPlan({
@@ -100,10 +100,7 @@ function CheckoutWithPlan({
         }
 
         if (!res.ok) {
-          const message =
-            (typeof data.detail === 'string' && data.detail) ||
-            (typeof data.error === 'string' && data.error) ||
-            'server_error';
+          const message = (typeof data.error === 'string' && data.error) || 'server_error';
           setError(message);
           return;
         }

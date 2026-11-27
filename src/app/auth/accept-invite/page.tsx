@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AuthFrame } from '@/components/auth/AuthFrame';
 import { useTranslations } from 'next-intl';
-import { passwordSchema } from '@/lib/validations/common.schema';
+import { passwordIssueMessage } from '@/lib/validations/password-rules';
 import { PasswordRulesList, usePasswordIssueText } from '@/components/auth/PasswordRules';
 
 // --- Accept Invite Form ---
@@ -29,6 +29,8 @@ function AcceptInviteForm() {
   const [success, setSuccess] = useState(false);
   const [tokenExpired, setTokenExpired] = useState(false);
   const [tokenInvalid, setTokenInvalid] = useState(false);
+  // Le formulaire n'apparait qu'une fois le jeton verifie par le serveur.
+  const [validating, setValidating] = useState(Boolean(token));
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -42,7 +44,11 @@ function AcceptInviteForm() {
     if (!token) return;
     async function validateToken() {
       try {
-        const res = await fetch(`/api/invitations/validate?token=${encodeURIComponent(token!)}`);
+        const res = await fetch('/api/invitations/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
         if (res.status === 410) {
           setTokenExpired(true);
         } else if (res.status === 400 || res.status === 404) {
@@ -55,10 +61,16 @@ function AcceptInviteForm() {
         }
       } catch {
         // Network error - let the actual submit handle it
+      } finally {
+        setValidating(false);
       }
     }
     validateToken();
   }, [token]);
+
+  if (token && validating) {
+    return <CenteredSkeleton />;
+  }
 
   // No token in URL, or a token the server does not recognise
   if (!token || tokenInvalid) {
@@ -165,10 +177,9 @@ function AcceptInviteForm() {
 
     // Memes regles que le serveur et que la politique Auth (12 caracteres,
     // minuscule, majuscule, chiffre, symbole): le message nomme TOUT ce qui manque.
-    const passwordCheck = passwordSchema.safeParse(password);
-    if (!passwordCheck.success) {
-      const message = passwordCheck.error.issues[0]?.message;
-      setError(passwordIssueText(message) ?? t('acceptError'));
+    const passwordIssue = passwordIssueMessage(password);
+    if (passwordIssue) {
+      setError(passwordIssueText(passwordIssue) ?? t('acceptError'));
       return;
     }
 

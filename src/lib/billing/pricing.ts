@@ -33,3 +33,12 @@ export const PLAN_TOTALS: Record<
   pro: { monthly: 79000, yearly: 804000 },
   business: { monthly: 149000, yearly: 1524000 },
 };
+
+/**
+ * Prix par jour AFFICHE sur la vitrine (accueil et tarifs): montant mensuel
+ * divise par 30, arrondi aux 50 FCFA. Un seul calcul pour tous les ecrans, afin
+ * que "soit environ X par jour" ne change plus d'une page a l'autre.
+ */
+export function approxPricePerDay(monthlyAmount: number): number {
+  return Math.round(monthlyAmount / 30 / 50) * 50;
+}

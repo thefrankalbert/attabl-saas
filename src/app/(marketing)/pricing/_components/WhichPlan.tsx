@@ -59,7 +59,7 @@ export function WhichPlan() {
                 className={cn(
                   'text-xs font-semibold uppercase tracking-[0.04em]',
                   p.highlight
-                    ? 'text-orange-600 dark:text-orange-500'
+                    ? 'text-orange-700 dark:text-orange-500'
                     : 'text-zinc-500 dark:text-zinc-400',
                 )}
               >

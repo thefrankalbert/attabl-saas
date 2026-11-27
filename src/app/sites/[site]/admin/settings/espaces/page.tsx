@@ -7,6 +7,11 @@ import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import { EspacesManager, type EspaceRow } from '@/components/admin/settings/EspacesManager';
 import { getTranslations } from 'next-intl/server';
 import AdminSrTitle from '@/components/admin/AdminSrTitle';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('espaces', 'title');
+}
 
 export const dynamic = 'force-dynamic';
 

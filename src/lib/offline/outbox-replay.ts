@@ -14,7 +14,7 @@ import type { ReplayOutcome } from './outbox';
 export const OUTBOX_SYNC_TAG = 'attabl-outbox';
 
 /** Route de commande du convive, sans session. */
-export const GUEST_ORDER_ENDPOINT = '/api/orders';
+const GUEST_ORDER_ENDPOINT = '/api/orders';
 
 /** HTTP status -> what the outbox should do with the entry. */
 export function classifyStatus(

@@ -1,41 +1,22 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-const {
-  sendTrialIdleEmail,
-  sendTrialEndgameEmail,
-  sendFirstOrderTriggerEmail,
-  sendTenthOrderTriggerEmail,
-  emailConfigured,
-} = vi.hoisted(() => ({
+const { sendTrialIdleEmail, sendTrialEndgameEmail, emailConfigured } = vi.hoisted(() => ({
   sendTrialIdleEmail: vi.fn(),
   sendTrialEndgameEmail: vi.fn(),
-  sendFirstOrderTriggerEmail: vi.fn(),
-  sendTenthOrderTriggerEmail: vi.fn(),
   emailConfigured: vi.fn(),
 }));
 vi.mock('../email.service', () => ({
-  createEmailService: () => ({
-    sendTrialIdleEmail,
-    sendTrialEndgameEmail,
-    sendFirstOrderTriggerEmail,
-    sendTenthOrderTriggerEmail,
-  }),
+  createEmailService: () => ({ sendTrialIdleEmail, sendTrialEndgameEmail }),
   isEmailDeliveryConfigured: () => emailConfigured(),
 }));
 vi.mock('@/lib/logger', () => ({ logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn() } }));
 
 import {
   determineTrialEventKey,
-  findLifecycleRecipient,
   isTrialIdle,
-  sendOrderEmailForKey,
-  sendTrialEmailForKey,
   sendTrialIdleEmails,
 } from '../trigger-emails.service';
-import { verifyUnsubscribeToken } from '@/lib/email/unsubscribe-token';
-
-process.env.SUPABASE_SERVICE_ROLE_KEY ??= 'cle-de-test-serveur';
 
 const NOW = new Date('2026-11-24T09:00:00Z');
 const HOUR = 3_600_000;
@@ -56,6 +37,17 @@ describe('isTrialIdle (B104)', () => {
 });
 
 describe('determineTrialEventKey (B104)', () => {
+  // determineTrialEventKey lit l'heure reelle (getTrialDaysRemaining). Sans
+  // horloge figee sur NOW, "fin d'essai dans 2 jours" est devenue une date
+  // passee le 2026-11-26 et le test a casse tout seul.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(NOW);
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('ne rend plus jamais la relance d inactivite pendant une visite', () => {
     // Un nouvel inscrit (aucune visite enregistree) la recevait des sa premiere visite.
     expect(determineTrialEventKey({ trialEndsAt: inDays(10), activationEvents: {} })).toBeNull();
@@ -93,17 +85,12 @@ function fakeDb(opts: { tenants: Row[]; claim?: boolean }) {
   return { client, tenantFilters, claims };
 }
 
-const tenant = (
-  id: string,
-  lastActive: string | null,
-  email: string | null = 'p@x.test',
-  optedOutAt: string | null = null,
-): Row => ({
+const tenant = (id: string, lastActive: string | null, email: string | null = 'p@x.test'): Row => ({
   id,
   name: `Resto ${id}`,
   slug: `resto-${id}`,
   last_active_at: lastActive,
-  owners: email ? [{ id: `owner-${id}`, email, lifecycle_emails_opt_out_at: optedOutAt }] : [],
+  owners: email ? [{ email }] : [],
 });
 
 describe('sendTrialIdleEmails (B104)', () => {
@@ -132,10 +119,6 @@ describe('sendTrialIdleEmails (B104)', () => {
     expect(sendTrialIdleEmail).toHaveBeenCalledWith('proprio@resto.test', {
       restaurantName: 'Resto t1',
       dashboardUrl: expect.stringContaining('/sites/resto-t1/admin'),
-      unsubscribe: {
-        pageUrl: expect.stringContaining('/unsubscribe?token='),
-        oneClickUrl: expect.stringContaining('/api/email/unsubscribe?token='),
-      },
     });
   });
 
@@ -144,12 +127,7 @@ describe('sendTrialIdleEmails (B104)', () => {
     await sendTrialIdleEmails(client, NOW);
     expect(tenantFilters).toEqual(
       expect.arrayContaining([
-        [
-          'select',
-          expect.stringContaining(
-            'owners:admin_users!inner(id, email, lifecycle_emails_opt_out_at)',
-          ),
-        ],
+        ['select', expect.stringContaining('owners:admin_users!inner(email)')],
         ['eq', 'subscription_status', 'trial'],
         ['eq', 'is_active', true],
         ['is', 'deleted_at', null],
@@ -160,7 +138,6 @@ describe('sendTrialIdleEmails (B104)', () => {
         ['eq', 'owners.is_active', true],
         ['is', 'owners.deleted_at', null],
         ['not', 'owners.email', 'is', null],
-        ['is', 'owners.lifecycle_emails_opt_out_at', null],
         ['order', 'last_active_at', { ascending: true }],
         ['limit', 50],
       ]),
@@ -177,117 +154,5 @@ describe('sendTrialIdleEmails (B104)', () => {
     const pris = fakeDb({ tenants: [tenant('t1', ago(72))], claim: false });
     expect(await sendTrialIdleEmails(pris.client, NOW)).toEqual({ candidates: 1, sent: 0 });
     expect(sendTrialIdleEmail).not.toHaveBeenCalled();
-  });
-});
-
-describe('R5/T9: aucune relance a une personne desinscrite', () => {
-  const TENANT = '22222222-2222-4222-8222-222222222222';
-  const OWNER = '11111111-1111-4111-8111-111111111111';
-  const SELF = '33333333-3333-4333-8333-333333333333';
-
-  type AdminRow = { id: string; email: string | null; lifecycle_emails_opt_out_at: string | null };
-
-  /** Fausse base admin_users: rend la ligne du proprietaire ou de la personne connectee. */
-  function adminDb(rows: { owner?: AdminRow | null; self?: AdminRow | null }) {
-    const queries: unknown[][][] = [];
-    const client = {
-      from(table: string) {
-        const calls: unknown[][] = [['from', table]];
-        queries.push(calls);
-        const chain: Record<string, unknown> = {};
-        for (const m of ['select', 'eq']) {
-          chain[m] = (...args: unknown[]) => (calls.push([m, ...args]), chain);
-        }
-        chain.maybeSingle = async () => {
-          const isOwner = calls.some((c) => c[0] === 'eq' && c[1] === 'role');
-          return { data: (isOwner ? rows.owner : rows.self) ?? null, error: null };
-        };
-        return chain;
-      },
-    } as unknown as SupabaseClient;
-    return { client, queries };
-  }
-
-  beforeEach(() => {
-    sendTrialIdleEmail.mockReset().mockResolvedValue({ success: true });
-    sendTrialEndgameEmail.mockReset().mockResolvedValue({ success: true });
-    sendFirstOrderTriggerEmail.mockReset().mockResolvedValue({ success: true });
-    sendTenthOrderTriggerEmail.mockReset().mockResolvedValue({ success: true });
-    emailConfigured.mockReset().mockReturnValue(true);
-  });
-
-  it('temoin: proprietaire abonne = destinataire, filtre par restaurant', async () => {
-    const { client, queries } = adminDb({
-      owner: { id: OWNER, email: 'patron@x.test', lifecycle_emails_opt_out_at: null },
-    });
-    expect(await findLifecycleRecipient(client, TENANT)).toEqual({
-      adminUserId: OWNER,
-      tenantId: TENANT,
-      email: 'patron@x.test',
-    });
-    expect(queries[0]).toContainEqual(['eq', 'tenant_id', TENANT]);
-  });
-
-  it('proprietaire desinscrit = aucun destinataire, et pas de repli sur la personne connectee', async () => {
-    const { client } = adminDb({
-      owner: { id: OWNER, email: 'patron@x.test', lifecycle_emails_opt_out_at: ago(1) },
-      self: { id: SELF, email: 'gerant@x.test', lifecycle_emails_opt_out_at: null },
-    });
-    expect(await findLifecycleRecipient(client, TENANT, { userId: 'u', email: 'u@x.test' })).toBe(
-      null,
-    );
-  });
-
-  it('repli sur la ligne de la personne connectee, sauf si elle est desinscrite', async () => {
-    const abonne = adminDb({
-      owner: null,
-      self: { id: SELF, email: 'gerant@x.test', lifecycle_emails_opt_out_at: null },
-    });
-    expect(
-      await findLifecycleRecipient(abonne.client, TENANT, { userId: 'u', email: 'u@x.test' }),
-    ).toEqual({ adminUserId: SELF, tenantId: TENANT, email: 'gerant@x.test' });
-
-    const desinscrit = adminDb({
-      owner: null,
-      self: { id: SELF, email: 'gerant@x.test', lifecycle_emails_opt_out_at: ago(1) },
-    });
-    expect(
-      await findLifecycleRecipient(desinscrit.client, TENANT, { userId: 'u', email: 'u@x.test' }),
-    ).toBeNull();
-
-    const sansLigne = adminDb({ owner: null, self: null });
-    expect(
-      await findLifecycleRecipient(sansLigne.client, TENANT, { userId: 'u', email: 'u@x.test' }),
-    ).toBeNull();
-  });
-
-  it('relance d inactivite: proprietaire desinscrit = aucun envoi ni reservation (temoin: abonne = envoi)', async () => {
-    const desinscrit = fakeDb({ tenants: [tenant('t1', ago(72), 'p@x.test', ago(1))] });
-    expect(await sendTrialIdleEmails(desinscrit.client, NOW)).toEqual({ candidates: 1, sent: 0 });
-    expect(desinscrit.claims).toEqual([]);
-    expect(sendTrialIdleEmail).not.toHaveBeenCalled();
-
-    const abonne = fakeDb({ tenants: [tenant('t1', ago(72), 'p@x.test', null)] });
-    expect(await sendTrialIdleEmails(abonne.client, NOW)).toEqual({ candidates: 1, sent: 1 });
-    expect(sendTrialIdleEmail).toHaveBeenCalledTimes(1);
-  });
-
-  it('le lien de desinscription de chaque relance designe le destinataire', async () => {
-    const recipient = { adminUserId: OWNER, tenantId: TENANT, email: 'patron@x.test' };
-    const params = { recipient, restaurantName: 'R', dashboardUrl: 'https://attabl.com/x' };
-    await sendOrderEmailForKey('first_order_email_sent', params);
-    await sendOrderEmailForKey('tenth_order_email_sent', params);
-    await sendTrialEmailForKey('endgame_email_sent', { ...params, trialEndsAt: inDays(2) });
-
-    for (const fn of [
-      sendFirstOrderTriggerEmail,
-      sendTenthOrderTriggerEmail,
-      sendTrialEndgameEmail,
-    ]) {
-      const [to, data] = fn.mock.calls[0] as [string, { unsubscribe: { oneClickUrl: string } }];
-      expect(to).toBe('patron@x.test');
-      const token = new URL(data.unsubscribe.oneClickUrl).searchParams.get('token') ?? '';
-      expect(verifyUnsubscribeToken(token)).toEqual({ adminUserId: OWNER, tenantId: TENANT });
-    }
   });
 });

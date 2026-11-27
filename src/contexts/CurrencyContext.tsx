@@ -9,7 +9,6 @@ import {
   useRef,
   type ReactNode,
 } from 'react';
-import { getUsdXafRate } from '@/lib/exchange-rate';
 
 // --- Types ----------------------------------------------
 
@@ -52,8 +51,9 @@ const STORAGE_KEY = 'attabl_display_currency';
  * - EUR: Fixed peg (CFA franc pegged to Euro via BCEAO: 1 EUR = 655.957 XAF).
  *   This rate is permanent and guaranteed by treaty - no update needed.
  *
- * - USD: Fetched live from exchangerate-api.com on mount (cached 24h).
- *   Falls back to 605 if the API is unreachable.
+ * - USD: fetched on mount from our own /api/exchange-rate route (the server calls
+ *   the rate service, so the visitor's IP never reaches a third party).
+ *   Falls back to 605 if the route is unreachable.
  */
 const DEFAULT_RATES_TO_XAF: Record<string, number> = {
   XAF: 1,
@@ -147,9 +147,17 @@ export function CurrencyProvider({
   useEffect(() => {
     if (hasFetched.current) return;
     hasFetched.current = true;
-    getUsdXafRate().then((rate) => {
-      setRatesToXaf((prev) => ({ ...prev, USD: rate }));
-    });
+    fetch('/api/exchange-rate')
+      .then((res) => (res.ok ? (res.json() as Promise<{ rate?: number }>) : null))
+      .then((json) => {
+        const rate = json?.rate;
+        if (typeof rate === 'number' && rate > 0) {
+          setRatesToXaf((prev) => ({ ...prev, USD: rate }));
+        }
+      })
+      .catch(() => {
+        // Valeur de repli deja en place (DEFAULT_RATES_TO_XAF.USD).
+      });
   }, []);
 
   const setDisplayCurrency = useCallback((code: DisplayCurrency) => {

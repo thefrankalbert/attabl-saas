@@ -22,7 +22,7 @@ export function CostOverThreeYears() {
         <div className="mx-auto grid max-w-[760px] grid-cols-1 gap-[18px] sm:grid-cols-2">
           {/* Attabl */}
           <div className="rounded-2xl border border-zinc-900 bg-white p-[30px] shadow-[0_24px_48px_-30px_rgba(9,9,11,0.28)] dark:border-zinc-100 dark:bg-zinc-950">
-            <div className="text-[13px] font-semibold text-orange-600 dark:text-orange-500">
+            <div className="text-[13px] font-semibold text-orange-700 dark:text-orange-500">
               {t('attablLabel')}
             </div>
             <div className="mb-1 mt-3 text-[40px] font-semibold tracking-[-0.03em] text-zinc-950 dark:text-zinc-50">
@@ -49,7 +49,7 @@ export function CostOverThreeYears() {
             <div className="text-[13px] font-semibold text-zinc-500 dark:text-zinc-400">
               {t('rivalLabel')}
             </div>
-            <div className="mb-1 mt-3 text-[40px] font-semibold tracking-[-0.03em] text-zinc-400 dark:text-zinc-500">
+            <div className="mb-1 mt-3 text-[40px] font-semibold tracking-[-0.03em] text-zinc-500 dark:text-zinc-400">
               {t('rivalPrice')}
             </div>
             <div className="text-sm text-zinc-500 dark:text-zinc-400">{t('rivalSub')}</div>
@@ -69,7 +69,7 @@ export function CostOverThreeYears() {
             </div>
           </div>
         </div>
-        <p className="mx-auto mt-[22px] max-w-[560px] text-center text-[12.5px] leading-[1.5] text-zinc-400 dark:text-zinc-500">
+        <p className="mx-auto mt-[22px] max-w-[560px] text-center text-[12.5px] leading-[1.5] text-zinc-500 dark:text-zinc-400">
           {t('disclaimer')}
         </p>
       </div>

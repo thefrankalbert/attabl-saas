@@ -6,6 +6,11 @@ import { FeatureUpgradeWall } from '@/components/admin/FeatureUpgradeWall';
 import { canAccessFeature } from '@/lib/plans/features';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
+import { adminPageMetadata } from '@/lib/admin-page-metadata';
+
+export async function generateMetadata() {
+  return adminPageMetadata('sidebar', 'navStockHistory');
+}
 
 export const dynamic = 'force-dynamic';
 

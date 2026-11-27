@@ -35,6 +35,7 @@ export function SoundSettings({
   tenantId,
 }: SoundSettingsProps) {
   const t = useTranslations('settings');
+  const tc = useTranslations('common');
   const { effectivePlan } = useSubscription();
   const { toast } = useToast();
   const { setSoundId: setGlobalSoundId, preview: globalPreview } = useSound();
@@ -330,7 +331,7 @@ export function SoundSettings({
                       handleDeleteCustomSound();
                     }
                   }}
-                  title="Supprimer"
+                  title={tc('delete')}
                   className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 text-app-text-muted hover:text-[var(--destructive)] hover:bg-[var(--accent)] transition-colors"
                 >
                   <Trash2 className="w-3 h-3" />

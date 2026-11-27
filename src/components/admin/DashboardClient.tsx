@@ -16,7 +16,6 @@ import type {
   DashboardBucketSeries,
   DashboardChannelSeries,
   TopDishRecord,
-  StockAlertRecord,
 } from '@/types/dashboard.types';
 
 type DashboardClientProps = UseDashboardDataParams & {
@@ -25,7 +24,6 @@ type DashboardClientProps = UseDashboardDataParams & {
   initialBuckets?: DashboardBucketSeries;
   initialChannelBuckets?: DashboardChannelSeries;
   initialTopDishes?: TopDishRecord[];
-  initialStockAlerts?: StockAlertRecord[];
   initialActiveTables?: { used: number; total: number };
 };
 

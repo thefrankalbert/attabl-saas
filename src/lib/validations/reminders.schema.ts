@@ -10,7 +10,7 @@ export const REMINDER_RULES = [
 
 export type ReminderRule = (typeof REMINDER_RULES)[number];
 
-export const reminderRuleSchema = z.enum(REMINDER_RULES);
+const reminderRuleSchema = z.enum(REMINDER_RULES);
 
 /**
  * Reglages d'un restaurant. Les delais sont ceux DU restaurant: une cuisine de

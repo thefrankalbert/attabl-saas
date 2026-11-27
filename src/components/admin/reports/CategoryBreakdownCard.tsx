@@ -15,7 +15,12 @@ export function CategoryBreakdownCard({ categories, fmt }: CategoryBreakdownCard
 
   return (
     <div className="bg-app-card border border-app-border/60 rounded-xl p-4">
-      <h3 className="text-sm font-bold text-app-text mb-4">{t('categoryBreakdown')}</h3>
+      <h3 className="text-sm font-bold text-app-text">{t('categoryBreakdown')}</h3>
+      {/* Le chiffre d'affaires compte les paiements recus sur la periode, la
+          repartition compte les commandes passees sur la periode: une commande
+          passee un jour et payee le lendemain change de jour d'un bloc a
+          l'autre. On le dit plutot que de laisser croire a une erreur. */}
+      <p className="mb-4 mt-1 text-xs text-app-text-secondary">{t('categoryBreakdownBasis')}</p>
       {categories.length === 0 ? (
         <p className="text-sm text-app-text-muted text-center py-6">{t('noCategories')}</p>
       ) : (

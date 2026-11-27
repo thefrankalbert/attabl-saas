@@ -16,9 +16,10 @@ const QR_STYLES: Array<{
   id: OnboardingData['qrStyle'];
   fg: string;
   bg: string;
+  labelKey: string;
 }> = [
-  { id: 'classic', fg: '#000000', bg: '#FFFFFF' },
-  { id: 'branded', fg: 'primary', bg: '#FFFFFF' },
+  { id: 'classic', fg: '#000000', bg: '#FFFFFF', labelKey: 'qrStyleClassic' },
+  { id: 'branded', fg: 'primary', bg: '#FFFFFF', labelKey: 'qrStyleBranded' },
 ];
 
 interface LaunchStyleTabProps {
@@ -33,7 +34,9 @@ export function LaunchStyleTab({ data, updateData }: LaunchStyleTabProps) {
     <div className="space-y-6">
       {/* Templates */}
       <div>
-        <p className="mb-2 block text-xs font-medium text-app-text-secondary">Template</p>
+        <p className="mb-2 block text-xs font-medium text-app-text-secondary">
+          {t('styleTemplateLabel')}
+        </p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {TEMPLATES.map((tmpl) => {
             const isSelected = data.qrTemplate === tmpl.id;
@@ -42,6 +45,7 @@ export function LaunchStyleTab({ data, updateData }: LaunchStyleTabProps) {
                 key={tmpl.id}
                 type="button"
                 variant="ghost"
+                aria-pressed={isSelected}
                 onClick={() => updateData({ qrTemplate: tmpl.id })}
                 className={`flex h-auto flex-col overflow-hidden rounded-lg p-0 text-center transition-all duration-150 ${
                   isSelected
@@ -77,6 +81,8 @@ export function LaunchStyleTab({ data, updateData }: LaunchStyleTabProps) {
                 key={style.id}
                 type="button"
                 variant="ghost"
+                aria-label={t(style.labelKey)}
+                aria-pressed={isActive}
                 onClick={() => updateData({ qrStyle: style.id })}
                 className={`flex h-12 w-12 items-center justify-center rounded-lg p-0 shadow-sm transition-all ${
                   isActive

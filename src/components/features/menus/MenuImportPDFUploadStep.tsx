@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { Loader2, Upload, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { getMainAppPath } from '@/lib/app-url';
 import type { Menu } from '@/types/admin.types';
 import { formatFileSize, type Step } from './menu-import-pdf.types';
 
@@ -131,22 +129,7 @@ export function MenuImportPDFUploadStep({
         )}
       </div>
 
-      {/* D9: le restaurateur sait, avant l'envoi, qu'un prestataire lit le fichier.
-          Lien absolu: l'admin vit sur le sous-domaine du restaurant, ou /privacy n'existe pas. */}
-      <p className="text-xs text-app-text-muted">
-        {t.rich('pdfThirdPartyNotice', {
-          privacy: (chunks) => (
-            <Link
-              href={getMainAppPath('/privacy')}
-              target="_blank"
-              rel="noopener"
-              className="underline underline-offset-2"
-            >
-              {chunks}
-            </Link>
-          ),
-        })}
-      </p>
+      <p className="text-xs text-app-text-muted">{t('pdfAiNotice')}</p>
 
       {/* Action buttons */}
       <div className="flex justify-end gap-3 pt-4 border-t border-app-border">

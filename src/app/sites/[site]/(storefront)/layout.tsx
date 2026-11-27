@@ -1,3 +1,4 @@
+import { NextIntlClientProvider } from 'next-intl';
 import { TenantProvider } from '@/contexts/TenantContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { CurrencyProvider } from '@/contexts/CurrencyContext';
@@ -17,6 +18,7 @@ import { StorefrontUnavailable } from '@/components/tenant/StorefrontUnavailable
 import { AnnouncementBanner } from '@/components/tenant/AnnouncementBanner';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
+import { getStorefrontMessages } from '@/i18n/storefront-messages';
 
 /**
  * Storefront (convive) shell.
@@ -63,8 +65,16 @@ export default async function StorefrontLayout({
     notFound();
   }
 
+  // Only the messages the convive client components read: the full catalog was
+  // most of the HTML of every menu page (see src/i18n/client-messages.ts).
+  const messages = await getStorefrontMessages();
+
   if (access === 'closed') {
-    return <StorefrontUnavailable />;
+    return (
+      <NextIntlClientProvider messages={messages}>
+        <StorefrontUnavailable />
+      </NextIntlClientProvider>
+    );
   }
 
   const tenantId = tenant?.id || null;
@@ -99,47 +109,49 @@ export default async function StorefrontLayout({
     : [defaultCurrency];
 
   return (
-    <NextThemesProvider attribute="class" forcedTheme="light" nonce={nonce}>
-      <TenantProvider
-        slug={site}
-        tenantId={tenantId}
-        tenant={tenant ? toPublicTenant(tenant) : null}
-        orderingPaused={access === 'read_only'}
-        tipsEnabled={tipsEnabled}
-      >
-        <TenantBrandProvider
-          initialColors={{
-            primaryColor: resolveStorefrontPrimary(tenant?.primary_color),
-          }}
+    <NextIntlClientProvider messages={messages}>
+      <NextThemesProvider attribute="class" forcedTheme="light" nonce={nonce}>
+        <TenantProvider
+          slug={site}
+          tenantId={tenantId}
+          tenant={tenant ? toPublicTenant(tenant) : null}
+          orderingPaused={access === 'read_only'}
+          tipsEnabled={tipsEnabled}
         >
-          <CartProvider>
-            <CurrencyProvider
-              tenantCurrency={defaultCurrency}
-              supportedCurrencies={supportedCurrencies}
-            >
-              <div
-                className="tenant-client flex h-dvh flex-col overflow-hidden bg-white antialiased"
-                style={{
-                  fontFamily: tenantFontFamily,
-                  ...storefrontBrandStyle(tenant?.primary_color),
-                }}
+          <TenantBrandProvider
+            initialColors={{
+              primaryColor: resolveStorefrontPrimary(tenant?.primary_color),
+            }}
+          >
+            <CartProvider>
+              <CurrencyProvider
+                tenantCurrency={defaultCurrency}
+                supportedCurrencies={supportedCurrencies}
               >
-                <StorefrontOfflineIndicator />
-                <OrderingPausedNotice />
-                {tenantId && <AnnouncementBanner tenantId={tenantId} />}
-                <main
-                  id="main-content"
-                  className="relative flex-1 overflow-y-auto overscroll-contain"
+                <div
+                  className="tenant-client flex h-dvh flex-col overflow-hidden bg-white antialiased"
+                  style={{
+                    fontFamily: tenantFontFamily,
+                    ...storefrontBrandStyle(tenant?.primary_color),
+                  }}
                 >
-                  {children}
-                </main>
-                <ClientFloatingCart slug={site} />
-                <ClientBottomNav slug={site} />
-              </div>
-            </CurrencyProvider>
-          </CartProvider>
-        </TenantBrandProvider>
-      </TenantProvider>
-    </NextThemesProvider>
+                  <StorefrontOfflineIndicator />
+                  <OrderingPausedNotice />
+                  {tenantId && <AnnouncementBanner tenantId={tenantId} />}
+                  <main
+                    id="main-content"
+                    className="relative flex-1 overflow-y-auto overscroll-contain"
+                  >
+                    {children}
+                  </main>
+                  <ClientFloatingCart slug={site} />
+                  <ClientBottomNav slug={site} />
+                </div>
+              </CurrencyProvider>
+            </CartProvider>
+          </TenantBrandProvider>
+        </TenantProvider>
+      </NextThemesProvider>
+    </NextIntlClientProvider>
   );
 }

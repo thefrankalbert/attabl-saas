@@ -43,6 +43,7 @@ export default function SettingsBranding({ form, t }: SettingsBrandingProps) {
               {/* eslint-disable-next-line react/forbid-elements -- <input type="color"> is the CLAUDE.md-documented exception (no shadcn equivalent) */}
               <input
                 type="color"
+                aria-label={t('primaryColor')}
                 value={watchedPrimaryColor}
                 onChange={(e) => setValue('primaryColor', e.target.value)}
                 className="w-10 h-10 min-h-[44px] p-1 rounded-lg cursor-pointer flex-shrink-0 border border-app-border"
@@ -65,6 +66,7 @@ export default function SettingsBranding({ form, t }: SettingsBrandingProps) {
               {/* eslint-disable-next-line react/forbid-elements -- <input type="color"> is the CLAUDE.md-documented exception (no shadcn equivalent) */}
               <input
                 type="color"
+                aria-label={t('secondaryColor')}
                 value={watchedSecondaryColor}
                 onChange={(e) => setValue('secondaryColor', e.target.value)}
                 className="w-10 h-10 min-h-[44px] p-1 rounded-lg cursor-pointer flex-shrink-0 border border-app-border"

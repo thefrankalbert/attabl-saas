@@ -67,7 +67,7 @@ export function EstablishmentsList({
           style={{ color: 'var(--cc-text-2)' }}
         >
           {t('title')}
-          <span className="cc-mono text-[11px]" style={{ color: 'var(--cc-text-3)' }}>
+          <span className="cc-mono text-xs" style={{ color: 'var(--cc-text-3)' }}>
             {count}
           </span>
         </div>
@@ -113,7 +113,6 @@ export function EstablishmentsList({
               gradient={GRADIENTS[idx % GRADIENTS.length]}
               onClick={() => onOpenDashboard(loc.tenant_slug)}
               onOpenMenu={onOpenMenu ? () => onOpenMenu(loc.tenant_slug) : undefined}
-              openDashboardLabel={t('openDashboard', { name: loc.tenant_name })}
               openMenuLabel={t('openMenu', { name: loc.tenant_name })}
               ordersLabel={t('ordersShort')}
               sparklineLabel={t('sparklineLabel', { name: loc.tenant_name })}
@@ -133,7 +132,6 @@ interface EstablishmentRowProps {
   gradient: string;
   onClick: () => void;
   onOpenMenu?: () => void;
-  openDashboardLabel: string;
   openMenuLabel: string;
   ordersLabel: string;
   sparklineLabel: string;
@@ -147,7 +145,6 @@ function EstablishmentRow({
   gradient,
   onClick,
   onOpenMenu,
-  openDashboardLabel,
   openMenuLabel,
   ordersLabel,
   sparklineLabel,
@@ -170,7 +167,6 @@ function EstablishmentRow({
         type="button"
         variant="ghost"
         onClick={onClick}
-        aria-label={openDashboardLabel}
         className={cn(
           '-mx-2.5 grid h-auto w-[calc(100%+1.25rem)] grid-cols-[auto_1fr_auto_auto] items-center gap-3.5 rounded-lg p-2.5 text-left font-normal shadow-none transition-colors sm:grid-cols-[auto_1fr_auto_auto_auto]',
           'justify-start hover:bg-[var(--cc-surface-2)]',
@@ -197,7 +193,7 @@ function EstablishmentRow({
             <span className="truncate">{location.tenant_name}</span>
           </div>
           <div
-            className="cc-mono mt-0.5 hidden truncate text-[11.5px] sm:block"
+            className="cc-mono mt-0.5 hidden truncate text-xs sm:block"
             style={{ color: 'var(--cc-text-3)' }}
           >
             {url}
@@ -218,10 +214,7 @@ function EstablishmentRow({
               newLabel={trendNewLabel}
             />
           </span>
-          <span
-            className="mt-0.5 block text-[11px] font-normal"
-            style={{ color: 'var(--cc-text-3)' }}
-          >
+          <span className="mt-0.5 block text-xs font-normal" style={{ color: 'var(--cc-text-3)' }}>
             {new Intl.NumberFormat(locale).format(location.orders_today)} {ordersLabel}
           </span>
         </div>

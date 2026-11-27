@@ -1,5 +1,7 @@
 import { headers } from 'next/headers';
+import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { readTenantSlug } from '@/lib/auth/tenant-header';
+import { isMfaSatisfied, MFA_REQUIRED_MESSAGE } from '@/lib/auth/mfa-assurance';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { hasPermission } from '@/lib/permissions';
@@ -106,6 +108,8 @@ export async function getAuthenticatedUser(): Promise<AuthenticatedUser> {
   if (error || !user) {
     throw new AuthError('Non authentifié', 401);
   }
+
+  await assertMfaSatisfied(supabase, user);
 
   return {
     user: { id: user.id, email: user.email ?? '' },
@@ -342,6 +346,21 @@ export async function getAuthenticatedUserForTenant(
     adminUserId: adminUser.id,
     supabase,
   };
+}
+
+/**
+ * Double authentification des operations authentifiees: leve 403 si le compte
+ * a un facteur verifie et que la session n'est pas aal2 (voir `isMfaSatisfied`).
+ * Appelee par `getAuthenticatedUser`, donc par les deux fonctions qui en
+ * derivent; les appels directs a `auth.getUser()` l'appellent eux-memes.
+ */
+async function assertMfaSatisfied(
+  supabase: Pick<SupabaseClient, 'auth'>,
+  user: Pick<User, 'factors'>,
+): Promise<void> {
+  if (!(await isMfaSatisfied(supabase, user))) {
+    throw new AuthError(MFA_REQUIRED_MESSAGE, 403);
+  }
 }
 
 /**

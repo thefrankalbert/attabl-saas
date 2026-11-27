@@ -2,73 +2,19 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { createEmailService, isEmailDeliveryConfigured } from './email.service';
 import { getTrialDaysRemaining } from '@/lib/plans/features';
 import { logger } from '@/lib/logger';
-import { buildUnsubscribeLinks } from '@/lib/email/unsubscribe-token';
 
 type ActivationEvents = Record<string, string>;
 
-/**
- * Destinataire d'une relance: la ligne `admin_users` (pour le lien de
- * desinscription signe) et son adresse. R5/T9: une personne desinscrite
- * (`lifecycle_emails_opt_out_at` pose) n'est JAMAIS un destinataire.
- */
-export interface LifecycleRecipient {
-  adminUserId: string;
-  tenantId: string;
-  email: string;
-}
-
-interface RecipientRow {
-  id: string;
-  email: string | null;
-  lifecycle_emails_opt_out_at: string | null;
-}
-
-const RECIPIENT_COLUMNS = 'id, email, lifecycle_emails_opt_out_at';
-
-/**
- * Le destinataire des relances d'un restaurant: son proprietaire. S'il n'y en a
- * pas, ou qu'il n'a pas d'adresse, `fallback` (la personne connectee, chemin du
- * tableau de bord) prend le relais avec sa PROPRE ligne du restaurant: sans
- * ligne, rien ne part, puisqu'aucune desinscription ne pourrait etre honoree.
- *
- * Un proprietaire desinscrit rend null, sans repli: sa desinscription vaut pour
- * le restaurant, la relance ne doit pas partir a quelqu'un d'autre a sa place.
- */
-export async function findLifecycleRecipient(
-  supabase: SupabaseClient,
-  tenantId: string,
-  fallback?: { userId: string; email: string },
-): Promise<LifecycleRecipient | null> {
-  const { data: owner } = await supabase
-    .from('admin_users')
-    .select(RECIPIENT_COLUMNS)
-    .eq('tenant_id', tenantId)
-    .eq('role', 'owner')
-    .maybeSingle<RecipientRow>();
-  if (owner?.lifecycle_emails_opt_out_at) return null;
-  if (owner?.email) return { adminUserId: owner.id, tenantId, email: owner.email };
-  if (!fallback) return null;
-
-  const { data: self } = await supabase
-    .from('admin_users')
-    .select(RECIPIENT_COLUMNS)
-    .eq('tenant_id', tenantId)
-    .eq('user_id', fallback.userId)
-    .maybeSingle<RecipientRow>();
-  if (!self || self.lifecycle_emails_opt_out_at) return null;
-  return { adminUserId: self.id, tenantId, email: self.email ?? fallback.email };
-}
-
 interface OrderTriggerParams {
   ordersCount: number;
-  recipient: LifecycleRecipient;
+  adminEmail: string;
   restaurantName: string;
   dashboardUrl: string;
   activationEvents: ActivationEvents;
 }
 
 interface TrialTriggerParams {
-  recipient: LifecycleRecipient;
+  adminEmail: string;
   restaurantName: string;
   dashboardUrl: string;
   trialEndsAt: string | null | undefined;
@@ -95,24 +41,21 @@ export function determineOrderEventKey(
  */
 export async function sendOrderEmailForKey(
   key: string,
-  params: Pick<OrderTriggerParams, 'recipient' | 'restaurantName' | 'dashboardUrl'>,
+  params: Pick<OrderTriggerParams, 'adminEmail' | 'restaurantName' | 'dashboardUrl'>,
 ): Promise<void> {
   const svc = createEmailService();
-  const { recipient, restaurantName, dashboardUrl } = params;
-  const unsubscribe = buildUnsubscribeLinks(recipient);
+  const { adminEmail, restaurantName, dashboardUrl } = params;
   if (key === 'first_order_email_sent') {
-    const result = await svc.sendFirstOrderTriggerEmail(recipient.email, {
+    const result = await svc.sendFirstOrderTriggerEmail(adminEmail, {
       restaurantName,
       dashboardUrl,
-      unsubscribe,
     });
     if (!result.success)
       logger.warn('First order trigger email failed to send', { restaurantName });
   } else if (key === 'tenth_order_email_sent') {
-    const result = await svc.sendTenthOrderTriggerEmail(recipient.email, {
+    const result = await svc.sendTenthOrderTriggerEmail(adminEmail, {
       restaurantName,
       dashboardUrl,
-      unsubscribe,
     });
     if (!result.success)
       logger.warn('Tenth order trigger email failed to send', { restaurantName });
@@ -141,7 +84,7 @@ export function determineTrialEventKey(
 }
 
 /** Silence au-dela duquel un essai est dit inactif. */
-export const TRIAL_IDLE_AFTER_HOURS = 48;
+const TRIAL_IDLE_AFTER_HOURS = 48;
 /** Plafond de relances par passage (meilleur effort, la suite au passage suivant). */
 const TRIAL_IDLE_MAX_PER_RUN = 50;
 
@@ -162,8 +105,8 @@ interface IdleTrialRow {
   name: string;
   slug: string;
   last_active_at: string | null;
-  /** Proprietaire actif, joignable et abonne (jointure interne filtree cote serveur). */
-  owners: { id: string; email: string | null; lifecycle_emails_opt_out_at: string | null }[] | null;
+  /** Proprietaire actif et joignable (jointure interne filtree cote serveur). */
+  owners: { email: string | null }[] | null;
 }
 
 /**
@@ -192,9 +135,7 @@ export async function sendTrialIdleEmails(
   // plus tronquee par le plafond de 1 000 lignes de l'API.
   const { data, error } = await supabase
     .from('tenants')
-    .select(
-      'id, name, slug, last_active_at, owners:admin_users!inner(id, email, lifecycle_emails_opt_out_at)',
-    )
+    .select('id, name, slug, last_active_at, owners:admin_users!inner(email)')
     .eq('subscription_status', 'trial')
     .eq('is_active', true)
     .is('deleted_at', null)
@@ -207,7 +148,6 @@ export async function sendTrialIdleEmails(
     .eq('owners.is_active', true)
     .is('owners.deleted_at', null)
     .not('owners.email', 'is', null)
-    .is('owners.lifecycle_emails_opt_out_at', null)
     .order('last_active_at', { ascending: true })
     .limit(TRIAL_IDLE_MAX_PER_RUN);
   if (error) throw error;
@@ -219,10 +159,8 @@ export async function sendTrialIdleEmails(
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
   let sent = 0;
   for (const tenant of candidates) {
-    // R5/T9: le filtre serveur exclut deja un proprietaire desinscrit; on le
-    // reverifie ici pour qu'une requete modifiee ne puisse pas le relancer.
-    const owner = tenant.owners?.find((o) => o.email && !o.lifecycle_emails_opt_out_at);
-    if (!owner?.email) continue;
+    const email = tenant.owners?.find((o) => o.email)?.email;
+    if (!email) continue;
 
     const { data: claimed, error: claimError } = await supabase.rpc('claim_activation_event', {
       p_tenant_id: tenant.id,
@@ -237,10 +175,9 @@ export async function sendTrialIdleEmails(
     // Un echec d'envoi apres la reservation n'est pas rejoue: voir le rapport
     // du lot B2b-3b (pas de liberation atomique de la reservation, et un envoi
     // peut avoir abouti chez le prestataire malgre l'erreur rendue).
-    const result = await svc.sendTrialIdleEmail(owner.email, {
+    const result = await svc.sendTrialIdleEmail(email, {
       restaurantName: tenant.name,
       dashboardUrl: `${appUrl}/sites/${tenant.slug}/admin`,
-      unsubscribe: buildUnsubscribeLinks({ adminUserId: owner.id, tenantId: tenant.id }),
     });
     if (result.success) sent++;
     else logger.error('Trial idle trigger email failed to send', { tenantId: tenant.id });
@@ -255,19 +192,18 @@ export async function sendTrialEmailForKey(
   key: string,
   params: Pick<
     TrialTriggerParams,
-    'recipient' | 'restaurantName' | 'dashboardUrl' | 'trialEndsAt' | 'ordersCount'
+    'adminEmail' | 'restaurantName' | 'dashboardUrl' | 'trialEndsAt' | 'ordersCount'
   >,
 ): Promise<void> {
   const svc = createEmailService();
-  const { recipient, restaurantName, dashboardUrl, trialEndsAt, ordersCount = 0 } = params;
+  const { adminEmail, restaurantName, dashboardUrl, trialEndsAt, ordersCount = 0 } = params;
   if (key === 'endgame_email_sent') {
     const daysLeft = getTrialDaysRemaining(trialEndsAt ?? null);
-    const result = await svc.sendTrialEndgameEmail(recipient.email, {
+    const result = await svc.sendTrialEndgameEmail(adminEmail, {
       restaurantName,
       dashboardUrl,
       ordersCount,
       daysLeft,
-      unsubscribe: buildUnsubscribeLinks(recipient),
     });
     if (!result.success)
       logger.warn('Trial endgame trigger email failed to send', { restaurantName, daysLeft });

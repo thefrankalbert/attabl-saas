@@ -4,15 +4,7 @@
  * Pure builders that turn typed email data into { subject, html, text }.
  */
 
-import {
-  escapeHtml,
-  FOOTER,
-  wrap,
-  card,
-  cta,
-  unsubscribeFooterHtml,
-  unsubscribeFooterText,
-} from './email.render';
+import { escapeHtml, FOOTER, wrap, card, cta } from './email.render';
 import type {
   WelcomeEmailData,
   WelcomeOnboardingEmailData,
@@ -25,8 +17,6 @@ import type {
   TeamInvitationEmailData,
   LowStockAlertEmailData,
   RenewalReminderEmailData,
-  LifecycleEmailData,
-  TrialEndgameEmailData,
 } from './email.types';
 
 export interface EmailContent {
@@ -299,7 +289,10 @@ export function buildLowStockAlertEmail(data: LowStockAlertEmailData): EmailCont
   return { subject: `Alerte stock : ${count} produit(s) - ${data.restaurantName}`, html, text };
 }
 
-export function buildFirstOrderTriggerEmail(data: LifecycleEmailData): EmailContent {
+export function buildFirstOrderTriggerEmail(data: {
+  restaurantName: string;
+  dashboardUrl: string;
+}): EmailContent {
   const safeName = escapeHtml(data.restaurantName);
   const html = wrap(
     'Bravo pour votre premiere commande ! Decouvrez 3 fonctionnalites Pro.',
@@ -312,13 +305,15 @@ export function buildFirstOrderTriggerEmail(data: LifecycleEmailData): EmailCont
           <p style="margin:0 0 20px;font-size:14px;color:#111827;"><strong>3. Stats avancees</strong> - Voyez quels plats se vendent, a quelle heure, pour combien.</p>
           ${cta(data.dashboardUrl, 'Voir mon tableau de bord')}`,
     ),
-    unsubscribeFooterHtml(data.unsubscribe.pageUrl),
   );
-  const text = `Bravo ${data.restaurantName} !\n\nPremiere commande recue. Voici 3 fonctionnalites Pro pour aller plus loin :\n1. Ecran cuisine (KDS)\n2. Suivi des stocks automatique\n3. Stats avancees\n\n${data.dashboardUrl}\n\n${unsubscribeFooterText(data.unsubscribe.pageUrl)}\n${FOOTER}`;
+  const text = `Bravo ${data.restaurantName} !\n\nPremiere commande recue. Voici 3 fonctionnalites Pro pour aller plus loin :\n1. Ecran cuisine (KDS)\n2. Suivi des stocks automatique\n3. Stats avancees\n\n${data.dashboardUrl}\n\n${FOOTER}`;
   return { subject: `Bravo ${data.restaurantName} - Premiere commande !`, html, text };
 }
 
-export function buildTenthOrderTriggerEmail(data: LifecycleEmailData): EmailContent {
+export function buildTenthOrderTriggerEmail(data: {
+  restaurantName: string;
+  dashboardUrl: string;
+}): EmailContent {
   const safeName = escapeHtml(data.restaurantName);
   const html = wrap(
     '10 commandes ! Le KDS vous ferait gagner 30 secondes par commande.',
@@ -329,9 +324,8 @@ export function buildTenthOrderTriggerEmail(data: LifecycleEmailData): EmailCont
           <p style="margin:0 0 20px;font-size:15px;color:#4b5563;">Les commandes arrivent directement sur l'ecran cuisine. Vos cuisiniers ne lisent plus les tickets papier. Moins d'erreurs, service plus rapide.</p>
           ${cta(data.dashboardUrl, 'Decouvrir le KDS')}`,
     ),
-    unsubscribeFooterHtml(data.unsubscribe.pageUrl),
   );
-  const text = `${data.restaurantName} - 10 commandes !\n\nLe KDS vous ferait gagner 30 secondes par commande. Decouvrez-le : ${data.dashboardUrl}\n\n${unsubscribeFooterText(data.unsubscribe.pageUrl)}\n${FOOTER}`;
+  const text = `${data.restaurantName} - 10 commandes !\n\nLe KDS vous ferait gagner 30 secondes par commande. Decouvrez-le : ${data.dashboardUrl}\n\n${FOOTER}`;
   return {
     subject: `${data.restaurantName} - Le KDS peut vous faire gagner 30s/commande`,
     html,
@@ -339,7 +333,10 @@ export function buildTenthOrderTriggerEmail(data: LifecycleEmailData): EmailCont
   };
 }
 
-export function buildTrialIdleEmail(data: LifecycleEmailData): EmailContent {
+export function buildTrialIdleEmail(data: {
+  restaurantName: string;
+  dashboardUrl: string;
+}): EmailContent {
   const safeName = escapeHtml(data.restaurantName);
   const html = wrap(
     'Votre essai gratuit est actif. On est la si vous avez besoin.',
@@ -350,13 +347,17 @@ export function buildTrialIdleEmail(data: LifecycleEmailData): EmailContent {
           <p style="margin:0 0 20px;font-size:15px;color:#4b5563;">Sinon, votre tableau de bord vous attend.</p>
           ${cta(data.dashboardUrl, 'Reprendre ou poser une question')}`,
     ),
-    unsubscribeFooterHtml(data.unsubscribe.pageUrl),
   );
-  const text = `${data.restaurantName} - On est la si vous avez besoin.\n\nVotre essai est actif. Une question ? Repondez directement a cet email.\n\n${data.dashboardUrl}\n\n${unsubscribeFooterText(data.unsubscribe.pageUrl)}\n${FOOTER}`;
+  const text = `${data.restaurantName} - On est la si vous avez besoin.\n\nVotre essai est actif. Une question ? Repondez directement a cet email.\n\n${data.dashboardUrl}\n\n${FOOTER}`;
   return { subject: `${data.restaurantName} - On peut vous aider ?`, html, text };
 }
 
-export function buildTrialEndgameEmail(data: TrialEndgameEmailData): EmailContent {
+export function buildTrialEndgameEmail(data: {
+  restaurantName: string;
+  dashboardUrl: string;
+  ordersCount: number;
+  daysLeft: number;
+}): EmailContent {
   const safeName = escapeHtml(data.restaurantName);
   const hasOrders = data.ordersCount >= 5;
   const subject = hasOrders
@@ -373,9 +374,8 @@ export function buildTrialEndgameEmail(data: TrialEndgameEmailData): EmailConten
           ${body}
           ${cta(data.dashboardUrl, 'Activer mon abonnement')}`,
     ),
-    unsubscribeFooterHtml(data.unsubscribe.pageUrl),
   );
-  const text = `${data.restaurantName} - Il reste ${data.daysLeft} jour(s) sur votre essai.\n\n${data.dashboardUrl}\n\n${unsubscribeFooterText(data.unsubscribe.pageUrl)}\n${FOOTER}`;
+  const text = `${data.restaurantName} - Il reste ${data.daysLeft} jour(s) sur votre essai.\n\n${data.dashboardUrl}\n\n${FOOTER}`;
   return { subject, html, text };
 }
 

@@ -14,8 +14,9 @@ import { isReservedSiteSlug } from '@/lib/tenant-slugs';
 import { SCREEN_TO_API_STEP, oldStepToPhaseScreen, type ScreenKey } from './onboarding-steps';
 import type { PhaseDefinition } from './onboarding-steps';
 import type { OnboardingData } from './types';
+import { launchFixKey } from './utils/launch-errors';
 import { stepBlockingError } from './utils/step-validation';
-import { describeLaunchIssues, type LaunchIssue } from './launch-issues';
+import { describeLaunchIssues, isZoneLaunchIssue, type LaunchIssue } from './launch-issues';
 
 export function useOnboarding() {
   const t = useTranslations('onboarding');
@@ -504,8 +505,13 @@ export function useOnboarding() {
 
       if (!res.ok) {
         if (result.details && Array.isArray(result.details)) {
-          // Une phrase par refus, la zone nommee par son numero affiche.
-          const lines = describeLaunchIssues(result.details, data.tableZones ?? [], t);
+          // Une phrase par refus de zone, la zone nommee par son numero
+          // affiche; les autres refus disent quel ecran corriger, jamais le
+          // texte technique du serveur.
+          const zoneIssues = result.details.filter(isZoneLaunchIssue);
+          const otherIssues = result.details.filter((issue) => !isZoneLaunchIssue(issue));
+          const lines = describeLaunchIssues(zoneIssues, data.tableZones ?? [], t);
+          if (otherIssues.length > 0) lines.push(t(launchFixKey(otherIssues)));
           throw new Error(lines.join(' '));
         }
         if (result.error === 'RESTAURANT_NAME_TAKEN') {

@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import type { CurrencyCode, Zone, Table } from '@/types/admin.types';
 
-export interface POSSuggestion {
+interface POSSuggestion {
   menu_item_id: string;
   suggested_item_id: string;
   suggested_item_name: string;

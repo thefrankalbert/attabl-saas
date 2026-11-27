@@ -112,7 +112,6 @@ export function TenantsListDialog({
                         onOpenDashboard(loc.tenant_slug);
                         onOpenChange(false);
                       }}
-                      aria-label={tEst('openDashboard', { name: loc.tenant_name })}
                       className={cn(
                         'grid h-auto w-full grid-cols-[auto_1fr_auto] items-center gap-3 rounded-md px-2 py-2 text-left font-normal shadow-none transition-colors sm:grid-cols-[auto_1fr_auto_auto]',
                         'justify-start hover:bg-[var(--cc-surface-2)]',
@@ -166,7 +165,7 @@ export function TenantsListDialog({
                           />
                         </span>
                         <span
-                          className="mt-0.5 block text-[11px] font-normal"
+                          className="mt-0.5 block text-xs font-normal"
                           style={{ color: 'var(--cc-text-3)' }}
                         >
                           {nf.format(loc.orders_today)} {tEst('ordersShort')}
@@ -183,7 +182,7 @@ export function TenantsListDialog({
                           onOpenChange(false);
                         }}
                         aria-label={tEst('openMenu', { name: loc.tenant_name })}
-                        className="absolute right-2 top-1/2 z-10 min-h-[44px] min-w-[44px] -translate-y-1/2 rounded-md px-3 text-[11px] opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
+                        className="absolute right-2 top-1/2 z-10 min-h-[44px] min-w-[44px] -translate-y-1/2 rounded-md px-3 text-xs opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
                         style={{ color: 'var(--cc-text-3)' }}
                       >
                         {t('menu')}

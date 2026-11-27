@@ -80,6 +80,8 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
       return { menuItems: menuItems as MenuItem[], recipeIds: recipeItemIds };
     },
     enabled: !!tenantId,
+    // Une seule reprise: erreur + "Reessayer" plutot qu'un "Chargement..." sans fin.
+    retry: 1,
   });
 
   const loading = !isMounted || isQueryLoading;

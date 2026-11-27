@@ -1,3 +1,4 @@
+import { isMfaSatisfied, MFA_REQUIRED_CODE, MFA_REQUIRED_MESSAGE } from '@/lib/auth/mfa-assurance';
 import { createClient } from '@/lib/supabase/server';
 import { readTenantSlug } from '@/lib/auth/tenant-header';
 import { stripe } from '@/lib/stripe/server';
@@ -32,6 +33,13 @@ export async function POST(request: Request) {
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
+    if (!(await isMfaSatisfied(supabase, user))) {
+      return NextResponse.json(
+        { error: MFA_REQUIRED_MESSAGE, code: MFA_REQUIRED_CODE },
+        { status: 403 },
+      );
     }
 
     // Derive the tenant from the sub-domain context (x-tenant-slug, injected by

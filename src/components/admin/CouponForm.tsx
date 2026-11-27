@@ -18,6 +18,7 @@ import AdminModal from '@/components/admin/AdminModal';
 import type { Coupon, CurrencyCode } from '@/types/admin.types';
 import { actionCreateCoupon, actionUpdateCoupon } from '@/app/actions/coupons';
 import { isoToZonedDay } from '@/lib/timezones';
+import { couponCodeSchema } from '@/lib/validations/coupon.schema';
 
 interface CouponFormProps {
   tenantId: string;
@@ -74,8 +75,18 @@ export default function CouponForm({
       return;
     }
 
-    if (!discountValue || discountValue <= 0) {
+    if (!couponCodeSchema.safeParse(code).success) {
+      toast({ title: t('codeFormat'), variant: 'destructive' });
+      return;
+    }
+
+    if (discountValue === '') {
       toast({ title: t('valueRequired'), variant: 'destructive' });
+      return;
+    }
+
+    if (discountValue <= 0) {
+      toast({ title: t('valueMustBePositive'), variant: 'destructive' });
       return;
     }
 
@@ -135,6 +146,7 @@ export default function CouponForm({
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             placeholder={t('codePlaceholder')}
+            maxLength={20}
             required
             className="font-mono uppercase tracking-wider"
           />

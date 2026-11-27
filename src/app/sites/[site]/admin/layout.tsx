@@ -1,9 +1,11 @@
+import { NextIntlClientProvider } from 'next-intl';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { headers } from 'next/headers';
 import { getTenant } from '@/lib/cache';
 import { PaymentMethodsProvider } from '@/contexts/PaymentMethodsContext';
 import { redirectToLogin, redirectToUnauthorized } from '@/lib/auth/redirect-to-main';
+import { enforceMfa } from '@/lib/auth/mfa-guard';
 import { AdminLayoutClient } from '@/components/admin/AdminLayoutClient';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
 import { PermissionsProvider } from '@/contexts/PermissionsContext';
@@ -32,11 +34,7 @@ import type { AdminRole } from '@/types/admin.types';
 import type { SubscriptionStatus } from '@/types/billing';
 import type { PermissionCode, RolePermissions } from '@/types/permission.types';
 import { getEffectivePermissions } from '@/lib/permissions';
-import {
-  determineTrialEventKey,
-  findLifecycleRecipient,
-  sendTrialEmailForKey,
-} from '@/services/trigger-emails.service';
+import { determineTrialEventKey, sendTrialEmailForKey } from '@/services/trigger-emails.service';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -78,6 +76,7 @@ export default async function AdminLayout({
   const showOnboardingResume = tenant.onboarding_completed === false;
 
   let adminUser: AdminUser | null = null;
+  let viaSuperAdmin = false;
 
   if (authError || !user) {
     redirectToLogin();
@@ -118,6 +117,7 @@ export default async function AdminLayout({
       }
 
       // Super admin: create a virtual admin entry with owner-level access
+      viaSuperAdmin = true;
       adminUser = {
         id: superAdminCheck.id,
         user_id: superAdminCheck.user_id,
@@ -128,6 +128,14 @@ export default async function AdminLayout({
       };
     }
   }
+
+  // Double authentification (K6.13): un compte qui l'a activee n'entre pas en
+  // session aal1 (elle ne vaut pas plus qu'avant le code). Le super
+  // administrateur, entre ici sans etre membre, doit l'avoir activee.
+  await enforceMfa(supabase, user, {
+    next: `/sites/${tenantSlug}/admin`,
+    requireEnrollment: viaSuperAdmin,
+  });
 
   // Fetch all tenants managed by this user (for tenant switcher). Exclude
   // banned / soft-deleted memberships so a locked-out link never shows.
@@ -165,21 +173,20 @@ export default async function AdminLayout({
           .eq('tenant_id', tenant.id)
           .then((r) => ({ count: r.count ?? 0 }));
 
+        const { data: ownerUser } = await adminClient
+          .from('admin_users')
+          .select('email')
+          .eq('tenant_id', tenant.id)
+          .eq('role', 'owner')
+          .maybeSingle();
+        const ownerEmail = ownerUser?.email ?? user.email;
+
         const eventKey = determineTrialEventKey({
           trialEndsAt: tenant.trial_ends_at,
           activationEvents,
         });
 
-        // R5/T9: proprietaire, sinon la personne connectee (sa propre ligne du
-        // restaurant); null si desinscrit des relances: rien n'est reserve.
-        const recipient = eventKey
-          ? await findLifecycleRecipient(adminClient, tenant.id, {
-              userId: user.id,
-              email: user.email,
-            })
-          : null;
-
-        if (eventKey && recipient) {
+        if (eventKey) {
           // Atomic claim server-side: merges into the LIVE activation_events row
           // (jsonb || ) and sets the slot once, so a concurrent writer's key is
           // never clobbered by a stale read-merge-write snapshot.
@@ -189,7 +196,7 @@ export default async function AdminLayout({
           });
           if (claimed) {
             await sendTrialEmailForKey(eventKey, {
-              recipient,
+              adminEmail: ownerEmail,
               restaurantName: tenant.name,
               dashboardUrl,
               trialEndsAt: tenant.trial_ends_at,
@@ -256,96 +263,98 @@ export default async function AdminLayout({
   );
 
   return (
-    <div>
-      {/* Owner only: the onboarding (and its save/complete routes) is the
+    <NextIntlClientProvider>
+      <div>
+        {/* Owner only: the onboarding (and its save/complete routes) is the
           owner's job; a waiter or a cook was offered a button leading to a
           screen they could not finish. */}
-      {showOnboardingResume && userRole === 'owner' && (
-        <OnboardingResumeDialog tenantSlug={tenant.slug} />
-      )}
-      <QueryProvider>
-        <SoundProvider
-          tenantId={tenant.id}
-          notificationSoundId={tenant.notification_sound_id ?? undefined}
-        >
-          {/* Au-dessus du shell: barre laterale, barre du bas, menu du compte et
+        {showOnboardingResume && userRole === 'owner' && (
+          <OnboardingResumeDialog tenantSlug={tenant.slug} />
+        )}
+        <QueryProvider>
+          <SoundProvider
+            tenantId={tenant.id}
+            notificationSoundId={tenant.notification_sound_id ?? undefined}
+          >
+            {/* Au-dessus du shell: barre laterale, barre du bas, menu du compte et
               pages lisent tous les MEMES permissions effectives que le serveur. */}
-          <PermissionsProvider role={userRole} permissions={navPermissions}>
-            <PaymentMethodsProvider methods={tenant.enabled_payment_methods ?? null}>
-              <AdminLayoutClient
-                isDevMode={false}
-                basePath={`/sites/${tenantSlug}/admin`}
-                role={userRole}
-                navPermissions={navPermissions}
-                tenant={{
-                  name: tenant.name,
-                  slug: tenant.slug,
-                  logo_url: tenant.logo_url ?? undefined,
-                  // Essai actif: tout est ouvert (offre Business). Le menu affiche
-                  // "Essai" plutot que le plan choisi a l'inscription, qui ferait
-                  // proposer de "debloquer" ce qui est deja ouvert.
-                  subscription_plan: isTrialActive(
-                    tenant.subscription_status as SubscriptionStatus | null,
-                    tenant.trial_ends_at,
-                  )
-                    ? 'trial'
-                    : (tenant.subscription_plan ?? undefined),
-                  establishment_type: tenant.establishment_type ?? undefined,
-                }}
-                userName={adminUser?.name || user.email || ''}
-                userEmail={user.email ?? undefined}
-                userTenants={userTenants}
-                notifications={
-                  <NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />
-                }
-                breadcrumbs={<AdminBreadcrumbs />}
-                statusBar={<OfflineIndicator />}
-                appVersion={APP_VERSION}
-              >
-                <OutboxIdentity userId={adminUser?.user_id} tenantId={tenant.id} />
-                <OrderReadyAlert tenantId={tenant.id} adminUserId={adminUser?.id} />
-                <CommandPalette />
-                <ShortcutsProvider basePath={`/sites/${tenantSlug}/admin`}>
-                  <AdminIdleWrapper
-                    idleTimeoutMinutes={tenant.idle_timeout_minutes ?? null}
-                    screenLockMode={tenant.screen_lock_mode ?? 'overlay'}
-                    tenantName={tenant.name}
-                  >
-                    <SubscriptionProvider
-                      tenant={
-                        tenant
-                          ? {
-                              subscription_plan: tenant.subscription_plan,
-                              subscription_status: displayedStatus,
-                              trial_ends_at: tenant.trial_ends_at,
-                            }
-                          : null
-                      }
-                      tenantSlug={tenantSlug}
+            <PermissionsProvider role={userRole} permissions={navPermissions}>
+              <PaymentMethodsProvider methods={tenant.enabled_payment_methods ?? null}>
+                <AdminLayoutClient
+                  isDevMode={false}
+                  basePath={`/sites/${tenantSlug}/admin`}
+                  role={userRole}
+                  navPermissions={navPermissions}
+                  tenant={{
+                    name: tenant.name,
+                    slug: tenant.slug,
+                    logo_url: tenant.logo_url ?? undefined,
+                    // Essai actif: tout est ouvert (offre Business). Le menu affiche
+                    // "Essai" plutot que le plan choisi a l'inscription, qui ferait
+                    // proposer de "debloquer" ce qui est deja ouvert.
+                    subscription_plan: isTrialActive(
+                      tenant.subscription_status as SubscriptionStatus | null,
+                      tenant.trial_ends_at,
+                    )
+                      ? 'trial'
+                      : (tenant.subscription_plan ?? undefined),
+                    establishment_type: tenant.establishment_type ?? undefined,
+                  }}
+                  userName={adminUser?.name || user.email || ''}
+                  userEmail={user.email ?? undefined}
+                  userTenants={userTenants}
+                  notifications={
+                    <NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />
+                  }
+                  breadcrumbs={<AdminBreadcrumbs />}
+                  statusBar={<OfflineIndicator />}
+                  appVersion={APP_VERSION}
+                >
+                  <OutboxIdentity userId={adminUser?.user_id} tenantId={tenant.id} />
+                  <OrderReadyAlert tenantId={tenant.id} adminUserId={adminUser?.id} />
+                  <CommandPalette />
+                  <ShortcutsProvider basePath={`/sites/${tenantSlug}/admin`}>
+                    <AdminIdleWrapper
+                      idleTimeoutMinutes={tenant.idle_timeout_minutes ?? null}
+                      screenLockMode={tenant.screen_lock_mode ?? 'overlay'}
+                      tenantName={tenant.name}
                     >
-                      {/* Hors du wrapper: doit tourner sur TOUTES les routes, caisse et cuisine comprises. */}
-                      <LockedSubscriptionRedirect
-                        tenantSlug={tenantSlug}
-                        kitchenMayFinish={kitchenMayFinish}
-                      />
-                      <AdminContentWrapper
-                        chrome={
-                          <SubscriptionBanners
-                            tenantSlug={tenantSlug}
-                            menuDaysLeft={menuDaysLeft}
-                          />
+                      <SubscriptionProvider
+                        tenant={
+                          tenant
+                            ? {
+                                subscription_plan: tenant.subscription_plan,
+                                subscription_status: displayedStatus,
+                                trial_ends_at: tenant.trial_ends_at,
+                              }
+                            : null
                         }
+                        tenantSlug={tenantSlug}
                       >
-                        {children}
-                      </AdminContentWrapper>
-                    </SubscriptionProvider>
-                  </AdminIdleWrapper>
-                </ShortcutsProvider>
-              </AdminLayoutClient>
-            </PaymentMethodsProvider>
-          </PermissionsProvider>
-        </SoundProvider>
-      </QueryProvider>
-    </div>
+                        {/* Hors du wrapper: doit tourner sur TOUTES les routes, caisse et cuisine comprises. */}
+                        <LockedSubscriptionRedirect
+                          tenantSlug={tenantSlug}
+                          kitchenMayFinish={kitchenMayFinish}
+                        />
+                        <AdminContentWrapper
+                          chrome={
+                            <SubscriptionBanners
+                              tenantSlug={tenantSlug}
+                              menuDaysLeft={menuDaysLeft}
+                            />
+                          }
+                        >
+                          {children}
+                        </AdminContentWrapper>
+                      </SubscriptionProvider>
+                    </AdminIdleWrapper>
+                  </ShortcutsProvider>
+                </AdminLayoutClient>
+              </PaymentMethodsProvider>
+            </PermissionsProvider>
+          </SoundProvider>
+        </QueryProvider>
+      </div>
+    </NextIntlClientProvider>
   );
 }

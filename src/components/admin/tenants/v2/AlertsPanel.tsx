@@ -47,12 +47,12 @@ export function AlertsPanel({ alerts, onOpenDashboard, multiTenant = true }: Ale
   return (
     <div className="rounded-[12px] border border-[var(--cc-border)] bg-[var(--cc-surface)] p-4">
       <div className="mb-3 flex items-center gap-2">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--cc-text-3)]">
+        <span className="text-xs font-semibold uppercase tracking-[0.06em] text-[var(--cc-text-3)]">
           {t('alerts.title')}
         </span>
         {count > 0 && (
           <span
-            className="cc-mono inline-flex min-w-[18px] items-center justify-center rounded-full px-1.5 py-[1px] text-[10px] font-bold"
+            className="cc-mono inline-flex min-w-[18px] items-center justify-center rounded-full px-1.5 py-[1px] text-xs font-bold"
             style={{ background: 'var(--cc-surface-2)', color: 'var(--cc-text-2)' }}
           >
             {count}
@@ -87,7 +87,6 @@ export function AlertsPanel({ alerts, onOpenDashboard, multiTenant = true }: Ale
                   isFirst={idx === 0}
                   showTenant={multiTenant}
                   onClick={() => onOpenDashboard(alert.tenant_slug)}
-                  ariaLabel={t('alerts.viewSite', { name: alert.tenant_name })}
                 />
               </motion.div>
             ))}
@@ -103,10 +102,9 @@ interface AlertRowProps {
   isFirst: boolean;
   showTenant: boolean;
   onClick: () => void;
-  ariaLabel: string;
 }
 
-function AlertRow({ alert, isFirst, showTenant, onClick, ariaLabel }: AlertRowProps) {
+function AlertRow({ alert, isFirst, showTenant, onClick }: AlertRowProps) {
   const Icon = SEVERITY_ICON[alert.severity];
   const color = SEVERITY_COLOR[alert.severity];
 
@@ -115,7 +113,6 @@ function AlertRow({ alert, isFirst, showTenant, onClick, ariaLabel }: AlertRowPr
       type="button"
       variant="ghost"
       onClick={onClick}
-      aria-label={ariaLabel}
       className={cn(
         'grid min-h-[44px] grid-cols-[auto_1fr_auto] items-center gap-3 rounded-none px-0 py-3 text-left font-normal shadow-none transition-colors',
         'h-auto justify-start',
@@ -133,14 +130,14 @@ function AlertRow({ alert, isFirst, showTenant, onClick, ariaLabel }: AlertRowPr
         </div>
         {showTenant && alert.tenant_name && (
           <div
-            className="mt-[1px] truncate whitespace-nowrap text-[11px]"
+            className="mt-[1px] truncate whitespace-nowrap text-xs"
             style={{ color: 'var(--cc-text-3)' }}
           >
             {alert.tenant_name}
           </div>
         )}
       </div>
-      <span className="cc-mono whitespace-nowrap text-[11px]" style={{ color: 'var(--cc-text-3)' }}>
+      <span className="cc-mono whitespace-nowrap text-xs" style={{ color: 'var(--cc-text-3)' }}>
         {formatTime(alert.created_at)}
       </span>
     </Button>

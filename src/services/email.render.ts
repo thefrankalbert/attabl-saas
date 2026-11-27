@@ -4,6 +4,8 @@
  * Pure string builders shared by every email template. No side effects.
  */
 
+import { emailFooterLine } from '@/lib/legal/company';
+
 export function escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
@@ -31,22 +33,9 @@ export function sanitizeUrl(url: string): string {
   }
 }
 
-export const FOOTER = 'ATTABL SAS - Douala, Cameroun';
+export const FOOTER = emailFooterLine();
 
-/**
- * Pied de desinscription des e-mails de RELANCE (R5/T9). `wrap` le place sous
- * la mention legale; la version texte est `unsubscribeFooterText`.
- */
-export function unsubscribeFooterHtml(pageUrl: string): string {
-  const safe = escapeHtml(sanitizeUrl(pageUrl));
-  return `<br />Vous recevez ces conseils parce que vous gerez ce restaurant sur ATTABL. <a href="${safe}" style="color:#6b7280;text-decoration:underline;">Ne plus recevoir ces e-mails</a>`;
-}
-
-export function unsubscribeFooterText(pageUrl: string): string {
-  return `Ne plus recevoir ces e-mails de conseils : ${pageUrl}`;
-}
-
-export function wrap(preheader: string, body: string, footerExtraHtml = ''): string {
+export function wrap(preheader: string, body: string): string {
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
@@ -59,7 +48,7 @@ export function wrap(preheader: string, body: string, footerExtraHtml = ''): str
 <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;">
 <tr><td style="padding:0 0 24px;text-align:center;font-size:18px;font-weight:700;color:#111827;">ATTABL</td></tr>
 ${body}
-<tr><td style="padding:24px 0 0;text-align:center;font-size:11px;color:#9ca3af;">${FOOTER}${footerExtraHtml}</td></tr>
+<tr><td style="padding:24px 0 0;text-align:center;font-size:11px;color:#9ca3af;">${escapeHtml(FOOTER)}</td></tr>
 </table></td></tr></table></body></html>`;
 }
 

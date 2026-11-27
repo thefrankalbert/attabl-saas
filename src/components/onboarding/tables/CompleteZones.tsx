@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Plus, X } from 'lucide-react';
 import type { ZoneIssue } from '@/lib/validations/onboarding.schema';
-import { capacityOptions, type ZoneData } from './types';
+import { capacityOptions, MAX_TABLES_PER_ZONE, type ZoneData } from './types';
 
 interface CompleteZonesProps {
   zones: ZoneData[];
@@ -136,7 +136,7 @@ export function CompleteZones({
                     id={`zone-table-count-${index}`}
                     type="number"
                     min="1"
-                    max="100"
+                    max={MAX_TABLES_PER_ZONE}
                     value={zone.tableCount}
                     onChange={(e) => updateZone(index, 'tableCount', e.target.value)}
                     className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-base md:text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"

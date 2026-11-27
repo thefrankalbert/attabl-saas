@@ -3,11 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/logger';
 import { formatCurrency } from '@/lib/utils/currency';
 import { getTranslations } from 'next-intl/server';
-import {
-  determineOrderEventKey,
-  findLifecycleRecipient,
-  sendOrderEmailForKey,
-} from '@/services/trigger-emails.service';
+import { determineOrderEventKey, sendOrderEmailForKey } from '@/services/trigger-emails.service';
 import { createPushService } from '@/services/push.service';
 
 // Fallback translations for API routes where locale may not be resolved
@@ -149,19 +145,23 @@ export function scheduleTriggerEmails(
   const { tenantId, tenantSlug } = params;
   after(async () => {
     try {
-      // R5/T9: un proprietaire desinscrit des relances n'est pas un
-      // destinataire (null), et le creneau n'est alors pas reserve.
-      const [countResult, recipient, tenantExtResult] = await Promise.all([
+      const [countResult, ownerResult, tenantExtResult] = await Promise.all([
         adminSupabase
           .from('orders')
           .select('id', { count: 'exact', head: true })
           .eq('tenant_id', tenantId),
-        findLifecycleRecipient(adminSupabase, tenantId),
+        adminSupabase
+          .from('admin_users')
+          .select('email')
+          .eq('tenant_id', tenantId)
+          .eq('role', 'owner')
+          .maybeSingle(),
         adminSupabase.from('tenants').select('name, activation_events').eq('id', tenantId).single(),
       ]);
 
       const ordersCount = countResult.count ?? 0;
-      if (!recipient) return;
+      const adminEmail = ownerResult.data?.email;
+      if (!adminEmail) return;
 
       const restaurantName = (tenantExtResult.data?.name as string | undefined) ?? tenantSlug;
       const activationEvents =
@@ -177,7 +177,7 @@ export function scheduleTriggerEmails(
           p_event_key: eventKey,
         });
         if (claimed) {
-          await sendOrderEmailForKey(eventKey, { recipient, restaurantName, dashboardUrl });
+          await sendOrderEmailForKey(eventKey, { adminEmail, restaurantName, dashboardUrl });
         }
       }
     } catch (triggerErr) {

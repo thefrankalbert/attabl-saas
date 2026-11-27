@@ -1,6 +1,8 @@
 'use server';
 
+import { isMfaSatisfied, MFA_REQUIRED_MESSAGE } from '@/lib/auth/mfa-assurance';
 import { after } from 'next/server';
+import { getTranslations } from 'next-intl/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -10,6 +12,7 @@ import { createAuditService } from '@/services/audit.service';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
 import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
 import { createOrderService } from '@/services/order.service';
+import { CANCEL_NEEDS_MONEY_AUTHORITY } from '@/services/order/order-lifecycle';
 import { createPaymentService, type PaymentSummary } from '@/services/payment.service';
 import { createInventoryService } from '@/services/inventory.service';
 import { createCouponService } from '@/services/coupon.service';
@@ -123,6 +126,10 @@ export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResp
 
   if (authError || !user) {
     return { error: 'Unauthorized' };
+  }
+
+  if (!(await isMfaSatisfied(supabase, user))) {
+    return { error: MFA_REQUIRED_MESSAGE };
   }
 
   // Verify the user is an admin for the tenant(s) of these orders.
@@ -455,6 +462,12 @@ export async function actionUpdateOrderStatus(
       return { error: err.message };
     }
     if (err instanceof ServiceError) {
+      if (
+        (err.details as { reason?: string } | undefined)?.reason === CANCEL_NEEDS_MONEY_AUTHORITY
+      ) {
+        const t = await getTranslations('orders');
+        return { error: t('cancelNeedsMoneyAuthority'), code: err.code };
+      }
       return { error: err.message, code: err.code };
     }
     logger.error('actionUpdateOrderStatus: unexpected error', { err, tenantId, orderId });

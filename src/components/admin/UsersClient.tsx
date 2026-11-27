@@ -225,6 +225,7 @@ export default function UsersClient({
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6 space-y-6">
           <UsersTable
             users={data.users}
+            currentUserRole={currentUserRole}
             canManageUsers={data.canManageUsers}
             onToggleStatus={data.handleToggleStatus}
             onDeleteUser={data.handleDeleteUser}
@@ -279,8 +280,9 @@ export default function UsersClient({
         >
           <div className="space-y-4 pt-2">
             <div className="space-y-1.5">
-              <Label>{t('fullName')}</Label>
+              <Label htmlFor="edit-user-name">{t('fullName')}</Label>
               <Input
+                id="edit-user-name"
                 autoComplete="off"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
@@ -288,8 +290,9 @@ export default function UsersClient({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>{t('email')}</Label>
+              <Label htmlFor="edit-user-email">{t('email')}</Label>
               <Input
+                id="edit-user-email"
                 type="email"
                 autoComplete="off"
                 value={editEmail}

@@ -100,3 +100,44 @@ export async function remplacantVerifie(
     throw new ServiceError('Replacement subscription unreadable', 'INTERNAL');
   }
 }
+
+/** Identifiant de l'abonnement que la facture regle, `null` si elle n'en porte pas. */
+export function abonnementDeLaFacture(invoice: Stripe.Invoice): string | null {
+  const lien: unknown =
+    invoice.parent?.subscription_details?.subscription ??
+    (invoice as { subscription?: unknown }).subscription;
+  if (typeof lien === 'string') return lien;
+  if (lien && typeof lien === 'object' && 'id' in lien) return String(lien.id);
+  return null;
+}
+
+/**
+ * Audit B94: avant de lever un gel pour remboursement, l'abonnement de la
+ * facture est relu chez Stripe (seconde condition du degel, freeze-reason.ts).
+ * `true` seulement s'il est en regle (active, trialing). Introuvable ou absent:
+ * `false`, l'evenement est consomme. Panne de lecture: ServiceError INTERNAL,
+ * la route retire la ligne d'idempotence et Stripe rejoue.
+ */
+export async function abonnementEnRegle(
+  stripe: StripeWebhookDeps['stripe'],
+  invoice: Stripe.Invoice,
+  customerId: string,
+): Promise<boolean> {
+  const abonnementId = abonnementDeLaFacture(invoice);
+  if (!abonnementId) return false;
+  try {
+    const abonnement = await stripe.subscriptions.retrieve(abonnementId);
+    return abonnement.status === 'active' || abonnement.status === 'trialing';
+  } catch (err) {
+    const introuvable =
+      typeof err === 'object' &&
+      err !== null &&
+      (err as { code?: string }).code === 'resource_missing';
+    if (introuvable) return false;
+    logger.error('invoice.paid: abonnement illisible, evenement a rejouer', err, {
+      customerId,
+      abonnementId,
+    });
+    throw new ServiceError('Subscription state unreadable', 'INTERNAL');
+  }
+}

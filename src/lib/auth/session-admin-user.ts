@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createSignupService } from '@/services/signup.service';
 import { logger } from '@/lib/logger';
+import { isMfaSatisfied, MFA_REQUIRED_MESSAGE } from '@/lib/auth/mfa-assurance';
 import { pickOnboardingTenantIndex } from '@/lib/onboarding/select-onboarding-tenant';
 
 type SessionAdminUser = {
@@ -52,6 +53,10 @@ export async function resolveSessionAdminUser(options?: {
 
   if (!user) {
     return { ok: false, status: 401, error: 'Non authentifie' };
+  }
+
+  if (!(await isMfaSatisfied(supabase, user))) {
+    return { ok: false, status: 403, error: MFA_REQUIRED_MESSAGE };
   }
 
   const adminSupabase = createAdminClient();

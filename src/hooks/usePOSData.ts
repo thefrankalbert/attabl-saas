@@ -25,7 +25,6 @@ import type { ServiceType, PricingBreakdown } from '@/types/admin.types';
 
 export type { AppliedCoupon } from '@/hooks/usePosCoupon';
 export type { CartItem } from '@/hooks/usePosCartState';
-export type { POSSuggestion } from '@/hooks/usePosExtras';
 
 export function usePOSData(tenantId: string) {
   const t = useTranslations('pos');

@@ -36,7 +36,7 @@ interface PdfExtractionResult {
   notImported: PdfNotImportedItem[];
 }
 
-export interface PdfNotImportedItem {
+interface PdfNotImportedItem {
   name: string;
   /** Le prix tel que lu dans la reponse du modele. */
   price: string;
@@ -106,7 +106,7 @@ export function createPdfImportService(supabase: SupabaseClient): PdfImportServi
 
       if (!apiKey) {
         throw new ServiceError(
-          'ANTHROPIC_API_KEY is not configured. PDF import requires a valid Anthropic API key.',
+          "L'import de carte en PDF n'est pas disponible pour le moment.",
           'INTERNAL',
         );
       }

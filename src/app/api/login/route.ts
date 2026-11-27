@@ -15,6 +15,13 @@ import { getTranslations } from 'next-intl/server';
 import { isHoneypotTriggered } from '@/lib/honeypot';
 import { verifyTurnstileToken } from '@/lib/turnstile';
 import { mapMembershipRows, postLoginDestination } from '@/lib/auth/post-login-destination';
+import {
+  APPAREIL_CONNU_COOKIE,
+  cookieAppareilDeLaRequete,
+  optionsCookieAppareil,
+} from '@/lib/auth/appareil-connu';
+import { traiterConnexionReussie } from '@/lib/auth/alerte-nouvelle-connexion';
+import { hasVerifiedFactor } from '@/lib/auth/mfa-assurance';
 
 export async function POST(request: Request) {
   try {
@@ -121,7 +128,12 @@ export async function POST(request: Request) {
       // affirmation sur l'ordre interne de Supabase que ce depot ne peut pas
       // verifier, et qui offrait des essais gratuits si elle etait fausse.
       if (authCode === 'email_not_confirmed') {
-        return NextResponse.json({ error: t('emailNotConfirmed'), email }, { status: 403 });
+        // `code` est stable et lu par le formulaire pour proposer "Renvoyer":
+        // il comparait `error`, qui porte la phrase traduite, donc jamais.
+        return NextResponse.json(
+          { error: t('emailNotConfirmed'), code: 'email_not_confirmed', email },
+          { status: 403 },
+        );
       }
 
       if (authCode === 'invalid_credentials') {
@@ -166,10 +178,31 @@ export async function POST(request: Request) {
     // abandon d'onboarding, pas une erreur. La regle le renvoie au parcours
     // plutot que de laisser filtrer "ce compte existe mais n'a pas
     // d'etablissement".
-    return NextResponse.json({
+    //
+    // Double authentification (audit K6.13): un compte qui a un facteur verifie
+    // sort d'ici en session aal1. `mfaRequired` fait passer le formulaire par
+    // /auth/mfa, qui garde la destination. Ce n'est qu'un aiguillage: les
+    // layouts serveur refusent de toute facon une session aal1 de ce compte.
+    const response = NextResponse.json({
       success: true,
       redirect: postLoginDestination(mapMembershipRows(adminUsers)),
+      mfaRequired: hasVerifiedFactor(authData.user),
     });
+
+    // 5. Alerte "nouvelle connexion" si l'appareil est inconnu (audit Q19).
+    // Meilleur effort: ne leve jamais, l'e-mail part apres la reponse.
+    const cookieAppareil = await traiterConnexionReussie({
+      supabase,
+      userId: authData.user.id,
+      email: authData.user.email,
+      compteCreeLe: authData.user.created_at,
+      cookieAppareil: cookieAppareilDeLaRequete(request),
+      methode: 'mot_de_passe',
+    });
+    if (cookieAppareil) {
+      response.cookies.set(APPAREIL_CONNU_COOKIE, cookieAppareil, optionsCookieAppareil());
+    }
+    return response;
   } catch (error) {
     logger.error('Login route error', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

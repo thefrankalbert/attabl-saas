@@ -27,7 +27,7 @@ const PAGE_SIZE = 1000;
  */
 const MAX_PAGES = 50;
 
-export interface RecentOrderRow extends DerivableOrder {
+interface RecentOrderRow extends DerivableOrder {
   tenants: { name: string; slug: string } | null;
 }
 

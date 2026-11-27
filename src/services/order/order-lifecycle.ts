@@ -27,6 +27,21 @@ const ORDER_STATUS_RANK: Record<string, number> = {
 // (migration 20261115200000): change both together.
 export const STALE_PAID_ORDER_MS = 2 * 60 * 60 * 1000;
 
+/**
+ * Marqueur (ServiceError.details.reason) d'une annulation refusee parce que de
+ * l'argent reste au registre et que la personne n'a pas l'autorite sur l'argent
+ * (owner, admin, manager). L'action le traduit au lieu de montrer le texte brut.
+ */
+export const CANCEL_NEEDS_MONEY_AUTHORITY = 'cancel_needs_money_authority';
+
+/**
+ * HINT posed by the database guard `exiger_registre_rembourse_pour_annuler`
+ * (migration 20261124210000) when it refuses a cancellation: change both
+ * together.
+ */
+const CANCEL_HINT_NEEDS_REFUND = 'orders_annulation_exige_remboursement';
+const CANCEL_HINT_NEEDS_MONEY_AUTHORITY = 'orders_annulation_exige_autorite_argent';
+
 export function createLifecycleMethods(supabase: SupabaseClient) {
   /**
    * Close a table session once everything on it is settled: paid (a 'partial'
@@ -300,6 +315,13 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
      * (`rendre_coupon_commande`, service role, migration 20261124151500), which
      * checks the order is cancelled, the coupon belongs to the same restaurant
      * and was not given back yet.
+     *
+     * Money still in the ledger (migration 20261124210000): the database, not
+     * this service, judges an order whose ledger `payments` holds money (net of
+     * refunds). Net covering the amount due: refund first, for every role. Net
+     * positive below the due (a deposit): only the money authority (owner,
+     * admin, manager) may cancel. The refusal carries a HINT that is mapped
+     * below to a clear message; no second computation of the ledger here.
      */
     async cancelOrder(orderId: string, tenantId: string): Promise<boolean> {
       const { data: cancelled, error: updateError } = await supabase
@@ -311,11 +333,30 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
         // `neq` alone would skip a NULL payment status (NULL <> 'paid' is not
         // true), which the application treats as pending.
         .or('payment_status.is.null,payment_status.neq.paid')
-        .select('id');
+        // `payment_status` DOIT figurer dans le select: PostgREST refuse un
+        // filtre `or` sur une colonne absente des lignes renvoyees (42703
+        // "column orders.payment_status does not exist", mesure sur v14.3 le
+        // 2026-11-24). Avec `select('id')`, AUCUNE annulation n'aboutissait.
+        .select('id, payment_status');
       if (updateError) {
         // 42501: a guard trigger refused (no orders.pay, or an offered /
         // refunded order without the money authority).
-        if ((updateError as { code?: string }).code === '42501') {
+        const { code, hint } = updateError as { code?: string; hint?: string };
+        if (code === '42501' && hint === CANCEL_HINT_NEEDS_REFUND) {
+          throw new ServiceError(
+            'Une commande payee ne peut pas etre annulee - utiliser un remboursement',
+            'CONFLICT',
+            updateError,
+          );
+        }
+        if (code === '42501' && hint === CANCEL_HINT_NEEDS_MONEY_AUTHORITY) {
+          throw new ServiceError(
+            "Cette commande a un acompte au registre : l'annuler revient a un gerant, un administrateur ou le proprietaire",
+            'CONFLICT',
+            { reason: CANCEL_NEEDS_MONEY_AUTHORITY },
+          );
+        }
+        if (code === '42501') {
           throw new ServiceError(
             'Vous n avez pas la permission d annuler cette commande',
             'UNAUTHORIZED',

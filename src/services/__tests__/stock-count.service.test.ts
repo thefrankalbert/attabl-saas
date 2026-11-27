@@ -60,7 +60,7 @@ describe('InventoryService.openStockCount', () => {
 
     await expect(service.openStockCount(TENANT_ID, {})).rejects.toMatchObject({
       code: 'CONFLICT',
-      message: 'Un inventaire est deja ouvert',
+      message: 'Un inventaire est déjà ouvert',
     });
   });
 

@@ -186,6 +186,7 @@ export function ScreenLock({
                   <div className="relative">
                     <Input
                       type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
                       placeholder={t('password')}
                       value={password}
                       onChange={(e) => {

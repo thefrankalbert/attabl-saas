@@ -53,7 +53,7 @@ export function WelcomeStep({
         {/* Branded header pill */}
         <div className="inline-flex items-center gap-3 mb-10 opacity-0 animate-[fadeSlideIn_0.6s_0.1s_ease-out_forwards]">
           <div className="h-px w-10 bg-gradient-to-r from-transparent to-border" />
-          <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground">
+          <span className="text-xs font-bold uppercase tracking-[0.4em] text-muted-foreground">
             ATTABL
           </span>
           <div className="h-px w-10 bg-gradient-to-l from-transparent to-border" />
@@ -79,7 +79,7 @@ export function WelcomeStep({
                   <div className="flex flex-col items-center">
                     <div className="w-10 h-10 rounded-full border border-border bg-card flex items-center justify-center flex-shrink-0 relative">
                       <Icon className="h-[18px] w-[18px] text-app-text-secondary" strokeWidth={2} />
-                      <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-muted border border-border flex items-center justify-center text-[10px] font-bold text-muted-foreground leading-none">
+                      <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-muted border border-border flex items-center justify-center text-xs font-bold text-muted-foreground leading-none">
                         {phase.num}
                       </span>
                     </div>
@@ -91,9 +91,7 @@ export function WelcomeStep({
                     <p className="text-[13px] font-semibold text-foreground leading-none mb-1">
                       {t(phase.label)}
                     </p>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      {t(phase.desc)}
-                    </p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{t(phase.desc)}</p>
                   </div>
                 </div>
               );
@@ -130,7 +128,7 @@ export function WelcomeStep({
             /* Trial reminder */
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border bg-card/50">
               <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-              <p className="text-[10px] font-medium text-muted-foreground">{t('trialReminder')}</p>
+              <p className="text-xs font-medium text-muted-foreground">{t('trialReminder')}</p>
             </div>
           )}
         </div>

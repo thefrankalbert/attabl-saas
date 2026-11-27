@@ -23,7 +23,17 @@ const createAdPayloadSchema = z.object({
   tenant_id: z.string().uuid(),
   // Rendered by next/image: only our storage host renders (image-url.schema.ts).
   image_url: renderableImageUrlSchema,
-  link: z.string().nullable().optional(),
+  // Le lien devient un <a href> sur la carte des clients: http(s) seulement,
+  // sinon un lien "javascript:" executerait du code chez chaque convive.
+  link: z
+    .string()
+    .trim()
+    .max(500)
+    .refine((v) => /^https?:\/\/[^\s/]+\.[^\s]+$/i.test(v), {
+      message: 'Lien invalide : il doit commencer par https://',
+    })
+    .nullable()
+    .optional(),
   sort_order: z.number().int().min(1),
   is_active: z.boolean(),
 });
@@ -41,9 +51,14 @@ async function checkPermissions(tenantId: string): Promise<{ error: string | nul
       return { error: err.message };
     }
     if (err instanceof AuthError) {
-      return { error: err.status === 401 ? 'Non authentifie' : 'Permissions insuffisantes' };
+      return {
+        error:
+          err.status === 401
+            ? 'Session expirée, reconnectez-vous.'
+            : 'Votre rôle ne permet pas de gérer les publicités.',
+      };
     }
-    return { error: 'Permissions insuffisantes' };
+    return { error: 'Votre rôle ne permet pas de gérer les publicités.' };
   }
 }
 
@@ -58,12 +73,16 @@ export async function actionCreateAd(
   payload: z.infer<typeof createAdPayloadSchema>,
 ): Promise<ActionResponse<unknown>> {
   const parsedTenant = tenantIdSchema.safeParse(tenantId);
-  if (!parsedTenant.success) return { error: 'Invalid tenant ID' };
+  if (!parsedTenant.success) return { error: 'Restaurant introuvable.' };
 
   const parsedPayload = createAdPayloadSchema.safeParse(payload);
-  if (!parsedPayload.success) return { error: 'Invalid input' };
+  if (!parsedPayload.success) {
+    const linkIssue = parsedPayload.error.issues.find((i) => i.path[0] === 'link');
+    if (linkIssue) return { error: linkIssue.message };
+    return { error: "L'image ou l'ordre d'affichage n'est pas valide." };
+  }
 
-  if (parsedPayload.data.tenant_id !== tenantId) return { error: 'Tenant mismatch' };
+  if (parsedPayload.data.tenant_id !== tenantId) return { error: 'Restaurant introuvable.' };
 
   const { error: permError } = await checkPermissions(tenantId);
   if (permError) return { error: permError };
@@ -75,7 +94,7 @@ export async function actionCreateAd(
     return { success: true, data };
   } catch (err) {
     if (err instanceof ServiceError) return { error: err.message };
-    return { error: 'Server error' };
+    return { error: 'Erreur du serveur. Réessayez.' };
   }
 }
 
@@ -86,7 +105,7 @@ export async function actionCreateAd(
 export async function actionDeleteAd(tenantId: string, adId: string): Promise<ActionResponse> {
   const parsedTenant = tenantIdSchema.safeParse(tenantId);
   const parsedAdId = adIdSchema.safeParse(adId);
-  if (!parsedTenant.success || !parsedAdId.success) return { error: 'Invalid input' };
+  if (!parsedTenant.success || !parsedAdId.success) return { error: 'Publicité introuvable.' };
 
   const { error: permError } = await checkPermissions(tenantId);
   if (permError) return { error: permError };
@@ -101,7 +120,7 @@ export async function actionDeleteAd(tenantId: string, adId: string): Promise<Ac
     return { success: true };
   } catch (err) {
     if (err instanceof ServiceError) return { error: err.message };
-    return { error: 'Server error' };
+    return { error: 'Erreur du serveur. Réessayez.' };
   }
 }
 
@@ -116,7 +135,7 @@ export async function actionToggleAdActive(
 ): Promise<ActionResponse<unknown>> {
   const parsedTenant = tenantIdSchema.safeParse(tenantId);
   const parsedAdId = adIdSchema.safeParse(adId);
-  if (!parsedTenant.success || !parsedAdId.success) return { error: 'Invalid input' };
+  if (!parsedTenant.success || !parsedAdId.success) return { error: 'Publicité introuvable.' };
 
   const { error: permError } = await checkPermissions(tenantId);
   if (permError) return { error: permError };
@@ -128,6 +147,6 @@ export async function actionToggleAdActive(
     return { success: true, data };
   } catch (err) {
     if (err instanceof ServiceError) return { error: err.message };
-    return { error: 'Server error' };
+    return { error: 'Erreur du serveur. Réessayez.' };
   }
 }

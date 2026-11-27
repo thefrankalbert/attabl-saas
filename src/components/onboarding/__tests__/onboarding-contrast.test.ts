@@ -56,8 +56,18 @@ describe('contrastes de l onboarding (WCAG AA, 4,5:1)', () => {
     }
   });
 
-  it.each(THEMES)('%s, temoin: text-app-text-muted restait sous 4,5:1', (_t, scope) => {
-    expect(ratio(token(scope, 'app-text-muted'), token(scope, 'app-elevated'))).toBeLessThan(4.5);
+  // Temoin: les anciennes valeurs de text-app-text-muted restaient sous 4,5:1.
+  // Le jeton a depuis ete releve dans globals.css (verification de mise en
+  // production du 2026-11-24), d'ou les valeurs d'avant ecrites ici.
+  const OLD_MUTED = { '.light': '#a8a29e', ':root': '#6b6560' } as const;
+  it.each(THEMES)('%s, temoin: l ancien text-app-text-muted restait sous 4,5:1', (_t, scope) => {
+    expect(ratio(OLD_MUTED[scope], token(scope, 'app-elevated'))).toBeLessThan(4.5);
+  });
+
+  it.each(THEMES)('%s: text-app-text-muted atteint maintenant 4,5:1', (_t, scope) => {
+    expect(
+      ratio(token(scope, 'app-text-muted'), token(scope, 'app-elevated')),
+    ).toBeGreaterThanOrEqual(4.5);
   });
 
   it('les textes signales utilisent le jeton secondaire', () => {
@@ -65,7 +75,7 @@ describe('contrastes de l onboarding (WCAG AA, 4,5:1)', () => {
       'leading-relaxed text-app-text-secondary',
     );
     expect(src('src/components/onboarding/OnboardingTopNav.tsx')).toContain(
-      'text-[10px] text-app-text-secondary',
+      'text-xs text-app-text-secondary',
     );
     for (const f of ['CompleteZones', 'MinimumZones']) {
       expect(src(`src/components/onboarding/tables/${f}.tsx`)).not.toMatch(
