@@ -98,7 +98,7 @@ export function EstablishmentCard({
                 style={{ background: online ? 'var(--cc-accent-ink)' : 'var(--cc-soft)' }}
               />
               <span
-                className="shrink-0 text-[11px] font-medium"
+                className="shrink-0 text-xs font-medium"
                 style={{ color: online ? 'var(--cc-accent-ink)' : 'var(--cc-text-3)' }}
               >
                 {online ? labels.online : labels.offline}
@@ -115,15 +115,13 @@ export function EstablishmentCard({
                     e.preventDefault();
                     onViewMenu();
                   }}
-                  className="inline-flex min-w-0 items-center gap-1 font-mono text-[11px] text-[var(--cc-text-3)] transition-colors hover:text-[var(--cc-text)]"
+                  className="inline-flex min-w-0 items-center gap-1 font-mono text-xs text-[var(--cc-text-3)] transition-colors hover:text-[var(--cc-text)]"
                 >
                   <span className="truncate">{url}</span>
                   <ExternalLink className="size-3 shrink-0" strokeWidth={2} aria-hidden />
                 </a>
               ) : (
-                <span className="truncate font-mono text-[11px] text-[var(--cc-text-3)]">
-                  {url}
-                </span>
+                <span className="truncate font-mono text-xs text-[var(--cc-text-3)]">{url}</span>
               )}
             </div>
           </div>
@@ -133,7 +131,7 @@ export function EstablishmentCard({
             <div className="text-[12px] text-[var(--cc-text-3)]">{labels.noSales}</div>
           ) : (
             <div>
-              <div className="text-[10px] font-medium uppercase tracking-[0.07em] text-[var(--cc-text-3)]">
+              <div className="text-xs font-medium uppercase tracking-[0.07em] text-[var(--cc-text-3)]">
                 {labels.revenueToday}
               </div>
               <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-[var(--cc-text)]">
@@ -147,7 +145,7 @@ export function EstablishmentCard({
                   label={labels.trend}
                   newLabel={labels.trendNew}
                 />
-                <span className="ml-1 text-[11px] text-[var(--cc-text-3)]">
+                <span className="ml-1 text-xs text-[var(--cc-text-3)]">
                   {new Intl.NumberFormat(locale).format(location.orders_today)} {labels.ordersToday}
                 </span>
               </div>

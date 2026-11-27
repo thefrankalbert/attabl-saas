@@ -50,7 +50,7 @@ export function TopbarMinimal({
     >
       <div className="flex items-center gap-2.5 whitespace-nowrap text-sm font-medium tracking-tight">
         <div
-          className="grid size-[22px] place-items-center rounded-md text-[11px] font-semibold"
+          className="grid size-[22px] place-items-center rounded-md text-xs font-semibold"
           style={{
             background: 'var(--cc-text)',
             color: 'var(--cc-bg)',
@@ -136,7 +136,7 @@ export function TopbarMinimal({
         style={{ color: 'var(--cc-text-2)' }}
       >
         <div
-          className="grid size-6 place-items-center rounded-full text-[10px] font-semibold"
+          className="grid size-6 place-items-center rounded-full text-xs font-semibold"
           style={{
             background: 'linear-gradient(135deg, var(--cc-accent), var(--cc-accent-hover))',
             color: '#ffffff',
@@ -147,7 +147,7 @@ export function TopbarMinimal({
         </div>
         <span className="flex flex-col leading-tight">
           <span
-            className="text-[9px] font-medium uppercase tracking-[0.08em]"
+            className="text-xs font-medium uppercase tracking-[0.08em]"
             style={{ color: 'var(--cc-text-3)' }}
           >
             {t('account')}
