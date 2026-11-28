@@ -136,3 +136,28 @@ jobs:
         env:
           TARGET_URL: postgresql://supabase_admin:restauration-jetable@localhost:5432/postgres
         run: bash scripts/sauvegarde/restaurer-et-verifier.sh
+
+  # Audit P9: un echec de nuit ne doit pas passer inapercu. Hors PR, toute
+  # sauvegarde ou restauration en echec (ou sautee faute de secrets) ouvre
+  # l'issue d'alerte. L'absence pure de passage est couverte par
+  # veille-sauvegarde.yml.
+  alerte:
+    name: Alerte si echec
+    needs: [sauvegarde, restauration]
+    if: >-
+      always() && github.event_name != 'pull_request' &&
+      (needs.sauvegarde.result != 'success' || needs.restauration.result != 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Ouvrir ou completer l'issue d'alerte
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULTATS: 'sauvegarde=${{ needs.sauvegarde.result }}, restauration=${{ needs.restauration.result }}'
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          bash scripts/sauvegarde/signaler.sh "La sauvegarde nocturne a echoue ($RESULTATS). Execution : $RUN_URL"
