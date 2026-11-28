@@ -217,7 +217,7 @@ export async function seedStaffForTenant(tenantId: string, personas: Persona[]):
       user_id: userId,
       email: p.email,
       full_name: p.label,
-      postes: [DB_POSTE[p.role]],
+      postes: p.postes ?? [DB_POSTE[p.role]],
       is_active: true,
     });
     if (error && !/duplicate|already exists/i.test(error.message)) {
@@ -503,6 +503,25 @@ export async function getTenantBilling(tenantId: string): Promise<TenantBilling 
     .eq('id', tenantId)
     .maybeSingle();
   return (data as TenantBilling | null) ?? null;
+}
+
+/**
+ * Client Supabase connecte comme une VRAIE personne (cle publique + mot de
+ * passe) : ses requetes passent par la RLS et les declencheurs, comme celles de
+ * l'application. Sert a prouver un droit en base (un chef change un prix), la
+ * ou `getAdmin()` (service_role) contourne tout.
+ */
+export async function newUserClient(email: string, password: string): Promise<SupabaseClient> {
+  assertNotProduction();
+  if (!journeyEnv.supabaseUrl || !journeyEnv.supabaseAnonKey) {
+    throw new Error('Client utilisateur indisponible: JOURNEY_SUPABASE_URL/ANON_KEY requis.');
+  }
+  const client = createClient(journeyEnv.supabaseUrl, journeyEnv.supabaseAnonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const { error } = await client.auth.signInWithPassword({ email, password });
+  if (error) throw new Error(`connexion ${email} echec: ${error.message}`);
+  return client;
 }
 
 /** Met a jour le statut d'une commande (declenche un event CDC vu par le KDS). */

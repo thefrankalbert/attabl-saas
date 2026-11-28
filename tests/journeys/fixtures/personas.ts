@@ -13,6 +13,11 @@ export interface Persona {
   side: 'restaurant' | 'client';
   label: string;
   role?: RestaurantRole;
+  /**
+   * Postes cumules, quand un seul role ne suffit pas a decrire la personne
+   * (serveur ET caissier). Sans cette liste, le poste vient de `role`.
+   */
+  postes?: string[];
   email?: string;
   password?: string;
 }

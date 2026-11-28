@@ -240,7 +240,7 @@ describe('moteur de rappels (base reelle)', () => {
     expect(pushes.filter((p) => p.titre.startsWith("Avant l'ouverture"))).toEqual([]);
   });
 
-  it('le bilan du lundi: des faits mesures, au proprietaire seulement', async () => {
+  it('le bilan du lundi: des faits mesures, a qui a le droit reports.money (proprietaire et gerant)', async () => {
     // Prochain lundi 09:01, heure de Douala (UTC+1) = 08:01 UTC.
     const monday = new Date(T0);
     monday.setUTCDate(monday.getUTCDate() + ((8 - monday.getUTCDay()) % 7 || 7));
@@ -270,7 +270,12 @@ describe('moteur de rappels (base reelle)', () => {
     pushes.length = 0;
     await engine.tick(monday);
     const coach = pushes.filter((p) => p.titre === 'Vos 4 dernières semaines en chiffres');
-    expect(coach.map((p) => p.membres[0])).toEqual([staff.owner.id]);
+    // Le bilan porte du chiffre d'affaires: il va a qui detient `reports.money`.
+    // Par defaut le proprietaire ET le gerant (avant le lot des postes: le
+    // proprietaire et l'administrateur). Ni le serveur ni le chef.
+    expect(coach.map((p) => p.membres[0]).sort()).toEqual(
+      [staff.owner.id, staff.manager.id].sort(),
+    );
     expect(coach[0].corps).toContain('le samedi de 13 h à 14 h, 300 commande(s) en moyenne');
     // Le compte exact, lu en base (les commandes des etapes precedentes comptent
     // aussi). Avant le calcul en base, la lecture s'arretait a 1000 lignes.

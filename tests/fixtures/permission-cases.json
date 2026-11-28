@@ -352,6 +352,127 @@
       "poste_permissions": {},
       "perm": "orders.take",
       "expected": null
+    },
+    {
+      "name": "cumul chef et caissier : toujours pas de rapports d'argent",
+      "postes": ["chef", "cashier"],
+      "permission_overrides": null,
+      "poste_permissions": {},
+      "perm": "reports.money",
+      "expected": null
+    },
+    {
+      "name": "cumul chef et caissier : change les prix (chef)",
+      "postes": ["chef", "cashier"],
+      "permission_overrides": null,
+      "poste_permissions": {},
+      "perm": "menu.price",
+      "expected": "full"
+    },
+    {
+      "name": "cumul chef et caissier : encaisse (caissier)",
+      "postes": ["chef", "cashier"],
+      "permission_overrides": null,
+      "poste_permissions": {},
+      "perm": "orders.pay",
+      "expected": "full"
+    },
+    {
+      "name": "reglage par personne : un false retire un droit BORNE (caissier, annuler)",
+      "postes": ["cashier"],
+      "permission_overrides": {
+        "orders.cancel": false
+      },
+      "poste_permissions": {},
+      "perm": "orders.cancel",
+      "expected": null
+    },
+    {
+      "name": "reglage par personne : un false retire les factures au gerant",
+      "postes": ["manager"],
+      "permission_overrides": {
+        "billing.manage": false
+      },
+      "poste_permissions": {},
+      "perm": "billing.manage",
+      "expected": null
+    },
+    {
+      "name": "reglage du poste : false sur les DEUX postes d'un cumul, droit borne retire",
+      "postes": ["cashier", "waiter"],
+      "permission_overrides": null,
+      "poste_permissions": {
+        "cashier": {
+          "orders.cancel": false
+        },
+        "waiter": {
+          "orders.cancel": false
+        }
+      },
+      "perm": "orders.cancel",
+      "expected": null
+    },
+    {
+      "name": "temoin : false sur UN seul poste du cumul, l'autre garde le niveau borne",
+      "postes": ["cashier", "waiter"],
+      "permission_overrides": null,
+      "poste_permissions": {
+        "cashier": {
+          "orders.cancel": false
+        }
+      },
+      "perm": "orders.cancel",
+      "expected": "limited"
+    },
+    {
+      "name": "reglage par personne a true : gagne sur un reglage de poste a false",
+      "postes": ["waiter"],
+      "permission_overrides": {
+        "orders.take": true
+      },
+      "poste_permissions": {
+        "waiter": {
+          "orders.take": false
+        }
+      },
+      "perm": "orders.take",
+      "expected": "full"
+    },
+    {
+      "name": "proprietaire cumulant gerant : un reglage du poste gerant a false est ignore",
+      "postes": ["owner", "manager"],
+      "permission_overrides": null,
+      "poste_permissions": {
+        "manager": {
+          "settings.edit": false
+        }
+      },
+      "perm": "settings.edit",
+      "expected": "full"
+    },
+    {
+      "name": "cumul de trois postes : prend les commandes (caissier ou serveur)",
+      "postes": ["chef", "cashier", "waiter"],
+      "permission_overrides": null,
+      "poste_permissions": {},
+      "perm": "orders.take",
+      "expected": "full"
+    },
+    {
+      "name": "cumul de trois postes : rembourser reste borne (caissier seul l'a, en borne)",
+      "postes": ["chef", "cashier", "waiter"],
+      "permission_overrides": null,
+      "poste_permissions": {},
+      "perm": "orders.refund",
+      "expected": "limited"
+    },
+    {
+      "name": "cumul de trois postes : aucun ne donne les rapports d'argent",
+      "postes": ["chef", "cashier", "waiter"],
+      "permission_overrides": null,
+      "poste_permissions": {},
+      "perm": "reports.money",
+      "expected": null
     }
   ],
   "unknown_codes": [
