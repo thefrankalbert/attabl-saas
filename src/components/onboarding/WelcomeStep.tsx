@@ -50,8 +50,8 @@ export function WelcomeStep({
 
       {/* Main content */}
       <div className="relative z-10 flex flex-col items-center text-center max-w-lg w-full">
-        {/* Pastille de marque. Accent NEUTRE voulu (onboarding-brand.css: le
-            parcours reprend la palette du tableau de bord). */}
+        {/* Pastille de marque. Accent NEUTRE: decision du proprietaire du
+            2026-11-28 (regle 09, onboarding-brand.css). */}
         <div className="mb-10 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 opacity-0 animate-[fadeSlideIn_0.6s_0.1s_ease-out_forwards]">
           <span aria-hidden className="h-2 w-2 rounded-full bg-accent" />
           <span className="text-xs font-semibold tracking-wide text-foreground">ATTABL</span>
