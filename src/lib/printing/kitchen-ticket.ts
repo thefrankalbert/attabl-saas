@@ -75,6 +75,7 @@ function generateKitchenTicketHTML(order: Order, options: PrintOptions = {}): st
   const serviceLabel = SERVICE_LABELS[order.service_type || 'dine_in'] || 'Sur place';
 
   // Group items by course
+  // Pas d'Object.groupBy : il exige Safari 17.4, le projet supporte Safari 16.4 (iPhone 8 et X restent sur iOS 16).
   const grouped: Record<string, typeof items> = {};
   for (const item of items) {
     const course = item.course || 'main';

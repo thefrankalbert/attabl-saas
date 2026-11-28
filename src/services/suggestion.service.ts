@@ -222,7 +222,7 @@ export function generateSuggestions(items: MenuItem[]): GeneratedSuggestion[] {
       const targetCategory = otherCategories[0];
       const targets = byCategory.get(targetCategory) || [];
       if (targets.length > 0) {
-        const closest = [...targets].sort(
+        const closest = targets.toSorted(
           (a, b) => Math.abs(a.price - item.price) - Math.abs(b.price - item.price),
         )[0];
         suggestions.push({

@@ -148,6 +148,7 @@ export function CommandPalette() {
         <CommandSeparator />
 
         {/* Group navigation items by their group label */}
+        {/* Pas d'Object.groupBy : il exige Safari 17.4, le projet supporte Safari 16.4 (iPhone 8 et X restent sur iOS 16). */}
         {Object.entries(
           navItems.reduce<Record<string, typeof navItems>>((acc, item) => {
             (acc[item.group] ??= []).push(item);

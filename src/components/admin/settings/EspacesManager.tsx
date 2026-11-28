@@ -64,7 +64,7 @@ export function EspacesManager({
   const atLimit = maxEspaces !== -1 && activeCount >= maxEspaces;
   const activeEspaces = espaces.filter((e) => e.is_active);
   // "Principal" = le plus ancien espace ACTIF (aucune colonne is_default en base).
-  const activeSorted = [...activeEspaces].sort(
+  const activeSorted = activeEspaces.toSorted(
     (a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id),
   );
   const principalId = activeSorted[0]?.id;
