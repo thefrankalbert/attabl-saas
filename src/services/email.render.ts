@@ -35,6 +35,25 @@ export function sanitizeUrl(url: string): string {
 
 export const FOOTER = emailFooterLine();
 
+// Gris des petits textes de tous les e-mails (surtitre, notes, pied de page):
+// `#6b7280`, 4,8:1 sur la carte blanche et 4,6:1 sur le fond `#f9fafb`, soit
+// le niveau AA (4,5:1). L'ancien `#9ca3af` tombait a 2,4-2,5:1 en 11-12 px.
+
+/**
+ * Pied de page d'une relance commerciale: lien visible de desabonnement
+ * (en plus de l'en-tete List-Unsubscribe, que toutes les messageries
+ * n'affichent pas). A placer comme dernier bloc du `body` passe a `wrap`.
+ */
+export function unsubscribeFooter(pageUrl: string): string {
+  const safe = escapeHtml(sanitizeUrl(pageUrl));
+  return `<tr><td style="padding:16px 0 0;text-align:center;font-size:12px;color:#6b7280;">Vous recevez cet e-mail parce que vous avez un compte ATTABL. <a href="${safe}" style="color:#6b7280;text-decoration:underline;">Se desabonner de ces e-mails</a></td></tr>`;
+}
+
+/** Equivalent texte du pied de page de desabonnement. */
+export function unsubscribeFooterText(pageUrl: string): string {
+  return `Se desabonner de ces e-mails : ${pageUrl}`;
+}
+
 export function wrap(preheader: string, body: string): string {
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head>
@@ -48,7 +67,7 @@ export function wrap(preheader: string, body: string): string {
 <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;">
 <tr><td style="padding:0 0 24px;text-align:center;font-size:18px;font-weight:700;color:#111827;">ATTABL</td></tr>
 ${body}
-<tr><td style="padding:24px 0 0;text-align:center;font-size:11px;color:#9ca3af;">${escapeHtml(FOOTER)}</td></tr>
+<tr><td style="padding:24px 0 0;text-align:center;font-size:11px;color:#6b7280;">${escapeHtml(FOOTER)}</td></tr>
 </table></td></tr></table></body></html>`;
 }
 
