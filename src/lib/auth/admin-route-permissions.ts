@@ -12,7 +12,7 @@ import {
  * before their parent (e.g. /settings/permissions before /settings).
  *
  * Routes that return null are open to any authenticated tenant member -
- * operational pages every role needs: dashboard home, kitchen, menus,
+ * operational pages every role needs: dashboard home, menus,
  * items, categories, service, qr-codes, support. Their EDIT actions are hidden
  * on screen without the matching permission (menu.edit, orders.pay...).
  *
@@ -37,6 +37,9 @@ const ROUTE_PERMISSIONS: ReadonlyArray<{ test: RegExp; permission: PermissionReq
   { test: /^\/suppliers(\/|$)/, permission: { anyOf: ['inventory.view', 'suppliers.manage'] } },
   { test: /^\/recipes(\/|$)/, permission: 'inventory.view' },
   { test: /^\/pos(\/|$)/, permission: 'orders.take' },
+  // "Suivre en cuisine ou au bar" (cahier des charges, section 5): ni le
+  // caissier ni le serveur n'ouvrent l'ecran de cuisine.
+  { test: /^\/kitchen(\/|$)/, permission: 'kitchen.track' },
   // Les ardoises sont de l'argent (decision du 2026-11-09): pas le serveur ni le chef.
   { test: /^\/orders\/house-accounts(\/|$)/, permission: 'orders.pay' },
   { test: /^\/orders(\/|$)/, permission: ORDERS_VIEW },

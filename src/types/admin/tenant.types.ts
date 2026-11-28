@@ -91,3 +91,12 @@ export interface AdminUser {
   /** Reglage par personne : il tranche avant les postes, dans les deux sens. */
   permission_overrides?: PermissionMap | null;
 }
+
+/**
+ * Ce que le plan de salle lit d'un membre proposable a une table : ni email,
+ * ni telephone, ni reglage par personne (ils ne quittent pas le serveur).
+ */
+export type FloorServer = Pick<
+  AdminUser,
+  'id' | 'tenant_id' | 'user_id' | 'full_name' | 'postes' | 'is_active'
+>;

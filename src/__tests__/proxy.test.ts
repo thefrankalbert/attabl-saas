@@ -740,13 +740,27 @@ describe('proxy - RBAC route gate', () => {
     }
   });
 
-  it('lets a waiter reach operational routes (orders, kitchen, menus, pos, dashboard)', async () => {
+  it('lets a waiter reach operational routes (orders, menus, pos, dashboard)', async () => {
     authed('w-3');
     mockPostes = ['waiter'];
-    for (const sub of ['orders', 'kitchen', 'menus', 'pos', '']) {
+    for (const sub of ['orders', 'menus', 'pos', '']) {
       const res = await go(`/sites/radisson/admin/${sub}`);
       expect(res.status).not.toBe(307);
     }
+  });
+
+  // Cahier des charges, section 5: "Suivre en cuisine ou au bar" n'est ni au
+  // serveur ni au caissier. L'ecran de cuisine exige `kitchen.track`.
+  it('refuse la cuisine au serveur et au caissier, la laisse au cuisinier (temoin)', async () => {
+    authed('w-5');
+    for (const poste of ['waiter', 'cashier'] as const) {
+      mockPostes = [poste];
+      const res = await go('/sites/radisson/admin/kitchen');
+      expect(res.status, poste).toBe(307);
+      expect(new URL(res.headers.get('location')!).pathname, poste).toBe('/unauthorized');
+    }
+    mockPostes = ['cook'];
+    expect((await go('/sites/radisson/admin/kitchen')).status).not.toBe(307);
   });
 
   it('lets an owner reach every sensitive route', async () => {
@@ -832,7 +846,7 @@ describe('proxy - RBAC route gate', () => {
   it('temoin: un membre sans droit particulier (serveur) garde ces routes ouvertes', async () => {
     authed('w-1');
     mockPostes = ['waiter'];
-    for (const sub of ['', '/items', '/kitchen', '/service', '/support']) {
+    for (const sub of ['', '/items', '/service', '/support']) {
       const res = await go(`/sites/radisson/admin${sub}`);
       expect(res.status, sub).not.toBe(307);
     }

@@ -34,6 +34,12 @@ const member: { poste: string; custom: Record<string, boolean> | null } = {
   custom: null,
 };
 
+// Supplement lu avant sa suppression (prix stocke), reglable par test.
+const modifierRow: {
+  value: { price: number | null; prices: Record<string, number> | null } | null;
+  readError: boolean;
+} = { value: null, readError: false };
+
 function chain(table: string) {
   const c: Record<string, unknown> = {};
   for (const m of ['select', 'eq', 'is', 'in']) c[m] = vi.fn(() => c);
@@ -50,8 +56,10 @@ function chain(table: string) {
             postes: [member.poste],
             permission_overrides: member.custom,
           }
-        : null,
-    error: null,
+        : table === 'item_modifiers'
+          ? modifierRow.value
+          : null,
+    error: modifierRow.readError && table === 'item_modifiers' ? { message: 'panne' } : null,
   }));
   return c;
 }
@@ -86,8 +94,12 @@ vi.mock('@/services/plan-enforcement.service', () => ({
   createPlanEnforcementService: () => ({ canAddMenuItem: async () => undefined }),
 }));
 const mockCreateModifier = vi.fn();
+const mockDeleteModifier = vi.fn();
 vi.mock('@/services/modifier.service', () => ({
-  createModifierService: () => ({ createModifier: mockCreateModifier }),
+  createModifierService: () => ({
+    createModifier: mockCreateModifier,
+    deleteModifier: mockDeleteModifier,
+  }),
 }));
 
 import {
@@ -95,7 +107,7 @@ import {
   actionUpdateMenuItem,
   actionUpdateMenuItemPrice,
 } from '@/app/actions/menu-items';
-import { actionCreateModifier } from '@/app/actions/modifiers';
+import { actionCreateModifier, actionDeleteModifier } from '@/app/actions/modifiers';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -106,6 +118,9 @@ beforeEach(() => {
   mockUpdatePrice.mockResolvedValue(undefined);
   mockCreateMenuItem.mockResolvedValue('new-item');
   mockCreateModifier.mockResolvedValue({ id: 'm-1' });
+  mockDeleteModifier.mockResolvedValue(undefined);
+  modifierRow.value = null;
+  modifierRow.readError = false;
 });
 
 /** Cuisinier avec `menu.edit` donne par personne, mais SANS `menu.price`. */
@@ -251,5 +266,56 @@ describe('actionCreateModifier: un supplement payant exige menu.price', () => {
     const res = await actionCreateModifier(TENANT, modifier(200));
     expect(res.success).toBe(true);
     expect(mockCreateModifier).toHaveBeenCalledTimes(1);
+  });
+});
+
+/**
+ * Audit de securite M1. Un chef sans `menu.price` supprimait le supplement
+ * "Fromage 500" (`menu.edit` suffisait) puis le recreait a 0 : le prix passait
+ * de 500 a 0 sans le droit de prix. Supprimer un supplement PAYANT exige donc
+ * `menu.price`, comme le declencheur `garder_prix_carte` en base.
+ */
+describe('actionDeleteModifier : un supplement payant ne se supprime pas sans menu.price', () => {
+  const chefSansPrix = () => {
+    member.poste = 'chef';
+    member.custom = { 'menu.price': false };
+  };
+
+  it('chef sans menu.price, supplement a 500 : REFUSE, rien n est supprime', async () => {
+    chefSansPrix();
+    modifierRow.value = { price: 500, prices: null };
+    const res = await actionDeleteModifier(TENANT, ITEM);
+    expect(res.error).toBe('Permissions insuffisantes');
+    expect(mockDeleteModifier).not.toHaveBeenCalled();
+  });
+
+  it('chef sans menu.price, prix porte par `prices` seul : REFUSE aussi', async () => {
+    chefSansPrix();
+    modifierRow.value = { price: 0, prices: { XOF: 200 } };
+    const res = await actionDeleteModifier(TENANT, ITEM);
+    expect(res.error).toBe('Permissions insuffisantes');
+    expect(mockDeleteModifier).not.toHaveBeenCalled();
+  });
+
+  it('temoin : le meme chef supprime un supplement GRATUIT (menu.edit suffit)', async () => {
+    chefSansPrix();
+    modifierRow.value = { price: 0, prices: null };
+    expect(await actionDeleteModifier(TENANT, ITEM)).toEqual({ success: true });
+    expect(mockDeleteModifier).toHaveBeenCalledWith(ITEM, TENANT);
+  });
+
+  it('temoin : un chef par defaut (menu.price) supprime le supplement payant', async () => {
+    member.poste = 'chef';
+    modifierRow.value = { price: 500, prices: null };
+    expect(await actionDeleteModifier(TENANT, ITEM)).toEqual({ success: true });
+    expect(mockDeleteModifier).toHaveBeenCalledWith(ITEM, TENANT);
+  });
+
+  it('lecture du supplement en panne : refus, rien n est supprime (echec ferme)', async () => {
+    member.poste = 'chef';
+    modifierRow.readError = true;
+    const res = await actionDeleteModifier(TENANT, ITEM);
+    expect(res.error).toBe('Server error');
+    expect(mockDeleteModifier).not.toHaveBeenCalled();
   });
 });

@@ -19,7 +19,6 @@ import { ReassignTableDialog, type ReassignFreeTable } from './ReassignTableDial
 import { actionReleaseTable } from '@/app/actions/table-release';
 import type { ServiceServerVM, ServiceTableStatus, ServiceTableVM } from './service.types';
 import type { Order } from '@/types/admin.types';
-import { ORDERS_ADVANCE } from '@/lib/admin-roles';
 
 interface Props {
   vm: ServiceTableVM | null;
@@ -90,8 +89,8 @@ export function ServiceTableDetail({
   const [freeing, setFreeing] = useState(false);
   const canAssign = useCanManageFloor();
   // Freeing a table is a floor gesture (waiter, cashier): same check as the
-  // server action (prendre ou suivre une commande), not the assignment gate.
-  const canFreeTable = usePermissions().can(ORDERS_ADVANCE);
+  // server action (`orders.take`: prendre une commande), not the assignment gate.
+  const canFreeTable = usePermissions().can('orders.take');
 
   useEffect(() => {
     if (!vm) return;

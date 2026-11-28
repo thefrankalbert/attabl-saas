@@ -29,7 +29,12 @@ import {
   assertTenantServingForKitchen,
   TenantLockedError,
 } from '@/lib/billing/assert-tenant-serving';
-import { MONEY_PERMISSIONS, ORDERS_ADVANCE, ORDERS_VIEW } from '@/lib/admin-roles';
+import {
+  MONEY_PERMISSIONS,
+  ORDERS_ADVANCE,
+  ORDERS_VIEW,
+  orderStatusRequirement,
+} from '@/lib/admin-roles';
 
 const deleteOrdersSchema = z.array(z.string().uuid()).min(1).max(200);
 
@@ -341,13 +346,14 @@ export async function actionUpdateOrderStatus(
   }
 
   try {
-    // Faire avancer une commande = `orders.manage` (serveur et cuisine compris).
-    // L'ANNULER annule une note impayee: prendre l'argent puis annuler la
-    // commande est le detournement classique. L'annulation exige donc en plus
-    // le droit d'argent `orders.pay` (decision du proprietaire du 2026-11-09).
+    // Le droit depend du statut pose (`orderStatusRequirement`): "en
+    // preparation" et "pret" sont des gestes de cuisine (`kitchen.track`),
+    // servir reste ouvert a la salle. L'ANNULER annule une note impayee:
+    // prendre l'argent puis annuler la commande est le detournement classique,
+    // d'ou `orders.pay` (decision du proprietaire du 2026-11-09).
     const { supabase, user } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
-      parsed.data.status === 'cancelled' ? 'orders.pay' : ORDERS_ADVANCE,
+      orderStatusRequirement(parsed.data.status),
     );
 
     // Coupure du restaurant: ces actions sont appelees EN DIRECT par
@@ -482,7 +488,12 @@ export async function actionUpdateItemStatus(
   }
 
   try {
-    const { supabase } = await getAuthenticatedUserForTenant(parsed.data.tenantId, ORDERS_ADVANCE);
+    // Meme regle que le statut d'une commande: "en preparation" et "pret"
+    // exigent `kitchen.track`.
+    const { supabase } = await getAuthenticatedUserForTenant(
+      parsed.data.tenantId,
+      orderStatusRequirement(parsed.data.status),
+    );
 
     // Coupure du restaurant: ces actions sont appelees EN DIRECT par
     // l'interface (OrderPaymentPanel, CompOrderDialog), donc la garde de
@@ -848,7 +859,7 @@ export async function actionRefundOrder(
 /**
  * Read the payment ledger summary for an order (amount due, net settled, status,
  * the list of tenders). Used by the order detail payment panel. Read-only, so
- * `orders.view` is enough: whoever can open the order sees what is paid, and
+ * `ORDERS_VIEW` is enough: whoever can open the order sees what is paid, and
  * only the money actions themselves need `orders.pay`.
  */
 export async function actionGetPaymentSummary(
@@ -983,7 +994,7 @@ export async function actionAddOrderNote(
 }
 
 /**
- * List the manager notes of an order (oldest first). Read-only: `orders.view`.
+ * List the manager notes of an order (oldest first). Read-only: `ORDERS_VIEW`.
  */
 export async function actionListOrderNotes(
   tenantId: string,

@@ -107,6 +107,21 @@ export async function actionDeleteModifier(
 
   try {
     const supabase = await createClient();
+    // Supprimer un supplement PAYANT puis le recreer gratuit faisait passer son
+    // prix a 0 sans `menu.price` (audit de securite M1). Meme regle que le
+    // declencheur `garder_prix_carte` : un supplement payant ne se supprime
+    // qu'avec `menu.price`. Lecture en panne : refus.
+    const { data: existing, error: readError } = await supabase
+      .from('item_modifiers')
+      .select('price, prices')
+      .eq('id', modifierId)
+      .eq('tenant_id', tenantId)
+      .maybeSingle();
+    if (readError) return { error: 'Server error' };
+    if (existing && (Number(existing.price ?? 0) > 0 || existing.prices != null)) {
+      const { error: priceError } = await checkPermissions(tenantId, MENU_WITH_PRICE);
+      if (priceError) return { error: priceError };
+    }
     const modifierService = createModifierService(supabase);
     await modifierService.deleteModifier(modifierId, tenantId);
     revalidateTag(CACHE_TAG_MENUS, 'max');

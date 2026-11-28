@@ -198,6 +198,62 @@ describe('statut: avancer oui, annuler non, pour le serveur et le chef', () => {
     expect(mockUpdateStatus).toHaveBeenCalledWith(ORDER_ID, TENANT_ID, 'delivered');
   });
 
+  // Audit de conformite M2 (cahier des charges, section 5): "en preparation" et
+  // "pret" sont des gestes de cuisine. Le serveur et le caissier, qui ont
+  // `orders.take` mais pas `kitchen.track`, ne les posent plus.
+  it.each([
+    ['waiter', 'preparing'],
+    ['waiter', 'ready'],
+    ['cashier', 'preparing'],
+    ['cashier', 'ready'],
+  ])('%s ne passe PAS une commande a "%s" (statut de cuisine)', async (poste, status) => {
+    member.poste = poste;
+    const { actionUpdateOrderStatus } = await import('@/app/actions/orders');
+    const res = await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, status);
+    expect(res.error).toBe('Permissions insuffisantes');
+    expect(mockUpdateStatus).not.toHaveBeenCalled();
+  });
+
+  it.each(['cook', 'chef', 'bartender'])(
+    'temoin: %s passe une commande a "preparing" (kitchen.track)',
+    async (poste) => {
+      member.poste = poste;
+      const { actionUpdateOrderStatus } = await import('@/app/actions/orders');
+      const res = await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, 'preparing');
+      expect(res.success).toBe(true);
+      expect(mockUpdateStatus).toHaveBeenCalledWith(ORDER_ID, TENANT_ID, 'preparing');
+    },
+  );
+
+  it('un serveur a qui le proprietaire donne kitchen.track pose "ready"', async () => {
+    member.poste = 'waiter';
+    member.custom = { 'kitchen.track': true };
+    const { actionUpdateOrderStatus } = await import('@/app/actions/orders');
+    expect((await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, 'ready')).success).toBe(true);
+  });
+
+  // Meme regle pour le statut d'une LIGNE de commande.
+  it.each(['waiter', 'cashier'])('%s ne passe PAS une ligne a "ready"', async (poste) => {
+    member.poste = poste;
+    const { actionUpdateItemStatus } = await import('@/app/actions/orders');
+    const res = await actionUpdateItemStatus(TENANT_ID, ORDER_ID, [ORDER_ID], 'ready');
+    expect(res.error).toBe('Permissions insuffisantes');
+  });
+
+  it('temoin: le cuisinier passe la garde pour une ligne "ready", le serveur pour "served"', async () => {
+    const { actionUpdateItemStatus } = await import('@/app/actions/orders');
+    // La base simulee ne rend aucune commande: l'action va donc PLUS LOIN que la
+    // garde et repond "introuvable", jamais "Permissions insuffisantes".
+    member.poste = 'cook';
+    expect((await actionUpdateItemStatus(TENANT_ID, ORDER_ID, [ORDER_ID], 'ready')).error).toBe(
+      'Commande introuvable',
+    );
+    member.poste = 'waiter';
+    expect((await actionUpdateItemStatus(TENANT_ID, ORDER_ID, [ORDER_ID], 'served')).error).toBe(
+      'Commande introuvable',
+    );
+  });
+
   it.each(['waiter', 'chef'])('%s n annule PAS une commande (note impayee)', async (poste) => {
     member.poste = poste;
     const { actionUpdateOrderStatus } = await import('@/app/actions/orders');

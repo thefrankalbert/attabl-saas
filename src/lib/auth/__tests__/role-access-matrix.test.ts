@@ -18,7 +18,7 @@ const canAccess = (postes: Poste[], subPath: string): boolean =>
   canOpenAdminSubPath(subPath, getEffectiveLevels({ postes }));
 
 // Routes ouvertes a tout membre (aucune exigence).
-const OPEN_ROUTES = ['', '/kitchen', '/menus', '/categories', '/items', '/service', '/qr-codes'];
+const OPEN_ROUTES = ['', '/menus', '/categories', '/items', '/service', '/qr-codes'];
 
 const MANAGERS: Poste[] = ['owner', 'manager'];
 // Postes qui prennent des commandes (orders.take en entier).
@@ -33,6 +33,9 @@ const TAKERS: Poste[] = [
 ];
 // Postes qui encaissent (orders.pay en entier) : le serveur n'en est pas.
 const PAYERS: Poste[] = [...MANAGERS, 'cashier', 'bartender', 'reception', 'crew', 'sales'];
+// Postes qui suivent en cuisine ou au bar (kitchen.track) : ni le caissier, ni
+// le serveur, ni la reception, ni la vente (cahier des charges, section 5).
+const KITCHEN: Poste[] = [...MANAGERS, 'chef', 'bartender', 'cook', 'crew', 'production'];
 // Postes qui voient le stock.
 const STOCK: Poste[] = [...MANAGERS, 'chef', 'bartender', 'cook', 'crew', 'production'];
 
@@ -53,6 +56,7 @@ const GATED: Array<{ path: string; allowed: Poste[] }> = [
   { path: '/recipes', allowed: STOCK },
   { path: '/suppliers', allowed: STOCK }, // inventory.view OU suppliers.manage
   { path: '/pos', allowed: TAKERS }, // orders.take
+  { path: '/kitchen', allowed: KITCHEN }, // kitchen.track
   { path: '/orders/house-accounts', allowed: PAYERS }, // orders.pay : pas le serveur
   { path: '/orders', allowed: [...POSTE_CODES] }, // prendre, suivre ou encaisser : tous
   { path: '/coupons', allowed: MANAGERS }, // orders.discount en entier
@@ -91,12 +95,14 @@ describe('matrice d acces aux pages admin, par poste', () => {
       '/stock-losses',
       '/recipes',
       '/suppliers',
+      '/kitchen',
       '/orders',
       '/suggestions',
     ]);
   });
 
-  it('le serveur n ouvre que la caisse et les commandes', () => {
+  // Cahier des charges, section 5: la cuisine n'est ni au serveur ni au caissier.
+  it('le serveur n ouvre que la caisse et les commandes (pas la cuisine)', () => {
     const reachable = GATED.filter((g) => canAccess(['waiter'], g.path)).map((g) => g.path);
     expect(reachable).toEqual(['/pos', '/orders']);
   });

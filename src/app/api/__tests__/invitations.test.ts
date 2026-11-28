@@ -750,14 +750,35 @@ describe('DELETE /api/invitations/[id]', () => {
     expect(json.success).toBe(true);
   });
 
-  it('returns 403 when a manager tries to cancel a peer (manager) invitation', async () => {
-    // Anti-escalade: un gerant n'annule pas l'invitation d'un pair gerant (droits
-    // non strictement inclus), posee par le proprietaire.
+  // Audit regression M3: un gerant peut INVITER un gerant (inclus ou egal). Il
+  // doit donc pouvoir defaire cette invitation, sinon une faute de frappe dans
+  // l'adresse ne se corrige que par le proprietaire. Meme regle que pour donner.
+  it('un gerant annule l invitation d un gerant (il avait le droit de la poser)', async () => {
     mockRateLimit(true);
     vi.mocked(createClient).mockResolvedValue(
       createMockDeleteSupabase({ actor: MANAGER }) as never,
     );
     setupMockAdminClient({ rights: { postes: ['manager'] } });
+    const cancelInvitation = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(createInvitationService).mockReturnValue({ cancelInvitation } as never);
+
+    const res = await DELETE(buildDeleteRequest(), buildParams());
+
+    expect(res.status).toBe(200);
+    expect(cancelInvitation).toHaveBeenCalledWith(TEST_INVITATION_ID);
+  });
+
+  it('returns 403 when a manager tries to cancel an invitation carrying a right he does not hold', async () => {
+    // Anti-escalade: le proprietaire a ajoute a cette invitation le paiement de
+    // l'abonnement, que le gerant n'a qu'au niveau borne. Il n'aurait pas pu la
+    // poser: il ne la defait pas.
+    mockRateLimit(true);
+    vi.mocked(createClient).mockResolvedValue(
+      createMockDeleteSupabase({ actor: MANAGER }) as never,
+    );
+    setupMockAdminClient({
+      rights: { postes: ['manager'], permission_overrides: { 'billing.manage': true } },
+    });
     const cancelInvitation = vi.fn().mockResolvedValue(undefined);
     vi.mocked(createInvitationService).mockReturnValue({ cancelInvitation } as never);
 
@@ -872,12 +893,14 @@ describe('POST /api/invitations/[id]/resend', () => {
     expect(json.error).toContain('Non autorise');
   });
 
-  it('refuse a un gerant de renvoyer l invitation d un pair gerant (403, aucun courriel)', async () => {
+  it('refuse a un gerant de renvoyer une invitation qui porte un droit qu il n a pas (403, aucun courriel)', async () => {
     mockRateLimit(true);
     vi.mocked(createClient).mockResolvedValue(
       createMockDeleteSupabase({ actor: MANAGER }) as never,
     );
-    setupMockAdminClient({ rights: { postes: ['manager'] } });
+    setupMockAdminClient({
+      rights: { postes: ['manager'], permission_overrides: { 'billing.manage': true } },
+    });
     const resendInvitation = vi.fn();
     vi.mocked(createInvitationService).mockReturnValue({ resendInvitation } as never);
 
@@ -885,6 +908,18 @@ describe('POST /api/invitations/[id]/resend', () => {
 
     expect(res.status).toBe(403);
     expect(resendInvitation).not.toHaveBeenCalled();
+  });
+
+  it('un gerant renvoie l invitation d un gerant (il avait le droit de la poser)', async () => {
+    mockRateLimit(true);
+    vi.mocked(createClient).mockResolvedValue(
+      createMockDeleteSupabase({ actor: MANAGER }) as never,
+    );
+    setupMockAdminClient({ rights: { postes: ['manager'] } });
+
+    const res = await RESEND_POST(buildResendRequest(), buildParams());
+
+    expect(res.status).toBe(200);
   });
 
   it('temoin: le proprietaire renvoie l invitation d un gerant', async () => {

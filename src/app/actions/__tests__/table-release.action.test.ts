@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ORDERS_ADVANCE } from '@/lib/admin-roles';
+import { getEffectiveLevels, meetsRequirement } from '@/lib/permissions';
 
 // "Liberer la table": tenant from the session, floor permission, service-role
 // write; refusal surfaced to the staff.
@@ -28,11 +28,17 @@ describe('actionReleaseTable', () => {
     mockAuth.mockResolvedValue({ tenantId: 'tenant-from-session' });
   });
 
-  it('requires ORDERS_ADVANCE and uses the tenant of the session', async () => {
+  // Audit de securite P1: liberer une table est un geste de salle. L'ancienne
+  // exigence (`orders.take` OU `kitchen.track`) l'ouvrait a un cuisinier.
+  it('requires orders.take (not kitchen.track alone) and uses the tenant of the session', async () => {
     const { actionReleaseTable } = await import('../table-release');
     const res = await actionReleaseTable('5', 'Salle 5');
 
-    expect(mockAuth).toHaveBeenCalledWith(ORDERS_ADVANCE);
+    expect(mockAuth).toHaveBeenCalledWith('orders.take');
+    // Temoin: l'exigence passee refuse un cuisinier et admet un serveur.
+    const requirement = mockAuth.mock.calls[0][0];
+    expect(meetsRequirement(getEffectiveLevels({ postes: ['cook'] }), requirement)).toBe(false);
+    expect(meetsRequirement(getEffectiveLevels({ postes: ['waiter'] }), requirement)).toBe(true);
     expect(mockRelease).toHaveBeenCalledWith('tenant-from-session', '5', 'Salle 5');
     expect(res).toEqual({ success: true });
   });

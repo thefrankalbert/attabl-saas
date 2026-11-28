@@ -27,7 +27,7 @@ import { useServiceLabels } from './service/use-service-labels';
 import { ServiceManagerSkeleton } from './service/ServiceManagerSkeleton';
 import { buildServerVMs, buildTableVMs, getElapsedMinutes } from './service/service-status';
 import type { ServiceServerVM, ServiceTableStatus, ZoneWithTables } from './service/service.types';
-import type { AdminUser, Order } from '@/types/admin.types';
+import type { FloorServer, Order } from '@/types/admin.types';
 
 interface Props {
   tenantId: string;
@@ -40,7 +40,7 @@ export default function ServiceManager({ tenantId, currency }: Props) {
   const tc = useTranslations('common');
 
   const [zones, setZones] = useState<ZoneWithTables[]>([]);
-  const [servers, setServers] = useState<AdminUser[]>([]);
+  const [servers, setServers] = useState<FloorServer[]>([]);
   const [readyOrders, setReadyOrders] = useState<Order[]>([]);
   const [openSessions, setOpenSessions] = useState<OpenTableSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,7 +100,7 @@ export default function ServiceManager({ tenantId, currency }: Props) {
         const { zones, servers, readyOrders, openSessions } = await svc.loadDashboard(tenantId);
         if (cancelled) return;
         setZones(zones as ZoneWithTables[]);
-        setServers(servers as AdminUser[]);
+        setServers(servers);
         setReadyOrders(readyOrders as Order[]);
         setOpenSessions(openSessions);
       } catch (error) {

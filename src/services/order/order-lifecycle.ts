@@ -369,7 +369,7 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
       const row = (cancelled ?? [])[0] as { id: string } | undefined;
       if (!row) {
         // Nothing touched: say why. Already cancelled is the idempotent no-op,
-        // paid needs a refund, and a row the policy hides (no orders.manage)
+        // paid needs a refund, and a row the policy hides (no orders.take nor kitchen.track)
         // is a refusal - RLS raises no error, it only hides.
         const { data: order, error: fetchError } = await supabase
           .from('orders')

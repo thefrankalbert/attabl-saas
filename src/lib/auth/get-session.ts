@@ -46,6 +46,17 @@ export interface AuthenticatedUserWithTenant extends AuthenticatedUser {
   adminUserId: string;
 }
 
+/**
+ * Exigence explicite "etre membre vivant du restaurant, sans droit particulier".
+ * A passer a `getAuthenticatedUserForTenant` par les rares gestes ouverts a
+ * toute l'equipe (vider SA cloche de notifications). Nommee expres : une garde
+ * sans exigence ne doit jamais etre un oubli.
+ */
+export const MEMBER_ONLY = 'member-only' as const;
+
+/** Ce qu'une garde par restaurant exige : un droit, ou l'appartenance nommee. */
+export type TenantGuardRequirement = PermissionRequirement | typeof MEMBER_ONLY;
+
 interface MembershipRow {
   id: string;
   tenant_id: string;
@@ -66,7 +77,7 @@ async function resolveMembership(
   supabase: Awaited<ReturnType<typeof createClient>>,
   user: AuthenticatedUser['user'],
   row: MembershipRow,
-  requirement: PermissionRequirement | undefined,
+  requirement: TenantGuardRequirement | undefined,
   virtualOwnerOf?: string,
 ): Promise<AuthenticatedUserWithTenant> {
   const tenantId = virtualOwnerOf ?? row.tenant_id;
@@ -77,7 +88,7 @@ async function resolveMembership(
   };
   const levels = await resolveMemberLevels(supabase, tenantId, member);
 
-  if (requirement && !meetsRequirement(levels, requirement)) {
+  if (requirement && requirement !== MEMBER_ONLY && !meetsRequirement(levels, requirement)) {
     throw new AuthError('Permissions insuffisantes', 403);
   }
 
@@ -248,18 +259,22 @@ export async function getAuthenticatedUserWithTenant(
  * verify the user actually has access to that tenant (IDOR prevention).
  *
  * @param clientTenantId - The tenant ID provided by the client
- * @param requiredPermission - Exigence de droit (voir `PermissionRequirement`) :
+ * @param requiredPermission - Exigence OBLIGATOIRE (voir `PermissionRequirement`) :
  *   un code, plusieurs codes (TOUS exiges), `anyOf` ou `atLeastLimited`. Le
  *   droit decide SEUL : il n'y a plus de liste de roles a cote. Une liste de
  *   roles posee avant le droit annulait en silence les reglages du proprietaire
  *   (un gerant a qui l'on donnait `team.manage` restait refuse).
+ *   Pas de valeur par defaut : avant le lot des postes, l'absence d'exigence
+ *   voulait dire "proprietaire ou administrateur" ; la rendre facultative
+ *   l'aurait ouverte a tout membre. Un geste ouvert a toute l'equipe le dit en
+ *   passant `MEMBER_ONLY`.
  * @throws {AuthError} with status 401 if not authenticated
  * @throws {AuthError} with status 403 if user does not belong to the tenant or
  *   lacks the required permission
  */
 export async function getAuthenticatedUserForTenant(
   clientTenantId: string,
-  requiredPermission?: PermissionRequirement,
+  requiredPermission: TenantGuardRequirement,
 ): Promise<AuthenticatedUserWithTenant> {
   const { user, supabase } = await getAuthenticatedUser();
 

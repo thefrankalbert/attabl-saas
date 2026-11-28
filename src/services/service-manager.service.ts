@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { AdminUser, Table, Zone } from '@/types/admin.types';
+import type { FloorServer, Table, Zone } from '@/types/admin.types';
 import { hasPermission, toPermissionMap, toPostes, type PosteOverrides } from '@/lib/permissions';
 import type { StaffPoste } from '@/types/permission.types';
 import { ServiceError } from './errors';
@@ -30,7 +30,7 @@ export interface OpenTableSession {
 export interface ServiceManagerService {
   loadDashboard(tenantId: string): Promise<{
     zones: ServiceZoneRow[];
-    servers: AdminUser[];
+    servers: FloorServer[];
     // readyOrders is typed unknown[] because it is produced by the protected
     // order.service (listReadyOrdersToday), whose signature is out of scope here.
     readyOrders: unknown[];
@@ -57,7 +57,7 @@ export function createServiceManagerService(supabase: SupabaseClient): ServiceMa
      */
     async loadDashboard(tenantId: string): Promise<{
       zones: ServiceZoneRow[];
-      servers: AdminUser[];
+      servers: FloorServer[];
       readyOrders: unknown[];
       openSessions: OpenTableSession[];
     }> {
@@ -123,7 +123,7 @@ export function createServiceManagerService(supabase: SupabaseClient): ServiceMa
           ),
         )
         // Le reglage par personne ne quitte pas le service.
-        .map((row) => ({
+        .map((row): FloorServer => ({
           id: row.id,
           tenant_id: row.tenant_id,
           user_id: row.user_id,
@@ -134,8 +134,7 @@ export function createServiceManagerService(supabase: SupabaseClient): ServiceMa
 
       return {
         zones: (zonesResult.data as ServiceZoneRow[]) || [],
-        // La salle n'utilise que ces champs d'un membre (ni email ni date).
-        servers: servers as unknown as AdminUser[],
+        servers,
         readyOrders,
         openSessions: (sessionsResult.data as OpenTableSession[]) || [],
       };

@@ -22,7 +22,11 @@ vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
-import { getAuthenticatedUserForTenant, getAuthenticatedUserWithTenant } from '../get-session';
+import {
+  getAuthenticatedUserForTenant,
+  getAuthenticatedUserWithTenant,
+  MEMBER_ONLY,
+} from '../get-session';
 import { getEffectiveLevels } from '@/lib/permissions';
 
 // ---------------------------------------------------------------------------
@@ -220,15 +224,38 @@ describe('getAuthenticatedUserForTenant - perimetre et exigences', () => {
     mockFrom.mockImplementation((t: string) =>
       t === 'poste_permissions' ? posteChain([]) : memberTable(row(['owner']), true),
     );
-    await expect(getAuthenticatedUserForTenant('tenant-A')).rejects.toMatchObject({ status: 403 });
+    await expect(getAuthenticatedUserForTenant('tenant-A', MEMBER_ONLY)).rejects.toMatchObject({
+      status: 403,
+    });
   });
 
   it('temoin: meme membre non retire, accepte', async () => {
     mockFrom.mockImplementation((t: string) =>
       t === 'poste_permissions' ? posteChain([]) : memberTable(row(['owner']), false),
     );
-    const res = await getAuthenticatedUserForTenant('tenant-A');
+    const res = await getAuthenticatedUserForTenant('tenant-A', MEMBER_ONLY);
     expect(res.tenantId).toBe('tenant-A');
+  });
+
+  // Constat de revue (hors audit 1) : sans exigence, la garde d'avant le lot
+  // voulait dire "proprietaire ou administrateur". Elle est devenue obligatoire.
+  it("l'exigence est obligatoire: un appel sans exigence ne compile pas", () => {
+    // Jamais execute: seule la verification de types compte (`pnpm typecheck`).
+    const sansExigence = (): Promise<unknown> =>
+      // @ts-expect-error l'exigence n'a pas de valeur par defaut
+      getAuthenticatedUserForTenant('tenant-A');
+    expect(sansExigence).toBeTypeOf('function');
+  });
+
+  it('membre sans le droit exige: 403 ; temoin MEMBER_ONLY: le meme membre passe', async () => {
+    mockFrom.mockImplementation((t: string) =>
+      t === 'poste_permissions' ? posteChain([]) : chain({ data: row(['cook']) }),
+    );
+    await expect(getAuthenticatedUserForTenant('tenant-A', 'team.manage')).rejects.toMatchObject({
+      status: 403,
+    });
+    const res = await getAuthenticatedUserForTenant('tenant-A', MEMBER_ONLY);
+    expect(res.postes).toEqual(['cook']);
   });
 
   it('cumul: serveur + caissier passe orders.pay, serveur seul non', async () => {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   canActOnMember,
   canGrantPostes,
+  canManageInvitationRights,
   type TeamActor,
   type TeamTarget,
 } from '../poste-authority';
@@ -138,5 +139,38 @@ describe('canActOnMember : jamais le proprietaire, jamais soi, jamais un pair', 
   it('les reglages du restaurant comptent dans la comparaison', () => {
     const overrides: PosteOverrides = { waiter: { 'billing.manage': true } };
     expect(canActOnMember(manager, target('t', { postes: ['waiter'] }, overrides))).toBe(false);
+  });
+});
+
+// Audit regression M3 : annuler ou renvoyer une invitation suit la regle pour
+// DONNER (inclus ou egal), pas la regle pour agir sur un membre (strict).
+describe('canManageInvitationRights : qui pouvait envoyer l invitation peut la defaire', () => {
+  const invited = (member: MemberRights) => getEffectiveLevels(member);
+
+  it('un gerant gere l invitation d un gerant (il peut en inviter un)', () => {
+    expect(canManageInvitationRights(manager, invited({ postes: ['manager'] }))).toBe(true);
+    // Temoin de coherence : c'est bien un poste qu'il peut donner.
+    expect(canGrantPostes(manager.levels, ['manager'])).toBe(true);
+  });
+
+  it('un gerant ne gere PAS une invitation qui porte un droit qu il n a pas', () => {
+    const withBilling = invited({
+      postes: ['manager'],
+      permission_overrides: { 'billing.manage': true },
+    });
+    expect(canManageInvitationRights(manager, withBilling)).toBe(false);
+    // Temoin : le proprietaire la gere.
+    expect(canManageInvitationRights(owner, withBilling)).toBe(true);
+  });
+
+  it('sans team.manage, personne ne gere une invitation, meme inferieure', () => {
+    expect(canManageInvitationRights(cashier, invited({ postes: ['cook'] }))).toBe(false);
+    const cashierWithTeam = actor('c2', {
+      postes: ['cashier'],
+      permission_overrides: { 'team.manage': true, 'team.view': true },
+    });
+    // Avec team.manage : un caissier gere l'invitation d'un caissier, pas d'un chef.
+    expect(canManageInvitationRights(cashierWithTeam, invited({ postes: ['sales'] }))).toBe(true);
+    expect(canManageInvitationRights(cashierWithTeam, invited({ postes: ['chef'] }))).toBe(false);
   });
 });

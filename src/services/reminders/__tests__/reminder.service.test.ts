@@ -158,6 +158,62 @@ describe('createReminderService.tick, rappels a heure fixe', () => {
     expect(coach).toEqual(['mgr1', 'owner1']);
   });
 
+  // Audit regression M5: le DROIT `reports.money` decide, pas le nom du poste.
+  it('le coach suit le droit reports.money: reglage par personne et reglage du poste', async () => {
+    coachWindow.current = { ymd: '2026-11-23' };
+    loadCoachFacts.mockResolvedValue({
+      weeks: 4,
+      ordersInWindow: 100,
+      peak: { day: 6, hour: 13, avgOrders: 25 },
+      dropped: [],
+    });
+    const staff = [
+      { id: 'owner1', user_id: 'u1', tenant_id: 't1', postes: ['owner'] },
+      // Gerant a qui le proprietaire a retire le chiffre: ne le recoit plus.
+      {
+        id: 'mgrSans',
+        user_id: 'u2',
+        tenant_id: 't1',
+        postes: ['manager'],
+        permission_overrides: { 'reports.money': false },
+      },
+      // Temoin: un gerant sans reglage le recoit.
+      { id: 'mgrAvec', user_id: 'u3', tenant_id: 't1', postes: ['manager'] },
+      // Caissier a qui le proprietaire l'a donne: le recoit.
+      {
+        id: 'caisseAvec',
+        user_id: 'u4',
+        tenant_id: 't1',
+        postes: ['cashier'],
+        permission_overrides: { 'reports.money': true },
+      },
+      { id: 'caisseSans', user_id: 'u5', tenant_id: 't1', postes: ['cashier'] },
+    ];
+    const recipients = async (postePermissions: Row[]) => {
+      sendGroup.mockClear();
+      const { client } = fakeDb({
+        tenants: [tenantRow(1)],
+        admin_users: staff,
+        poste_permissions: postePermissions,
+      });
+      await createReminderService(client, { push }).tick(NOW);
+      return sendGroup.mock.calls
+        .map(([g]) => g)
+        .filter((g) => g.rule === 'weekly_coach')
+        .map((g) => g.recipient.id)
+        .sort();
+    };
+
+    expect(await recipients([])).toEqual(['caisseAvec', 'mgrAvec', 'owner1']);
+    // Le restaurant retire le chiffre au poste Gerant: seul le reglage par
+    // personne et le proprietaire restent.
+    expect(
+      await recipients([
+        { tenant_id: 't1', poste: 'manager', permissions: { 'reports.money': false } },
+      ]),
+    ).toEqual(['caisseAvec', 'owner1']);
+  });
+
   it('temoin: sans fenetre du bilan, personne ne recoit le coach', async () => {
     coachWindow.current = null;
     const { client } = fakeDb({

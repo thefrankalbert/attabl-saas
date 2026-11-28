@@ -3,7 +3,8 @@
 // quelqu'un MAINTENANT, et qui peut agir ? Le moteur (reminder.service.ts) se
 // charge des lectures, du "deja envoye", des preferences et de l'envoi.
 
-import type { Poste } from '@/types/permission.types';
+import { getFailClosedLevels, hasPermission, type PosteOverrides } from '@/lib/permissions';
+import type { PermissionMap, Poste } from '@/types/permission.types';
 import type { ReminderRule, ReminderSettings } from '@/lib/validations/reminders.schema';
 import { localClock, openingMinutesForDay } from '@/lib/opening-hours';
 import type { OpeningHoursMap } from '@/types/admin.types';
@@ -14,6 +15,8 @@ export interface StaffMember {
   tenantId: string;
   /** Postes cumules du membre. */
   postes: readonly Poste[];
+  /** Reglage par personne (`permission_overrides`), s'il existe. */
+  overrides?: PermissionMap | null;
 }
 
 export interface DueReminder {
@@ -33,7 +36,7 @@ export interface SubjectRef {
   order: string;
 }
 
-/** Les responsables: proprietaire et gerant (les deux postes qui ont `reports.money`). */
+/** Les responsables qui peuvent agir sur le service: proprietaire et gerant. */
 const MANAGER_POSTES: readonly Poste[] = ['owner', 'manager'];
 /** La cuisine: chef et cuisinier. */
 const KITCHEN_POSTES: readonly Poste[] = ['chef', 'cook'];
@@ -44,6 +47,28 @@ const MINUTE = 60_000;
 
 export function managersOf(staff: StaffMember[], tenantId: string): StaffMember[] {
   return staff.filter((s) => s.tenantId === tenantId && holds(s, MANAGER_POSTES));
+}
+
+/**
+ * Qui peut recevoir du chiffre d'affaires (coach hebdomadaire) : le DROIT
+ * `reports.money` decide, jamais le nom du poste. Un gerant a qui le
+ * proprietaire l'a retire ne le recoit plus ; une personne a qui il l'a donne
+ * le recoit. `posteOverrides` a `null` = la lecture des reglages du restaurant
+ * a echoue : echec ferme, seuls le proprietaire et un reglage par personne
+ * a `true` comptent.
+ */
+export function moneyReadersOf(
+  staff: StaffMember[],
+  tenantId: string,
+  posteOverrides: PosteOverrides | null,
+): StaffMember[] {
+  return staff.filter((s) => {
+    if (s.tenantId !== tenantId) return false;
+    const member = { postes: s.postes, permission_overrides: s.overrides };
+    return posteOverrides
+      ? hasPermission(member, 'reports.money', posteOverrides)
+      : getFailClosedLevels(member)['reports.money'] === 'full';
+  });
 }
 
 function refOf(o: { table_number: string | null; order_number: string }): SubjectRef {
