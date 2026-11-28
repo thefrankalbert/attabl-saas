@@ -55,7 +55,7 @@ from (values (1, 'patron@b2a.test'), (2, 'admin@b2a.test'), (3, 'gerant@b2a.test
              (6, 'serveur@b2a.test'), (7, 'desactive@b2a.test'), (8, 'mobile@b2a.test'),
              (9, 'admin-ferme@b2a.test')) v(n, e);
 
-insert into public.admin_users (id, user_id, tenant_id, email, role, is_active, custom_permissions) values
+insert into public.admin_users (id, user_id, tenant_id, email, role, is_active, permission_overrides) values
   ('b2a00000-0000-4000-8000-000000000201', 'b2a00000-0000-4000-8000-000000000101', 'b2a00000-0000-4000-8000-000000000001', 'patron@b2a.test', 'owner', true, null),
   ('b2a00000-0000-4000-8000-000000000202', 'b2a00000-0000-4000-8000-000000000102', 'b2a00000-0000-4000-8000-000000000001', 'admin@b2a.test', 'manager', true, null),
   ('b2a00000-0000-4000-8000-000000000203', 'b2a00000-0000-4000-8000-000000000103', 'b2a00000-0000-4000-8000-000000000001', 'gerant@b2a.test', 'manager', true, null),

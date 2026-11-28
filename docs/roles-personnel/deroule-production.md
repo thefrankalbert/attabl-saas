@@ -1,6 +1,8 @@
 # Lot 1 des roles : deroule de mise en production
 
-Date : 2026-11-28. Ce document est la consigne d'application. Il complete la section E.2 de `conception-lot1.md` et la remplace la ou les deux different : il connait les CINQ migrations du lot, la conception d'origine n'en connaissait que trois.
+Date : 2026-11-28. Etat au 2026-11-28 : les cinq migrations sont appliquees et verifiees en production, le code du lot 1 est fusionne (PR #514, commit `542f7452`) et servi. Il reste la contraction (MIG4, section 7), puis la regeneration de `supabase/schema.sql` et des types.
+
+Ce document est la consigne d'application. Il complete la section E.2 de `conception-lot1.md` et la remplace la ou les deux different : il connait les CINQ migrations du lot, la conception d'origine n'en connaissait que trois.
 
 ## 1. La regle d'ordre, a lire avant tout
 
@@ -23,6 +25,8 @@ A ecrire en tete de la PR, mot pour mot : "NE PAS FUSIONNER avant que les quatre
 | 3     | `20261128100200_gardes_prix_et_proprietaire.sql`         | garde du prix (modification, creation et suppression d'un supplement payant), protection du proprietaire                |
 | 4     | `20261128100300_resolution_plus_rapide.sql`              | meme resolution, en plpgsql : sans elle la garde d'ecriture reste six fois plus lente (1,2 a 1,6 s pour 500 lignes)     |
 | 5     | `20261128100400_garde_statut_cuisine.sql`                | poser "en preparation" ou "pret" sur une commande exige `kitchen.track`. APRES la mise en service du code (section 1)   |
+
+| 6 | `20261128120000_contraction_anciens_reglages.sql` | MIG4 : retire `custom_permissions`, `role_permissions` et leurs traductions. En production AVANT la fusion de sa PR (section 7) |
 
 Commande : `scripts/appliquer-migrations-ciblees.sh --confirmer <fichiers, dans l'ordre>`, en deux fois : les quatre premiers avant la fusion, le cinquieme apres. Jamais `supabase db push`, jamais `pnpm db:migrate:prod`.
 
@@ -144,27 +148,19 @@ La requete est volontairement large : elle liste un restaurant des qu'aucun autr
 1. Sauvegarde (procedure habituelle), les sept controles E.0 et les cinq controles de la section 3 (3.2 et 3.5 se lancent apres les premieres migrations, comme ils le disent). Resultats archives.
 2. Repetition sur le banc : instantane, les migrations, suite pgTAP, script de retour arriere rejoue, puis l'ancien code lance contre cette base. Deja joue le 2026-11-28 : voir `preuves-corrections.md`. A rejouer si `origin/main` a bouge entre-temps.
 3. Pause obligatoire : accord ecrit du proprietaire avant d'appliquer en production.
-4. Appliquer les QUATRE premieres migrations (100000, 100100, 100200, 100300), dans cet ordre, avec les verifications par objet.
+4. FAIT le 2026-11-28. Appliquer les QUATRE premieres migrations (100000, 100100, 100200, 100300), dans cet ordre, avec les verifications par objet.
 5. Verifier par le corps STOCKE des fonctions, pas par le nom de la migration. Lancer le balayage `private.droits_hors_catalogue()` : 0 ligne. Temoin : la meme requete, lancee AVANT la migration 2 sur une copie, doit rendre `orders.manage` et `reports.view`.
-6. La fenetre de retour arriere de la base se ferme ici. Fusionner la PR du code (une seule fusion en cours), attendre le workflow `promote-prod`, verifier `/api/version` trois minutes apres, pas avant.
-   6 bis. Des que `/api/version` rend le commit de la fusion : appliquer la CINQUIEME migration (100400), puis verifier ses deux declencheurs. Le jour meme. Tant qu'elle manque, l'application refuse deja ces gestes ; seule la base ne les refuse pas encore a qui l'appellerait avec son propre jeton.
+6. FAIT le 2026-11-28 (PR #514, commit `542f7452`, servi). La fenetre de retour arriere de la base se ferme ici. Fusionner la PR du code (une seule fusion en cours), attendre le workflow `promote-prod`, verifier `/api/version` trois minutes apres, pas avant.
+   6 bis. FAIT le 2026-11-28. Des que `/api/version` rend le commit de la fusion : appliquer la CINQUIEME migration (100400), puis verifier ses deux declencheurs. Le jour meme. Tant qu'elle manque, l'application refuse deja ces gestes ; seule la base ne les refuse pas encore a qui l'appellerait avec son propre jeton.
 7. Verification a l'ecran de chaque poste, telephone et ordinateur, clair et sombre.
-8. Regenerer `supabase/schema.sql` et les types, avancer le marqueur `SCHEMA_SNAPSHOT_MIGRATION`.
-9. MIG4 (contraction), le jour de la fusion ou au plus tard le jour ouvre suivant, aux conditions ecrites dans son en-tete. Relancer le controle 3.2 juste avant.
+8. Regenerer `supabase/schema.sql` et les types, avancer le marqueur `SCHEMA_SNAPSHOT_MIGRATION`. Reporte APRES l'application de MIG4 en production, pour ne le faire qu'une fois (section 7).
+9. MIG4 (contraction), le jour de la fusion ou au plus tard le jour ouvre suivant, aux conditions ecrites dans son en-tete. Relancer le controle 3.2 juste avant. La PR est prete : voir la section 7.
 
 ## 5. Retour arriere
 
-Permis seulement AVANT la fusion du code (etape 6). Apres : correction en avant. Seule exception : la cinquieme migration, appliquee apres la fusion, se retire seule et sans risque (son retour ne supprime qu'une garde ; l'application continue de refuser ces gestes).
+La fenetre est fermee depuis la fusion du code (etape 6) : correction en avant seulement. Les scripts de `supabase/retour-arriere/` et le test qui verifiait leurs copies (`retour-arriere-roles-copies.test.ts`) sont supprimes par la PR de MIG4 : ils retablissaient l'ancienne resolution par roles, que plus aucun code servi ne sait lire, et les rejouer apres la contraction casserait la base.
 
-Ordre, du plus recent au plus ancien :
-
-1. `supabase/retour-arriere/20261128100400_retour_garde_statut_cuisine.sql` (si elle est appliquee)
-2. `supabase/retour-arriere/20261128100300_retour_resolution_plus_rapide.sql` (optionnel : les deux retours suivants suppriment de toute facon ces fonctions)
-3. `supabase/retour-arriere/20261128100200_retour_gardes_prix_et_proprietaire.sql`
-4. `supabase/retour-arriere/20261128100100_retour_resolution_par_roles.sql`
-5. `supabase/retour-arriere/20261128100000_retour_postes_colonnes.sql`
-
-Les retours 1 et 3 doivent passer avant le 4 : leurs gardes appellent des codes de droit (`kitchen.track`, `menu.price`) que l'ancienne resolution par roles ne connait pas.
+Pour MIG4 elle-meme, le seul retour est la restauration depuis la sauvegarde prise juste avant (colonnes et table supprimees).
 
 ## 6. Ce qui change pour le personnel le jour de la fusion
 
@@ -175,3 +171,63 @@ A dire au proprietaire avant de fusionner, parce que ce sont des refus nouveaux 
 - Supprimer un supplement payant demande le droit "Modifier les prix".
 - Le gerant voit l'abonnement et les factures, sans les boutons de paiement.
 - Le bilan hebdomadaire avec le chiffre d'affaires part a qui a le droit "Rapports d'argent", plus selon le nom du poste.
+
+## 7. MIG4, la contraction : consigne, preuves, ecarts
+
+Fichier : `supabase/migrations/20261128120000_contraction_anciens_reglages.sql` (l'ancien `migrations-differees/20261128110000_...`, renomme avec un horodatage posterieur a `20261128100400`).
+
+### 7.1 L'ordre, a lire avant tout
+
+**MIG4 s'applique en production AVANT la fusion de sa PR.** Le code servi (PR #514) ne lit plus et n'ecrit plus les objets retires ; l'ancien code, qui les lisait, n'est plus servi. Dans l'autre sens rien ne casse non plus, mais la PR porte les tests adaptes et l'instantane des parcours regenere : les fusionner avant d'appliquer laisserait le depot decrire une base qui n'existe pas encore.
+
+1. Sauvegarde, accord ecrit du proprietaire (suppression de colonnes).
+2. Controle 3.2. Chaque ligne dont `role` n'est pas `admin` est tranchee par le proprietaire AVANT (MIG4 les liste en `NOTICE` et n'y touche pas).
+3. `scripts/appliquer-migrations-ciblees.sh --confirmer supabase/migrations/20261128120000_contraction_anciens_reglages.sql`.
+4. Verifier par objet, puis relancer le controle 3.2 :
+
+```sql
+SELECT count(*) FROM information_schema.columns
+ WHERE table_schema = 'public' AND column_name = 'custom_permissions';                       -- 0
+SELECT to_regclass('public.role_permissions') IS NULL;                                       -- t
+SELECT to_regprocedure('private.fusion_anciens_droits(jsonb, jsonb, jsonb)') IS NULL;        -- t
+-- controle 3.2 : plus aucune ligne `role = 'admin'`
+```
+
+5. Fusionner la PR de MIG4.
+6. Regenerer `supabase/schema.sql` et `src/types/database.generated.ts` depuis la production, avancer `SCHEMA_SNAPSHOT_MIGRATION` a `20261128120000` (etape 8 du deroule), dans un commit a part. Puis relancer `rg -n "custom_permissions|role_permissions" src scripts tests` SANS exclusion : 0 ligne.
+
+MIG4 ne se rejoue pas : sa garde compare l'empreinte de trois fonctions a celle d'avant, et refuse un second passage sans rien changer.
+
+### 7.2 Preuves (banc local, 2026-11-28, rien contre la production)
+
+Bases jetables `mig4_*` creees sur le serveur de la pile `bancattabl` (57322), supprimees a la fin. Pile a part `roles-mig4` (ports 59321 a 59329) pour l'instantane des parcours, arretee et supprimee a la fin. Les piles `bancattabl`, `lot4-rapports` et `web` n'ont ete ni arretees ni modifiees.
+
+| Mesure                                                                                    | Resultat                                                                                     |
+| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Garde de l'etape 0, sur une base portant toutes les migrations jusqu'a `20261128100400`   | les trois empreintes sont celles du fichier : rien a regenerer                               |
+| Suite pgTAP avant MIG4 (temoin)                                                           | 80 fichiers, `pgtap: 2083/2083 passed`                                                       |
+| Suite pgTAP avec MIG4 et les tests adaptes                                                | 80 fichiers, `pgtap: 2040/2040 passed`                                                       |
+| Temoin negatif : le test `transition_anciens_roles` adapte, joue sur la base d'AVANT MIG4 | rouge, 9 assertions sur 31 (les suppressions et le retrait de `billing.manage` n'y sont pas) |
+| MIG4 sur une base dans l'etat de la production, avec des lignes semees                    | appliquee sans erreur                                                                        |
+| Controle 3.2 avant, puis apres                                                            | 2 lignes (`role = 'admin'`, dont une inactive), puis 0 ligne                                 |
+| Un `billing.manage: false` pose par le proprietaire sur un ancien administrateur          | conserve                                                                                     |
+| Invitation `admin` en attente                                                             | son `billing.manage: true` est retire                                                        |
+| Second passage de MIG4                                                                    | refuse par la garde ("fonction(s) modifiee(s)"), base inchangee                              |
+
+Les 43 assertions de moins : 34 dans `transition_anciens_roles` (sections B, D et E, qui prouvaient la traduction des anciens reglages), 9 dans `privileges_fonctions_droits` (trois fonctions supprimees, trois roles), 1 dans `employe_ne_s_eleve_pas` (l'ancienne colonne), et 1 de plus dans `garde_delegation` (la base refuse maintenant d'enregistrer une valeur non booleenne).
+
+### 7.3 L'instantane des parcours
+
+`tests/journeys/fixtures/schema.sql` portait les anciens objets par construction (marqueur 20260628000000). Il est regenere, pas corrige a la main : l'ancien instantane et les 181 migrations posterieures sur une pile vierge, puis `supabase db dump --local --schema public,private`. Son marqueur passe a `20261128120000` dans les deux scripts qui le chargent.
+
+Un dump ne suffit pas. Trois ajouts, ecrits dans l'en-tete du fichier : le retrait des droits par defaut en tete (sans lui, plus de 150 fonctions redeviennent appelables par `anon` sur le banc), les objets hors des schemas `public` et `private` (deux declencheurs sur `auth.users`, huit politiques et deux espaces de stockage, deux tables publiees), et la ligne `__platform`.
+
+Preuve : le nouvel instantane recharge sur une pile vierge, compare a la base d'origine par `pg_dump` de tous les schemas, droits compris, et par les donnees. Il ne reste que l'ordre de quelques `GRANT` et l'ecriture d'une contrainte (`orders_payment_status_check`, meme sens). Temoin : le dump seul, sans les ajouts, laissait 426 lignes d'ecart.
+
+Parcours joues avec ce nouvel instantane (`08-bola|04-service|03-staff|09-casse`, le jeu de la CI), sur la pile a part : 40 passes, 2 echecs, 1 saute. Tous les parcours 03, 04 et 08 passent. Les 2 echecs sont dans 09 (inventaire sur tablette, cuisine sur telephone) et viennent du banc, pas de l'instantane : la politique de securite du navigateur n'autorise en developpement que `127.0.0.1:54321` (`src/lib/csp.ts`), et la pile a part ecoute sur 59321 parce que 54321 appartient a une autre pile. Le journal du serveur le dit (`CSP violation ... bloque: http://127.0.0.1:59321/rest/v1/suppliers`). La CI, qui tourne sur 54321, tranche.
+
+### 7.4 Ecarts avec l'en-tete d'origine de MIG4
+
+- L'en-tete demandait de regenerer `supabase/schema.sql` et les types dans la meme PR. Ils se regenerent depuis la production, donc apres l'application : commit a part, etape 6 de 7.1.
+- `supabase/retour-arriere/20261128100400_retour_garde_statut_cuisine.sql` est supprime avec les quatre autres. La section 5 d'origine le gardait comme seule exception ; il retirait une garde que l'application double de toute facon. S'il fallait un jour la retirer, ce serait par une migration.
+- `transition_anciens_roles.test.sql` est reduit, pas supprime : la synchronisation entre `role` et `postes` reste vraie jusqu'a MIG5. Une section F y verrouille la contraction.

@@ -50,11 +50,11 @@ values
   ('aa000000-0000-4000-8000-000000000001', 'lot-a', 'Lot A', true),
   ('ab000000-0000-4000-8000-000000000002', 'lot-a-plateforme', 'Plateforme', true);
 
-insert into public.admin_users (tenant_id, user_id, email, role, is_active, custom_permissions)
+insert into public.admin_users (tenant_id, user_id, email, role, is_active, permission_overrides)
 values
   ('aa000000-0000-4000-8000-000000000001', 'a1111111-1111-4111-8111-111111111111', 'proprio@lota.local', 'owner', true, null),
   ('aa000000-0000-4000-8000-000000000001', 'a2222222-2222-4222-8222-222222222222', 'caisse@lota.local', 'cashier', true, null),
-  ('aa000000-0000-4000-8000-000000000001', 'a3333333-3333-4333-8333-333333333333', 'serveur@lota.local', 'waiter', true, '{"orders.manage": false}'::jsonb);
+  ('aa000000-0000-4000-8000-000000000001', 'a3333333-3333-4333-8333-333333333333', 'serveur@lota.local', 'waiter', true, '{"orders.take": false, "kitchen.track": false, "orders.cancel": false, "orders.discount": false, "orders.refund": false}'::jsonb);
 
 -- Super administrateur, membre d'un AUTRE restaurant seulement (A15). Le
 -- declencheur prevent_super_admin_elevation n'accepte un super admin que d'un

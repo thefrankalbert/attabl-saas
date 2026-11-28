@@ -19,7 +19,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(16);
+select plan(15);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 select ('ad000000-0000-4000-8000-00000000010' || g)::uuid,
@@ -61,9 +61,6 @@ select throws_ok(
   $$update public.admin_users set role = 'manager' where user_id = 'ad000000-0000-4000-8000-000000000102'$$,
   '42501', null, 'elevation: role = manager (ancienne colonne) est refuse');
 select throws_ok(
-  $$update public.admin_users set custom_permissions = '{"orders.pay": true}' where user_id = 'ad000000-0000-4000-8000-000000000102'$$,
-  '42501', null, 'elevation: custom_permissions (ancienne colonne, traduite par declencheur) est refuse');
-select throws_ok(
   $$update public.admin_users set full_name = 'x', postes = '{owner}' where user_id = 'ad000000-0000-4000-8000-000000000102'$$,
   '42501', null, 'elevation: melanger une colonne permise et postes est refuse en entier');
 select throws_ok(
@@ -89,9 +86,8 @@ select throws_ok(
 
 reset role;
 select is((select postes::text || ' ' || role || ' ' || coalesce(permission_overrides::text, 'null')
-                  || ' ' || coalesce(custom_permissions::text, 'null')
             from public.admin_users where user_id = 'ad000000-0000-4000-8000-000000000102'),
-  '{waiter} waiter null null', 'elevation: apres toutes les tentatives, sa ligne est inchangee');
+  '{waiter} waiter null', 'elevation: apres toutes les tentatives, sa ligne est inchangee');
 select is((select count(*)::int from public.admin_users where tenant_id = 'ad000000-0000-4000-8000-000000000001'), 2,
   'elevation: toujours deux membres, proprietaire compris');
 

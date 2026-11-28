@@ -1,18 +1,15 @@
--- ===========================================================================
--- MIGRATION DIFFEREE. NE PAS DEPLACER dans supabase/migrations/ AVANT L'ETAPE 9
--- du deroule (docs/roles-personnel/conception-lot1.md, E.2). Ce dossier
--- (supabase/migrations-differees/) n'est lu par AUCUN outil : ni
--- scripts/run-pgtap.sh, ni la CI, ni `supabase db push`. Appliquer ce fichier
--- avec les quatre migrations additives couperait l'ancien code en plein service.
--- ===========================================================================
---
 -- Lot 1 des roles du personnel, MIG4 : contraction des anciens reglages.
+--
+-- ORDRE D'APPLICATION. Ce fichier s'applique en production AVANT la fusion de
+-- la PR qui le porte (docs/roles-personnel/deroule-production.md, etape 9). Le
+-- code servi (PR #514) ne lit plus ni n'ecrit plus les objets retires ici ;
+-- l'ancien code, qui les lisait, n'est plus servi. Sauvegarde AVANT, accord
+-- ecrit du proprietaire (suppression de colonnes).
 --
 -- CE QUE CE FICHIER RETIRE. `admin_users.custom_permissions`,
 -- `invitations.custom_permissions`, la table `role_permissions`, et tout ce qui
 -- les traduisait (declencheur de report, branches des declencheurs de
--- synchronisation, fonctions de traduction). C'est un RETRAIT D'ACCES pour
--- l'ancien code : il ne passe qu'APRES que le nouveau code est servi et verifie.
+-- synchronisation, fonctions de traduction).
 --
 -- DECISION G.f du proprietaire (2026-11-28) : l'ancien administrateur devient
 -- un gerant SIMPLE des que le nouveau code est servi. Ce fichier retire donc le
@@ -20,30 +17,22 @@
 -- `role = 'admin'` (membres et invitations en attente), et les declencheurs ne
 -- le reposent plus.
 --
--- CONDITIONS, toutes requises (E.2 etape 9) :
+-- CONDITIONS, toutes requises (conception-lot1.md, E.2 etape 9) :
 --   (a) /api/version rend le SHA de la fusion du code du lot 1 ;
 --   (b) le workflow promote-prod est vert sur ce commit ;
 --   (c) la verification a l'ecran de chaque poste est faite et archivee ;
 --   (d) `rg -n "custom_permissions|role_permissions" src scripts tests
---        --glob '!src/types/database.generated.ts'` rend 0 ligne sur origin/main ;
+--        --glob '!src/types/database.generated.ts'` rend 0 ligne ;
 --   (e) aucune ecriture dans les anciennes colonnes depuis la fusion.
--- Date limite : le jour de la fusion, au plus tard le jour ouvre suivant.
--- Sauvegarde AVANT, accord ecrit du proprietaire (suppression de colonnes).
 --
--- LE JOUR DE L'APPLICATION.
---   1. Renommer le fichier avec un horodatage posterieur a la derniere
---      migration appliquee, puis le deplacer dans supabase/migrations/.
---   2. Dans la MEME PR : adapter les tests pgTAP qui ecrivent encore
---      `custom_permissions` ou `role_permissions` (ils servent a prouver la
---      transition, qui est alors finie), supprimer
---      supabase/tests/rls/transition_anciens_roles.test.sql (sections A, D, E)
---      ou le reduire a ce qui reste vrai, regenerer supabase/schema.sql et les
---      types, supprimer supabase/retour-arriere/2026112810* et son test.
---   3. Les corps de fonctions ci-dessous ont ete generes depuis une base ou
---      MIG1 a MIG3 etaient appliquees (banc du 2026-11-28). La garde de
---      l'etape 0 compare l'empreinte des fonctions en place a celle de ce
---      jour-la : si une autre migration les a modifiees entre-temps, le fichier
---      s'annule au lieu d'ecraser leur version. Dans ce cas, regenerer.
+-- GARDE DE L'ETAPE 0. Les corps de fonctions ci-dessous ont ete generes depuis
+-- une base ou MIG1 a MIG3 etaient appliquees, et reverifies le 2026-11-28 sur
+-- une base portant toutes les migrations jusqu'a 20261128100400 (empreintes
+-- identiques). La garde compare l'empreinte des fonctions en place a celle de
+-- ce jour-la : si une autre migration les a modifiees entre-temps, le fichier
+-- s'annule au lieu d'ecraser leur version. Dans ce cas, regenerer.
+-- Consequence voulue : ce fichier ne se rejoue pas. Un second passage est
+-- refuse par cette meme garde ("fonction(s) modifiee(s)"), sans rien changer.
 --
 -- RETOUR ARRIERE : restauration depuis la sauvegarde (colonnes supprimees).
 

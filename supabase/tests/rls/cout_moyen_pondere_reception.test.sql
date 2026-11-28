@@ -30,7 +30,7 @@ values
 insert into public.tenants (id, slug, name, is_active, subscription_plan, subscription_status)
 values ('c0000000-0000-4000-8000-00000000000a', 'cm-a', 'CM A', true, 'business', 'active');
 
-insert into public.admin_users (tenant_id, user_id, email, role, is_active, custom_permissions)
+insert into public.admin_users (tenant_id, user_id, email, role, is_active, permission_overrides)
 values
   ('c0000000-0000-4000-8000-00000000000a', 'c0000000-0000-4000-8000-0000000000a1', 'proprio-cm@test.local', 'owner', true, null),
   ('c0000000-0000-4000-8000-00000000000a', 'c0000000-0000-4000-8000-0000000000a2', 'serveur-cm@test.local', 'waiter', true, null);

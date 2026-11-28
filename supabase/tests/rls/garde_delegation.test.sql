@@ -24,7 +24,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(10);
+select plan(11);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -40,7 +40,7 @@ values
 insert into public.tenants (id, slug, name, is_active)
 values ('d5555555-5555-5555-5555-555555555555', 'tenant-delegation', 'Tenant Delegation', true);
 
-insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, custom_permissions)
+insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, permission_overrides)
 values
   -- Chef a qui le proprietaire a accorde inventory.edit, par surcharge de ROLE.
   (gen_random_uuid(), 'd5555555-5555-5555-5555-555555555555',
@@ -51,20 +51,20 @@ values
   -- Serveur a qui le proprietaire a accorde menu.edit INDIVIDUELLEMENT.
   (gen_random_uuid(), 'd5555555-5555-5555-5555-555555555555',
    'd3333333-3333-3333-3333-333333333333', 'serveur-simple@test.local', 'waiter', true,
-   '{"menu.edit": true}'::jsonb),
+   '{"menu.edit": true, "menu.price": true}'::jsonb),
   -- Gerant a qui le proprietaire a RETIRE inventory.edit.
   (gen_random_uuid(), 'd5555555-5555-5555-5555-555555555555',
    'd4444444-4444-4444-4444-444444444444', 'gerant-prive@test.local', 'manager', true, null);
 
--- Surcharges de ROLE pour ce tenant, telles que /api/permissions les ecrit.
+-- Reglages de POSTE pour ce tenant, tels que /api/permissions les ecrit.
 -- NOTE: la surcharge porte sur le ROLE, donc elle s applique aux DEUX chefs.
 -- C est pourquoi le temoin de non-elargissement utilise une permission
 -- DIFFERENTE (orders.pay), que personne n a deleguee au chef. Depuis le lot 1
 -- des roles le chef detient menu.edit par defaut: ce n est plus un temoin.
-insert into public.role_permissions (tenant_id, role, permissions)
+insert into public.poste_permissions (tenant_id, poste, permissions)
 values
-  ('d5555555-5555-5555-5555-555555555555', 'chef', '{"inventory.edit": true}'::jsonb),
-  ('d5555555-5555-5555-5555-555555555555', 'manager', '{"inventory.edit": false}'::jsonb);
+  ('d5555555-5555-5555-5555-555555555555', 'chef', '{"inventory.edit": true, "suppliers.manage": true}'::jsonb),
+  ('d5555555-5555-5555-5555-555555555555', 'manager', '{"inventory.edit": false, "suppliers.manage": false}'::jsonb);
 
 set local role authenticated;
 
@@ -125,31 +125,37 @@ select ok(
 );
 
 -- ===========================================================================
--- Lire custom_permissions comme source d autorisation ne doit pas ouvrir
+-- Lire permission_overrides comme source d autorisation ne doit pas ouvrir
 -- d escalade, et une valeur non booleenne ne doit rien accorder
 -- ===========================================================================
 -- Le serveur a `{"menu.edit": true}` en surcharge individuelle (assertion 2).
 -- S il pouvait ECRIRE cette colonne sur sa propre ligne, il s accorderait
 -- n importe quoi: la policy `Members update their own admin row` l autorise a
 -- modifier SA ligne. Le verrou est au niveau des COLONNES
--- (20261105000000): `custom_permissions` n est pas dans la liste blanche
+-- (20261128100000): `permission_overrides` n est pas dans la liste blanche
 -- `GRANT UPDATE(colonne)` de `authenticated`.
 set local request.jwt.claims = '{"sub":"d3333333-3333-3333-3333-333333333333"}';
 select throws_ok(
-  $$update public.admin_users set custom_permissions = '{"settings.edit": true}'::jsonb
+  $$update public.admin_users set permission_overrides = '{"settings.edit": true}'::jsonb
     where user_id = 'd3333333-3333-3333-3333-333333333333'$$,
   '42501',
   null,
-  'escalade: un waiter ne peut PAS ecrire son propre custom_permissions'
+  'escalade: un waiter ne peut PAS ecrire son propre permission_overrides'
 );
 
--- Comparaison STRICTE: seule la valeur booleenne `true` accorde. Pose en tant
--- que proprietaire de la base, puisque personne d autre ne peut ecrire cette
--- colonne - c est precisement ce que l assertion precedente prouve.
+-- STRICT: seule la valeur booleenne `true` accorde, et la base refuse meme
+-- d ENREGISTRER autre chose (contrainte sur `permission_overrides`). Tente en
+-- tant que proprietaire de la base, puisque personne d autre ne peut ecrire
+-- cette colonne - c est precisement ce que l assertion precedente prouve.
 reset role;
-update public.admin_users
-set custom_permissions = '{"settings.edit": "oui"}'::jsonb
-where user_id = 'd2222222-2222-2222-2222-222222222222';
+select throws_ok(
+  $$update public.admin_users
+    set permission_overrides = '{"settings.edit": "oui"}'::jsonb
+    where user_id = 'd2222222-2222-2222-2222-222222222222'$$,
+  '23514',
+  null,
+  'stricte: une valeur non booleenne ("oui") est refusee a l ecriture'
+);
 
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"d2222222-2222-2222-2222-222222222222"}';

@@ -59,8 +59,8 @@ values
 insert into public.audit_log (tenant_id, action, entity_type)
 values ('e2000000-0000-0000-0000-00000000000a', 'create', 'menu_item');
 
-insert into public.role_permissions (tenant_id, role, permissions)
-values ('e2000000-0000-0000-0000-00000000000a', 'waiter', '{"orders.view": true}'::jsonb);
+insert into public.poste_permissions (tenant_id, poste, permissions)
+values ('e2000000-0000-0000-0000-00000000000a', 'waiter', '{"orders.take": true}'::jsonb);
 
 -- ------------------------------------------------------------------ T-01
 set local role authenticated;
@@ -122,9 +122,9 @@ select is(
   'T-03 temoin: le proprietaire actif lit le journal d audit'
 );
 select is(
-  (select count(*)::int from public.role_permissions where tenant_id = 'e2000000-0000-0000-0000-00000000000a'),
+  (select count(*)::int from public.poste_permissions where tenant_id = 'e2000000-0000-0000-0000-00000000000a'),
   1,
-  'T-03 temoin: le proprietaire actif lit les droits par role'
+  'T-03 temoin: le proprietaire actif lit les droits par poste'
 );
 
 set local request.jwt.claims = '{"sub":"e1000000-0000-0000-0000-000000000003"}';
@@ -134,9 +134,9 @@ select is(
   'T-03: un gerant desactive ne lit plus le journal d audit'
 );
 select is(
-  (select count(*)::int from public.role_permissions where tenant_id = 'e2000000-0000-0000-0000-00000000000a'),
+  (select count(*)::int from public.poste_permissions where tenant_id = 'e2000000-0000-0000-0000-00000000000a'),
   0,
-  'T-03: un gerant desactive ne lit plus les droits par role'
+  'T-03: un gerant desactive ne lit plus les droits par poste'
 );
 
 select * from finish();
