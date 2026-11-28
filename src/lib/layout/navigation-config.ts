@@ -219,11 +219,26 @@ export const NAV_GROUPS: NavGroupConfig[] = [
  * AdminBottomNav retire ensuite chaque entree dont la route est refusee au
  * membre (permissions effectives).
  */
-export const BOTTOM_NAV_ITEMS: Record<string, string[]> = {
+const BOTTOM_NAV_ITEMS: Record<string, string[]> = {
   owner: ['dashboard', 'orders', 'pos', 'kitchen', 'analyse'],
-  admin: ['dashboard', 'orders', 'pos', 'kitchen', 'analyse'],
   manager: ['dashboard', 'orders', 'pos', 'kitchen', 'analyse'],
   chef: ['dashboard', 'orders', 'kitchen', 'organization', 'analyse'],
   cashier: ['dashboard', 'orders', 'pos', 'organization', 'analyse'],
+  bartender: ['dashboard', 'orders', 'pos', 'kitchen', 'organization'],
+  reception: ['dashboard', 'orders', 'pos', 'organization', 'analyse'],
   waiter: ['dashboard', 'orders', 'pos', 'service', 'organization'],
+  cook: ['dashboard', 'orders', 'kitchen', 'organization', 'analyse'],
+  crew: ['dashboard', 'orders', 'pos', 'kitchen', 'service'],
+  sales: ['dashboard', 'orders', 'pos', 'organization', 'analyse'],
+  production: ['dashboard', 'orders', 'kitchen', 'organization', 'analyse'],
 };
+
+/**
+ * Les 5 onglets du bas d'un membre: ceux de son PREMIER poste dans l'ordre
+ * canonique (les postes sont ranges ainsi en base). En cas de cumul, les
+ * onglets que ses droits n'ouvrent pas sont retires par l'appelant. Sans poste,
+ * la liste la plus large: ses droits (aucun) filtrent ensuite.
+ */
+export function bottomNavItemsFor(postes: readonly string[]): string[] {
+  return BOTTOM_NAV_ITEMS[postes[0] ?? ''] ?? BOTTOM_NAV_ITEMS.owner;
+}

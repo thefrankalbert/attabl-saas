@@ -1,0 +1,367 @@
+{
+  "_comment": "Cas partages de la resolution des droits. Lus par Vitest (src/lib/__tests__/permissions.test.ts) ET par pgTAP (supabase/tests/rls/postes_cas_partages.test.sql) : le TypeScript et la base doivent donner le meme niveau pour chaque cas. La matrice est une recopie independante du tableau B.3 de la conception.",
+  "codes": [
+    "menu.view",
+    "menu.edit",
+    "menu.price",
+    "orders.take",
+    "kitchen.track",
+    "orders.cancel",
+    "orders.discount",
+    "orders.refund",
+    "orders.pay",
+    "cash.close",
+    "cash.count",
+    "reports.menu",
+    "reports.money",
+    "reports.own",
+    "inventory.view",
+    "inventory.edit",
+    "suppliers.manage",
+    "team.view",
+    "team.manage",
+    "settings.edit",
+    "audit.view",
+    "billing.manage"
+  ],
+  "matrix": {
+    "manager": {
+      "menu.view": "full",
+      "menu.edit": "full",
+      "menu.price": "full",
+      "orders.take": "full",
+      "kitchen.track": "full",
+      "orders.cancel": "full",
+      "orders.discount": "full",
+      "orders.refund": "full",
+      "orders.pay": "full",
+      "cash.close": "full",
+      "cash.count": "full",
+      "reports.menu": "full",
+      "reports.money": "full",
+      "reports.own": "full",
+      "inventory.view": "full",
+      "inventory.edit": "full",
+      "suppliers.manage": "full",
+      "team.view": "full",
+      "team.manage": "full",
+      "settings.edit": "full",
+      "audit.view": "full",
+      "billing.manage": "limited"
+    },
+    "chef": {
+      "menu.view": "full",
+      "menu.edit": "full",
+      "menu.price": "full",
+      "kitchen.track": "full",
+      "reports.menu": "full",
+      "inventory.view": "full",
+      "inventory.edit": "full",
+      "suppliers.manage": "full"
+    },
+    "cook": {
+      "menu.view": "full",
+      "kitchen.track": "full",
+      "inventory.view": "full"
+    },
+    "cashier": {
+      "menu.view": "full",
+      "orders.take": "full",
+      "orders.cancel": "limited",
+      "orders.discount": "limited",
+      "orders.refund": "limited",
+      "orders.pay": "full",
+      "cash.count": "full",
+      "reports.own": "full"
+    },
+    "waiter": {
+      "menu.view": "full",
+      "orders.take": "full",
+      "orders.cancel": "limited",
+      "orders.discount": "limited",
+      "orders.pay": "limited",
+      "reports.own": "full"
+    },
+    "bartender": {
+      "menu.view": "full",
+      "orders.take": "full",
+      "kitchen.track": "full",
+      "orders.cancel": "limited",
+      "orders.discount": "limited",
+      "orders.refund": "limited",
+      "orders.pay": "full",
+      "cash.count": "full",
+      "reports.own": "full",
+      "inventory.view": "full"
+    },
+    "reception": {
+      "menu.view": "full",
+      "orders.take": "full",
+      "orders.cancel": "limited",
+      "orders.discount": "limited",
+      "orders.refund": "limited",
+      "orders.pay": "full",
+      "cash.count": "full",
+      "reports.own": "full"
+    },
+    "crew": {
+      "menu.view": "full",
+      "orders.take": "full",
+      "kitchen.track": "full",
+      "orders.cancel": "limited",
+      "orders.discount": "limited",
+      "orders.refund": "limited",
+      "orders.pay": "full",
+      "cash.count": "full",
+      "reports.own": "full",
+      "inventory.view": "full"
+    },
+    "sales": {
+      "menu.view": "full",
+      "orders.take": "full",
+      "orders.cancel": "limited",
+      "orders.discount": "limited",
+      "orders.refund": "limited",
+      "orders.pay": "full",
+      "cash.count": "full",
+      "reports.own": "full"
+    },
+    "production": {
+      "menu.view": "full",
+      "kitchen.track": "full",
+      "inventory.view": "full"
+    }
+  },
+  "cases": [
+    {
+      "name": "cumul : serveur et caissier encaisse",
+      "postes": ["cashier", "waiter"],
+      "permission_overrides": null,
+      "poste_permissions": {},
+      "perm": "orders.pay",
+      "expected": "full"
+    },
+    {
+      "name": "temoin : serveur seul n'encaisse pas en entier",
+      "postes": ["waiter"],
+      "permission_overrides": null,
+      "poste_permissions": {},
+      "perm": "orders.pay",
+      "expected": "limited"
+    },
+    {
+      "name": "cumul : cuisinier et vente suit la cuisine",
+      "postes": ["cook", "sales"],
+      "permission_overrides": null,
+      "poste_permissions": {},
+      "perm": "kitchen.track",
+      "expected": "full"
+    },
+    {
+      "name": "cumul : cuisinier et vente encaisse",
+      "postes": ["cook", "sales"],
+      "permission_overrides": null,
+      "poste_permissions": {},
+      "perm": "orders.pay",
+      "expected": "full"
+    },
+    {
+      "name": "cumul : limited plus full donne full",
+      "postes": ["waiter", "reception"],
+      "permission_overrides": null,
+      "poste_permissions": {},
+      "perm": "orders.pay",
+      "expected": "full"
+    },
+    {
+      "name": "cumul : limited des deux cotes reste limited",
+      "postes": ["cashier", "waiter"],
+      "permission_overrides": null,
+      "poste_permissions": {},
+      "perm": "orders.cancel",
+      "expected": "limited"
+    },
+    {
+      "name": "reglage du poste : serveur prive de orders.take",
+      "postes": ["waiter"],
+      "permission_overrides": null,
+      "poste_permissions": {
+        "waiter": {
+          "orders.take": false
+        }
+      },
+      "perm": "orders.take",
+      "expected": null
+    },
+    {
+      "name": "reglage du poste : le cumul garde orders.take par le caissier",
+      "postes": ["cashier", "waiter"],
+      "permission_overrides": null,
+      "poste_permissions": {
+        "waiter": {
+          "orders.take": false
+        }
+      },
+      "perm": "orders.take",
+      "expected": "full"
+    },
+    {
+      "name": "reglage du poste : un true ouvre le droit en entier",
+      "postes": ["waiter"],
+      "permission_overrides": null,
+      "poste_permissions": {
+        "waiter": {
+          "orders.pay": true
+        }
+      },
+      "perm": "orders.pay",
+      "expected": "full"
+    },
+    {
+      "name": "reglage du poste : un false remplace un limited",
+      "postes": ["cashier"],
+      "permission_overrides": null,
+      "poste_permissions": {
+        "cashier": {
+          "orders.refund": false
+        }
+      },
+      "perm": "orders.refund",
+      "expected": null
+    },
+    {
+      "name": "reglage du poste d'un AUTRE poste : sans effet",
+      "postes": ["waiter"],
+      "permission_overrides": null,
+      "poste_permissions": {
+        "cashier": {
+          "orders.take": false
+        }
+      },
+      "perm": "orders.take",
+      "expected": "full"
+    },
+    {
+      "name": "reglage par personne : retire un droit du poste",
+      "postes": ["chef"],
+      "permission_overrides": {
+        "menu.price": false
+      },
+      "poste_permissions": {},
+      "perm": "menu.price",
+      "expected": null
+    },
+    {
+      "name": "temoin : le chef sans reglage change les prix",
+      "postes": ["chef"],
+      "permission_overrides": null,
+      "poste_permissions": {},
+      "perm": "menu.price",
+      "expected": "full"
+    },
+    {
+      "name": "reglage par personne : donne un droit hors poste",
+      "postes": ["waiter"],
+      "permission_overrides": {
+        "orders.pay": true
+      },
+      "poste_permissions": {},
+      "perm": "orders.pay",
+      "expected": "full"
+    },
+    {
+      "name": "reglage par personne : gagne sur un reglage de poste a true",
+      "postes": ["manager"],
+      "permission_overrides": {
+        "settings.edit": false
+      },
+      "poste_permissions": {
+        "manager": {
+          "settings.edit": true
+        }
+      },
+      "perm": "settings.edit",
+      "expected": null
+    },
+    {
+      "name": "reglage par personne : gagne sur le cumul",
+      "postes": ["cashier", "waiter"],
+      "permission_overrides": {
+        "orders.pay": false
+      },
+      "poste_permissions": {},
+      "perm": "orders.pay",
+      "expected": null
+    },
+    {
+      "name": "reglage par personne : le gerant paie l'abonnement",
+      "postes": ["manager"],
+      "permission_overrides": {
+        "billing.manage": true
+      },
+      "poste_permissions": {},
+      "perm": "billing.manage",
+      "expected": "full"
+    },
+    {
+      "name": "temoin : le gerant sans reglage ne fait que voir les factures",
+      "postes": ["manager"],
+      "permission_overrides": null,
+      "poste_permissions": {},
+      "perm": "billing.manage",
+      "expected": "limited"
+    },
+    {
+      "name": "proprietaire : un false par personne est ignore",
+      "postes": ["owner"],
+      "permission_overrides": {
+        "billing.manage": false
+      },
+      "poste_permissions": {},
+      "perm": "billing.manage",
+      "expected": "full"
+    },
+    {
+      "name": "proprietaire : toujours tout",
+      "postes": ["owner"],
+      "permission_overrides": null,
+      "poste_permissions": {},
+      "perm": "cash.close",
+      "expected": "full"
+    },
+    {
+      "name": "aucun poste : aucun droit",
+      "postes": [],
+      "permission_overrides": null,
+      "poste_permissions": {},
+      "perm": "menu.view",
+      "expected": null
+    },
+    {
+      "name": "chef : pas de rapports d'argent",
+      "postes": ["chef"],
+      "permission_overrides": null,
+      "poste_permissions": {},
+      "perm": "reports.money",
+      "expected": null
+    },
+    {
+      "name": "chef : ne prend pas de commande",
+      "postes": ["chef"],
+      "permission_overrides": null,
+      "poste_permissions": {},
+      "perm": "orders.take",
+      "expected": null
+    }
+  ],
+  "unknown_codes": [
+    "orders.manage",
+    "orders.view",
+    "reports.view",
+    "pos.use",
+    "settings.view",
+    "nimporte.quoi",
+    "menu.edti",
+    ""
+  ]
+}

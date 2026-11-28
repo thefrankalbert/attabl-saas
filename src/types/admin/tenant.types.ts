@@ -1,7 +1,8 @@
 // Types tenant & utilisateurs admin pour l'administration multi-tenant ATTABL SaaS
 
 import type { SubscriptionPlan, SubscriptionStatus, BillingInterval } from '@/types/billing';
-import type { AdminRole, CurrencyCode } from './enums.types';
+import type { PermissionMap, Poste } from '@/types/permission.types';
+import type { CurrencyCode } from './enums.types';
 
 // --- Types principaux (avec tenant_id) ---------------------
 
@@ -79,12 +80,14 @@ export interface AdminUser {
   email: string;
   full_name?: string;
   phone?: string;
-  role: AdminRole;
+  /** Postes cumules, ordre canonique. La verite des droits (jamais `role`). */
+  postes: Poste[];
   is_active: boolean;
   last_login?: string;
   last_login_at?: string;
   login_count?: number;
   created_at: string;
   created_by?: string;
-  custom_permissions?: Record<string, boolean> | null;
+  /** Reglage par personne : il tranche avant les postes, dans les deux sens. */
+  permission_overrides?: PermissionMap | null;
 }

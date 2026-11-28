@@ -21,7 +21,9 @@ export interface PlatformUserRow {
   id: string;
   email: string;
   full_name: string | null;
+  /** Transition: affiche seulement pour une ligne de plateforme (sans poste). */
   role: string;
+  postes: string[];
   tenant_id: string;
   is_active: boolean;
   banned_at: string | null;

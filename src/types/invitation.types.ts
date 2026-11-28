@@ -1,11 +1,13 @@
+import type { PermissionMap, StaffPoste } from '@/types/permission.types';
+
 type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'cancelled';
 
 export interface Invitation {
   id: string;
   tenant_id: string;
   email: string;
-  role: string;
-  custom_permissions: Record<string, boolean> | null;
+  postes: StaffPoste[];
+  permission_overrides: PermissionMap | null;
   invited_by: string;
   token: string;
   expires_at: string;

@@ -24,7 +24,8 @@ vi.mock('@/lib/supabase/server', () => ({
 }));
 
 type LigneMembre = {
-  role?: string;
+  postes: string[];
+  permission_overrides?: Record<string, boolean> | null;
   tenant_id: string;
   tenants: {
     name: string;
@@ -48,9 +49,16 @@ vi.mock('@/lib/supabase/admin', () => ({
         chain.maybeSingle = async () => ({ data: reponseTenantParSlug, error: null });
         return chain;
       }
+      // Reglages du restaurant par poste: aucun, la matrice par defaut decide.
+      if (table === 'poste_permissions') {
+        const chain: Record<string, unknown> = {};
+        for (const m of ['select', 'eq']) chain[m] = () => chain;
+        chain.in = async () => ({ data: [], error: null });
+        return chain;
+      }
       // admin_users: `maybeSingle` pour la cible, `limit` pour l'ambiguite.
       const chain: Record<string, unknown> = {};
-      for (const m of ['select', 'eq', 'order']) chain[m] = () => chain;
+      for (const m of ['select', 'eq', 'is', 'order']) chain[m] = () => chain;
       chain.maybeSingle = async () => ({ data: reponseMembreCible, error: null });
       chain.limit = async () => ({ data: reponseMembresSansCible, error: null });
       return chain;
@@ -62,8 +70,17 @@ import { resolveCheckoutTenant } from '../checkout-tenant';
 
 const UTILISATEUR = { id: 'user-1', email: 'patron@resto.test' };
 
-function membre(tenantId: string, role = 'owner'): LigneMembre {
-  return { role, tenant_id: tenantId, tenants: { name: `Resto ${tenantId}` } };
+function membre(
+  tenantId: string,
+  postes: string[] = ['owner'],
+  permission_overrides: Record<string, boolean> | null = null,
+): LigneMembre {
+  return {
+    postes,
+    permission_overrides,
+    tenant_id: tenantId,
+    tenants: { name: `Resto ${tenantId}` },
+  };
 }
 
 describe('resolveCheckoutTenant', () => {
@@ -135,14 +152,24 @@ describe('resolveCheckoutTenant', () => {
     expect(r).toMatchObject({ ok: false, status: 403 });
   });
 
-  it.each(['manager', 'server', 'chef'])('role %s: 403, n engage pas la depense', async (role) => {
-    reponseMembreCible = membre('tenant-2', role);
+  // Le gerant n'a billing.manage qu'au niveau borne (voir, pas payer).
+  it.each(['manager', 'waiter', 'chef', 'cashier'])(
+    'poste %s: 403, n engage pas la depense',
+    async (poste) => {
+      reponseMembreCible = membre('tenant-2', [poste]);
+      const r = await resolveCheckoutTenant({ tenantSlug: 'deuxieme-resto' });
+      expect(r).toMatchObject({ ok: false, status: 403 });
+    },
+  );
+
+  it('proprietaire: autorise', async () => {
+    reponseMembreCible = membre('tenant-2', ['owner']);
     const r = await resolveCheckoutTenant({ tenantSlug: 'deuxieme-resto' });
-    expect(r).toMatchObject({ ok: false, status: 403 });
+    expect(r.ok).toBe(true);
   });
 
-  it.each(['owner', 'admin'])('role %s: autorise', async (role) => {
-    reponseMembreCible = membre('tenant-2', role);
+  it('temoin: un gerant avec permission_overrides billing.manage est autorise', async () => {
+    reponseMembreCible = membre('tenant-2', ['manager'], { 'billing.manage': true });
     const r = await resolveCheckoutTenant({ tenantSlug: 'deuxieme-resto' });
     expect(r.ok).toBe(true);
   });
@@ -167,14 +194,20 @@ describe('resolveCheckoutTenant', () => {
    * employe dont le compte n'a qu'un seul restaurant pouvait ouvrir une caisse
    * et engager une depense.
    */
-  it.each(['manager', 'server', 'chef'])(
-    'sans cible, role %s: 403 aussi - la garde ne vit pas sur une seule branche',
-    async (role) => {
-      reponseMembresSansCible = [membre('tenant-1', role)];
+  it.each(['manager', 'waiter', 'chef'])(
+    'sans cible, poste %s: 403 aussi - la garde ne vit pas sur une seule branche',
+    async (poste) => {
+      reponseMembresSansCible = [membre('tenant-1', [poste])];
       const r = await resolveCheckoutTenant();
       expect(r).toMatchObject({ ok: false, status: 403 });
     },
   );
+
+  it('sans cible, un gerant avec permission_overrides billing.manage est autorise', async () => {
+    reponseMembresSansCible = [membre('tenant-1', ['manager'], { 'billing.manage': true })];
+    const r = await resolveCheckoutTenant();
+    expect(r.ok).toBe(true);
+  });
 
   it('aucun restaurant: 404', async () => {
     reponseMembresSansCible = [];

@@ -1,4 +1,9 @@
-import type { PermissionCode } from '@/types/permission.types';
+import { BILLING_READ, ORDERS_VIEW } from '@/lib/admin-roles';
+import {
+  meetsRequirement,
+  type PermissionLevels,
+  type PermissionRequirement,
+} from '@/lib/permissions';
 
 /**
  * Maps an admin sub-route (the path AFTER `/admin`, e.g. `/users`,
@@ -15,29 +20,34 @@ import type { PermissionCode } from '@/types/permission.types';
  * server-side 307 redirect for ALL clients (browser, curl, bots), and mirrored
  * by the per-page `requireAdminPermission` guards as defense in depth.
  */
-const ROUTE_PERMISSIONS: ReadonlyArray<{ test: RegExp; permission: PermissionCode }> = [
+const ROUTE_PERMISSIONS: ReadonlyArray<{ test: RegExp; permission: PermissionRequirement }> = [
   { test: /^\/users(\/|$)/, permission: 'team.view' },
+  // La page des droits garde en plus son controle "proprietaire seulement".
   { test: /^\/settings\/permissions(\/|$)/, permission: 'settings.edit' },
-  { test: /^\/settings(\/|$)/, permission: 'settings.view' },
-  { test: /^\/subscription(\/|$)/, permission: 'settings.view' },
-  { test: /^\/audit-logs(\/|$)/, permission: 'settings.view' },
-  { test: /^\/invoices(\/|$)/, permission: 'settings.view' },
-  { test: /^\/reports(\/|$)/, permission: 'reports.view' },
+  { test: /^\/settings(\/|$)/, permission: 'settings.edit' },
+  // Abonnement et factures: le gerant les VOIT (niveau borne), il ne paie pas.
+  { test: /^\/subscription(\/|$)/, permission: BILLING_READ },
+  { test: /^\/invoices(\/|$)/, permission: BILLING_READ },
+  { test: /^\/audit-logs(\/|$)/, permission: 'audit.view' },
+  { test: /^\/reports(\/|$)/, permission: 'reports.money' },
   { test: /^\/inventory\/counts(\/|$)/, permission: 'inventory.view' },
   { test: /^\/inventory(\/|$)/, permission: 'inventory.view' },
   { test: /^\/stock-history(\/|$)/, permission: 'inventory.view' },
   { test: /^\/stock-losses(\/|$)/, permission: 'inventory.view' },
-  { test: /^\/suppliers(\/|$)/, permission: 'inventory.view' },
+  { test: /^\/suppliers(\/|$)/, permission: { anyOf: ['inventory.view', 'suppliers.manage'] } },
   { test: /^\/recipes(\/|$)/, permission: 'inventory.view' },
-  { test: /^\/pos(\/|$)/, permission: 'pos.use' },
+  { test: /^\/pos(\/|$)/, permission: 'orders.take' },
   // Les ardoises sont de l'argent (decision du 2026-11-09): pas le serveur ni le chef.
   { test: /^\/orders\/house-accounts(\/|$)/, permission: 'orders.pay' },
-  { test: /^\/orders(\/|$)/, permission: 'orders.view' },
-  { test: /^\/coupons(\/|$)/, permission: 'menu.edit' },
-  { test: /^\/ads(\/|$)/, permission: 'menu.edit' },
-  { test: /^\/announcements(\/|$)/, permission: 'menu.edit' },
+  { test: /^\/orders(\/|$)/, permission: ORDERS_VIEW },
+  // Un code promo est une remise.
+  { test: /^\/coupons(\/|$)/, permission: 'orders.discount' },
+  // Publicites, annonces, supports: reglages du restaurant (decision G.d), pour
+  // que le chef ne les obtienne pas avec "Modifier la carte".
+  { test: /^\/ads(\/|$)/, permission: 'settings.edit' },
+  { test: /^\/announcements(\/|$)/, permission: 'settings.edit' },
   { test: /^\/suggestions(\/|$)/, permission: 'menu.edit' },
-  { test: /^\/supports(\/|$)/, permission: 'menu.edit' },
+  { test: /^\/supports(\/|$)/, permission: 'settings.edit' },
 ];
 
 /**
@@ -45,7 +55,7 @@ const ROUTE_PERMISSIONS: ReadonlyArray<{ test: RegExp; permission: PermissionCod
  * is open to all tenant members. `subPath` is the path after `/admin`
  * (e.g. `/users`, `/settings/permissions`, or `` for the dashboard home).
  */
-export function permissionForAdminSubPath(subPath: string): PermissionCode | null {
+export function permissionForAdminSubPath(subPath: string): PermissionRequirement | null {
   for (const { test, permission } of ROUTE_PERMISSIONS) {
     if (test.test(subPath)) return permission;
   }
@@ -53,15 +63,12 @@ export function permissionForAdminSubPath(subPath: string): PermissionCode | nul
 }
 
 /**
- * Le membre peut-il ouvrir cette sous-route admin, d'apres ses permissions
- * EFFECTIVES ? Meme regle que le middleware: une route sans permission est
+ * Le membre peut-il ouvrir cette sous-route admin, d'apres ses droits
+ * EFFECTIFS ? Meme regle que le middleware: une route sans droit exige est
  * ouverte a tout membre. Partage par la barre du bas et la palette de commandes
  * pour qu'aucun lien ne mene a /unauthorized.
  */
-export function canOpenAdminSubPath(
-  subPath: string,
-  permissions: Partial<Record<PermissionCode, boolean>>,
-): boolean {
+export function canOpenAdminSubPath(subPath: string, levels: PermissionLevels): boolean {
   const required = permissionForAdminSubPath(subPath);
-  return required === null || permissions[required] === true;
+  return required === null || meetsRequirement(levels, required);
 }
