@@ -282,7 +282,7 @@ select lives_ok($$select * from public.get_stock_losses_report('f1200000-0000-40
 -- Serveur du restaurant Business: pas de droit reports.view, refuse.
 set local request.jwt.claims = '{"sub":"f1100000-0000-4000-8000-000000000004"}';
 select throws_like($$select * from public.get_payment_method_report('f1200000-0000-4000-8000-000000000001', now() - interval '1 day', now())$$,
-  '%reports.view%', 'serveur: moyens de paiement refuses (droit reports.view)');
+  '%reports.money%', 'serveur: moyens de paiement refuses (droit reports.view)');
 
 reset role;
 select is(

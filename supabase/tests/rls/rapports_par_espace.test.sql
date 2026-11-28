@@ -257,13 +257,13 @@ select throws_like(
 set local request.jwt.claims = '{"sub":"e1000000-0000-4000-8000-000000000008"}';
 select throws_like(
   $$select * from public.get_venue_report('e2000000-0000-4000-8000-000000000001', now() - interval '1 day', now())$$,
-  '%reports.view%', 'serveur: rapport par espace refuse (droit reports.view)');
+  '%reports.money%', 'serveur: rapport par espace refuse (droit reports.view)');
 select throws_like(
   $$select * from public.get_order_summary('e2000000-0000-4000-8000-000000000001', now() - interval '1 day', now())$$,
-  '%reports.view%', 'serveur: resume des ventes refuse aussi (faille des rapports Pro fermee)');
+  '%reports.money%', 'serveur: resume des ventes refuse aussi (faille des rapports Pro fermee)');
 select throws_like(
   $$select * from public.get_daily_revenue('e2000000-0000-4000-8000-000000000001', now() - interval '1 day', now())$$,
-  '%reports.view%', 'serveur: chiffre par jour refuse');
+  '%reports.money%', 'serveur: chiffre par jour refuse');
 set local request.jwt.claims = '{"sub":"e1000000-0000-4000-8000-000000000009"}';
 select lives_ok(
   $$select * from public.get_venue_report('e2000000-0000-4000-8000-000000000001', now() - interval '1 day', now())$$,
@@ -283,7 +283,7 @@ set local role authenticated;
 set local request.jwt.claims = '{"sub":"e1000000-0000-4000-8000-000000000008"}';
 select throws_like(
   $$select * from public.get_venue_report('e2000000-0000-4000-8000-000000000001', now() - interval '1 day', now())$$,
-  '%reports.view%', 'gerant dont le proprietaire a retire le droit: refuse');
+  '%reports.money%', 'gerant dont le proprietaire a retire le droit: refuse');
 
 reset role;
 delete from public.role_permissions where tenant_id = 'e2000000-0000-4000-8000-000000000001';

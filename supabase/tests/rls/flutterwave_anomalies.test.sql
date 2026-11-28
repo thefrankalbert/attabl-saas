@@ -34,10 +34,10 @@ insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, 
   ('fa000000-0000-4000-8000-00000000000a', 'f5555555-5555-4555-8555-555555555555',
    'f1111111-1111-1111-1111-111111111111', 'patron.anomalies@test.local', 'owner', true, false),
   ('fb000000-0000-4000-8000-00000000000b', 'f5555555-5555-4555-8555-555555555555',
-   'f2222222-2222-2222-2222-222222222222', 'super.anomalies@test.local', 'owner', true, true),
+   'f2222222-2222-2222-2222-222222222222', 'super.anomalies@test.local', 'super_admin', true, true),
   -- Super administrateur REVOQUE: is_super_admin() le refuse (T-06).
   ('fc000000-0000-4000-8000-00000000000c', 'f5555555-5555-4555-8555-555555555555',
-   'f3333333-3333-3333-3333-333333333333', 'ancien.super.anomalies@test.local', 'owner', false, true);
+   'f3333333-3333-3333-3333-333333333333', 'ancien.super.anomalies@test.local', 'super_admin', false, true);
 set local request.jwt.claim.role = '';
 
 insert into public.flutterwave_payments

@@ -35,7 +35,7 @@ insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, 
   ('ea000000-0000-4000-8000-00000000000a', 'e5555555-5555-4555-8555-555555555555',
    'e1111111-1111-1111-1111-111111111111', 'patron.reglages@test.local', 'owner', true, false),
   ('eb000000-0000-4000-8000-00000000000b', 'e5555555-5555-4555-8555-555555555555',
-   'e2222222-2222-2222-2222-222222222222', 'super.reglages@test.local', 'owner', true, true);
+   'e2222222-2222-2222-2222-222222222222', 'super.reglages@test.local', 'super_admin', true, true);
 set local request.jwt.claim.role = '';
 
 insert into public.cron_heartbeats (job, schedule, last_run_at, last_status, last_duration_ms)

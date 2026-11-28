@@ -30,7 +30,7 @@ insert into public.admin_users (tenant_id, user_id, email, role, is_active, is_s
 values
   ('f6000000-0000-4000-8000-00000000000a', 'f6000000-0000-4000-8000-0000000000a1', 'proprio-mfa@test.local', 'owner', true, false),
   ('f6000000-0000-4000-8000-00000000000a', 'f6000000-0000-4000-8000-0000000000a2', 'gerant-sans-mfa@test.local', 'manager', true, false),
-  ('f6000000-0000-4000-8000-00000000000a', 'f6000000-0000-4000-8000-0000000000a3', 'superadmin-mfa@test.local', 'owner', true, true);
+  ('f6000000-0000-4000-8000-00000000000a', 'f6000000-0000-4000-8000-0000000000a3', 'superadmin-mfa@test.local', 'super_admin', true, true);
 set local request.jwt.claim.role = '';
 
 -- Facteurs TOTP VERIFIES pour le proprietaire et le super administrateur.
