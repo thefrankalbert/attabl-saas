@@ -1,5 +1,5 @@
 /**
- * ATTABL SaaS — Demo Seed Script
+ * ATTABL SaaS: Demo Seed Script
  * ================================
  * Populates the database with comprehensive demo data for "L'Epicurien",
  * a luxury restaurant in N'Djamena, Chad.
@@ -405,7 +405,7 @@ async function cleanup() {
   const memberUserIds = await listTenantMemberUserIds(supabase, tenantId);
 
   // Delete in dependency order (child tables first)
-  // Some tables may not exist if migrations haven't been applied — skip silently.
+  // Some tables may not exist if migrations haven't been applied, skip silently.
   const tablesToClean = [
     'stock_movements',
     'recipes',
@@ -1642,7 +1642,7 @@ async function createHistoricalOrders() {
       const taxAmount = Math.round(subtotal * TAX_RATE);
       const serviceChargeAmount = Math.round(subtotal * SERVICE_RATE);
 
-      // Apply coupon occasionally (~10%) — only if coupons table exists
+      // Apply coupon occasionally (~10%), only if coupons table exists
       let discountAmount = 0;
       let couponId: string | null = null;
       if (migrations.hasProductionUpgrade && Math.random() < 0.1 && subtotal >= 50000) {
@@ -1927,7 +1927,7 @@ function printSummary() {
 
 async function main() {
   console.log('='.repeat(60));
-  console.log("  ATTABL SaaS — Demo Seed: L'Epicurien");
+  console.log("  ATTABL SaaS: Demo Seed: L'Epicurien");
   console.log('='.repeat(60));
   console.log(`  Supabase URL: ${SUPABASE_URL}`);
   console.log(`  Timestamp:    ${new Date().toISOString()}\n`);
