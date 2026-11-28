@@ -27,7 +27,7 @@ interface CompOrderDialogProps {
 /**
  * "Offrir la commande" (comp) - a MANAGER action. Only rendered when the caller
  * has already established the actor is manager-capable; the server action
- * re-checks the role (owner/admin/manager) so this is defense-in-depth, not the
+ * re-checks the money authority (the four money rights) so this is defense-in-depth, not the
  * only gate. Closing an order for free is a fraud surface, hence the reason is
  * required and audited server-side.
  */

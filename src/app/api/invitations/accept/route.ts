@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     // CREATION de l'invitation: invitationManageLimiter, 30 par 10 minutes et
     // par IP (src/lib/rate-limit.ts), soit de l'ordre de 4300 adresses
     // sondables par jour et par IP - avec un courriel envoye a chacune, et la
-    // qualite d'owner/admin exigee. Le cout de l'oracle vient de la, pas d'ici.
+    // droit `team.manage` exige. Le cout de l'oracle vient de la, pas d'ici.
     const tokenForKey =
       typeof (body as { token?: unknown })?.token === 'string'
         ? (body as { token: string }).token

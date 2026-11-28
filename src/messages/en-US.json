@@ -3890,7 +3890,8 @@
     "limited": {
       "code": "soon, with a manager's code",
       "merchantQr": "soon, by merchant QR",
-      "invoices": "invoices only"
+      "invoices": "invoices only",
+      "removed": "removed"
     },
     "category": {
       "menu": "Menu",
@@ -5543,7 +5544,9 @@
     "namePlaceholder": "Name",
     "nameEnPlaceholder": "Name (translation)",
     "pricePlaceholder": "Price",
-    "priceNegative": "The price cannot be negative."
+    "priceNegative": "The price cannot be negative.",
+    "needsPriceRight": "This add-on has a price. Creating or deleting it needs the Change prices right.",
+    "needsEditRight": "You do not have the right to edit the menu."
   },
   "allergens": {
     "title": "Allergens",

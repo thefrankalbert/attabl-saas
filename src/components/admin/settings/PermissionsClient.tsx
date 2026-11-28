@@ -234,7 +234,11 @@ export function PermissionsClient({ initialOverrides }: PermissionsClientProps) 
                                         : 'text-app-text-muted',
                                     )}
                                   >
-                                    {t('modified')}
+                                    {/* Borne par defaut puis retire: la case reste
+                                        eteinte, le mot dit ce qui a change. */}
+                                    {limitedByDefault && !isEnabled
+                                      ? t('limited.removed')
+                                      : t('modified')}
                                   </span>
                                 )}
                                 {limitedHint && (

@@ -351,7 +351,7 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
         }
         if (code === '42501' && hint === CANCEL_HINT_NEEDS_MONEY_AUTHORITY) {
           throw new ServiceError(
-            "Cette commande a un acompte au registre : l'annuler revient a un gerant, un administrateur ou le proprietaire",
+            "Cette commande a un acompte au registre : l'annuler revient au proprietaire ou a un gerant",
             'CONFLICT',
             { reason: CANCEL_NEEDS_MONEY_AUTHORITY },
           );

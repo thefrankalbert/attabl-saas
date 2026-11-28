@@ -3,7 +3,7 @@
 -- du deroule (docs/roles-personnel/conception-lot1.md, E.2). Ce dossier
 -- (supabase/migrations-differees/) n'est lu par AUCUN outil : ni
 -- scripts/run-pgtap.sh, ni la CI, ni `supabase db push`. Appliquer ce fichier
--- avec les trois migrations additives couperait l'ancien code en plein service.
+-- avec les quatre migrations additives couperait l'ancien code en plein service.
 -- ===========================================================================
 --
 -- Lot 1 des roles du personnel, MIG4 : contraction des anciens reglages.

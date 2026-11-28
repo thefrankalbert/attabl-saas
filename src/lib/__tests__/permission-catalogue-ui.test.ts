@@ -19,10 +19,15 @@ describe('nextOverride : reglage ecrit quand on bascule un interrupteur', () => 
 
   // Audit de conformite M1 : la case bornee s'affiche eteinte. L'eteindre
   // "revenait au defaut" (le niveau borne) : le droit ne se retirait jamais.
-  it('droit BORNE par defaut : allumer ecrit true, eteindre ecrit false, jamais de retour silencieux au niveau borne', () => {
-    expect(nextOverride('limited', undefined)).toBe(true);
-    expect(nextOverride('limited', true)).toBe(false);
+  // Contre-audit N4 (decision du responsable) : depuis le niveau borne, UN clic
+  // retire le droit. Il ne passe jamais par le droit entier.
+  it('droit BORNE par defaut : le premier clic ecrit FALSE, jamais true', () => {
+    expect(nextOverride('limited', undefined)).toBe(false);
+  });
+
+  it('droit BORNE : retire puis entier puis retire, jamais de retour silencieux au niveau borne', () => {
     expect(nextOverride('limited', false)).toBe(true);
+    expect(nextOverride('limited', true)).toBe(false);
   });
 });
 

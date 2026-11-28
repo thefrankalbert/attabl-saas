@@ -232,7 +232,11 @@ export default function UserPermissionsDialog({
                         )}
                         {isOverridden && (
                           <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-[0.625rem] border border-[var(--border)] text-[var(--warning)]">
-                            {t('modified')}
+                            {/* Borne par les postes puis retire: l'interrupteur
+                                reste eteint, le mot dit ce qui a change. */}
+                            {baselineLevel(perm) === 'limited' && !enabled
+                              ? t('limited.removed')
+                              : t('modified')}
                           </span>
                         )}
                         {limitedHint && (

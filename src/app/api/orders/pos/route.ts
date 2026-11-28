@@ -116,12 +116,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
     }
 
-    // ENCAISSER A LA CAISSE = `orders.pay`, pas seulement `pos.use`.
+    // ENCAISSER A LA CAISSE = `orders.pay`, pas seulement `orders.take`.
     //
     // Decision du proprietaire (2026-11-09): le serveur prend les commandes a
     // la caisse mais ne touche pas a l'argent. Cette route cree la commande ET,
     // si un moyen de paiement est fourni, la passe a `paid` et inscrit le tender
-    // dans `payments` (applyPosPayment). Avec `pos.use` seul, donner la
+    // dans `payments` (applyPosPayment). Avec `orders.take` seul, donner la
     // caisse au serveur lui donnait aussi l'encaissement et les pourboires.
     // Un moyen de paiement ou un pourboire exige donc `orders.pay`; sans lui,
     // la commande part en cuisine impayee et le caissier l'encaisse ensuite.

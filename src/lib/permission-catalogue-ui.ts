@@ -80,16 +80,18 @@ export const posteLabelKey = (poste: Poste): string =>
  * niveau SANS ce reglage (matrice du poste, ou cumul des postes du membre) ;
  * `current` le reglage en place. Rend `undefined` pour retirer le reglage.
  *
- * Une case bornee par defaut (`limited`) s'affiche eteinte : sans cette regle,
- * l'eteindre "revenait au defaut" et le droit borne ne pouvait jamais etre
- * retire (le gerant gardait les factures). L'eteindre ecrit donc `false` ;
- * seul "defaut" (retrait du reglage) ramene au niveau borne.
+ * Une case bornee par defaut (`limited`) s'affiche eteinte. Decision du
+ * responsable (contre-audit N4) : depuis le niveau borne, UN SEUL clic retire
+ * le droit (`false`). Il ne passe jamais par le droit entier : pour retirer
+ * les factures au gerant, le proprietaire ne lui donne pas un instant le
+ * paiement de l'abonnement. L'ordre est donc borne, retire, entier, retire...
+ * Seul "defaut" (retrait du reglage) ramene au niveau borne.
  */
 export function nextOverride(
   base: PermissionLevel | null,
   current: boolean | undefined,
 ): boolean | undefined {
+  if (base === 'limited') return current === false;
   const next = !(current ?? base === 'full');
-  if (base === 'limited') return next;
   return next === (base === 'full') ? undefined : next;
 }

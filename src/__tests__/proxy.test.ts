@@ -729,7 +729,7 @@ describe('proxy - RBAC route gate', () => {
     }
   });
 
-  // Depuis le 2026-11-09 le serveur prend les commandes a la caisse (pos.use):
+  // Depuis le 2026-11-09 le serveur prend les commandes a la caisse (orders.take):
   // /pos lui est ouvert. Les ardoises (argent, orders.pay) restent fermees.
   it('redirects a waiter away from reports / inventory / house accounts / marketing editors', async () => {
     authed('w-2');

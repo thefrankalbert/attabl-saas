@@ -15,6 +15,11 @@ type ActionResponse<T = undefined> = {
   success?: boolean;
   data?: T;
   error?: string;
+  /**
+   * `forbidden` : le droit manque (et non une panne). L'ecran affiche alors la
+   * raison precise, pas une erreur generique.
+   */
+  code?: 'forbidden';
 };
 
 const tenantIdSchema = z.string().uuid();
@@ -33,7 +38,7 @@ const createModifierPayloadSchema = z.object({
 async function checkPermissions(
   tenantId: string,
   requirement: PermissionRequirement = 'menu.edit',
-): Promise<{ error: string | null }> {
+): Promise<{ error: string | null; code?: 'forbidden' }> {
   try {
     await getAuthenticatedUserForTenant(tenantId, requirement);
     // Coupure du restaurant: toute action de ce fichier est une ecriture.
@@ -46,9 +51,11 @@ async function checkPermissions(
       return { error: err.message };
     }
     if (err instanceof AuthError) {
-      return { error: err.status === 401 ? 'Non authentifie' : 'Permissions insuffisantes' };
+      return err.status === 401
+        ? { error: 'Non authentifie' }
+        : { error: 'Permissions insuffisantes', code: 'forbidden' };
     }
-    return { error: 'Permissions insuffisantes' };
+    return { error: 'Permissions insuffisantes', code: 'forbidden' };
   }
 }
 
@@ -72,11 +79,11 @@ export async function actionCreateModifier(
 
   // Un supplement payant fixe un prix: `menu.price` en plus, comme le
   // declencheur `garder_prix_carte` sur `item_modifiers`.
-  const { error: permError } = await checkPermissions(
+  const { error: permError, code: permCode } = await checkPermissions(
     tenantId,
     parsedPayload.data.price > 0 ? MENU_WITH_PRICE : 'menu.edit',
   );
-  if (permError) return { error: permError };
+  if (permError) return { error: permError, code: permCode };
 
   try {
     const supabase = await createClient();
@@ -102,8 +109,8 @@ export async function actionDeleteModifier(
   const parsedId = modifierIdSchema.safeParse(modifierId);
   if (!parsedTenant.success || !parsedId.success) return { error: 'Invalid input' };
 
-  const { error: permError } = await checkPermissions(tenantId);
-  if (permError) return { error: permError };
+  const { error: permError, code: permCode } = await checkPermissions(tenantId);
+  if (permError) return { error: permError, code: permCode };
 
   try {
     const supabase = await createClient();
@@ -119,8 +126,8 @@ export async function actionDeleteModifier(
       .maybeSingle();
     if (readError) return { error: 'Server error' };
     if (existing && (Number(existing.price ?? 0) > 0 || existing.prices != null)) {
-      const { error: priceError } = await checkPermissions(tenantId, MENU_WITH_PRICE);
-      if (priceError) return { error: priceError };
+      const { error: priceError, code } = await checkPermissions(tenantId, MENU_WITH_PRICE);
+      if (priceError) return { error: priceError, code };
     }
     const modifierService = createModifierService(supabase);
     await modifierService.deleteModifier(modifierId, tenantId);
@@ -145,8 +152,8 @@ export async function actionToggleModifierAvailable(
   const parsedId = modifierIdSchema.safeParse(modifierId);
   if (!parsedTenant.success || !parsedId.success) return { error: 'Invalid input' };
 
-  const { error: permError } = await checkPermissions(tenantId);
-  if (permError) return { error: permError };
+  const { error: permError, code: permCode } = await checkPermissions(tenantId);
+  if (permError) return { error: permError, code: permCode };
 
   try {
     const supabase = await createClient();

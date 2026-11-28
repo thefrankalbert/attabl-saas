@@ -3890,7 +3890,8 @@
     "limited": {
       "code": "bientôt, avec un code responsable",
       "merchantQr": "bientôt, par QR marchand",
-      "invoices": "factures seulement"
+      "invoices": "factures seulement",
+      "removed": "retiré"
     },
     "category": {
       "menu": "Carte",
@@ -5543,7 +5544,9 @@
     "namePlaceholder": "Nom",
     "nameEnPlaceholder": "Nom (traduction)",
     "pricePlaceholder": "Prix",
-    "priceNegative": "Le prix ne peut pas être négatif."
+    "priceNegative": "Le prix ne peut pas être négatif.",
+    "needsPriceRight": "Ce supplément a un prix. Le créer ou le supprimer demande le droit Modifier les prix.",
+    "needsEditRight": "Vous n'avez pas le droit de modifier la carte."
   },
   "allergens": {
     "title": "Allergènes",

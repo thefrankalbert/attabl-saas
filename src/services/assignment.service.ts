@@ -33,7 +33,7 @@ export function createAssignmentService(supabase: SupabaseClient): AssignmentSer
       }
 
       // Verify the table belongs to this tenant too: without this an
-      // owner/admin/manager could pass another tenant's table_id and create an
+      // member allowed to assign could pass another tenant's table_id and create an
       // assignment row referencing a foreign table (cross-tenant write).
       const { data: table, error: tableErr } = await supabase
         .from('tables')

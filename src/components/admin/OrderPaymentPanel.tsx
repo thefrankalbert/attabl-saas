@@ -34,7 +34,7 @@ interface OrderPaymentPanelProps {
   currency?: CurrencyCode;
   /**
    * Whether the current actor may comp (offer) the order. Comp is a MANAGER
-   * privilege - the caller passes true only for owner/admin/manager. The server
+   * privilege - the caller passes true only with the money authority (four rights). The server
    * action re-checks, so this only controls button visibility.
    */
   canComp?: boolean;

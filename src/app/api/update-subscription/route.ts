@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     }
 
     // 2. Resolve the ACTIVE tenant from the middleware-injected slug (multi-tenant safe),
-    //    then verify the user is an owner/admin of THAT tenant.
+    //    then verify the user holds full `billing.manage` (the owner) on THAT tenant.
     const tenantSlug = readTenantSlug(request.headers).slug;
     if (!tenantSlug) {
       return NextResponse.json({ error: 'Contexte tenant manquant' }, { status: 400 });

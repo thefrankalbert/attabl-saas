@@ -379,7 +379,7 @@ describe('POST /api/orders/pos - auto-destock wiring', () => {
 
   /**
    * Decision du proprietaire (2026-11-09): le serveur prend les commandes a la
-   * caisse (`pos.use`) mais n'encaisse pas (`orders.pay`). Avant, `pos.use`
+   * caisse (`orders.take`) mais n'encaisse pas (`orders.pay`). Avant, ce droit
    * suffisait pour creer la commande ET l'inscrire payee dans `payments`.
    */
   describe('table rattachee au serveur (decision du 14/11/2026)', () => {

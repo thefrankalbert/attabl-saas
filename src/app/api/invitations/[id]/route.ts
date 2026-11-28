@@ -58,8 +58,9 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       return NextResponse.json({ error: 'Invitation introuvable' }, { status: 404 });
     }
 
-    // `team.manage`, et autorite sur ce que l'invitation donnerait: jamais sur
-    // l'invitation d'un pair (voir `canManageInvitation`).
+    // `team.manage`, et autorite sur ce que l'invitation donnerait: la regle
+    // pour DONNER (inclus ou egal). Un gerant defait l'invitation d'un gerant,
+    // jamais celle qui porte un droit qu'il n'a pas (voir `canManageInvitation`).
     if (!(await canManageInvitation(supabase, adminClient, user.id, invitation))) {
       return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
     }

@@ -171,20 +171,25 @@ describe('UserPermissionsDialog - retirer un droit borne', () => {
     });
   const lastSaved = () => actionUpdateAdminUser.mock.calls.at(-1)?.[2];
 
-  it('gerant, abonnement (factures seulement): allumer ecrit true, eteindre ecrit FALSE', async () => {
+  it('gerant, abonnement (factures seulement): UN clic ecrit FALSE, jamais true au passage', async () => {
     renderDialog(userWith(['manager']));
     const sw = getSwitch(perm.billing_manage);
     expect(sw).toHaveAttribute('data-state', 'unchecked');
 
     fireEvent.click(sw);
     await flush();
-    expect(lastSaved()).toEqual({ permission_overrides: { 'billing.manage': true } });
+    // Contre-audit N4: le droit entier n'est jamais enregistre en chemin.
+    expect(actionUpdateAdminUser.mock.calls.map((c) => c[2])).toEqual([
+      { permission_overrides: { 'billing.manage': false } },
+    ]);
+    expect(sw).toHaveAttribute('data-state', 'unchecked');
+    expect(screen.queryByText(messages.permissions.limited.invoices)).toBeNull();
+    expect(screen.getByText(messages.permissions.limited.removed)).toBeInTheDocument();
 
+    // Clic suivant: le droit entier, voulu cette fois.
     fireEvent.click(sw);
     await flush();
-    // Avant: `permission_overrides: null`, donc retour au niveau borne.
-    expect(lastSaved()).toEqual({ permission_overrides: { 'billing.manage': false } });
-    expect(screen.queryByText(messages.permissions.limited.invoices)).toBeNull();
+    expect(lastSaved()).toEqual({ permission_overrides: { 'billing.manage': true } });
   });
 
   it('"defaut des postes" ramene au niveau borne (reglage retire)', async () => {

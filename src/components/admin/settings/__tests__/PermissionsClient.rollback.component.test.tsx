@@ -61,7 +61,7 @@ describe('Editeur de permissions: l ecran suit le serveur', () => {
   // Audit de conformite M1: une case bornee par defaut s'affiche eteinte.
   // L'eteindre "revenait au defaut" et le droit borne ne se retirait jamais (le
   // gerant gardait les factures). L'eteindre ecrit maintenant `false`.
-  it('droit borne par defaut: allumer ecrit true, eteindre ecrit false, "reset" ramene au niveau borne', async () => {
+  it('droit borne par defaut: UN clic le retire (false), sans jamais enregistrer le droit entier', async () => {
     fetchMock.mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
     render(<PermissionsClient initialOverrides={{}} />);
     const sw = screen.getByLabelText('perm.billing_manage - roleManager');
@@ -70,33 +70,38 @@ describe('Editeur de permissions: l ecran suit le serveur', () => {
       act(async () => {
         await vi.advanceTimersByTimeAsync(600);
       });
-    const lastCall = () => {
-      const [, init] = fetchMock.mock.calls.at(-1) as [string, { method: string; body: string }];
-      return { method: init.method, body: JSON.parse(init.body) as Record<string, unknown> };
-    };
+    const bodies = () =>
+      fetchMock.mock.calls.map(([, init]) => {
+        const { method, body } = init as { method: string; body: string };
+        return { method, body: JSON.parse(body) as { permissions?: Record<string, boolean> } };
+      });
 
+    // Contre-audit N4: pour retirer les factures au gerant, le proprietaire ne
+    // doit pas lui donner un instant le paiement de l'abonnement.
+    fireEvent.click(sw);
+    await flush();
+    expect(sw).toHaveAttribute('data-state', 'unchecked');
+    expect(bodies()).toEqual([
+      { method: 'PUT', body: { poste: 'manager', permissions: { 'billing.manage': false } } },
+    ]);
+    // Aucun enregistrement n'a porte le droit entier.
+    expect(bodies().some((c) => c.body.permissions?.['billing.manage'] === true)).toBe(false);
+    // La case reste eteinte: le mot dit ce qui a change.
+    expect(screen.queryByText('limited.invoices')).toBeNull();
+    expect(screen.getByText('limited.removed')).toBeInTheDocument();
+
+    // Clic suivant: le droit entier, voulu cette fois.
     fireEvent.click(sw);
     await flush();
     expect(sw).toHaveAttribute('data-state', 'checked');
-    expect(lastCall()).toEqual({
+    expect(bodies().at(-1)).toEqual({
       method: 'PUT',
       body: { poste: 'manager', permissions: { 'billing.manage': true } },
     });
 
-    fireEvent.click(sw);
-    await flush();
-    expect(sw).toHaveAttribute('data-state', 'unchecked');
-    // PAS un DELETE: le reglage `false` retire le droit borne.
-    expect(lastCall()).toEqual({
-      method: 'PUT',
-      body: { poste: 'manager', permissions: { 'billing.manage': false } },
-    });
-    // Le texte "factures seulement" a disparu: le droit est retire, pas borne.
-    expect(screen.queryByText('limited.invoices')).toBeNull();
-
     fireEvent.click(screen.getByRole('button', { name: 'reset' }));
     await flush();
-    expect(lastCall().method).toBe('DELETE');
+    expect(bodies().at(-1)?.method).toBe('DELETE');
     expect(screen.getByText('limited.invoices')).toBeInTheDocument();
   });
 

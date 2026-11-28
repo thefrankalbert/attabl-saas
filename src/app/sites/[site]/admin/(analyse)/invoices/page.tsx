@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function InvoicesPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
-  // Billing/Stripe surface - keep consistent with subscription (owner/admin only).
+  // Billing/Stripe surface - keep consistent with subscription (`billing.manage`, bounded level included: owner and manager).
   const { tenantId } = await requireAdminPermission(site, BILLING_READ);
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
