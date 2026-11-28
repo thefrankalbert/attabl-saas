@@ -22,6 +22,7 @@
 @source "./reset-password";
 @source "./auth";
 @source "./unauthorized";
+@source "./unsubscribe";
 @source "./offline";
 @source "./layout.tsx";
 @source "./error.tsx";

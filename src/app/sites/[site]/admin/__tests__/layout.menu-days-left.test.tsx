@@ -112,7 +112,7 @@ vi.mock('@/lib/billing/tenant-billing-ids', () => ({
 vi.mock('@/lib/permissions', () => ({ getEffectivePermissions: () => ({}) }));
 vi.mock('@/services/trigger-emails.service', () => ({
   determineTrialEventKey: () => null,
-  sendTrialEmailForKey: vi.fn(),
+  claimAndSendTrialEmail: vi.fn(),
 }));
 vi.mock('@/lib/logger', () => ({
   logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn() },
