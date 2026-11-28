@@ -725,7 +725,7 @@
             },
             "truck": {
               "title": "Commandes en livraison",
-              "desc": "Suivi des courses et des livreurs."
+              "desc": "Commandes avec adresse de livraison, suivies comme les autres."
             },
             "bed": {
               "title": "Service en chambre",
@@ -1912,6 +1912,7 @@
       "restaurantPlaceholder": "Le Jardin",
       "termsNote": "En créant un compte, vous acceptez les <terms>conditions d'utilisation</terms> et la <privacy>politique de confidentialité</privacy>.",
       "trialNote": "14 jours gratuits - aucun engagement",
+      "legalNotice": "<terms>Conditions d'utilisation</terms> et <privacy>confidentialité</privacy>",
       "accountDeletedSuccess": "C'est fait : votre compte est supprimé. Merci d'avoir travaillé avec ATTABL."
     },
     "confirm": {
