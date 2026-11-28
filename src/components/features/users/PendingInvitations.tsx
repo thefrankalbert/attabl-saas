@@ -72,8 +72,10 @@ export default function PendingInvitations({
                 key={invitation.id}
                 className="rounded-xl border border-dashed border-app-border p-4"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-3">
+                {/* Telephone: les boutons passent SOUS le texte. Sur une seule
+                    ligne a 375 px, "Annuler" sortait de la carte (coupe a "A"). */}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex min-w-0 items-start gap-3">
                     <Mail className="w-5 h-5 text-app-text-muted mt-0.5 shrink-0" />
                     <div className="space-y-1">
                       <p className="font-medium text-app-text">{invitation.email}</p>

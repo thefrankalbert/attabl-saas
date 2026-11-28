@@ -19,6 +19,13 @@
 -- service_role, postgres, taches planifiees et fonctions SECURITY DEFINER :
 -- hors de cette garde, comme pour la garde du prix.
 --
+-- ORDRE EN PRODUCTION : APRES la mise en service du nouveau code, jamais avant.
+-- Ce fichier RETIRE un geste que l'ancien code offre encore au serveur et au
+-- caissier. Mesure du 2026-11-28, ancien code contre une base qui porte cette
+-- garde : "en preparation" par un serveur rend une erreur 500, que la file hors
+-- ligne rejoue comme une panne. Le nouveau code refuse deja ce geste lui-meme
+-- et ne depend pas de ce fichier. Voir docs/roles-personnel/deroule-production.md.
+--
 -- RETOUR ARRIERE : supabase/retour-arriere/20261128100400_retour_garde_statut_cuisine.sql
 -- (avant ceux de MIG3, MIG2 et MIG1).
 
