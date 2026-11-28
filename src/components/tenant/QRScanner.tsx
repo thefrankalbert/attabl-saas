@@ -136,7 +136,10 @@ export default function QRScanner({
     let cancelled = false;
     void hasNoCamera().then((absent) => {
       if (cancelled || !absent) return;
-      setCameraProblem('absent');
+      // Un refus deja signale par la bibliotheque prime: la liste des cameras
+      // peut arriver APRES lui (vide sans permission sur certains navigateurs),
+      // et "aucune camera" cacherait alors ou autoriser la camera.
+      setCameraProblem((prev) => (prev === 'denied' ? prev : 'absent'));
       setScanStatus('error');
     });
     return () => {

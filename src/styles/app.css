@@ -1,0 +1,13 @@
+/*
+ * Classes de l'APPLICATION (admin, menu client, caisse, onboarding, paiement),
+ * chargees par les layouts de ces zones EN PLUS de src/app/globals.css.
+ *
+ * Ce fichier ne contient QUE des classes utilitaires: le theme, les jetons et
+ * les composants restent dans globals.css, lus ici par @reference (rien n'est
+ * recopie). Ne pas y importer un fichier CSS deja importe par globals.css:
+ * deux feuilles Tailwind qui importent le meme fichier font recharger la page
+ * en boucle en mode developpement (mesure du 2026-11-27, scanner QR des
+ * parcours Journeys).
+ */
+@reference '../app/globals.css';
+@import 'tailwindcss/utilities' source('../');
