@@ -16,9 +16,24 @@ import { DEFAULT_PERMISSIONS, type PermissionCode } from '@/types/permission.typ
 const MIGRATIONS = join(process.cwd(), 'supabase', 'migrations');
 const ROLES = ['admin', 'manager', 'cashier', 'chef', 'waiter'] as const;
 
+/**
+ * Lot 1 des roles du personnel, phase A (base de donnees seule). Les migrations
+ * 20261128100000 et suivantes remplacent la resolution par ROLES par une
+ * resolution par POSTES, avec un catalogue de 22 droits. Le TypeScript, lui,
+ * porte encore DEFAULT_PERMISSIONS (13 droits, 5 roles) jusqu'a la phase B, qui
+ * reecrit ce test en parite exacte entre POSTE_MATRIX et
+ * private.matrice_postes() (docs/roles-personnel/conception-lot1.md, B.3 et
+ * F.2). D'ici la, ce test continue de verrouiller ce qu'il verrouillait : la
+ * derniere garde PAR ROLES contre DEFAULT_PERMISSIONS. Cote base, la nouvelle
+ * matrice est verrouillee case par case par pgTAP
+ * (supabase/tests/rls/postes_matrice_par_poste.test.sql).
+ */
+const PREMIERE_MIGRATION_PAR_POSTES = '20261128100000';
+
 function migrationFiles(): string[] {
   return readdirSync(MIGRATIONS)
     .filter((f) => f.endsWith('.sql'))
+    .filter((f) => f.split('_')[0] < PREMIERE_MIGRATION_PAR_POSTES)
     .sort();
 }
 
@@ -70,6 +85,15 @@ describe('DEFAULT_PERMISSIONS = valeurs par defaut de la garde SQL (B107)', () =
     expect(byPerm.size).toBeGreaterThan(0);
     expect(otherwise.length).toBeGreaterThan(0);
     expect(called).toContain('orders.pay');
+  });
+
+  it('les migrations du lot 1 des roles existent et sont bien ecartees (temoin)', () => {
+    const toutes = readdirSync(MIGRATIONS).filter((f) => f.endsWith('.sql'));
+    expect(toutes.some((f) => f.split('_')[0] >= PREMIERE_MIGRATION_PAR_POSTES)).toBe(true);
+    expect(migrationFiles().every((f) => f.split('_')[0] < PREMIERE_MIGRATION_PAR_POSTES)).toBe(
+      true,
+    );
+    expect(latestGuardBody()).toMatch(/ELSE\s+CASE\s+p_perm/i);
   });
 
   it.each(permissionsCalledBySql())('%s: memes roles autorises par defaut', (perm) => {
