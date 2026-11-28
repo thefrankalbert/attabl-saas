@@ -94,7 +94,9 @@ function migrationsPosterieures(): string[] {
 
 /** Une migration definit-elle cette fonction du schema public ? */
 function definitFonction(sql: string, nom: string): boolean {
-  return new RegExp(`FUNCTION\\s+"?public"?\\."?${nom}"?\\s*\\(`, 'i').test(sql);
+  const nomEchappe = nom.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // nosemgrep: detect-non-literal-regexp -- test, nom constant du depot entierement echappe ci-dessus
+  return new RegExp(`FUNCTION\\s+"?public"?\\."?${nomEchappe}"?\\s*\\(`, 'i').test(sql);
 }
 
 describe('retour arriere du lot 1 des roles : copies identiques a schema.sql (N9)', () => {

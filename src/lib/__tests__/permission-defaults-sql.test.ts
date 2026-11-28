@@ -25,10 +25,9 @@ const MIGRATIONS = join(process.cwd(), 'supabase', 'migrations');
 
 /** Corps de la derniere definition de `nom` (entre ses deux `$function$`). */
 function latestBody(nom: string): string {
-  const pattern = new RegExp(
-    `CREATE OR REPLACE FUNCTION\\s+${nom.replace('.', '\\.')}\\s*\\(`,
-    'i',
-  );
+  const nomEchappe = nom.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // nosemgrep: detect-non-literal-regexp -- test, nom constant du depot entierement echappe ci-dessus
+  const pattern = new RegExp(`CREATE OR REPLACE FUNCTION\\s+${nomEchappe}\\s*\\(`, 'i');
   const files = readdirSync(MIGRATIONS)
     .filter((f) => f.endsWith('.sql'))
     .sort()
@@ -36,6 +35,7 @@ function latestBody(nom: string): string {
   expect(files.length, `aucune migration ne definit ${nom}`).toBeGreaterThan(0);
   const sql = readFileSync(join(MIGRATIONS, files[files.length - 1]), 'utf8');
   // La derniere definition DANS le fichier, au cas ou il la redefinirait.
+  // nosemgrep: detect-non-literal-regexp -- test, source deja echappee (pattern ci-dessus)
   const starts = [...sql.matchAll(new RegExp(pattern.source, 'gi'))].map((m) => m.index);
   const start = starts[starts.length - 1];
   const open = sql.indexOf('$function$', start);
