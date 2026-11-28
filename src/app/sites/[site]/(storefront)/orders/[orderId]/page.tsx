@@ -12,6 +12,8 @@ import { getCartItemKey } from '@/components/tenant/cart/CartItemsList';
 import { remainingItemCapacity } from '@/lib/utils/cart-display';
 import { fromMinorUnits } from '@/lib/utils/money';
 import { formatCurrency } from '@/lib/utils/currency';
+import { lineDetails, lineUnitTotal, parseLineModifiers } from '@/lib/utils/order-line-display';
+import { planReorder } from '@/lib/utils/reorder-lines';
 import { logger } from '@/lib/logger';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -36,6 +38,7 @@ import {
   type OrderDetailData,
   type TrackedDetailRow,
 } from '@/components/tenant/order-detail/order-detail-data';
+import { TOUCH_EXTEND_3 } from '@/components/tenant/touch-zone';
 
 export default function OrderDetailPage() {
   const params = useParams();
@@ -85,6 +88,8 @@ export default function OrderDetailPage() {
               price: toMajor(oi.price_at_order),
               menu_item_id: oi.menu_item_id ?? undefined,
               image_url: oi.image_url ?? null,
+              modifiers: parseLineModifiers(oi.modifiers),
+              notes: oi.customer_notes ?? null,
             })),
           });
         }
@@ -96,7 +101,8 @@ export default function OrderDetailPage() {
   }, [orderId, tenantId, orderCurrency]);
 
   const subtotal = order
-    ? (order.subtotal ?? order.items.reduce((s, i) => s + i.price * i.quantity, 0))
+    ? (order.subtotal ??
+      order.items.reduce((s, i) => s + lineUnitTotal(i.price, i.modifiers) * i.quantity, 0))
     : 0;
   const grandTotal = order ? order.total + order.tip_amount : 0;
   const isCancelled = order?.status === 'cancelled';
@@ -107,29 +113,24 @@ export default function OrderDetailPage() {
     ? t(CLES_LIBELLE_STATUT[order.status] ?? 'statusPending')
     : t('statusPending');
 
-  const handleReorder = useCallback(() => {
+  const handleReorder = useCallback(async () => {
     if (!order || !tenantId) return;
-    for (const item of order.items) {
-      // Skip items whose menu entry no longer exists - they cannot be re-ordered
-      // (server price verification would reject an id that is not a real menu_item).
-      if (!item.menu_item_id) continue;
-      const existingQty = items.find((l) => getCartItemKey(l) === item.menu_item_id)?.quantity ?? 0;
-      const toAdd = Math.min(item.quantity, remainingItemCapacity(existingQty));
-      for (let i = 0; i < toAdd; i++) {
-        addToCart(
-          {
-            id: item.menu_item_id,
-            name: item.name,
-            price: item.price,
-            quantity: 1,
-          },
-          tenantId,
-          true,
-        );
-      }
+    const plan = await planReorder(supabaseRef.current, tenantId, order.items);
+    if (!plan) {
+      toast({ title: t('reorderUnavailable'), variant: 'destructive' });
+      return;
+    }
+    for (const line of plan.lines) {
+      const existingQty =
+        items.find((l) => getCartItemKey(l) === getCartItemKey(line))?.quantity ?? 0;
+      const toAdd = Math.min(line.quantity, remainingItemCapacity(existingQty));
+      if (toAdd > 0) addToCart({ ...line, quantity: toAdd }, tenantId, true);
+    }
+    if (plan.toChooseAgain.length > 0) {
+      toast({ title: t('reorderChooseAgain', { items: plan.toChooseAgain.join(', ') }) });
     }
     router.push(`/sites/${tenantSlug}/cart`);
-  }, [order, addToCart, items, tenantId, tenantSlug, router]);
+  }, [order, addToCart, items, tenantId, tenantSlug, router, toast, t]);
 
   const handleDownloadReceipt = useCallback(async () => {
     if (!order) return;
@@ -155,11 +156,14 @@ export default function OrderDetailPage() {
           orderNumber: order.order_number,
           dateTime: format(new Date(order.created_at), 'dd/MM/yyyy HH:mm', { locale: dateLocale }),
           table: order.table_number,
-          lines: order.items.map((i) => ({
-            name: i.name,
-            quantity: i.quantity,
-            unitPrice: i.price,
-          })),
+          lines: order.items.map((i) => {
+            const details = lineDetails(i.notes, i.modifiers);
+            return {
+              name: details.length > 0 ? `${i.name} (${details.join(', ')})` : i.name,
+              quantity: i.quantity,
+              unitPrice: lineUnitTotal(i.price, i.modifiers),
+            };
+          }),
           subtotal,
           total: order.total,
           tip: order.tip_amount,
@@ -222,7 +226,7 @@ export default function OrderDetailPage() {
             size="icon"
             onClick={() => router.push(`/sites/${tenantSlug}/orders?history=true`)}
             aria-label={t('ariaGoBack')}
-            className="h-[38px] w-[38px] shrink-0 rounded-full bg-[var(--color-surface-alt)] text-[var(--color-ink)]"
+            className={`h-[38px] w-[38px] shrink-0 rounded-full bg-[var(--color-surface-alt)] text-[var(--color-ink)] relative ${TOUCH_EXTEND_3}`}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -298,12 +302,22 @@ export default function OrderDetailPage() {
                   <div className="truncate text-[13px] font-semibold tracking-[-0.2px] text-[var(--color-ink)]">
                     {item.name}
                   </div>
+                  {lineDetails(item.notes, item.modifiers).map((detail) => (
+                    <div
+                      key={detail}
+                      className="truncate text-[11.5px] text-[var(--color-ink-soft)]"
+                    >
+                      {detail}
+                    </div>
+                  ))}
                   <div className="mt-px text-[11.5px] text-[var(--color-ink-muted)]">
                     {t('quantityLabel')} - {item.quantity}
                   </div>
                 </div>
                 <PriceStacked
-                  value={formatDisplayPrice(item.price * item.quantity)}
+                  value={formatDisplayPrice(
+                    lineUnitTotal(item.price, item.modifiers) * item.quantity,
+                  )}
                   numClass="text-[14px] font-bold text-[var(--color-ink)]"
                 />
               </div>

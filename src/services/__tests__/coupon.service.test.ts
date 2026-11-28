@@ -33,6 +33,10 @@ function createMockSupabase() {
         eq: vi.fn(),
         single: vi.fn(),
       };
+      // Reglage du restaurant: codes promo actives par defaut dans ces tests.
+      if (table === 'tenants') {
+        chains[table].single.mockResolvedValue({ data: { enable_coupons: true }, error: null });
+      }
     }
     return chains[table];
   }
@@ -269,6 +273,35 @@ describe('CouponService', () => {
       expect(result.discountAmount).toBe(30); // Capped at subtotal
     });
 
+    it('refuse tout code quand le restaurant a coupe les codes promo (audit convive #41)', async () => {
+      const supabase = createMockSupabase();
+      supabase._getChain('tenants').single.mockResolvedValue({
+        data: { enable_coupons: false },
+        error: null,
+      });
+      supabase._getChain('coupons').single.mockResolvedValue({ data: makeCoupon(), error: null });
+
+      const service = createCouponService(asSupabase(supabase));
+      const result = await service.validateCoupon('SUMMER10', 'tenant-123', 1000);
+
+      expect(result.valid).toBe(false);
+      expect(result.discountAmount).toBe(0);
+      expect(supabase._getChain('coupons').single).not.toHaveBeenCalled();
+    });
+
+    it('refuse quand le reglage ne peut pas etre lu (echec ferme)', async () => {
+      const supabase = createMockSupabase();
+      supabase._getChain('tenants').single.mockResolvedValue({
+        data: null,
+        error: { message: 'timeout' },
+      });
+      supabase._getChain('coupons').single.mockResolvedValue({ data: makeCoupon(), error: null });
+
+      const service = createCouponService(asSupabase(supabase));
+      const result = await service.validateCoupon('SUMMER10', 'tenant-123', 1000);
+      expect(result.valid).toBe(false);
+    });
+
     it('should normalize coupon code to uppercase and trim', async () => {
       const supabase = createMockSupabase();
       supabase._getChain('coupons').single.mockResolvedValue({
@@ -280,7 +313,8 @@ describe('CouponService', () => {
       await service.validateCoupon('  summer10  ', 'tenant-123', 1000);
 
       // Verify the from().select().eq().eq() chain was called with uppercase trimmed code
-      const fromCall = supabase.from.mock.results[0].value;
+      // from() n.0 lit le reglage du restaurant, n.1 cherche le coupon.
+      const fromCall = supabase.from.mock.results[1].value;
       const selectCall = fromCall.select.mock.results[0].value;
       const firstEqCall = selectCall.eq.mock.results[0].value;
       // The second .eq() should be called with 'code' and the normalized value

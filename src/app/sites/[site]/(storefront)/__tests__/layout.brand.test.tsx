@@ -23,6 +23,7 @@ vi.mock('next/headers', () => ({ headers: async () => new Headers() }));
 vi.mock('@/i18n/storefront-messages', () => ({ getStorefrontMessages: async () => ({}) }));
 vi.mock('@/lib/cache', () => ({
   getCachedTenant: async () => tenant.current,
+  getCachedTenantOrThrow: async () => tenant.current,
   toPublicTenant: (t: unknown) => t,
 }));
 // The lapsed-trial lock reads Stripe ids in service_role ('server-only'). This

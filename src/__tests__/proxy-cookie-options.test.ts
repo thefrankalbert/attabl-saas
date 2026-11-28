@@ -48,6 +48,7 @@ vi.mock('@supabase/ssr', () => ({
 vi.mock('@/lib/cache', () => ({
   getCachedTenantByDomain: async () => null,
   getCachedTenant: async () => null,
+  getCachedTenantOrThrow: async () => null,
 }));
 vi.mock('@/lib/csp', () => ({ buildCspHeader: () => "default-src 'self'" }));
 

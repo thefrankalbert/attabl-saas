@@ -27,15 +27,22 @@ export async function GET(_request: Request, { params }: { params: Promise<{ sit
       display: 'fullscreen',
       background_color: '#ffffff',
       theme_color: themeColor,
-      // Use the tenant logo when set; otherwise fall back to the app favicon
-      // (which exists) rather than /icon-192.png|/icon-512.png, which are not
-      // shipped and 404 on every storefront load.
-      icons: tenant?.logo_url
-        ? [
-            { src: tenant.logo_url, sizes: '192x192', type: 'image/png' },
-            { src: tenant.logo_url, sizes: '512x512', type: 'image/png' },
-          ]
-        : [{ src: '/favicon.ico', sizes: '48x48', type: 'image/x-icon' }],
+      // Icones ATTABL toujours presentes (192, 512, maskable): sans elles, un
+      // restaurant sans logo n'annoncait qu'une icone de 48 px et la vitrine
+      // n'etait pas installable sur Android (audit d'equipe du 2026-11-27,
+      // convive C29). Le logo du restaurant passe en tete, sans taille ni type
+      // inventes: on ne connait ni ses dimensions ni son format.
+      icons: [
+        ...(tenant?.logo_url ? [{ src: tenant.logo_url, sizes: 'any', purpose: 'any' }] : []),
+        { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+        { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+        {
+          src: '/icons/icon-512-maskable.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'maskable',
+        },
+      ],
     },
     { headers: { 'Content-Type': 'application/manifest+json' } },
   );

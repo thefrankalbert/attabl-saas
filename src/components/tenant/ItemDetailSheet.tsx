@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { getTranslatedContent } from '@/lib/utils/translate';
 import { MAX_ITEM_QTY } from '@/lib/utils/cart-display';
+import { TOUCH_EXTEND_3, TOUCH_EXTEND_6 } from '@/components/tenant/touch-zone';
 
 // --- Props ---------------------------------------------------------------
 
@@ -362,7 +363,7 @@ export default function ItemDetailSheet({
                   size="icon"
                   onClick={onClose}
                   aria-label={t('close')}
-                  className="absolute right-3.5 top-3.5 h-[38px] w-[38px] rounded-full bg-white/90 p-0 shadow-[0_1px_3px_0_rgba(26,26,26,0.06)] backdrop-blur hover:bg-white"
+                  className={`absolute right-3.5 top-3.5 h-[38px] w-[38px] rounded-full bg-white/90 p-0 shadow-[0_1px_3px_0_rgba(26,26,26,0.06)] backdrop-blur hover:bg-white ${TOUCH_EXTEND_3}`}
                 >
                   <X className="h-[18px] w-[18px] text-[var(--color-ink)]" strokeWidth={2.2} />
                 </Button>
@@ -626,7 +627,7 @@ export default function ItemDetailSheet({
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                     disabled={quantity <= 1}
                     aria-label={t('ariaDecrease')}
-                    className="h-8 w-8 rounded-full bg-white p-0 shadow-[0_1px_2px_0_rgba(26,26,26,0.04)] hover:bg-white disabled:opacity-40"
+                    className={`h-8 w-8 rounded-full bg-white p-0 shadow-[0_1px_2px_0_rgba(26,26,26,0.04)] hover:bg-white disabled:opacity-40 relative ${TOUCH_EXTEND_6}`}
                   >
                     <Minus className="h-3.5 w-3.5 text-[var(--color-ink)]" strokeWidth={2.4} />
                   </Button>
@@ -638,7 +639,7 @@ export default function ItemDetailSheet({
                     size="icon"
                     onClick={() => setQuantity((q) => Math.min(MAX_ITEM_QTY, q + 1))}
                     aria-label={t('ariaIncrease')}
-                    className="h-8 w-8 rounded-full bg-[var(--color-ink)] p-0 hover:bg-[var(--color-ink)]"
+                    className={`h-8 w-8 rounded-full bg-[var(--color-ink)] p-0 hover:bg-[var(--color-ink)] relative ${TOUCH_EXTEND_6}`}
                   >
                     <Plus className="h-3.5 w-3.5 text-white" strokeWidth={2.4} />
                   </Button>

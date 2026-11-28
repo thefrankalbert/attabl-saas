@@ -322,6 +322,43 @@ describe('OrderService', () => {
       expect(result.validatedTotal).toBe(15);
     });
 
+    it('refuse un plat a tailles envoye sans taille (audit convive #61)', async () => {
+      const supabase = createMockSupabase();
+      supabase._getChain('menu_items').in.mockResolvedValue({
+        data: [{ id: 'item-1', name: 'Pizza', price: 10, is_available: true }],
+        error: null,
+      });
+      supabase._getChain('item_modifiers').in.mockResolvedValue({ data: [], error: null });
+      supabase._getChain('item_price_variants').in.mockResolvedValue({
+        data: [{ id: 'var-1', menu_item_id: 'item-1', variant_name_fr: 'Grande', price: 15 }],
+        error: null,
+      });
+
+      const service = createOrderService(asSupabase(supabase));
+      // Prix de base envoye sans taille: autrefois accepte a 10.
+      const items = [{ id: 'item-1', name: 'Pizza', price: 10, quantity: 1 }] as OrderItemInput[];
+
+      await expect(service.validateOrderItems('tenant-123', items)).rejects.toMatchObject({
+        code: 'VALIDATION',
+      });
+    });
+
+    it('accepte toujours un plat SANS tailles envoye sans taille (temoin)', async () => {
+      const supabase = createMockSupabase();
+      supabase._getChain('menu_items').in.mockResolvedValue({
+        data: [{ id: 'item-1', name: 'Pizza', price: 10, is_available: true }],
+        error: null,
+      });
+      supabase._getChain('item_modifiers').in.mockResolvedValue({ data: [], error: null });
+      supabase._getChain('item_price_variants').in.mockResolvedValue({ data: [], error: null });
+
+      const service = createOrderService(asSupabase(supabase));
+      const items = [{ id: 'item-1', name: 'Pizza', price: 10, quantity: 1 }] as OrderItemInput[];
+
+      const result = await service.validateOrderItems('tenant-123', items);
+      expect(result.validatedTotal).toBe(10);
+    });
+
     it('should reject unknown variant', async () => {
       const supabase = createMockSupabase();
       supabase._getChain('menu_items').in.mockResolvedValue({

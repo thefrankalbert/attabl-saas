@@ -27,6 +27,13 @@ import Link from 'next/link';
 import { useClientOrderNotification } from '@/hooks/useClientOrderNotification';
 import { fromMinorUnits } from '@/lib/utils/money';
 import { logger } from '@/lib/logger';
+import {
+  lineDetails,
+  lineUnitTotal,
+  parseLineModifiers,
+  type TrackedLineModifier,
+} from '@/lib/utils/order-line-display';
+import { TOUCH_EXTEND_3 } from '@/components/tenant/touch-zone';
 
 // --- Types -----------------------------------------------
 interface OrderData {
@@ -47,6 +54,8 @@ interface OrderData {
     quantity: number;
     price: number;
     image_url?: string | null;
+    modifiers: TrackedLineModifier[];
+    notes: string | null;
   }>;
 }
 
@@ -71,6 +80,8 @@ interface TrackedOrderRow {
     price_at_order: number;
     menu_item_id: string | null;
     image_url: string | null;
+    modifiers?: unknown;
+    customer_notes?: string | null;
   }> | null;
 }
 
@@ -167,6 +178,8 @@ function OrderConfirmedContent() {
               quantity: oi.quantity,
               price: toMajor(oi.price_at_order),
               image_url: oi.image_url ?? null,
+              modifiers: parseLineModifiers(oi.modifiers),
+              notes: oi.customer_notes ?? null,
             })),
           };
           setOrder(mapped);
@@ -432,7 +445,7 @@ function OrderConfirmedContent() {
             size="icon"
             onClick={() => setView('confirmation')}
             aria-label={t('ariaGoBack')}
-            className="h-[38px] w-[38px] shrink-0 rounded-full bg-[var(--color-surface-alt)] text-[var(--color-ink)]"
+            className={`h-[38px] w-[38px] shrink-0 rounded-full bg-[var(--color-surface-alt)] text-[var(--color-ink)] relative ${TOUCH_EXTEND_3}`}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -592,16 +605,49 @@ function OrderConfirmedContent() {
                       </div>
                     )}
                   </div>
-                  <div className="min-w-0 flex-1 truncate text-[13px] font-medium tracking-[-0.2px] text-[var(--color-ink)]">
-                    {item.name}
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[13px] font-medium tracking-[-0.2px] text-[var(--color-ink)]">
+                      {item.name}
+                    </div>
+                    {lineDetails(item.notes, item.modifiers).map((detail) => (
+                      <div
+                        key={detail}
+                        className="truncate text-[12px] text-[var(--color-ink-soft)]"
+                      >
+                        {detail}
+                      </div>
+                    ))}
                   </div>
                   <PriceStacked
-                    value={formatDisplayPrice(item.price * item.quantity)}
+                    value={formatDisplayPrice(
+                      lineUnitTotal(item.price, item.modifiers) * item.quantity,
+                    )}
                     numClass="text-[14px] font-bold text-[var(--color-ink)]"
                   />
                 </div>
               );
             })}
+          </div>
+
+          {/* Detail du total: sous-total, frais, taxe, remise, pourboire */}
+          <div className="space-y-1 border-t border-[var(--color-divider)] px-4 py-3 text-[13px] text-[var(--color-ink-2)]">
+            {[
+              { label: t('subtotal'), value: order.subtotal, sign: 1 },
+              { label: t('serviceCharge'), value: order.service_charge_amount, sign: 1 },
+              { label: t('tax'), value: order.tax_amount, sign: 1 },
+              { label: t('discount'), value: order.discount_amount, sign: -1 },
+              { label: t('tip'), value: order.tip_amount, sign: 1 },
+            ]
+              .filter((row) => row.value != null && row.value !== 0)
+              .map((row) => (
+                <div key={row.label} className="flex items-center justify-between">
+                  <span>{row.label}</span>
+                  <span className="tabular-nums">
+                    {row.sign < 0 ? '- ' : ''}
+                    {formatDisplayPrice(row.value ?? 0)}
+                  </span>
+                </div>
+              ))}
           </div>
 
           {/* Total */}

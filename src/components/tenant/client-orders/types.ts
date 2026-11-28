@@ -1,3 +1,5 @@
+import type { TrackedLineModifier } from '@/lib/utils/order-line-display';
+
 // --- Types --------------------------------------------------
 
 // Shape returned by the get_orders_for_tracking RPC (non-PII columns only).
@@ -8,6 +10,8 @@ interface TrackedClientItemRow {
   price_at_order: number;
   menu_item_id?: string | null;
   image_url?: string | null;
+  modifiers?: unknown;
+  customer_notes?: string | null;
 }
 
 export interface TrackedClientRow {
@@ -29,6 +33,8 @@ interface OrderItem {
   price: number;
   menu_item_id?: string;
   image_url?: string | null;
+  modifiers: TrackedLineModifier[];
+  notes: string | null;
 }
 
 export interface OrderRecord {

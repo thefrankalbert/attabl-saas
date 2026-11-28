@@ -93,6 +93,10 @@ vi.mock('@/lib/supabase/middleware', () => ({
   }),
 }));
 
+// Lecture stricte (leve si la base tombe): par defaut, meme reponse que
+// getCachedTenantMock. Les tests de panne la font lever.
+const getCachedTenantOrThrowMock = vi.fn((slug: string) => getCachedTenantMock(slug));
+
 // Tenant lookups. By default no custom domain and no frozen tenant.
 const getCachedTenantByDomainMock = vi.fn<(domain: string) => Promise<string | null>>(
   async () => null,
@@ -110,6 +114,7 @@ const getCachedTenantMock = vi.fn<
 vi.mock('@/lib/cache', () => ({
   getCachedTenantByDomain: (domain: string) => getCachedTenantByDomainMock(domain),
   getCachedTenant: (slug: string) => getCachedTenantMock(slug),
+  getCachedTenantOrThrow: (slug: string) => getCachedTenantOrThrowMock(slug),
 }));
 
 vi.mock('@/lib/csp', () => ({
@@ -222,6 +227,20 @@ describe('proxy - restaurant inexistant', () => {
       expect(rewriteTarget(res), path).toBeNull();
       expect(isPassThrough(res), path).toBe(true);
     }
+  });
+
+  it('base indisponible: pas de faux 404, la page est rendue (audit convive C37)', async () => {
+    // La panne remonte au layout, dont la page d'erreur propose de reessayer.
+    // `getCachedTenant` avale l'erreur et rend null: c'est ce qui produisait le
+    // faux 404. La lecture stricte, elle, leve.
+    getCachedTenantMock.mockResolvedValue(null);
+    getCachedTenantOrThrowMock.mockRejectedValueOnce(new Error('connexion refusee'));
+    const res = await proxy(makeRequest('radisson.attabl.com', '/menu'));
+    expect(rewriteTarget(res)).toBe('/sites/radisson/menu');
+
+    getCachedTenantOrThrowMock.mockRejectedValueOnce(new Error('connexion refusee'));
+    const main = await proxy(makeRequest('attabl.com', '/sites/radisson/menu'));
+    expect(rewriteTarget(main)).not.toBe('/restaurant-introuvable');
   });
 
   it('temoin: un restaurant qui existe est servi normalement', async () => {

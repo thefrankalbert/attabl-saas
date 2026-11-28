@@ -45,6 +45,7 @@ vi.mock('@/lib/supabase/server', () => {
 });
 vi.mock('@/lib/cache', () => ({
   getCachedTenant: async () => state.tenant,
+  getCachedTenantOrThrow: async () => state.tenant,
   getCachedMenuData: (id: string) => state.menuData(id),
   getTableOccupied: async () => false,
   toPublicTenant: (t: unknown) => t,

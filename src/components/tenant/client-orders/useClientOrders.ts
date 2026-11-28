@@ -9,6 +9,10 @@ import { useCart } from '@/contexts/CartContext';
 import { getCartItemKey } from '@/components/tenant/cart/CartItemsList';
 import { remainingItemCapacity } from '@/lib/utils/cart-display';
 import { useClientOrderNotification } from '@/hooks/useClientOrderNotification';
+import { useTranslations } from 'next-intl';
+import { useToast } from '@/components/ui/use-toast';
+import { parseLineModifiers } from '@/lib/utils/order-line-display';
+import { planReorder } from '@/lib/utils/reorder-lines';
 import {
   ACTIVE_STATUSES,
   TERMINAL_STATUSES,
@@ -33,6 +37,8 @@ export function useClientOrders({
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const supabaseRef = useRef(createClient());
+  const t = useTranslations('tenant');
+  const { toast } = useToast();
   const previousStatusesRef = useRef<Map<string, string>>(new Map());
   const { notifyOrderReady, showReadyBanner, dismissBanner, readyOrderNumber } =
     useClientOrderNotification();
@@ -84,6 +90,8 @@ export function useClientOrders({
                 price: toMajor(oi.price_at_order),
                 menu_item_id: oi.menu_item_id ?? undefined,
                 image_url: oi.image_url ?? null,
+                modifiers: parseLineModifiers(oi.modifiers),
+                notes: oi.customer_notes ?? null,
               })),
             }),
           );
@@ -158,28 +166,28 @@ export function useClientOrders({
   // --- Reorder handler: add all items to cart without cancelling --
 
   const handleReorder = useCallback(
-    (order: OrderRecord) => {
-      for (const item of order.items) {
-        const key = item.menu_item_id || item.name;
-        const existingQty = items.find((l) => getCartItemKey(l) === key)?.quantity ?? 0;
-        const toAdd = Math.min(item.quantity, remainingItemCapacity(existingQty));
-        for (let i = 0; i < toAdd; i++) {
-          addToCart(
-            {
-              id: key,
-              name: item.name,
-              name_en: item.name_en,
-              price: item.price,
-              quantity: 1,
-            },
-            tenantId,
-            true,
-          );
-        }
+    async (order: OrderRecord) => {
+      // Meme reconstruction que la page de detail: taille, option, supplements
+      // et note (audit d'equipe du 2026-11-27, convive #48). Avant, ce bouton
+      // ajoutait le plat sans taille, et meme le NOM du plat comme identifiant
+      // quand le plat avait disparu de la carte.
+      const plan = await planReorder(supabaseRef.current, tenantId, order.items);
+      if (!plan) {
+        toast({ title: t('reorderUnavailable'), variant: 'destructive' });
+        return;
+      }
+      for (const line of plan.lines) {
+        const existingQty =
+          items.find((l) => getCartItemKey(l) === getCartItemKey(line))?.quantity ?? 0;
+        const toAdd = Math.min(line.quantity, remainingItemCapacity(existingQty));
+        if (toAdd > 0) addToCart({ ...line, quantity: toAdd }, tenantId, true);
+      }
+      if (plan.toChooseAgain.length > 0) {
+        toast({ title: t('reorderChooseAgain', { items: plan.toChooseAgain.join(', ') }) });
       }
       router.push(`/sites/${tenantSlug}/cart`);
     },
-    [addToCart, items, router, tenantId, tenantSlug],
+    [addToCart, items, router, tenantId, tenantSlug, toast, t],
   );
 
   // --- Derive displayed orders based on mode -------

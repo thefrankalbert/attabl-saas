@@ -19,6 +19,7 @@ vi.mock('next/headers', () => ({ headers: async () => new Headers() }));
 vi.mock('@/i18n/storefront-messages', () => ({ getStorefrontMessages: async () => ({}) }));
 vi.mock('@/lib/cache', () => ({
   getCachedTenant: async () => state.tenant,
+  getCachedTenantOrThrow: async () => state.tenant,
   toPublicTenant: (t: unknown) => t,
 }));
 vi.mock('@/lib/billing/tenant-billing-ids', () => ({

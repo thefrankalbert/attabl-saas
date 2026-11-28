@@ -3898,6 +3898,9 @@
     }
   },
   "coupons": {
+    "disabledTitle": "Vos clients ne peuvent pas utiliser ces codes.",
+    "disabledBody": "Les codes promo sont coupés dans vos paramètres. Activez-les pour qu'un client puisse en saisir un au panier.",
+    "disabledLink": "Activer dans les paramètres",
     "title": "Coupons",
     "addCoupon": "Ajouter un coupon",
     "editCoupon": "Modifier le coupon",
@@ -4776,6 +4779,8 @@
     "hidePassword": "Masquer le mot de passe"
   },
   "tenant": {
+    "reorderUnavailable": "Impossible de recharger la carte. Réessayez dans un instant.",
+    "reorderChooseAgain": "Ces plats sont à choisir à nouveau (taille ou carte changée) : {items}",
     "tableOccupiedNotice": "La table {table} semble déjà occupée. Vous pouvez continuer, ou voir avec le personnel pour une autre table.",
     "tableOccupiedDismiss": "Fermer",
     "closedNow": "Fermé actuellement",

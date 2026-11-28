@@ -79,6 +79,23 @@ export function createCouponService(supabase: SupabaseClient): CouponService {
       orderSubtotal: number,
       currencyCode?: CurrencyCode | string | null,
     ): Promise<CouponValidationResult> {
+      // Reglage du restaurant (Parametres > Codes promo). Il n'etait lu nulle
+      // part: un code actif restait accepte reglage coupe (audit d'equipe du
+      // 2026-11-27, convive #41). Un seul point de passage pour la vitrine, les
+      // commandes et la caisse. Lecture en echec = refus (echec ferme).
+      const { data: tenantRow, error: tenantError } = await supabase
+        .from('tenants')
+        .select('enable_coupons')
+        .eq('id', tenantId)
+        .single();
+      if (tenantError || !tenantRow?.enable_coupons) {
+        return {
+          valid: false,
+          discountAmount: 0,
+          error: "Ce restaurant n'accepte pas les codes promo",
+        };
+      }
+
       const { data: coupon, error } = await supabase
         .from('coupons')
         .select(

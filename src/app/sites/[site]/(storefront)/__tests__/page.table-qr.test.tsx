@@ -39,17 +39,19 @@ vi.mock('@/lib/supabase/server', () => {
   // The client itself must not be thenable, or `await createClient()` unwraps it.
   return { createClient: async () => ({ from: () => builder, rpc: () => builder }) };
 });
+const TENANT = {
+  id: 'tenant-1',
+  name: 'Resto',
+  slug: 'resto',
+  is_active: true,
+  subscription_status: 'active',
+  currency: 'XOF',
+  opening_hours: null,
+  logo_url: null,
+};
 vi.mock('@/lib/cache', () => ({
-  getCachedTenant: async () => ({
-    id: 'tenant-1',
-    name: 'Resto',
-    slug: 'resto',
-    is_active: true,
-    subscription_status: 'active',
-    currency: 'XOF',
-    opening_hours: null,
-    logo_url: null,
-  }),
+  getCachedTenant: async () => TENANT,
+  getCachedTenantOrThrow: async () => TENANT,
   getTableOccupied: (...args: unknown[]) => getTableOccupied(...(args as [])),
 }));
 

@@ -21,7 +21,9 @@ export default function OrdersTabs({
       <Link
         href={`/sites/${tenantSlug}/orders`}
         className={cn(
-          'rounded-[var(--radius-pill)] px-4 py-1.5 text-[12.5px] font-medium tracking-[-0.2px] transition-colors',
+          // Onglet de 31 px: zone sensible etendue a 45 px en hauteur (regle 44 px)
+          // sans changer le dessin (audit convive C19).
+          "relative rounded-[var(--radius-pill)] px-4 py-1.5 text-[12.5px] font-medium tracking-[-0.2px] transition-colors before:absolute before:inset-x-0 before:-inset-y-[7px] before:content-['']",
           !showHistory ? 'bg-[var(--color-ink)] text-white' : 'text-[var(--color-ink-muted)]',
         )}
       >
@@ -30,7 +32,9 @@ export default function OrdersTabs({
       <Link
         href={`/sites/${tenantSlug}/orders?history=true`}
         className={cn(
-          'rounded-[var(--radius-pill)] px-4 py-1.5 text-[12.5px] font-medium tracking-[-0.2px] transition-colors',
+          // Onglet de 31 px: zone sensible etendue a 45 px en hauteur (regle 44 px)
+          // sans changer le dessin (audit convive C19).
+          "relative rounded-[var(--radius-pill)] px-4 py-1.5 text-[12.5px] font-medium tracking-[-0.2px] transition-colors before:absolute before:inset-x-0 before:-inset-y-[7px] before:content-['']",
           showHistory ? 'bg-[var(--color-ink)] text-white' : 'text-[var(--color-ink-muted)]',
         )}
       >
