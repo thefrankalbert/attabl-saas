@@ -144,7 +144,7 @@ end $$;
 
 -- ============ PARITE: une permission RETIREE mord aussi en base ============
 reset role;
-update public.admin_users set custom_permissions = '{"menu.edit": false}'::jsonb
+update public.admin_users set permission_overrides = '{"menu.edit": false, "menu.price": false}'::jsonb
  where user_id = 'd1111111-1111-1111-1111-111111111111';
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"d1111111-1111-1111-1111-111111111111"}';

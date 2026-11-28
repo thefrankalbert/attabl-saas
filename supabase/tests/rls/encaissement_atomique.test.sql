@@ -29,7 +29,7 @@ insert into public.tenants (id, slug, name, is_active, subscription_plan, subscr
 values ('ea000000-0000-4000-8000-00000000000a', 'atomique-a', 'Atomique A', true, 'pro', 'active'),
        ('ea000000-0000-4000-8000-00000000000b', 'atomique-b', 'Atomique B', true, 'pro', 'active');
 
-insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, custom_permissions)
+insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, permission_overrides)
 values ('eb000000-0000-4000-8000-000000000001', 'ea000000-0000-4000-8000-00000000000a',
         'e1111111-1111-1111-1111-111111111111', 'caissier-atomique@test.local', 'cashier', true, null),
        ('eb000000-0000-4000-8000-000000000002', 'ea000000-0000-4000-8000-00000000000a',

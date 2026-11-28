@@ -52,7 +52,7 @@ from (values (1, 'patron@b2b1.test'), (2, 'gerant@b2b1.test'), (3, 'caissier@b2b
              (4, 'chef@b2b1.test'), (5, 'serveur@b2b1.test'), (6, 'caissier-stock@b2b1.test'),
              (7, 'patron-deux@b2b1.test')) v(n, e);
 
-insert into public.admin_users (id, user_id, tenant_id, email, role, is_active, custom_permissions) values
+insert into public.admin_users (id, user_id, tenant_id, email, role, is_active, permission_overrides) values
   ('b2b10000-0000-4000-8000-000000000201', 'b2b10000-0000-4000-8000-000000000101', 'b2b10000-0000-4000-8000-000000000001', 'patron@b2b1.test', 'owner', true, null),
   ('b2b10000-0000-4000-8000-000000000202', 'b2b10000-0000-4000-8000-000000000102', 'b2b10000-0000-4000-8000-000000000001', 'gerant@b2b1.test', 'manager', true, null),
   ('b2b10000-0000-4000-8000-000000000203', 'b2b10000-0000-4000-8000-000000000103', 'b2b10000-0000-4000-8000-000000000001', 'caissier@b2b1.test', 'cashier', true, null),

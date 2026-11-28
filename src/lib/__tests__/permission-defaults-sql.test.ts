@@ -117,32 +117,3 @@ describe('garde SQL : plus de repli par role, code inconnu refuse', () => {
     expect(guard).toBeLessThan(read);
   });
 });
-
-describe('retour arriere de la resolution plus rapide : copies des corps d origine', () => {
-  const RETOUR = join(
-    process.cwd(),
-    'supabase',
-    'retour-arriere',
-    '20261128100300_retour_resolution_plus_rapide.sql',
-  );
-  const fonction = (sql: string, nom: string): string => {
-    const start = sql.indexOf(`CREATE OR REPLACE FUNCTION ${nom}`);
-    expect(start, nom).toBeGreaterThan(-1);
-    return sql.slice(start, sql.indexOf('$function$;', start));
-  };
-
-  it.each([
-    ['private.matrice_postes()', '20261128100000_postes_colonnes_et_reprise.sql'],
-    ['public.tenant_permission_level(', '20261128100100_resolution_par_postes_et_politiques.sql'],
-  ])('%s est identique a sa definition d origine', (nom, migration) => {
-    const origine = fonction(readFileSync(join(MIGRATIONS, migration), 'utf8'), nom);
-    expect(fonction(readFileSync(RETOUR, 'utf8'), nom)).toBe(origine);
-    // Temoin : la definition en vigueur, elle, differe (sinon le retour ne
-    // retablirait rien et la comparaison ne prouverait rien).
-    const enVigueur = readFileSync(
-      join(MIGRATIONS, '20261128100300_resolution_plus_rapide.sql'),
-      'utf8',
-    );
-    expect(fonction(enVigueur, nom)).not.toBe(origine);
-  });
-});

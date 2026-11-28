@@ -15,7 +15,7 @@
 --
 -- TEMOIN. Le tableau contient des attendus "oui" et des attendus "non" : une
 -- verification qui rendrait toujours la meme reponse echouerait sur l'une des
--- deux moities. Le test verifie aussi qu'il a bien lu ses 20 fonctions (aucune
+-- deux moities. Le test verifie aussi qu'il a bien lu ses 18 fonctions (aucune
 -- signature mal ecrite, qui ferait disparaitre une ligne).
 --
 -- Execution: scripts/run-pgtap.sh, ou psql "$LOCAL_DB" -f ce fichier.
@@ -24,7 +24,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(71);
+select plan(62);
 
 -- signature, anon, authenticated, service_role
 create temp table attendus (signature text, anon boolean, authenticated boolean, service_role boolean) on commit drop;
@@ -36,27 +36,24 @@ insert into attendus values
   ('public.has_tenant_write_permission(uuid, text)',    true,  true,  true),
   ('public.has_tenant_money_permission(uuid)',          true,  true,  true),
   ('public.has_tenant_floor_permission(uuid)',          true,  true,  true),
-  -- Appelees par un CHECK ou par un declencheur SECURITY INVOKER.
+  -- Appelee par un CHECK, sous le role de l'appelant.
   ('private.droits_valides(jsonb)',                     false, true,  true),
-  ('private.fusion_anciens_droits(jsonb, jsonb, jsonb)', false, true,  true),
   -- Internes : appelees seulement depuis des fonctions SECURITY DEFINER.
   ('private.codes_droits()',                            false, false, false),
   ('private.matrice_postes()',                          false, false, false),
   ('private.postes_depuis_role(text)',                  false, false, false),
   ('private.role_depuis_postes(text[])',                false, false, false),
   ('private.postes_normalises(text[])',                 false, false, false),
-  ('private.droits_depuis_anciens(jsonb)',              false, false, false),
   ('private.droits_hors_catalogue()',                   false, false, false),
   -- Fonctions de declencheur : jamais appelables en direct.
   ('private.sync_postes_admin_users()',                 false, false, false),
   ('private.sync_postes_invitations()',                 false, false, false),
   ('private.garder_proprietaire()',                     false, false, false),
-  ('public.role_permissions_vers_postes()',             false, false, false),
   ('public.garder_prix_carte()',                        false, false, false),
   ('public.garder_statut_cuisine()',                    false, false, false);
 
-select is((select count(*)::int from attendus a where to_regprocedure(a.signature) is not null), 21,
-  'temoin: les 21 fonctions du tableau existent (aucune signature fausse)');
+select is((select count(*)::int from attendus a where to_regprocedure(a.signature) is not null), 18,
+  'temoin: les 18 fonctions du tableau existent (aucune signature fausse)');
 select ok((select count(*) filter (where a.authenticated) > 0 and count(*) filter (where not a.authenticated) > 0
            from attendus a), 'temoin: le tableau porte des attendus oui ET non');
 
@@ -86,16 +83,16 @@ select is((select count(*)::int from attendus a
             where not exists (select 1 from unnest(coalesce(p.proconfig, '{}')) c where c like 'search_path=%')), 0,
   'chaque fonction fixe son search_path');
 
--- Le mode de securite attendu : INVOKER pour les trois declencheurs qui lisent
+-- Le mode de securite attendu : INVOKER pour les deux declencheurs qui lisent
 -- current_user ou doivent subir la RLS de l'appelant, DEFINER pour les aides.
 select is((select array_agg(a.signature order by a.signature) from attendus a
             join pg_proc p on p.oid = to_regprocedure(a.signature) where p.prosecdef),
-  array['private.droits_valides(jsonb)', 'private.fusion_anciens_droits(jsonb, jsonb, jsonb)',
+  array['private.droits_valides(jsonb)',
         'private.garder_proprietaire()', 'private.sync_postes_admin_users()', 'private.sync_postes_invitations()',
         'public.has_tenant_floor_permission(uuid)', 'public.has_tenant_money_permission(uuid)',
         'public.has_tenant_write_permission(uuid, text)', 'public.is_tenant_owner(uuid)',
         'public.tenant_permission_level(uuid, text)', 'public.tenants_avec_droit(text, text)'],
-  'SECURITY DEFINER : exactement ces onze fonctions (les trois declencheurs INVOKER n y sont pas)');
+  'SECURITY DEFINER : exactement ces dix fonctions (les deux declencheurs INVOKER n y sont pas)');
 
 -- Effet reel, pas seulement le catalogue : anon n'appelle pas une fonction interne.
 set local role anon;

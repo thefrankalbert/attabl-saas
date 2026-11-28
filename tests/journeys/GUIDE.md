@@ -21,7 +21,7 @@ Fichiers du harnais :
   - `tests/journeys/fixtures/seed.ts` - seed/teardown via service_role
   - `tests/journeys/fixtures/personas.ts` - l'equipe + clients, sessions isolees
   - `tests/journeys/fixtures/stripe.ts` - helper Stripe Test Clocks
-  - `tests/journeys/fixtures/schema.sql` - snapshot du schema prod (4853 lignes, 42 tables)
+  - `tests/journeys/fixtures/schema.sql` - instantane du schema (65 tables, regenere le 2026-11-28 avec MIG4 ; son en-tete dit comment)
 - **Charge** : `tests/journeys/load/order-rush.k6.js` - test k6
 - **Config** : `tests/journeys/playwright.config.ts`, `tests/journeys/.env.journeys.example`, `tests/journeys/.gitignore`
 - **Doc** : `tests/journeys/README.md`
@@ -120,8 +120,8 @@ Debloque l'execution complete en local, en contournant le probleme connu (chaine
 1. `supabase init` + ecarte les migrations repo dans un tmp (sinon `supabase start` rejoue une chaine cassee).
 2. Desactive `enable_confirmations` dans `config.toml` (signup->login local sans email).
 3. `supabase start` (stack local vierge).
-4. Charge le **snapshot schema prod** (`fixtures/schema.sql`, 42 tables) via psql.
-5. Rejoue **uniquement les migrations dont le timestamp > `FIXTURE_MARKER=20260628000000`** (deltas de branche pas encore en prod).
+4. Charge le **snapshot schema prod** (`fixtures/schema.sql`, 65 tables) via psql.
+5. Rejoue **uniquement les migrations dont le timestamp > `FIXTURE_MARKER=20261128120000`** (deltas de branche pas encore en prod).
 6. Lance `pnpm dev` sur le port 3100 avec un env Supabase local inline (ne touche pas `.env.local`), `ALLOW_DEV_AUTH_BYPASS=true`, et **`UPSTASH_REDIS_REST_URL/TOKEN` vides** (isole le rate limiting de la prod).
 7. Attend `/api/health`, puis lance Playwright avec l'URL+cle service_role locales, `JOURNEY_CONFIRM_TEST_DB=yes`, et `JOURNEY_STRIPE_SECRET_KEY` si fournie.
 8. `cleanup()` (trap EXIT) : kill dev server, `supabase stop`, restaure les migrations, supprime les artefacts. Interrupt-safe.
@@ -159,7 +159,7 @@ JOURNEY_CONFIRM_TEST_DB=yes pnpm test:journey
 ## Limites connues, skips et dette technique
 
 1. **Rate limiting (07)** : non exerce par le runner local (Upstash vide -> desactive). Le test exige un vrai 429 UNIQUEMENT avec `JOURNEY_RATE_LIMIT_ACTIVE=yes` (cible avec Upstash branche, ex: staging) ; en local il reste un smoke "pas de 5xx" annonce explicitement (plus de faux vert).
-2. **Le snapshot `schema.sql` est un artefact a maintenir a la main** : il fige le schema prod a `FIXTURE_MARKER=20260628000000`. Toute migration future doit garder ce marqueur coherent.
+2. **Le snapshot `schema.sql` est un artefact a maintenir a la main** : il fige le schema a `FIXTURE_MARKER=20261128120000` (valeur ecrite dans son en-tete et dans les deux scripts qui le chargent). Toute migration future doit garder ce marqueur coherent.
 3. **CDC KDS local (04)** : le runner ajoute `orders` a la publication `supabase_realtime` + `REPLICA IDENTITY FULL` (etape locale uniquement, la prod publie deja `orders`). En staging, verifier que `orders` est bien publie sinon l'assertion temps reel timeout.
 4. **Webhooks Stripe forges (01/06)** : on signe les events en local avec `STRIPE_WEBHOOK_SECRET` partage (defaut `whsec_journey_local_test`). Le customer/subscription est reel (Test Clock), mais l'echec de paiement (past_due) est pilote par un `invoice.payment_failed` forge plutot que par un vrai echec de carte au renouvellement.
 5. **Confusion de perimetre de branche** : la branche embarque aussi le travail offline-first. Pour une PR "harnais seule", il faudrait isoler les commits journeys.

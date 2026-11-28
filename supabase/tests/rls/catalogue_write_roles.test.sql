@@ -175,7 +175,7 @@ reset role;
 
 -- Niveau 1: permission individuelle retiree a CE gerant.
 update public.admin_users
-   set custom_permissions = '{"menu.edit": false}'::jsonb
+   set permission_overrides = '{"menu.edit": false, "menu.price": false}'::jsonb
  where user_id = 'a1111111-1111-1111-1111-111111111111';
 
 set local role authenticated;
@@ -192,10 +192,10 @@ select is(
 -- tenant. Le niveau 1 gagne, exactement comme dans hasPermission.
 reset role;
 update public.admin_users
-   set custom_permissions = '{"menu.edit": true}'::jsonb
+   set permission_overrides = '{"menu.edit": true, "menu.price": true}'::jsonb
  where user_id = 'a1111111-1111-1111-1111-111111111111';
-insert into public.role_permissions (tenant_id, role, permissions)
-values ('a3333333-3333-3333-3333-333333333333', 'manager', '{"menu.edit": false}'::jsonb);
+insert into public.poste_permissions (tenant_id, poste, permissions)
+values ('a3333333-3333-3333-3333-333333333333', 'manager', '{"menu.edit": false, "menu.price": false}'::jsonb);
 
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"a1111111-1111-1111-1111-111111111111"}';
@@ -209,7 +209,7 @@ select is(
 
 -- Et l'inverse: sans permission individuelle, le refus du ROLE mord.
 reset role;
-update public.admin_users set custom_permissions = null
+update public.admin_users set permission_overrides = null
  where user_id = 'a1111111-1111-1111-1111-111111111111';
 
 set local role authenticated;

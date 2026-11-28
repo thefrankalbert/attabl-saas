@@ -207,7 +207,7 @@ select throws_ok(
 -- Parite avec l application: la permission RETIREE mord aussi en base.
 reset role;
 update public.admin_users
-   set custom_permissions = '{"orders.manage": false}'::jsonb
+   set permission_overrides = '{"orders.take": false, "kitchen.track": false, "orders.cancel": false, "orders.discount": false, "orders.refund": false}'::jsonb
  where user_id = 'c1111111-1111-1111-1111-111111111111';
 
 set local role authenticated;
