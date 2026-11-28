@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { Pause, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,6 +40,7 @@ const subscribeNever = () => () => {};
  */
 export function AuthPhotoPanel({ scene: sceneProp }: { scene: AuthScene }) {
   const t = useTranslations('authShell');
+  const tForm = useTranslations('auth.form');
   const scene = useAuthSceneOverride() ?? sceneProp;
   const photos = AUTH_SCENES[scene];
   const count = photos.length;
@@ -124,6 +126,25 @@ export function AuthPhotoPanel({ scene: sceneProp }: { scene: AuthScene }) {
           {t(`phrases.${scene}`)}
         </p>
       </div>
+
+      {/* D1, a partir de 1024px: conditions et confidentialite en bas du panneau
+          photo, sans allonger la carte (voir AuthForm). */}
+      <p className="absolute bottom-5 left-1/2 right-20 hidden text-center lg:block">
+        <span className="inline-block rounded-full bg-black/55 px-3 py-1.5 text-xs text-white">
+          {tForm.rich('legalNotice', {
+            terms: (chunks) => (
+              <Link href="/legal" className="underline underline-offset-2 hover:text-white">
+                {chunks}
+              </Link>
+            ),
+            privacy: (chunks) => (
+              <Link href="/privacy" className="underline underline-offset-2 hover:text-white">
+                {chunks}
+              </Link>
+            ),
+          })}
+        </span>
+      </p>
 
       {isSlideshow && (
         <Button

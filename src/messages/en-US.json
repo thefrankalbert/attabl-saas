@@ -725,7 +725,7 @@
             },
             "truck": {
               "title": "Delivery orders",
-              "desc": "Track runs and drivers."
+              "desc": "Orders with a delivery address, tracked like any other."
             },
             "bed": {
               "title": "Room service",
@@ -1912,6 +1912,7 @@
       "restaurantPlaceholder": "The Garden",
       "termsNote": "By creating an account, you accept the <terms>terms of use</terms> and the <privacy>privacy policy</privacy>.",
       "trialNote": "14 days free - no commitment",
+      "legalNotice": "<terms>Terms of use</terms> and <privacy>privacy</privacy>",
       "accountDeletedSuccess": "Done: your account is deleted. Thank you for working with ATTABL."
     },
     "confirm": {
