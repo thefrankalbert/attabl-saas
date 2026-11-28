@@ -33,7 +33,9 @@ export async function actionReleaseTable(
   if (!parsed.success) return { success: false, error: 'Donnees invalides' };
 
   try {
-    const { tenantId } = await getAuthenticatedUserWithTenant('orders.manage');
+    // Liberer une table est un geste de salle, pas de cuisine: `orders.take`
+    // (`kitchen.track` seul ne suffit pas, constat P1 de l'audit de securite).
+    const { tenantId } = await getAuthenticatedUserWithTenant('orders.take');
     await assertTenantServing(tenantId);
     await createOrderService(createAdminClient()).releaseTableSession(
       tenantId,

@@ -20,6 +20,7 @@ import { actionOpenStockCount } from '@/app/actions/stock-count';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useStockCounts } from '@/hooks/queries/useStockCounts';
 import type { StockCount, StockCountStatus } from '@/types/inventory.types';
+import { isEnterToSubmit } from '@/lib/utils/enter-key';
 
 interface StockCountClientProps {
   tenantId: string;
@@ -194,7 +195,7 @@ export default function StockCountClient({ tenantId }: StockCountClientProps) {
                 onChange={(e) => setReference(e.target.value)}
                 maxLength={120}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !isSubmitting) {
+                  if (isEnterToSubmit(e) && !isSubmitting) {
                     void handleOpenCount();
                   }
                 }}

@@ -127,7 +127,7 @@ export default function SettingsSecurity({
         <SecurityAccountSection />
 
         {/* Owner only: reset data, close the restaurant */}
-        <RoleGuard roles={['owner']} fallback={null}>
+        <RoleGuard ownerOnly fallback={null}>
           <SecuritySection title={t('dangerZone')} description={t('dangerZoneDescription')}>
             <SettingsDataReset tenantSlug={tenantSlug} />
           </SecuritySection>

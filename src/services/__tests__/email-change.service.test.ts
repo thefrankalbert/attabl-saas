@@ -38,8 +38,9 @@ const CLAIMS: EmailChangeClaims = {
 interface World {
   authEmail: string;
   nonce: string | undefined;
-  requester: { role: string; is_active: boolean } | null;
-  target: { role: string } | null;
+  requester: { id: string; postes: string[]; is_active: boolean } | null;
+  target: { id: string; postes: string[] } | null;
+  posteRead: { data: unknown; error: { message: string } | null };
   mirrorRows: { id: string }[];
   mirrorError: boolean;
   updateError: boolean;
@@ -66,7 +67,14 @@ function client(): SupabaseClient {
         },
       },
     },
-    from: () => {
+    from: (table: string) => {
+      if (table === 'poste_permissions') {
+        // select().eq().in() rend un TABLEAU de lignes
+        const c: Record<string, unknown> = {};
+        for (const m of ['select', 'eq']) c[m] = () => c;
+        c.in = async () => world.posteRead;
+        return c;
+      }
       const readChain = (row: unknown) => {
         const c: Record<string, unknown> = {};
         c.select = () => c;
@@ -106,8 +114,9 @@ describe('createEmailChangeService.confirmStep', () => {
     world = {
       authEmail: 'ancien@resto.test',
       nonce: 'n-1',
-      requester: { role: 'owner', is_active: true },
-      target: { role: 'manager' },
+      requester: { id: 'r-1', postes: ['owner'], is_active: true },
+      target: { id: 'tg-1', postes: ['waiter'] },
+      posteRead: { data: [], error: null },
       mirrorRows: [{ id: 'row-1' }],
       mirrorError: false,
       updateError: false,
@@ -153,16 +162,20 @@ describe('createEmailChangeService.confirmStep', () => {
     ['demande jamais enregistree (pas de nonce)', () => (world.nonce = undefined), 'expired'],
     [
       'demandeur desactive',
-      () => (world.requester = { role: 'owner', is_active: false }),
+      () => (world.requester = { id: 'r-1', postes: ['owner'], is_active: false }),
       'refused',
     ],
     ['demandeur retire', () => (world.requester = null), 'refused'],
     [
       'demandeur retrograde',
-      () => (world.requester = { role: 'waiter', is_active: true }),
+      () => (world.requester = { id: 'r-1', postes: ['waiter'], is_active: true }),
       'refused',
     ],
-    ['cible devenue plus haut placee', () => (world.target = { role: 'owner' }), 'refused'],
+    [
+      'cible devenue proprietaire',
+      () => (world.target = { id: 'tg-1', postes: ['owner'] }),
+      'refused',
+    ],
     ['cible retiree du restaurant', () => (world.target = null), 'refused'],
   ])('TEMOIN: %s -> rien n est applique', async (_label, mutate, expected) => {
     mutate();
@@ -210,6 +223,64 @@ describe('createEmailChangeService.confirmStep', () => {
   it('echec d envoi a la nouvelle adresse: echec', async () => {
     sendNew.mockResolvedValue(false);
     expect(await createEmailChangeService(client()).confirmStep(CLAIMS)).toBe('failed');
+  });
+
+  describe('autorite du demandeur: team.manage ET autorite sur la cible', () => {
+    const setup = (requesterPostes: string[], targetPostes: string[]) => {
+      world.requester = { id: 'r-1', postes: requesterPostes, is_active: true };
+      world.target = { id: 'tg-1', postes: targetPostes };
+    };
+
+    it('gerant sur serveur: passe (temoin positif)', async () => {
+      setup(['manager'], ['waiter']);
+      expect(await createEmailChangeService(client()).confirmStep(CLAIMS)).toBe(
+        'new_address_notified',
+      );
+    });
+
+    it('gerant sur proprietaire: refuse', async () => {
+      setup(['manager'], ['owner']);
+      expect(await createEmailChangeService(client()).confirmStep(CLAIMS)).toBe('refused');
+      expect(sendNew).not.toHaveBeenCalled();
+    });
+
+    it('gerant sur gerant: refuse (droits non strictement inclus)', async () => {
+      setup(['manager'], ['manager']);
+      for (const step of ['current', 'new'] as const) {
+        expect(await createEmailChangeService(client()).confirmStep({ ...CLAIMS, step })).toBe(
+          'refused',
+        );
+      }
+      expect(updateUserById).not.toHaveBeenCalled();
+    });
+
+    it('demandeur sans team.manage (caissier): refuse meme sur un serveur', async () => {
+      setup(['cashier'], ['waiter']);
+      expect(await createEmailChangeService(client()).confirmStep(CLAIMS)).toBe('refused');
+    });
+
+    it('team.manage retire au gerant par le restaurant: refuse (temoin: sans reglage il passe)', async () => {
+      setup(['manager'], ['waiter']);
+      world.posteRead = {
+        data: [{ poste: 'manager', permissions: { 'team.manage': false } }],
+        error: null,
+      };
+      expect(await createEmailChangeService(client()).confirmStep(CLAIMS)).toBe('refused');
+    });
+
+    it('echec de lecture de poste_permissions: refuse (echec ferme)', async () => {
+      setup(['manager'], ['waiter']);
+      world.posteRead = { data: null, error: { message: 'timeout' } };
+      expect(await createEmailChangeService(client()).confirmStep(CLAIMS)).toBe('refused');
+      expect(sendNew).not.toHaveBeenCalled();
+    });
+
+    it('echec de lecture: refuse aussi quand le demandeur est proprietaire mais la cible a des postes a lire', async () => {
+      setup(['owner'], ['waiter']);
+      world.posteRead = { data: null, error: { message: 'timeout' } };
+      // Les droits de la cible waiter doivent etre lus: l'echec ferme refuse.
+      expect(await createEmailChangeService(client()).confirmStep(CLAIMS)).toBe('refused');
+    });
   });
 
   it('un jeton signe est bien relu avec les memes revendications', () => {

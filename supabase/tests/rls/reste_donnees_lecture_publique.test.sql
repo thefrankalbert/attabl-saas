@@ -51,7 +51,7 @@ insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, 
 values
   (gen_random_uuid(), 'f2000000-0000-0000-0000-00000000000a', 'f1000000-0000-0000-0000-000000000001', 'membre-a@test.local', 'owner', true, false),
   (gen_random_uuid(), 'f2000000-0000-0000-0000-00000000000b', 'f1000000-0000-0000-0000-000000000002', 'visiteur@test.local', 'owner', true, false),
-  (gen_random_uuid(), 'f2000000-0000-0000-0000-00000000000a', 'f1000000-0000-0000-0000-000000000003', 'sa@test.local', 'owner', true, true),
+  (gen_random_uuid(), 'f2000000-0000-0000-0000-00000000000a', 'f1000000-0000-0000-0000-000000000003', 'sa@test.local', 'super_admin', true, true),
   (gen_random_uuid(), 'f2000000-0000-0000-0000-00000000000c', 'f1000000-0000-0000-0000-000000000004', 'membre-c@test.local', 'owner', true, false);
 reset request.jwt.claim.role;
 

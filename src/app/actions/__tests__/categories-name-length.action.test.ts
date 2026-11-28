@@ -22,7 +22,7 @@ vi.mock('@/lib/auth/get-session', () => ({
   getAuthenticatedUserForTenant: vi.fn(async () => ({
     user: { id: 'u1' },
     supabase: {},
-    role: 'owner',
+    postes: ['owner'],
   })),
   AuthError: class extends Error {
     status = 403;

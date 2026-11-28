@@ -36,6 +36,8 @@ vi.mock('@/lib/auth/get-session', () => ({
 }));
 
 import { POST } from '@/app/api/admin/reset/route';
+import { getEffectiveLevels } from '@/lib/permissions';
+import type { PermissionMap, Poste } from '@/types/permission.types';
 
 function resetRequest(): Request {
   return new Request('http://localhost/api/admin/reset', {
@@ -45,8 +47,15 @@ function resetRequest(): Request {
   });
 }
 
-function as(role: string): void {
-  mockAuth.mockResolvedValue({ tenantId: 'tenant-1', user: { id: 'user-1' }, role });
+function as(poste: Poste, overrides?: PermissionMap): void {
+  const member = { postes: [poste], permission_overrides: overrides ?? null };
+  mockAuth.mockResolvedValue({
+    tenantId: 'tenant-1',
+    user: { id: 'user-1' },
+    postes: member.postes,
+    isOwner: poste === 'owner',
+    levels: getEffectiveLevels(member),
+  });
 }
 
 describe('POST /api/admin/reset - reserve au proprietaire', () => {
@@ -56,8 +65,18 @@ describe('POST /api/admin/reset - reserve au proprietaire', () => {
     mockInsert.mockResolvedValue({ error: null });
   });
 
-  it.each(['admin', 'manager', 'cashier', 'chef', 'waiter'])('refuse le role %s', async (role) => {
-    as(role);
+  it.each(['manager', 'cashier', 'chef', 'waiter'] as const)(
+    'refuse le poste %s',
+    async (poste) => {
+      as(poste);
+      const res = await POST(resetRequest());
+      expect(res.status).toBe(403);
+      expect(mockRpc).not.toHaveBeenCalled();
+    },
+  );
+
+  it('refuse un gerant meme avec tous les droits d argent accordes (proprietaire seulement)', async () => {
+    as('manager', { 'billing.manage': true, 'team.manage': true });
     const res = await POST(resetRequest());
     expect(res.status).toBe(403);
     expect(mockRpc).not.toHaveBeenCalled();

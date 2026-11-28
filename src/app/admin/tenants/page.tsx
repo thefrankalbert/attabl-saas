@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import TenantsPageClient from './tenants-page-client';
 import { APP_VERSION } from '@/lib/app-version';
 import { mapMembershipRows, pickHomeTenantSlug } from '@/lib/auth/post-login-destination';
+import { toPostes } from '@/lib/permissions';
 import { enforceMfa } from '@/lib/auth/mfa-guard';
 
 export const dynamic = 'force-dynamic';
@@ -26,7 +27,7 @@ export default async function TenantsPage() {
     redirect('/login');
   }
 
-  // Check if the user has super_admin or owner role in any tenant.
+  // Check if the user is a super_admin or holds the owner poste in any tenant.
   //
   // ADMIN-TENANTS-BAN. `is_active` et `deleted_at` sont filtres ici comme
   // partout ailleurs dans le code. Cette page etait la SEULE exception, et la
@@ -40,7 +41,7 @@ export default async function TenantsPage() {
   // helper ne couvre pas.
   const { data: adminUsers } = await supabase
     .from('admin_users')
-    .select('is_super_admin, role, full_name, tenant_id, tenants(slug, created_at)')
+    .select('is_super_admin, role, postes, full_name, tenant_id, tenants(slug, created_at)')
     .eq('user_id', user.id)
     .eq('is_active', true)
     .is('deleted_at', null);
@@ -49,7 +50,7 @@ export default async function TenantsPage() {
     (au) => au.is_super_admin === true || au.role === 'super_admin',
   );
 
-  const isOwner = (adminUsers || []).some((au) => au.role === 'owner');
+  const isOwner = (adminUsers || []).some((au) => toPostes(au.postes).includes('owner'));
 
   // Only super admins and owners can access this page.
   //

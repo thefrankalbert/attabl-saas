@@ -8,6 +8,8 @@ import { usePermissions } from '@/hooks/usePermissions';
 interface OrdersTableSelectionBarProps {
   count: number;
   canChangeStatus: boolean;
+  /** Au moins une commande choisie peut avancer avec les droits du membre. */
+  canAdvance: boolean;
   onBulkAdvance: () => void;
   onBulkCancel: () => void;
   onExport: () => void;
@@ -16,6 +18,7 @@ interface OrdersTableSelectionBarProps {
 export function OrdersTableSelectionBar({
   count,
   canChangeStatus,
+  canAdvance,
   onBulkAdvance,
   onBulkCancel,
   onExport,
@@ -42,15 +45,17 @@ export function OrdersTableSelectionBar({
         </Button>
         {canChangeStatus && (
           <>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onBulkAdvance}
-              className="h-[30px] gap-1.5 px-2.5 text-[13px] font-normal"
-            >
-              <RefreshCw className="size-[14px] text-[var(--muted-foreground)]" />
-              {t('bulkStatus')}
-            </Button>
+            {canAdvance && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onBulkAdvance}
+                className="h-[30px] gap-1.5 px-2.5 text-[13px] font-normal"
+              >
+                <RefreshCw className="size-[14px] text-[var(--muted-foreground)]" />
+                {t('bulkStatus')}
+              </Button>
+            )}
             {canCancel && (
               <Button
                 type="button"

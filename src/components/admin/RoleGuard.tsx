@@ -3,16 +3,15 @@
 import { usePermissions } from '@/hooks/usePermissions';
 import { ShieldX } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { AdminRole } from '@/types/admin.types';
-import type { PermissionCode } from '@/types/permission.types';
+import type { PermissionRequirement } from '@/lib/permissions';
 
 // --- Types ----------------------------------------------
 
 interface RoleGuardProps {
-  /** Permission EFFECTIVE requise (meme resolution que le serveur). */
-  permission?: PermissionCode;
-  /** Direct role whitelist (user must have one of these roles) */
-  roles?: AdminRole[];
+  /** Droit EFFECTIF requis (meme resolution que le serveur). */
+  permission?: PermissionRequirement;
+  /** Acte reserve au proprietaire du restaurant. */
+  ownerOnly?: boolean;
   /** Custom fallback UI (defaults to AccessDenied) */
   fallback?: React.ReactNode;
   children: React.ReactNode;
@@ -36,11 +35,10 @@ function AccessDenied() {
 
 // --- Component ------------------------------------------
 
-export default function RoleGuard({ permission, roles, fallback, children }: RoleGuardProps) {
-  const { role, can } = usePermissions();
+export default function RoleGuard({ permission, ownerOnly, fallback, children }: RoleGuardProps) {
+  const { isOwner, can } = usePermissions();
 
-  // Check role whitelist
-  if (roles && !roles.includes(role)) {
+  if (ownerOnly && !isOwner) {
     return <>{fallback ?? <AccessDenied />}</>;
   }
 

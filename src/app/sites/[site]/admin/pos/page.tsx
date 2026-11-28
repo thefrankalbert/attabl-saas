@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function POSPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
-  await requireAdminPermission(site, 'pos.use');
+  await requireAdminPermission(site, 'orders.take');
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 

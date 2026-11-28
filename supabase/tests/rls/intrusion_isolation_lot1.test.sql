@@ -40,8 +40,8 @@ values
   (gen_random_uuid(), 'e2000000-0000-0000-0000-00000000000a', 'e1000000-0000-0000-0000-000000000001', 'proprio-a@test.local', 'owner', true, false),
   (gen_random_uuid(), 'e2000000-0000-0000-0000-00000000000b', 'e1000000-0000-0000-0000-000000000002', 'proprio-b@test.local', 'owner', true, false),
   (gen_random_uuid(), 'e2000000-0000-0000-0000-00000000000a', 'e1000000-0000-0000-0000-000000000003', 'gerant-desactive@test.local', 'manager', false, false),
-  (gen_random_uuid(), 'e2000000-0000-0000-0000-00000000000a', 'e1000000-0000-0000-0000-000000000004', 'sa-vivant@test.local', 'owner', true, true),
-  (gen_random_uuid(), 'e2000000-0000-0000-0000-00000000000a', 'e1000000-0000-0000-0000-000000000005', 'sa-revoque@test.local', 'owner', false, true);
+  (gen_random_uuid(), 'e2000000-0000-0000-0000-00000000000a', 'e1000000-0000-0000-0000-000000000004', 'sa-vivant@test.local', 'super_admin', true, true),
+  (gen_random_uuid(), 'e2000000-0000-0000-0000-00000000000a', 'e1000000-0000-0000-0000-000000000005', 'sa-revoque@test.local', 'super_admin', false, true);
 
 reset request.jwt.claim.role;
 

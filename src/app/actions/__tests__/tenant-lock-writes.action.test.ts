@@ -57,7 +57,14 @@ vi.mock('@/lib/supabase/admin', () => ({
     return {};
   },
 }));
-vi.mock('@/lib/auth/get-session', () => {
+vi.mock('@/lib/auth/get-session', async () => {
+  // Niveaux calcules par la vraie resolution, jamais ecrits a la main.
+  const { getEffectiveLevels } = await import('@/lib/permissions');
+  const owner = {
+    postes: ['owner'],
+    isOwner: true,
+    levels: getEffectiveLevels({ postes: ['owner'] }),
+  };
   class AuthError extends Error {
     status: number;
     constructor(message: string, status = 403) {
@@ -73,14 +80,14 @@ vi.mock('@/lib/auth/get-session', () => {
       tenantId,
       supabase,
       user,
-      role: 'owner',
+      ...owner,
       adminUserId: 'a-1',
     }),
     getAuthenticatedUserWithTenant: async () => ({
       tenantId: '22222222-2222-4222-a222-222222222222',
       supabase,
       user,
-      role: 'owner',
+      ...owner,
     }),
   };
 });

@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { loadSessionMemberships } from '@/lib/auth/session-destination';
 import { onboardingGateDestination } from '@/lib/auth/post-login-destination';
+// Toutes les classes de l'application (la feuille racine ne porte que celles du site public).
+import '@/styles/app.css';
 
 export const metadata: Metadata = {
   title: 'Créer votre établissement - ATTABL',

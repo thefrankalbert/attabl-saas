@@ -15,7 +15,8 @@
 -- CE QUE CE TEST PROTEGE AUSSI (et c est la moitie du travail): le gerant doit
 -- continuer a encaisser et a corriger une commande. Une policy trop serree
 -- couperait le service en salle. Les taxes, elles, relevent de `settings.edit`
--- depuis 20261124110000 (audit B103): le gerant ne les change plus par defaut.
+-- depuis 20261124110000 (audit B103). Depuis le lot 1 des roles le gerant detient
+-- `settings.edit` par defaut: il les change, sauf si le proprietaire le lui retire.
 --
 -- Execution: psql "$LOCAL_DB" -f supabase/tests/rls/argent_write_roles.test.sql
 
@@ -150,14 +151,14 @@ select is(
 );
 
 -- Depuis 20261124110000 (audit B103), la politique de `tenants` exige
--- `settings.edit`, que le gerant n'a pas par defaut (DEFAULT_PERMISSIONS):
--- comme dans l'application, il ne change PAS la TVA. Le proprietaire et
--- l'administrateur, eux, la changent (revue_lot_b2a.test.sql).
+-- `settings.edit`. Lot 1 des roles (conception B.4): le gerant le detient par
+-- defaut, il change donc la TVA. Le refus (serveur, gerant a qui le
+-- proprietaire le retire) est verrouille dans revue_lot_b2a.test.sql.
 update public.tenants set tax_rate = 20 where id = 'c3333333-3333-3333-3333-333333333333';
 select is(
   (select tax_rate::int from public.tenants where id = 'c3333333-3333-3333-3333-333333333333'),
-  18,
-  'argent: un manager sans settings.edit ne change PAS la TVA du restaurant (B103)'
+  20,
+  'argent: un manager (settings.edit par defaut) change la TVA du restaurant (B103)'
 );
 
 -- Depuis 20261124100200 (constat B150), plus aucun employe, gerant compris,

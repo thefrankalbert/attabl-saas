@@ -24,6 +24,12 @@ import { randomUUID } from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { assertNotProduction } from './assert-not-production';
+import {
+  deleteAccountsWithoutMembership,
+  deleteStraySeedAccounts,
+  listTenantMemberUserIds,
+} from './lib/seed-accounts';
+import type { Poste } from '../src/types/permission.types';
 
 // ─── ENV LOADING (no dotenv dependency) ────────────────────────────────────
 function loadEnv(): Record<string, string> {
@@ -238,7 +244,7 @@ for (const s of suppliersDef) supplierId[s.slug] = randomUUID();
 interface StaffMember {
   email: string;
   fullName: string;
-  role: string;
+  poste: Poste;
   phone: string;
   userId?: string;
   adminUserId?: string;
@@ -257,37 +263,37 @@ const STAFF: StaffMember[] = [
   {
     email: 'owner@demo.attabl.com',
     fullName: 'Amadou Diallo',
-    role: 'owner',
+    poste: 'owner',
     phone: '+235 66 00 00 00',
   },
   {
     email: 'chef@demo.attabl.com',
     fullName: 'Fatime Hassan',
-    role: 'chef',
+    poste: 'chef',
     phone: '+235 66 10 10 10',
   },
   {
     email: 'manager@demo.attabl.com',
     fullName: 'Ousmane Kabore',
-    role: 'manager',
+    poste: 'manager',
     phone: '+235 66 20 20 20',
   },
   {
     email: 'caisse@demo.attabl.com',
     fullName: 'Mariam Toure',
-    role: 'cashier',
+    poste: 'cashier',
     phone: '+235 66 30 30 30',
   },
   {
     email: 'serveur1@demo.attabl.com',
     fullName: 'Ali Mahamat',
-    role: 'waiter',
+    poste: 'waiter',
     phone: '+235 66 40 40 40',
   },
   {
     email: 'serveur2@demo.attabl.com',
     fullName: 'Aicha Ndiaye',
-    role: 'waiter',
+    poste: 'waiter',
     phone: '+235 66 50 50 50',
   },
 ];
@@ -366,18 +372,6 @@ async function cleanup() {
     .eq('slug', 'lepicurien')
     .single();
 
-  // Auth users may exist even if the tenant row was deleted.
-  const {
-    data: { users },
-  } = await supabase.auth.admin.listUsers();
-  for (const staff of STAFF) {
-    const existingUser = users?.find((u) => u.email === staff.email);
-    if (existingUser) {
-      await supabase.auth.admin.deleteUser(existingUser.id);
-      log(`  Deleted auth user: ${staff.email}`);
-    }
-  }
-
   // Purge old photos: the dossier replaces every image (rule: replacement, not
   // merge), so stale files must not survive in the public buckets. Cover images
   // of items live under lepicurien/ and category covers under lepicurien/categories/.
@@ -396,12 +390,25 @@ async function cleanup() {
   await purgeFolder('menu-items', 'lepicurien');
 
   if (!existing) {
+    // Pas de restaurant : un compte du seed ne part que s'il n'appartient a
+    // aucun restaurant (jamais de suppression decidee sur l'email seul).
+    await deleteStraySeedAccounts(
+      supabase,
+      STAFF.map((staff) => staff.email),
+      log,
+    );
     log('No existing tenant found. Starting fresh.');
     return;
   }
 
   const tenantId = existing.id;
   log(`Found existing tenant ${tenantId}. Removing all associated data...`);
+
+  // Les comptes des membres, lus AVANT la suppression : le restaurant part
+  // d'abord (sa cascade emporte les lignes de membres, proprietaire compris),
+  // les comptes ensuite. L'ordre inverse est refuse par la base, qui protege
+  // le proprietaire d'un restaurant vivant.
+  const memberUserIds = await listTenantMemberUserIds(supabase, tenantId);
 
   // Delete in dependency order (child tables first). Missing tables skip silently.
   const tablesToClean = [
@@ -426,7 +433,6 @@ async function cleanup() {
     'zones',
     'venues',
     'onboarding_progress',
-    'admin_users',
   ];
 
   for (const table of tablesToClean) {
@@ -441,7 +447,10 @@ async function cleanup() {
   }
 
   const { error: tenantDelError } = await supabase.from('tenants').delete().eq('id', tenantId);
-  if (tenantDelError) log(`  Warning deleting tenant: ${tenantDelError.message}`);
+  if (tenantDelError)
+    throw new Error(`Suppression du restaurant impossible : ${tenantDelError.message}`);
+
+  await deleteAccountsWithoutMembership(supabase, memberUserIds, log);
 
   log('Cleanup complete.');
 }
@@ -511,12 +520,13 @@ async function createUsers() {
       email: staff.email,
       full_name: staff.fullName,
       phone: staff.phone,
-      role: staff.role,
+      // `role` n'est pas ecrit : la base le projette depuis `postes`.
+      postes: [staff.poste],
       is_active: true,
       is_super_admin: false,
     });
     if (adminError) throw new Error(`Admin user ${staff.email} failed: ${adminError.message}`);
-    log(`User created: ${staff.email} (${staff.role})`);
+    log(`User created: ${staff.email} (${staff.poste})`);
   }
 }
 
@@ -702,7 +712,7 @@ async function uploadMedia() {
 async function createInventory() {
   logStep(6, 'Create Suppliers, Ingredients, Recipes & Opening Stock');
 
-  const owner = STAFF.find((s) => s.role === 'owner');
+  const owner = STAFF.find((s) => s.poste === 'owner');
 
   const supplierRows = suppliersDef.map((s) => ({
     id: supplierId[s.slug],
@@ -791,7 +801,7 @@ interface SeededOrder {
 async function createSalesOrders(): Promise<SeededOrder[]> {
   logStep(7, 'Create one week of POS orders (exact quantities)');
 
-  const cashier = STAFF.find((s) => s.role === 'cashier');
+  const cashier = STAFF.find((s) => s.poste === 'cashier');
   const paymentMethods: Array<'cash' | 'card' | 'wave'> = ['cash', 'cash', 'card', 'wave'];
 
   const allOrders: Array<Record<string, unknown>> = [];
@@ -911,8 +921,8 @@ async function createSalesOrders(): Promise<SeededOrder[]> {
 async function destockChronological(refs: SeededOrder[]) {
   logStep(8, 'Replay stock ledger chronologically (destock + delivery)');
 
-  const chef = STAFF.find((s) => s.role === 'chef');
-  const manager = STAFF.find((s) => s.role === 'manager');
+  const chef = STAFF.find((s) => s.poste === 'chef');
+  const manager = STAFF.find((s) => s.poste === 'manager');
   const delivery = deliveriesDef.find((d) => d.lines && d.lines.length > 0);
   const deliveryDayIdx = delivery ? ventes.days.indexOf(delivery.date) : -1;
 
@@ -1145,7 +1155,7 @@ function printSummary() {
   log(`Ventes:   ${ventes.days[0]} -> ${ventes.days[6]} (exactes, verifiees)`);
   log('');
   log('Comptes demo (mot de passe : voir DEMO_SEED_PASSWORD dans .env.local) :');
-  for (const s of STAFF) log(`  ${s.email} (${s.role})`);
+  for (const s of STAFF) log(`  ${s.email} (${s.poste})`);
   log('');
   log('TEST 5 (inventaire physique du 2026-07-20) - a saisir en UI le jour J:');
   const variances = expected.expected_variances;

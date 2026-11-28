@@ -6,12 +6,16 @@ import {
   type ReminderRule,
   type ReminderSettings,
 } from '@/lib/validations/reminders.schema';
-import type { AdminRole, OpeningHoursMap } from '@/types/admin.types';
+import type { OpeningHoursMap } from '@/types/admin.types';
+import { loadPosteOverrides } from '@/lib/auth/member-rights';
+import { toPermissionMap, toPostes } from '@/lib/permissions';
+import { STAFF_POSTES } from '@/types/permission.types';
 import type { ServicePush } from '@/services/push.service';
 import {
   dueNotStarted,
   dueReadyNotServed,
   managersOf,
+  moneyReadersOf,
   preServiceWindow,
   weeklyCoachWindow,
   type DueReminder,
@@ -95,7 +99,7 @@ export function createReminderService(supabase: SupabaseClient, deps: { push: Se
       inBatches(ids, async (batch) => {
         const { data, error: e } = await supabase
           .from('admin_users')
-          .select('id, user_id, tenant_id, role')
+          .select('id, user_id, tenant_id, postes, permission_overrides')
           .in('tenant_id', batch)
           .eq('is_active', true)
           .is('deleted_at', null);
@@ -120,7 +124,8 @@ export function createReminderService(supabase: SupabaseClient, deps: { push: Se
       id: s.id as string,
       userId: (s.user_id as string | null) ?? null,
       tenantId: s.tenant_id as string,
-      role: s.role as AdminRole,
+      postes: toPostes(s.postes),
+      overrides: toPermissionMap(s.permission_overrides),
     }));
     const muted = new Set(muteRows.map((m) => `${m.admin_user_id}:${m.rule}`));
     return {
@@ -411,8 +416,18 @@ export function createReminderService(supabase: SupabaseClient, deps: { push: Se
     }
 
     const week = settings.rules.weekly_coach ? weeklyCoachWindow(tz, now) : null;
-    const owners = managers.filter((m) => m.role === 'owner' || m.role === 'admin');
-    const weekTo = week ? await pendingRecipients('weekly_coach', week.ymd, owners) : [];
+    // Le coach hebdomadaire contient du chiffre d'affaires: il va a qui detient
+    // le DROIT `reports.money` (reglages du restaurant et par personne compris),
+    // pas a un nom de poste. Lecture en panne: echec ferme (`moneyReadersOf`).
+    let weekTo: StaffMember[] = [];
+    if (week) {
+      const { overrides, failed } = await loadPosteOverrides(supabase, tenant.id, STAFF_POSTES);
+      weekTo = await pendingRecipients(
+        'weekly_coach',
+        week.ymd,
+        moneyReadersOf(ctx.staff, tenant.id, failed ? null : overrides),
+      );
+    }
     if (week && weekTo.length) {
       const facts = await loadCoachFacts(supabase, tenant.id, tz, now);
       if (facts && (facts.peak || facts.dropped.length)) {

@@ -146,7 +146,7 @@ export default async function SupportPage() {
               {t('faq.subtitle')}{' '}
               <Link
                 href="/contact"
-                className="font-medium text-orange-600 hover:underline dark:text-orange-400"
+                className="font-medium text-orange-700 hover:underline dark:text-orange-400"
               >
                 {t('faq.cta')}
               </Link>

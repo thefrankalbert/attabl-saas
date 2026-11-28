@@ -9,8 +9,8 @@ import { getStorageCleanup } from '@/services/storage-cleanup.service';
 import { ServiceError } from '@/services/errors';
 import { getTranslations } from 'next-intl/server';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
+import { MENU_WITH_PRICE } from '@/lib/admin-roles';
 import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-tenant-serving';
-import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 import { revalidateTag } from 'next/cache';
 import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
 import { menuItemCreateSchema, menuItemUpdateSchema } from '@/lib/validations/menu-item.schema';
@@ -46,7 +46,9 @@ export async function actionCreateMenuItem(
   const t = await getTranslations('errors');
 
   try {
-    await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
+    // Creer un plat, c'est fixer son prix: les deux droits, comme la politique
+    // INSERT de `menu_items` en base.
+    await getAuthenticatedUserForTenant(tenantId, MENU_WITH_PRICE);
     // Coupure du restaurant: toute action de ce fichier est une ecriture.
     await assertTenantServing(tenantId);
   } catch (err) {
@@ -111,7 +113,6 @@ type WriteResponse = {
 
 /**
  * SECURITY: Verifies user belongs to tenant before updating a menu item.
- * roles: owner, admin, manager.
  */
 export async function actionUpdateMenuItem(
   tenantId: string,
@@ -126,8 +127,10 @@ export async function actionUpdateMenuItem(
 
   const t = await getTranslations('errors');
 
+  let canEditPrice = false;
   try {
-    await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
+    const { levels } = await getAuthenticatedUserForTenant(tenantId, 'menu.edit');
+    canEditPrice = levels['menu.price'] === 'full';
     // Coupure du restaurant: toute action de ce fichier est une ecriture.
     await assertTenantServing(tenantId);
   } catch (err) {
@@ -149,14 +152,29 @@ export async function actionUpdateMenuItem(
   try {
     const supabase = await createClient();
     const menuItemService = createMenuItemService(supabase);
+    // PRIX. Le formulaire d'un plat renvoie toujours `price` et `prices`, meme
+    // inchanges. Sans le droit `menu.price`, on ne refuse donc que si le prix
+    // CHANGE (meme regle que le declencheur `garder_prix_carte`), et les champs
+    // de prix sont retires de l'ecriture. Refus AVANT toute ecriture.
+    const data = parsedPayload.data;
+    if (!canEditPrice && ('price' in data || 'prices' in data)) {
+      const current = await menuItemService.getPrices(itemId, tenantId);
+      const samePrice = !('price' in data) || Number(data.price) === Number(current.price);
+      const samePrices =
+        !('prices' in data) ||
+        JSON.stringify(data.prices ?? null) === JSON.stringify(current.prices ?? null);
+      if (!samePrice || !samePrices) return { error: t('permissionDenied') };
+      delete data.price;
+      delete data.prices;
+    }
     // Remplacement d'image: on retient les anciennes avant l'ecriture, on les
     // libere apres (R-05). Un plat supprime en douceur garde sa photo.
-    const touchesImages = 'image_url' in parsedPayload.data || 'images' in parsedPayload.data;
+    const touchesImages = 'image_url' in data || 'images' in data;
     const cleanup = getStorageCleanup();
     const previousImages = touchesImages
       ? await cleanup.imageUrlsOf('menu_items', itemId, tenantId)
       : [];
-    await menuItemService.updateMenuItem(itemId, tenantId, parsedPayload.data);
+    await menuItemService.updateMenuItem(itemId, tenantId, data);
     if (touchesImages) await cleanup.release(tenantId, previousImages);
     revalidateTag(CACHE_TAG_MENUS, 'max');
     return { success: true };
@@ -170,7 +188,6 @@ export async function actionUpdateMenuItem(
 
 /**
  * SECURITY: Verifies user belongs to tenant before deleting a menu item.
- * roles: owner, admin, manager.
  */
 export async function actionDeleteMenuItem(
   tenantId: string,
@@ -185,7 +202,7 @@ export async function actionDeleteMenuItem(
   const t = await getTranslations('errors');
 
   try {
-    await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
+    await getAuthenticatedUserForTenant(tenantId, 'menu.edit');
     // Coupure du restaurant: toute action de ce fichier est une ecriture.
     await assertTenantServing(tenantId);
   } catch (err) {
@@ -215,7 +232,6 @@ export async function actionDeleteMenuItem(
 
 /**
  * SECURITY: Verifies user belongs to tenant before toggling item availability.
- * roles: owner, admin, manager.
  */
 export async function actionToggleMenuItemAvailable(
   tenantId: string,
@@ -235,7 +251,7 @@ export async function actionToggleMenuItemAvailable(
   const t = await getTranslations('errors');
 
   try {
-    await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
+    await getAuthenticatedUserForTenant(tenantId, 'menu.edit');
     // Coupure du restaurant: toute action de ce fichier est une ecriture.
     await assertTenantServing(tenantId);
   } catch (err) {
@@ -265,7 +281,6 @@ export async function actionToggleMenuItemAvailable(
 
 /**
  * SECURITY: Verifies user belongs to tenant before toggling item featured flag.
- * roles: owner, admin, manager.
  */
 export async function actionToggleMenuItemFeatured(
   tenantId: string,
@@ -285,7 +300,7 @@ export async function actionToggleMenuItemFeatured(
   const t = await getTranslations('errors');
 
   try {
-    await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
+    await getAuthenticatedUserForTenant(tenantId, 'menu.edit');
     // Coupure du restaurant: toute action de ce fichier est une ecriture.
     await assertTenantServing(tenantId);
   } catch (err) {
@@ -315,7 +330,6 @@ export async function actionToggleMenuItemFeatured(
 
 /**
  * SECURITY: Verifies user belongs to tenant before updating item price.
- * roles: owner, admin, manager.
  */
 export async function actionUpdateMenuItemPrice(
   tenantId: string,
@@ -331,7 +345,7 @@ export async function actionUpdateMenuItemPrice(
   const t = await getTranslations('errors');
 
   try {
-    await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
+    await getAuthenticatedUserForTenant(tenantId, 'menu.price');
     // Coupure du restaurant: toute action de ce fichier est une ecriture.
     await assertTenantServing(tenantId);
   } catch (err) {

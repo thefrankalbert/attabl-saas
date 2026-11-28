@@ -9,6 +9,7 @@ import { verifyOrigin } from '@/lib/csrf';
 import { updateSubscriptionSchema } from '@/lib/validations/checkout.schema';
 import { withStripeBreaker } from '@/lib/stripe/circuit-breaker';
 import { getTenantBillingIds } from '@/lib/billing/tenant-billing-ids';
+import { resolveLiveMember } from '@/lib/auth/resolve-admin-permission';
 import { refuseIfPaidByFlutterwave } from '@/lib/billing/flutterwave/guard';
 import { refusDEtat } from '@/lib/billing/tenant-billing-state';
 
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
     }
 
     // 2. Resolve the ACTIVE tenant from the middleware-injected slug (multi-tenant safe),
-    //    then verify the user is an owner/admin of THAT tenant.
+    //    then verify the user holds full `billing.manage` (the owner) on THAT tenant.
     const tenantSlug = readTenantSlug(request.headers).slug;
     if (!tenantSlug) {
       return NextResponse.json({ error: 'Contexte tenant manquant' }, { status: 400 });
@@ -73,21 +74,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: refusEtat.error }, { status: refusEtat.status });
     }
 
-    const { data: adminUser, error: adminUserError } = await supabase
-      .from('admin_users')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('tenant_id', tenant.id)
-      .eq('is_active', true)
-      .maybeSingle();
-
-    if (adminUserError || !adminUser) {
+    const member = await resolveLiveMember(supabase, user.id, tenant.id);
+    if (!member) {
       return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
     }
 
-    if (adminUser.role !== 'owner' && adminUser.role !== 'admin') {
+    // Changer de formule engage une depense: `billing.manage` EN ENTIER. Le
+    // niveau borne du gerant (voir les factures) ne suffit pas.
+    if (member.levels['billing.manage'] !== 'full') {
       return NextResponse.json(
-        { error: "Seuls les proprietaires et administrateurs peuvent modifier l'abonnement." },
+        { error: "Seul le proprietaire peut modifier l'abonnement." },
         { status: 403 },
       );
     }
@@ -96,7 +92,7 @@ export async function POST(request: Request) {
     const refusFlutterwave = await refuseIfPaidByFlutterwave(tenant.id);
     if (refusFlutterwave) return refusFlutterwave;
 
-    // Membership + role verified above with the session client: the Stripe id
+    // Membership + droit verified above with the session client: the Stripe id
     // is now read with the service role (column not readable by `authenticated`).
     const subscriptionId = (await getTenantBillingIds(tenant.id))?.stripe_subscription_id;
     if (!subscriptionId) {

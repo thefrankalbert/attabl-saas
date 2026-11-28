@@ -290,7 +290,7 @@
     "cancelOrderKeep": "Keep the order",
     "cancelOrderDone": "Order cancelled",
     "cancelOrderFailed": "Could not cancel",
-    "cancelNeedsMoneyAuthority": "A deposit is in the register. Only a manager, an admin or the owner can cancel this order.",
+    "cancelNeedsMoneyAuthority": "A deposit is in the register. Only the owner or a manager can cancel this order.",
     "statusLabel": "Status",
     "printLabel": "Print",
     "printKitchenTicket": "Kitchen Ticket",
@@ -588,7 +588,7 @@
       "metaTitle": "Privacy Policy",
       "metaDescription": "What data ATTABL collects, who hosts it, how long we keep it and how to exercise your rights.",
       "heading": "Privacy Policy",
-      "lastUpdate": "Last updated: November 24, 2026",
+      "lastUpdate": "Last updated: November 27, 2026",
       "section1Title": "1. Who is responsible for your data",
       "section1Body": "ATTABL is the data controller for its website and for the accounts of restaurant and hotel owners (account, subscription, login). For a restaurant's customers (name, phone, delivery address on an order) and for a restaurant's team, the restaurant decides how the data is used. ATTABL then acts on its behalf, as a processor.",
       "companyHeading": "Company details",
@@ -660,6 +660,16 @@
           "name": "Flutterwave",
           "role": "Subscription payment by mobile money, once this payment method is turned on. It is not active yet.",
           "country": "Depends on the provider"
+        },
+        "google": {
+          "name": "Google",
+          "role": "Sign-in with a Google account, if you choose it: Google sends us your name and email address",
+          "country": "United States"
+        },
+        "github": {
+          "name": "GitHub",
+          "role": "Storage of the encrypted database backups ({days} days)",
+          "country": "United States"
         }
       },
       "section5Title": "5. Applicable laws",
@@ -683,6 +693,7 @@
       "retentionClosed": "Deleted restaurant, {days} days after deletion: the team's email address, name and phone (sign-in accounts are deleted, including Google sign-in), credit customer accounts, supplier contacts, the restaurant's audit logs, and the restaurant's phone and address. After that, the restaurant can no longer be restored.",
       "retentionAccount": "Active account and venue: kept for the duration of the subscription.",
       "retentionAccounting": "Payments, invoices and payment events: never erased before the legal retention period for accounting records ends.",
+      "retentionBackups": "Database backups: encrypted, kept {days} days, then deleted. Data deleted from the database disappears from the backups at most {days} days later.",
       "retentionContact": "Messages sent through the contact form: they reach us by email, we do not store them in our database and we delete them from our mailbox after {months} months.",
       "section9Title": "9. Atfood mobile app",
       "section9Body": "Atfood is the ATTABL iPhone app for restaurant staff. It uses the camera only to photograph dishes. Photos are uploaded to the restaurant's menu storage (Supabase) and shown publicly on the restaurant's menu. Optional background removal and photo quality checks run on the phone (Apple Vision): nothing is sent to third parties. The app uses your account data: email address, user ID and the restaurant you belong to. If the app crashes, an anonymous crash report with no personal data may be sent to Sentry so we can fix the problem. You can request the deletion of your account from the app: Profil > Supprimer mon compte (Profile > Delete my account).",
@@ -725,7 +736,7 @@
             },
             "truck": {
               "title": "Delivery orders",
-              "desc": "Track runs and drivers."
+              "desc": "Orders with a delivery address, tracked like any other."
             },
             "bed": {
               "title": "Room service",
@@ -1912,6 +1923,7 @@
       "restaurantPlaceholder": "The Garden",
       "termsNote": "By creating an account, you accept the <terms>terms of use</terms> and the <privacy>privacy policy</privacy>.",
       "trialNote": "14 days free - no commitment",
+      "legalNotice": "<terms>Terms of use</terms> and <privacy>privacy</privacy>",
       "accountDeletedSuccess": "Done: your account is deleted. Thank you for working with ATTABL."
     },
     "confirm": {
@@ -2458,6 +2470,7 @@
       "venues": "Venues",
       "unlimited": "Unlimited",
       "changePlan": "Change plan",
+      "ownerPaysOnly": "Only the owner pays for the subscription and changes the plan.",
       "manageBilling": "Manage billing",
       "planChanged": "Plan updated. Your billing is prorated.",
       "planChangeError": "Could not change the plan. Try again.",
@@ -3327,13 +3340,6 @@
     "navTheme": "Dark / Light mode",
     "navInvoices": "Invoices",
     "navAuditLogs": "Audit Log",
-    "roleOwner": "General administrator",
-    "roleAdmin": "Administrator",
-    "roleManager": "Manager",
-    "roleStaff": "Staff",
-    "roleKitchen": "Kitchen",
-    "roleServer": "Server",
-    "roleUnknown": "Unknown",
     "groupMarketing": "Marketing",
     "groupSettings": "Settings",
     "groupAnalyse": "Analytics",
@@ -3563,18 +3569,19 @@
     "editPermissions": "Manage permissions",
     "deleteUser": "Delete user",
     "email": "Email",
-    "role": "Role",
     "lastLogin": "Last login",
     "createdAt": "Created on",
-    "roleOwner": "General administrator",
-    "roleAdmin": "Administrator",
+    "roleOwner": "Owner",
     "roleManager": "Manager",
     "roleCashier": "Cashier",
-    "roleChef": "Head chef",
+    "roleChef": "Chef",
+    "roleBartender": "Bartender",
+    "roleReception": "Front desk",
     "roleWaiter": "Waiter",
-    "roleStaff": "Staff",
-    "roleKitchen": "Kitchen",
-    "roleServer": "Server",
+    "roleCook": "Cook",
+    "roleCrew": "Crew member",
+    "roleSales": "Sales",
+    "roleProduction": "Production",
     "noUsers": "No users",
     "confirmDelete": "Are you sure you want to delete this user?",
     "userAdded": "User added",
@@ -3584,13 +3591,22 @@
     "inviteUser": "Invite user",
     "inviteSent": "Invitation sent",
     "newMember": "New Member",
-    "roleOwnerLabel": "General administrator",
-    "roleAdminLabel": "Administrator",
-    "roleManagerLabel": "Manager",
-    "roleCashierLabel": "Cashier",
-    "roleChefLabel": "Head chef",
-    "roleWaiterLabel": "Waiter",
     "roleDefaultLabel": "User",
+    "postesLabel": "Positions",
+    "postesHint": "Tick one or more positions. The person gets the rights of each.",
+    "posteRequired": "Choose at least one position.",
+    "posteDesc": {
+      "manager": "Runs the restaurant day to day. Sees invoices, does not pay the subscription.",
+      "chef": "Owns the menu, prices, stock and the kitchen.",
+      "cashier": "Takes orders and takes payment.",
+      "bartender": "Works the bar, prepares drinks and takes payment.",
+      "reception": "Welcomes guests, takes orders and takes payment.",
+      "waiter": "Takes orders on the floor. Does not take payment.",
+      "cook": "Follows orders in the kitchen and sees stock.",
+      "crew": "Covers the floor, the till and the kitchen.",
+      "sales": "Sells at the counter and takes payment.",
+      "production": "Makes what is ordered and sees stock."
+    },
     "inactive": "Inactive",
     "neverConnected": "Never connected",
     "neverLoggedIn": "Never logged in",
@@ -3601,12 +3617,6 @@
     "addMember": "Add member",
     "fullName": "Full name",
     "emailPlaceholder": "john@restaurant.com",
-    "roleAndPermissions": "Role & Permissions",
-    "roleDescAdmin": "Manages the team, settings and the whole restaurant, except the owner's rights.",
-    "roleDescManager": "Follows orders, stock and reports day to day.",
-    "roleDescCashier": "Takes payments and runs the till.",
-    "roleDescChef": "Runs the kitchen and prepares orders.",
-    "roleDescWaiter": "Takes orders and marks them served, without handling money.",
     "cancel": "Cancel",
     "deleteUserConfirm": "Are you sure you want to delete this user?",
     "userDeletedConfirm": "User deleted",
@@ -3818,62 +3828,74 @@
     "retry": "Retry"
   },
   "permissions": {
-    "title": "Permissions by Role",
-    "permissionColumn": "Permission",
+    "title": "Rights by position",
+    "permissionColumn": "Right",
     "saving": "Saving...",
     "loadError": "Error loading permissions",
     "saveError": "Error saving permissions",
     "deleteError": "Error deleting permissions",
     "restoreError": "Error restoring defaults",
-    "restoreSuccess": "Default permissions restored for {role}",
+    "restoreSuccess": "Default rights restored for the {poste} position",
     "accessDenied": "Access denied",
-    "noAccessHint": "Your role does not give access to this page. Ask the owner if you need it.",
-    "restoreDefaults": "Restore defaults",
+    "noAccessHint": "Your positions do not give access to this page. Ask the owner if you need it.",
     "reset": "Reset",
     "modified": "modified",
     "legendAllowed": "allowed",
     "legendDenied": "denied",
     "legendModified": "differs from default",
     "autoSaveNote": "Changes are saved automatically.",
-    "userTitle": "Member permissions",
-    "userSubtitle": "Adjust {name}'s access beyond their role.",
-    "useRoleDefault": "Role default",
+    "userTitle": "Member rights",
+    "userSubtitle": "Adjust {name}'s rights beyond their positions.",
+    "useRoleDefault": "Positions default",
     "autoSaveHint": "Your changes are saved automatically.",
     "saved": "Saved",
-    "ownerAllAccess": "The owner has full access. Nothing to adjust.",
+    "ownerAllAccess": "The owner has every right. Nothing to adjust.",
     "perm": {
-      "menu_view": "View menus",
-      "menu_edit": "Edit menus",
-      "orders_view": "View orders",
-      "orders_manage": "Manage orders",
-      "orders_pay": "Take money (payments, tabs, cancellations)",
-      "reports_view": "View reports",
-      "pos_use": "Use POS",
-      "inventory_view": "View inventory",
-      "inventory_edit": "Edit inventory",
-      "team_view": "View team",
-      "team_manage": "Manage team",
-      "settings_view": "View settings",
-      "settings_edit": "Edit settings"
+      "menu_view": "View the menu",
+      "menu_edit": "Edit the menu",
+      "menu_price": "Change prices",
+      "orders_take": "Take an order",
+      "kitchen_track": "Follow in the kitchen or at the bar",
+      "orders_cancel": "Cancel an order",
+      "orders_discount": "Give a discount",
+      "orders_refund": "Refund",
+      "orders_pay": "Take payment",
+      "cash_close": "Close the till",
+      "cash_count": "Blind count of own till",
+      "reports_menu": "Menu reports",
+      "reports_money": "Money reports",
+      "reports_own": "Own sales",
+      "inventory_view": "View stock",
+      "inventory_edit": "Enter stock",
+      "suppliers_manage": "Suppliers and purchase orders",
+      "team_view": "View the team",
+      "team_manage": "Hire and remove",
+      "settings_edit": "Restaurant settings",
+      "audit_view": "Audit log",
+      "billing_manage": "ATTABL subscription"
     },
-    "role": {
-      "owner": "General administrator",
-      "admin": "Administrator",
-      "manager": "Manager",
-      "cashier": "Cashier",
-      "chef": "Chef",
-      "waiter": "Waiter"
+    "limited": {
+      "code": "soon, with a manager's code",
+      "merchantQr": "soon, by merchant QR",
+      "invoices": "invoices only",
+      "removed": "removed"
     },
     "category": {
       "menu": "Menu",
       "orders": "Orders",
+      "cash": "Till",
       "reports": "Reports",
-      "pos": "Point of Sale",
-      "inventory": "Inventory",
+      "inventory": "Stock",
       "team": "Team",
       "settings": "Settings"
     },
-    "ownerOnlyHint": "Only the restaurant owner can change permissions."
+    "ownerOnlyHint": "Only the restaurant owner sets rights.",
+    "comingSoon": "coming soon",
+    "note": {
+      "orders_cancel": "For now, cancelling an unpaid order follows the Take payment right.",
+      "orders_discount": "Manages promo codes. At the till, applying a code follows the Take payment right.",
+      "orders_refund": "For now, refunding also needs Take payment, Cancel an order and Give a discount."
+    }
   },
   "coupons": {
     "title": "Coupons",
@@ -5509,7 +5531,9 @@
     "namePlaceholder": "Name",
     "nameEnPlaceholder": "Name (translation)",
     "pricePlaceholder": "Price",
-    "priceNegative": "The price cannot be negative."
+    "priceNegative": "The price cannot be negative.",
+    "needsPriceRight": "This add-on has a price. Creating or deleting it needs the Change prices right.",
+    "needsEditRight": "You do not have the right to edit the menu."
   },
   "allergens": {
     "title": "Allergens",
@@ -5679,7 +5703,7 @@
       "ouaga": {
         "name": "Ouagadougou",
         "country": "Burkina Faso",
-        "phone": "+226 55 21 22 93"
+        "phone": "+226 65 56 54 11"
       },
       "ndjamena": {
         "name": "N'Djamena",
@@ -5905,7 +5929,8 @@
       "reset": "A fresh password, and back to work.",
       "invite": "Your team is waiting on the floor.",
       "unauthorized": "Every venue has its own keys.",
-      "emailChange": "An up-to-date address, and on we go."
+      "emailChange": "An up-to-date address, and on we go.",
+      "unsubscribe": "Your inbox, your rules."
     }
   },
   "accountDeletion": {
@@ -5983,5 +6008,22 @@
       "invalidInput": "Type the 6 digits of the code.",
       "unauthenticated": "Your session has expired. Sign in again."
     }
+  },
+  "unsubscribe": {
+    "metaTitle": "Unsubscribe - ATTABL",
+    "title": "Fewer emails?",
+    "subtitle": "One click, and ATTABL stops its tips and trial reminders. Emails your account needs keep coming: password, payment, stock alerts.",
+    "confirm": "Unsubscribe me",
+    "doneTitle": "Done.",
+    "doneBody": "You will no longer get our reminders at this address. Changed your mind?",
+    "resubscribe": "Subscribe me again",
+    "resubscribedTitle": "You are subscribed again.",
+    "resubscribedBody": "Our tips will be back in your inbox.",
+    "unsubscribeAgain": "Unsubscribe me again",
+    "invalidTitle": "This link does not work.",
+    "invalidBody": "It is incomplete or damaged. Open it from the email you received, or write to us at support@attabl.com.",
+    "error": "That did not work. Try again in a moment.",
+    "rateLimited": "Too many tries. Wait a minute, then try again.",
+    "backHome": "Back to home"
   }
 }

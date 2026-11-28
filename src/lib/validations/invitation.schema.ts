@@ -1,8 +1,21 @@
 import { z } from 'zod';
 import { passwordSchema } from './common.schema';
-import { PERMISSION_CODES } from '@/types/permission.types';
+import { PERMISSION_CODES, STAFF_POSTES } from '@/types/permission.types';
 
-const INVITABLE_ROLES = ['admin', 'manager', 'cashier', 'chef', 'waiter'] as const;
+/**
+ * Postes d'un membre : au moins un, sans doublon, jamais `owner` (le
+ * proprietaire n'est ni invitable ni attribuable ; la base le refuse aussi).
+ */
+export const postesSchema = z
+  .array(
+    z.enum(STAFF_POSTES, { error: 'Poste invalide (le proprietaire ne peut pas etre attribue)' }),
+  )
+  .min(1, 'Choisissez au moins un poste')
+  .max(STAFF_POSTES.length)
+  .refine((postes) => new Set(postes).size === postes.length, { message: 'Poste en double' });
+
+/** Reglage par personne : cles limitees aux 22 codes du catalogue. */
+export const permissionOverridesSchema = z.partialRecord(z.enum(PERMISSION_CODES), z.boolean());
 
 export const createInvitationSchema = z.object({
   // trim + lowercase: l'adresse est la cle de resolution du compte existant a
@@ -15,12 +28,9 @@ export const createInvitationSchema = z.object({
     .toLowerCase()
     .email('Adresse email invalide')
     .max(255, "L'email ne doit pas depasser 255 caracteres"),
-  role: z.enum(INVITABLE_ROLES, {
-    error: 'Role invalide (owner ne peut pas etre invite)',
-  }),
-  // Cles limitees aux codes connus: une cle libre finissait telle quelle dans
-  // admin_users.custom_permissions a l'acceptation.
-  custom_permissions: z.partialRecord(z.enum(PERMISSION_CODES), z.boolean()).optional(),
+  postes: postesSchema,
+  // Une cle libre finissait telle quelle dans la ligne du membre a l'acceptation.
+  permission_overrides: permissionOverridesSchema.optional(),
 });
 
 // Accept: deux parcours derriere le meme jeton.

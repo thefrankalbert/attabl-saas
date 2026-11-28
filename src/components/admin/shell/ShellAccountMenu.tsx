@@ -56,7 +56,7 @@ export function ShellAccountMenu({
 }: ShellAccountMenuProps) {
   // N'offrir que les pages que ce membre peut ouvrir (meme regle que le
   // middleware): reglages et abonnement sont fermes au personnel par defaut.
-  const { permissions } = usePermissions();
+  const { levels: permissions } = usePermissions();
   const canOpen = (subPath: string) => canOpenAdminSubPath(subPath, permissions);
   const t = useTranslations('sidebar');
   const { toast } = useToast();

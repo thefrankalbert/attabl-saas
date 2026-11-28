@@ -3,6 +3,9 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
 import { isMfaSatisfied, MFA_REQUIRED_MESSAGE } from '@/lib/auth/mfa-assurance';
 import { refusDEtat } from './tenant-billing-state';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { resolveMemberLevels } from '@/lib/auth/member-rights';
+import { toPermissionMap, toPostes } from '@/lib/permissions';
 
 type CheckoutTenantRow = {
   tenant_id: string;
@@ -24,21 +27,30 @@ export type ResolveCheckoutTenantResult =
 const COLONNES_FACTURATION =
   'tenant_id, tenants(name, stripe_customer_id, stripe_subscription_id, trial_ends_at, subscription_status, suspended_at, deleted_at)';
 
-/** Les roles autorises a engager une depense pour le restaurant. */
-const ROLES_FACTURATION = ['owner', 'admin'];
+const COLONNES_DROITS = 'postes, permission_overrides';
 
 /**
- * Refus si le role n'engage pas la depense. UNE seule definition, appelee sur
- * les DEUX branches: la premiere version ne la posait que sur la branche avec
- * cible, et un employe dont le compte n'a qu'un seul restaurant pouvait ouvrir
- * une caisse. C'est exactement la divergence que ce fichier est cense tuer.
+ * Refus si le membre n'a pas le droit d'engager une depense pour le
+ * restaurant: `billing.manage` EN ENTIER (le niveau borne du gerant ne fait
+ * que voir les factures). UNE seule definition, appelee sur les DEUX branches:
+ * la premiere version ne la posait que sur la branche avec cible, et un employe
+ * dont le compte n'a qu'un seul restaurant pouvait ouvrir une caisse. C'est
+ * exactement la divergence que ce fichier est cense tuer.
  */
-function refusDeRole(role: unknown): ResolveCheckoutTenantResult | null {
-  if (ROLES_FACTURATION.includes(role as string)) return null;
+async function refusDeDroit(
+  admin: SupabaseClient,
+  tenantId: string,
+  membre: { postes?: unknown; permission_overrides?: unknown },
+): Promise<ResolveCheckoutTenantResult | null> {
+  const levels = await resolveMemberLevels(admin, tenantId, {
+    postes: toPostes(membre.postes),
+    permission_overrides: toPermissionMap(membre.permission_overrides),
+  });
+  if (levels['billing.manage'] === 'full') return null;
   return {
     ok: false,
     status: 403,
-    error: 'Seuls les proprietaires et administrateurs peuvent souscrire un abonnement.',
+    error: 'Seul le proprietaire peut souscrire un abonnement.',
   };
 }
 
@@ -61,7 +73,7 @@ function aplatirTenant(brut: unknown): CheckoutTenantRow['tenants'] {
  * interdit de FAIRE CONFIANCE a un tenant envoye par le client - pas de le
  * recevoir. Le slug sert a designer la cible; l'autorisation vient ensuite
  * d'une verification serveur: l'utilisateur doit avoir une ligne `admin_users`
- * ACTIVE sur ce restaurant, avec un role qui engage la depense. Sans cette
+ * ACTIVE sur ce restaurant, avec le droit d'engager la depense. Sans cette
  * verification ce serait une IDOR; avec elle, c'est le meme schema que
  * `/api/update-subscription`.
  *
@@ -117,13 +129,14 @@ export async function resolveCheckoutTenant(options?: {
       return { ok: false, status: 404, error: 'Restaurant non trouve' };
     }
 
-    // L'autorisation, et non la confiance: appartenance ACTIVE + role.
+    // L'autorisation, et non la confiance: appartenance VIVANTE + droit.
     const { data: membre, error: membreError } = await admin
       .from('admin_users')
-      .select(`role, ${COLONNES_FACTURATION}`)
+      .select(`${COLONNES_DROITS}, ${COLONNES_FACTURATION}`)
       .eq('user_id', user.id)
       .eq('tenant_id', tenant.id)
       .eq('is_active', true)
+      .is('deleted_at', null)
       .maybeSingle();
 
     if (membreError || !membre) {
@@ -134,7 +147,7 @@ export async function resolveCheckoutTenant(options?: {
       return { ok: false, status: 403, error: 'Acces refuse a ce restaurant' };
     }
 
-    const refus = refusDeRole(membre.role);
+    const refus = await refusDeDroit(admin, tenant.id, membre);
     if (refus) return refus;
 
     const tenants = aplatirTenant((membre as { tenants?: unknown }).tenants);
@@ -153,9 +166,10 @@ export async function resolveCheckoutTenant(options?: {
   // savoir s'il y a ambiguite, sans charger toute la liste.
   const { data: membres, error: membresError } = await admin
     .from('admin_users')
-    .select(`role, ${COLONNES_FACTURATION}`)
+    .select(`${COLONNES_DROITS}, ${COLONNES_FACTURATION}`)
     .eq('user_id', user.id)
     .eq('is_active', true)
+    .is('deleted_at', null)
     .order('created_at', { ascending: true })
     .limit(2);
 
@@ -176,7 +190,7 @@ export async function resolveCheckoutTenant(options?: {
   }
 
   const membre = membres[0];
-  const refusSansCible = refusDeRole((membre as { role?: unknown }).role);
+  const refusSansCible = await refusDeDroit(admin, membre.tenant_id as string, membre);
   if (refusSansCible) return refusSansCible;
 
   const tenants = aplatirTenant((membre as { tenants?: unknown }).tenants);

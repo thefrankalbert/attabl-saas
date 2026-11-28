@@ -32,6 +32,36 @@ const isDev = process.env.NODE_ENV === 'development';
 type LogLevel = 'error' | 'warn' | 'info' | 'event';
 type LogContext = Record<string, unknown>;
 
+/**
+ * K5.3: aucune valeur secrete ne part dans les journaux, meme si un appelant
+ * passe en contexte un objet qui en contient (erreur Supabase, en-tetes,
+ * reponse d'un prestataire). La valeur des cles sensibles est remplacee, a
+ * toute profondeur; les cycles et les objets tres profonds sont coupes.
+ */
+const SENSITIVE_KEY = /pass(word|wd)?|token|secret|authorization|api[_-]?key|cookie|signature/i;
+const MASK = '[masque]';
+const MAX_DEPTH = 6;
+
+export function redactSecrets(value: unknown, depth = 0, seen = new WeakSet<object>()): unknown {
+  if (value === null || typeof value !== 'object') return value;
+  if (value instanceof Error) return value;
+  if (seen.has(value)) return '[cycle]';
+  if (depth >= MAX_DEPTH) return '[profondeur]';
+  seen.add(value);
+  if (Array.isArray(value)) {
+    return value.map((v) => redactSecrets(v, depth + 1, seen));
+  }
+  const out: Record<string, unknown> = {};
+  for (const [key, v] of Object.entries(value)) {
+    out[key] = SENSITIVE_KEY.test(key) ? MASK : redactSecrets(v, depth + 1, seen);
+  }
+  return out;
+}
+
+function redactContext(context?: LogContext): LogContext | undefined {
+  return context === undefined ? undefined : (redactSecrets(context) as LogContext);
+}
+
 function buildLogPayload(
   level: LogLevel,
   message: string,
@@ -68,7 +98,7 @@ function writeStructuredLog(
   context?: LogContext,
   error?: unknown,
 ): void {
-  const payload = buildLogPayload(level, message, context, error);
+  const payload = buildLogPayload(level, message, redactContext(context), redactSecrets(error));
   const line = JSON.stringify(payload);
 
   if (level === 'error') {
@@ -88,17 +118,18 @@ function sendToSentry(
   context?: LogContext,
   error?: unknown,
 ): void {
-  const extra = { ...context };
+  const extra = { ...redactContext(context) };
+  const safeError = redactSecrets(error);
   const correlationId = resolveCorrelationId(context);
   if (correlationId) {
     extra.correlationId = correlationId;
   }
 
   if (level === 'error') {
-    if (error instanceof Error) {
-      Sentry.captureException(error, { extra: { message, ...extra } });
+    if (safeError instanceof Error) {
+      Sentry.captureException(safeError, { extra: { message, ...extra } });
     } else {
-      Sentry.captureMessage(message, { level: 'error', extra: { error, ...extra } });
+      Sentry.captureMessage(message, { level: 'error', extra: { error: safeError, ...extra } });
     }
     return;
   }

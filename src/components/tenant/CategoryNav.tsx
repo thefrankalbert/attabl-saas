@@ -203,6 +203,10 @@ export default function CategoryNav({
           alignItems: 'center',
           paddingLeft: '16px',
           paddingRight: '16px',
+          // Marge verticale pour que la zone tactile des pastilles (44px) ne soit
+          // pas coupee par overflow-x: auto (qui force aussi overflow-y).
+          paddingTop: '4px',
+          paddingBottom: '4px',
           gap: '6px',
         }}
       >

@@ -127,3 +127,17 @@ public/sw.js.map
 data/
 .claude/proven-config.json
 .claude/.proven-config-version
+
+# Audit lot 8 (U9): le depot est PUBLIC. Rapports de securite, scenarios de test
+# d'intrusion et annexes d'audit de la base restent sur le poste, hors depot
+# (un rapport de securite publie est un mode d'emploi). Fichiers parasites:
+# verrous LibreOffice, temporaires et journaux de la racine.
+/AUDIT-SECURITE-ATTABL.*
+/SCENARIOS-PENETRATION-*
+/migration-audit.md
+/docs/SECURITY-PENTEST-REPORT.md
+/audit/
+.~lock.*#
+/lu*.tmp
+/*.log
+/lint_output.txt

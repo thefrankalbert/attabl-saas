@@ -10,7 +10,9 @@ import { checkoutLimiter, getClientIp } from '@/lib/rate-limit';
 import { jsonWithCache } from '@/lib/cache-headers';
 import { withStripeBreaker } from '@/lib/stripe/circuit-breaker';
 import { getTenantBillingIds } from '@/lib/billing/tenant-billing-ids';
-import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
+import { resolveLiveMember } from '@/lib/auth/resolve-admin-permission';
+import { BILLING_READ } from '@/lib/admin-roles';
+import { meetsRequirement } from '@/lib/permissions';
 
 /**
  * GET /api/invoices
@@ -59,37 +61,20 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Tenant not found' }, { status: 404 });
     }
 
-    const { data: adminUser } = await supabase
-      .from('admin_users')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('tenant_id', tenantCtx.id)
-      // Un membre desactive ne lit plus les factures.
-      .eq('is_active', true)
-      .maybeSingle();
-
-    if (!adminUser) {
+    // Un membre desactive ou retire ne lit plus les factures.
+    const member = await resolveLiveMember(supabase, user.id, tenantCtx.id);
+    if (!member) {
       return NextResponse.json({ error: 'Tenant not found' }, { status: 404 });
     }
 
-    // RBAC: financial documents are owner/admin only.
-    if (!['owner', 'admin'].includes(adminUser.role)) {
+    // Meme droit que la page des factures: `billing.manage`, niveau borne
+    // compris. Le gerant VOIT les factures (il ne paie pas); le proprietaire
+    // peut lui retirer ce droit.
+    if (!meetsRequirement(member.levels, BILLING_READ)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Meme droit que la page des factures: un administrateur a qui le
-    // proprietaire a retire `settings.view` ne lit plus les factures par l'API.
-    const { allowed: canViewSettings } = await resolveAdminPermission(
-      supabase,
-      user.id,
-      tenantCtx.id,
-      'settings.view',
-    );
-    if (!canViewSettings) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    // Membership + role verified above with the session client: the Stripe id
+    // Membership + droit verified above with the session client: the Stripe id
     // is now read with the service role (column not readable by `authenticated`).
     const customerId = (await getTenantBillingIds(tenantCtx.id))?.stripe_customer_id;
 

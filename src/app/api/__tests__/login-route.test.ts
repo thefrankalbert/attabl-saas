@@ -53,7 +53,8 @@ type AdminRow = {
   is_active?: boolean;
   tenant_id: string;
   is_super_admin: boolean;
-  role: string;
+  postes: string[];
+  role?: string;
   tenants: { slug: string; onboarding_completed: boolean } | null;
 };
 
@@ -99,7 +100,7 @@ describe('POST /api/login redirect routing', () => {
       {
         tenant_id: 'platform',
         is_super_admin: true,
-        role: 'owner',
+        postes: ['owner'],
         tenants: { slug: '__platform', onboarding_completed: false },
       },
     ]);
@@ -113,14 +114,14 @@ describe('POST /api/login redirect routing', () => {
         id: 'au-1',
         tenant_id: 't1',
         is_super_admin: false,
-        role: 'cashier',
+        postes: ['cashier'],
         tenants: { slug: 'resto', onboarding_completed: true },
       },
       {
         id: 'au-2',
         tenant_id: 't2',
         is_super_admin: false,
-        role: 'waiter',
+        postes: ['waiter'],
         is_active: false,
         tenants: { slug: 'autre', onboarding_completed: true },
       },
@@ -138,7 +139,7 @@ describe('POST /api/login redirect routing', () => {
           id: 'au-1',
           tenant_id: 't1',
           is_super_admin: false,
-          role: 'owner',
+          postes: ['owner'],
           tenants: { slug: 'resto', onboarding_completed: true },
         },
       ],
@@ -154,7 +155,7 @@ describe('POST /api/login redirect routing', () => {
       {
         tenant_id: 't1',
         is_super_admin: false,
-        role: 'owner',
+        postes: ['owner'],
         tenants: { slug: 'resto', onboarding_completed: true },
       },
     ]);
@@ -166,13 +167,13 @@ describe('POST /api/login redirect routing', () => {
       {
         tenant_id: 't1',
         is_super_admin: false,
-        role: 'owner',
+        postes: ['owner'],
         tenants: { slug: 'resto', onboarding_completed: true },
       },
       {
         tenant_id: 't2',
         is_super_admin: false,
-        role: 'owner',
+        postes: ['owner'],
         tenants: { slug: 'resto-2', onboarding_completed: false },
       },
     ]);
@@ -184,7 +185,7 @@ describe('POST /api/login redirect routing', () => {
       {
         tenant_id: 't1',
         is_super_admin: false,
-        role: 'owner',
+        postes: ['owner'],
         tenants: { slug: 'resto', onboarding_completed: false },
       },
     ]);
@@ -324,7 +325,7 @@ describe('POST /api/login double authentification', () => {
         id: 'au-1',
         tenant_id: 't1',
         is_super_admin: false,
-        role: 'owner',
+        postes: ['owner'],
         tenants: { slug: 'resto', onboarding_completed: true },
       },
     ]);

@@ -1,4 +1,4 @@
-import type { AdminUser, Table, TableAssignment, Zone } from '@/types/admin.types';
+import type { FloorServer, Table, TableAssignment, Zone } from '@/types/admin.types';
 
 /**
  * UI-level status derived from backend state (assignments + open table sessions).
@@ -20,7 +20,7 @@ export interface ServiceTableVM {
 }
 
 export interface ServiceServerVM {
-  server: AdminUser;
+  server: FloorServer;
   status: ServiceServerStatus;
   assignedTables: string[];
 }

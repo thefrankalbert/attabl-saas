@@ -16,6 +16,7 @@ function createMock(
     accountRow?: { id: string; status?: string } | null;
     insertReturn?: Record<string, unknown>;
     listRows?: Array<Record<string, unknown>>;
+    houseUpdateError?: { code: string; message: string } | null;
   } = {},
 ) {
   const calls = {
@@ -80,9 +81,10 @@ function createMock(
         update: vi.fn((patch: Record<string, unknown>) => {
           calls.houseUpdate = patch;
           const b: Record<string, unknown> = {};
-          b.eq = vi.fn(async () => ({ error: null }));
           // chain: .eq().eq()
-          b.eq = vi.fn(() => ({ eq: vi.fn(async () => ({ error: null })) }));
+          b.eq = vi.fn(() => ({
+            eq: vi.fn(async () => ({ error: opts.houseUpdateError ?? null })),
+          }));
           return b;
         }),
       };
@@ -183,5 +185,28 @@ describe('createOrderAnnotationService', () => {
 
     expect(mock._calls.houseUpdate).toMatchObject({ status: 'settled', settled_by: 'admin-9' });
     expect(mock._calls.houseUpdate?.settled_at).toBeTruthy();
+  });
+
+  it('settleHouseAccount maps the DB settle guard (23514) to CONFLICT', async () => {
+    const mock = createMock({
+      houseUpdateError: {
+        code: '23514',
+        message: 'Une commande de cette ardoise reste a encaisser',
+      },
+    });
+    const svc = createOrderAnnotationService(asSupabase(mock));
+
+    await expect(svc.settleHouseAccount(ACCOUNT, TENANT, {})).rejects.toMatchObject({
+      code: 'CONFLICT',
+    });
+  });
+
+  it('settleHouseAccount keeps other DB errors INTERNAL', async () => {
+    const mock = createMock({ houseUpdateError: { code: '42501', message: 'denied' } });
+    const svc = createOrderAnnotationService(asSupabase(mock));
+
+    await expect(svc.settleHouseAccount(ACCOUNT, TENANT, {})).rejects.toMatchObject({
+      code: 'INTERNAL',
+    });
   });
 });

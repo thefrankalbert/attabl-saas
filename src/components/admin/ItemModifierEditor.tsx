@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import type { ItemModifier } from '@/types/admin.types';
+import { usePermissions } from '@/hooks/usePermissions';
 import {
   actionCreateModifier,
   actionDeleteModifier,
@@ -41,6 +42,13 @@ export default function ItemModifierEditor({
   const { toast } = useToast();
   const t = useTranslations('modifiers');
   const tc = useTranslations('common');
+  // Meme regle que le serveur et que la base (`garder_prix_carte`): creer ou
+  // supprimer un supplement PAYANT, c'est toucher a un prix (`menu.price`).
+  const canPrice = usePermissions().can('menu.price');
+  const isPriced = (mod: ItemModifier) => mod.price > 0 || mod.prices != null;
+  /** Un refus de droit dit pourquoi ; une panne reste "erreur". */
+  const refusalMessage = (code: 'forbidden' | undefined, priced: boolean): string =>
+    code === 'forbidden' ? t(priced ? 'needsPriceRight' : 'needsEditRight') : tc('error');
 
   const handleAdd = async () => {
     const name = newName.trim();
@@ -49,6 +57,12 @@ export default function ItemModifierEditor({
     const price = parseFloat(newPrice) || 0;
     if (price < 0) {
       toast({ title: t('priceNegative'), variant: 'destructive' });
+      return;
+    }
+    // Sans le droit de prix, un supplement payant serait refuse par le serveur:
+    // on le dit tout de suite, sans aller-retour.
+    if (price > 0 && !canPrice) {
+      toast({ title: t('needsPriceRight'), variant: 'destructive' });
       return;
     }
     setSaving(true);
@@ -66,7 +80,7 @@ export default function ItemModifierEditor({
     setSaving(false);
 
     if (result.error) {
-      toast({ title: tc('error'), variant: 'destructive' });
+      toast({ title: refusalMessage(result.code, price > 0), variant: 'destructive' });
       return;
     }
     setModifiers((prev) => [...prev, result.data as ItemModifier]);
@@ -77,15 +91,15 @@ export default function ItemModifierEditor({
     toast({ title: t('added') });
   };
 
-  const handleDelete = async (id: string) => {
-    setDeletingId(id);
-    const result = await actionDeleteModifier(tenantId, id);
+  const handleDelete = async (mod: ItemModifier) => {
+    setDeletingId(mod.id);
+    const result = await actionDeleteModifier(tenantId, mod.id);
     setDeletingId(null);
     if (result.error) {
-      toast({ title: tc('error'), variant: 'destructive' });
+      toast({ title: refusalMessage(result.code, isPriced(mod)), variant: 'destructive' });
       return;
     }
-    setModifiers((prev) => prev.filter((m) => m.id !== id));
+    setModifiers((prev) => prev.filter((m) => m.id !== mod.id));
     onUpdate();
     toast({ title: t('deleted') });
   };
@@ -93,7 +107,7 @@ export default function ItemModifierEditor({
   const handleToggleAvailable = async (mod: ItemModifier) => {
     const result = await actionToggleModifierAvailable(tenantId, mod.id, !mod.is_available);
     if (result.error) {
-      toast({ title: tc('error'), variant: 'destructive' });
+      toast({ title: refusalMessage(result.code, false), variant: 'destructive' });
       return;
     }
     setModifiers((prev) =>
@@ -133,20 +147,24 @@ export default function ItemModifierEditor({
               >
                 {mod.is_available ? t('available') : t('unavailable')}
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleDelete(mod.id)}
-                disabled={deletingId === mod.id}
-                title={tc('delete')}
-                className="h-8 w-8 p-0 text-app-text-muted hover:text-[var(--destructive)] opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                {deletingId === mod.id ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <Trash2 className="w-3.5 h-3.5" />
-                )}
-              </Button>
+              {/* Supprimer un supplement payant exige `menu.price`: sans ce
+                  droit le bouton n'est pas propose (il finirait en refus). */}
+              {(canPrice || !isPriced(mod)) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDelete(mod)}
+                  disabled={deletingId === mod.id}
+                  title={tc('delete')}
+                  className="h-8 w-8 p-0 text-app-text-muted hover:text-[var(--destructive)] opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  {deletingId === mod.id ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-3.5 h-3.5" />
+                  )}
+                </Button>
+              )}
             </div>
           ))}
         </div>

@@ -35,13 +35,13 @@ insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, 
   ('ea000000-0000-4000-8000-00000000000a', 'e5555555-5555-4555-8555-555555555555',
    'e1111111-1111-1111-1111-111111111111', 'patron.reglages@test.local', 'owner', true, false),
   ('eb000000-0000-4000-8000-00000000000b', 'e5555555-5555-4555-8555-555555555555',
-   'e2222222-2222-2222-2222-222222222222', 'super.reglages@test.local', 'owner', true, true);
+   'e2222222-2222-2222-2222-222222222222', 'super.reglages@test.local', 'super_admin', true, true);
 set local request.jwt.claim.role = '';
 
 insert into public.cron_heartbeats (job, schedule, last_run_at, last_status, last_duration_ms)
 values ('reminders', '* * * * *', now(), 'ok', 10);
 insert into public.platform_settings (key, value) values
-  ('support_contact', '{"phone": "+226 55 21 22 93"}');
+  ('support_contact', '{"phone": "+226 65 56 54 11"}');
 
 -- ===========================================================================
 -- 1. cron_heartbeats: service_role seulement (3)
@@ -82,7 +82,7 @@ set local role authenticated;
 set local request.jwt.claims = '{"sub":"e1111111-1111-1111-1111-111111111111"}';
 select is(
   (select value ->> 'phone' from public.platform_settings where key = 'support_contact'),
-  '+226 55 21 22 93',
+  '+226 65 56 54 11',
   'membre connecte: lit le numero du support'
 );
 update public.platform_settings set value = '{"phone": "+1 555 000 0000"}'
@@ -96,7 +96,7 @@ select throws_ok(
 reset role;
 select is(
   (select value ->> 'phone' from public.platform_settings where key = 'support_contact'),
-  '+226 55 21 22 93',
+  '+226 65 56 54 11',
   'la tentative du proprietaire n a rien change (relu)'
 );
 

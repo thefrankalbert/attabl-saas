@@ -70,8 +70,9 @@ export function createFlutterwaveRenewalService(
       .from('admin_users')
       .select('email')
       .eq('tenant_id', tenantId)
-      .eq('role', 'owner')
+      .contains('postes', ['owner'])
       .eq('is_active', true)
+      .is('deleted_at', null)
       .limit(MAX_OWNERS_PER_TENANT);
     if (error) throw new Error('Lecture des proprietaires impossible');
     return (data ?? [])

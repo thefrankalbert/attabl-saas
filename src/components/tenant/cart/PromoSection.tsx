@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { CurrencyCode } from '@/types/admin.types';
+import { isEnterToSubmit } from '@/lib/utils/enter-key';
 
 interface AppliedCoupon {
   code: string;
@@ -136,7 +137,7 @@ export function PromoSection({
               if (promoError) setPromoError(null);
             }}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') {
+              if (isEnterToSubmit(e)) {
                 e.preventDefault();
                 onApply();
               }

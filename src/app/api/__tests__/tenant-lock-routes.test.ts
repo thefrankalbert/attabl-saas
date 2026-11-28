@@ -55,14 +55,11 @@ vi.mock('@/lib/api-route-context', () => ({
   runApiRoute: async (_req: Request, fn: () => Promise<Response>) => fn(),
 }));
 vi.mock('@/lib/cache', () => ({ getTenant: async () => ({ id: T }) }));
-vi.mock('@/lib/auth/resolve-admin-permission', () => ({
-  resolveAdminPermission: async () => ({ allowed: true, role: 'owner' }),
-}));
 vi.mock('@/lib/auth/session-admin-user', () => ({
   resolveSessionAdminUser: async () => ({
     ok: true,
     userId: 'u-1',
-    adminUser: { tenant_id: T, role: 'owner' },
+    adminUser: { tenant_id: T, isOwner: true },
   }),
 }));
 vi.mock('@/services/excel-import.service', () => ({
@@ -70,7 +67,7 @@ vi.mock('@/services/excel-import.service', () => ({
 }));
 vi.mock('@/services/plan-enforcement.service', () => ({
   createPlanEnforcementService: () => ({}),
-  STAFF_ROLES: ['manager', 'cashier', 'chef', 'waiter'],
+  isAdminSeat: () => false,
 }));
 vi.mock('@/services/email.service', () => ({ sendInvitationEmail: writeSpy }));
 vi.mock('@/services/invitation.service', () => ({
@@ -89,11 +86,19 @@ vi.mock('@/services/assignment.service', () => ({
 function chain(table: string) {
   const rows: Record<string, unknown> = {
     tenants: { id: T },
-    admin_users: { id: 'a-1', tenant_id: T, role: 'owner' },
-    invitations: { tenant_id: T, role: 'waiter' },
+    // Proprietaire vivant: le VRAI resolveLiveMember lit cette ligne.
+    admin_users: {
+      id: 'a-1',
+      tenant_id: T,
+      postes: ['owner'],
+      permission_overrides: null,
+      is_super_admin: false,
+      role: 'staff',
+    },
+    invitations: { tenant_id: T, postes: ['waiter'], permission_overrides: null },
   };
   const c: Record<string, unknown> = {};
-  for (const m of ['select', 'eq', 'in', 'is', 'limit']) c[m] = () => c;
+  for (const m of ['select', 'eq', 'in', 'is', 'limit', 'contains']) c[m] = () => c;
   c.single = async () => ({ data: rows[table], error: null });
   c.maybeSingle = async () => ({ data: rows[table], error: null });
   c.upsert = (...a: unknown[]) => {
@@ -123,7 +128,13 @@ vi.mock('@/lib/auth/get-session', () => {
   }
   return {
     AuthError,
-    getAuthenticatedUserWithTenant: async () => ({ tenantId: T, supabase, user: { id: 'u-1' } }),
+    getAuthenticatedUserWithTenant: async () => ({
+      tenantId: T,
+      supabase,
+      user: { id: 'u-1' },
+      postes: ['owner'],
+      isOwner: true,
+    }),
   };
 });
 
@@ -171,14 +182,14 @@ const lockedWrites: Call[] = [
   ],
   [
     'POST /api/invitations',
-    () => invitationsPost(jsonReq({ email: 'nouveau@resto.test', role: 'waiter' })),
+    () => invitationsPost(jsonReq({ email: 'nouveau@resto.test', postes: ['waiter'] })),
   ],
   ['POST /api/invitations/[id]/resend', () => resendPost(jsonReq({}), routeCtx)],
   [
     'PUT /api/permissions',
     () =>
       permissionsPut(
-        jsonReq({ role: 'waiter', permissions: { [PERMISSION_CODES[0]]: true } }, 'PUT'),
+        jsonReq({ poste: 'waiter', permissions: { [PERMISSION_CODES[0]]: true } }, 'PUT'),
       ),
   ],
 ];
@@ -206,7 +217,7 @@ describe('restaurant coupe: aucune ecriture admin par API (A-02)', () => {
   });
 
   it('TEMOIN: DELETE /api/permissions (revoquer) reste permis restaurant coupe', async () => {
-    const res = await permissionsDelete(jsonReq({ role: 'waiter' }, 'DELETE'));
+    const res = await permissionsDelete(jsonReq({ poste: 'waiter' }, 'DELETE'));
     expect(res.status).not.toBe(403);
     expect(mockAssertServing).not.toHaveBeenCalled();
   });
@@ -214,7 +225,7 @@ describe('restaurant coupe: aucune ecriture admin par API (A-02)', () => {
   it('TEMOIN: restaurant qui sert, la meme ecriture passe (la garde ne bloque pas tout)', async () => {
     mockAssertServing.mockResolvedValue(undefined);
     const res = await permissionsPut(
-      jsonReq({ role: 'waiter', permissions: { [PERMISSION_CODES[0]]: true } }, 'PUT'),
+      jsonReq({ poste: 'waiter', permissions: { [PERMISSION_CODES[0]]: true } }, 'PUT'),
     );
     expect(res.status).toBe(200);
     expect(writeSpy).toHaveBeenCalled();
@@ -283,6 +294,8 @@ describe('classement de toutes les routes API', () => {
     'cron/reminders',
     // Ne lit que les essais actifs non suspendus; n'ecrit que le creneau de relance.
     'cron/trial-idle-emails',
+    // Desabonnement des relances: par adresse e-mail, aucun restaurant vise.
+    'email/unsubscribe',
     'dev/simulate-subscription',
     // Publiques / authentification / convive.
     'auth/[...supabase]',

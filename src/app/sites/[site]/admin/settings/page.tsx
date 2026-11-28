@@ -28,7 +28,7 @@ interface SettingsPageProps {
 export default async function SettingsPage({ params, searchParams }: SettingsPageProps) {
   const { site } = await params;
   const tTitle = await getTranslations('sidebar');
-  await requireAdminPermission(site, 'settings.view');
+  await requireAdminPermission(site, 'settings.edit');
   const sp = await searchParams;
   const initialTab = parseSettingsTab(sp.tab);
   const headersList = await headers();
@@ -48,9 +48,11 @@ export default async function SettingsPage({ params, searchParams }: SettingsPag
   }
   const { data: adminUser } = await supabase
     .from('admin_users')
-    .select('role')
+    .select('id')
     .eq('user_id', user.id)
     .eq('tenant_id', tenant.id)
+    .eq('is_active', true)
+    .is('deleted_at', null)
     .maybeSingle();
   if (!adminUser) {
     redirectToUnauthorized();

@@ -6,7 +6,6 @@ import { createSupplierService } from '@/services/supplier.service';
 import { ServiceError } from '@/services/errors';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
 import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-tenant-serving';
-import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 import { isFeatureEntitled } from '@/lib/plans/assert-feature';
 import { phoneSchema } from '@/lib/validations/common.schema';
 import type { Supplier, CreateSupplierInput, UpdateSupplierInput } from '@/types/supplier.types';
@@ -57,11 +56,7 @@ async function checkSupplierPermissions(
   tenantId: string,
 ): Promise<{ error: null; supabase: SupabaseClient } | { error: string; supabase: null }> {
   try {
-    const { supabase } = await getAuthenticatedUserForTenant(
-      tenantId,
-      ALL_ADMIN_ROLES,
-      'inventory.edit',
-    );
+    const { supabase } = await getAuthenticatedUserForTenant(tenantId, 'suppliers.manage');
     // Coupure du restaurant: toute action de ce fichier est une ecriture.
     await assertTenantServing(tenantId);
     if (!(await isFeatureEntitled(supabase, tenantId, 'canAccessInventory'))) {

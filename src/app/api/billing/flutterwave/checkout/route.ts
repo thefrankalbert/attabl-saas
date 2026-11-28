@@ -47,7 +47,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Le restaurant vient de la session (appartenance ACTIVE + role owner/admin),
+    // Le restaurant vient de la session (appartenance ACTIVE + droit `billing.manage` entier),
     // jamais du corps de la requete.
     const resolved = await resolveCheckoutTenant({
       tenantSlug: readTenantSlug(request.headers).slug,

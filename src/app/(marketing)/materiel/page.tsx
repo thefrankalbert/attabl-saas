@@ -134,7 +134,7 @@ export default async function MaterielPage() {
                     {t(`kits.items.${key}.place`)}
                   </span>
                   {featured && (
-                    <span className="rounded-full bg-orange-500/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-orange-600 dark:text-orange-400">
+                    <span className="rounded-full bg-orange-500/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-orange-700 dark:text-orange-400">
                       {t('kits.recommended')}
                     </span>
                   )}

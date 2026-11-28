@@ -193,7 +193,7 @@ export function buildLocations(
       sparkline: sliceSparkline(td.sparkline, currentHour),
     };
   });
-  return [...computed].sort((a, b) => {
+  return computed.toSorted((a, b) => {
     if (a.is_active !== b.is_active) return a.is_active ? -1 : 1;
     return b.revenue_today - a.revenue_today;
   });

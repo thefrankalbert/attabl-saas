@@ -33,3 +33,7 @@ CONTRE-AUDIT-*.html
 .qa/
 playwright-report-journeys/
 tests/journeys/playwright-report-journeys/
+
+# Cahier des charges valide par le proprietaire (2026-11-28) : document de
+# reference, a ne pas reformater.
+docs/roles-personnel/cahier-des-charges.html

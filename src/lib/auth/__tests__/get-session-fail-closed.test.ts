@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Audit B22 et B23 (get-session.ts), garde des mutations.
-// B22: une lecture `role_permissions` en ERREUR retombait sur la matrice par
+// B22: une lecture `poste_permissions` en ERREUR retombait sur la matrice par
 //      defaut et reaccordait une permission que le restaurant avait retiree.
 // B23: slug present mais ligne `tenants` cachee par la RLS (restaurant
 //      inactif): le refus etait saute et l'ecriture partait sur l'appartenance
@@ -29,6 +29,7 @@ vi.mock('@/lib/logger', () => ({
 }));
 
 import { getAuthenticatedUserForTenant, getAuthenticatedUserWithTenant } from '../get-session';
+import { getEffectiveLevels } from '@/lib/permissions';
 
 type Result = { data: unknown; error?: { message: string } | null };
 
@@ -40,29 +41,46 @@ function chain(result: Result) {
   return c;
 }
 
-const MANAGER = { id: 'm-1', tenant_id: 'tenant-A', role: 'manager', custom_permissions: null };
+// Lecture de `poste_permissions`: select().eq().in() rend un TABLEAU de lignes.
+function posteChain(result: Result) {
+  const c: Record<string, unknown> = {};
+  for (const m of ['select', 'eq']) c[m] = vi.fn(() => c);
+  c.in = vi.fn(() => Promise.resolve({ error: null, ...result }));
+  return c;
+}
+
+const MANAGER = {
+  id: 'm-1',
+  tenant_id: 'tenant-A',
+  postes: ['manager'],
+  permission_overrides: null,
+};
+const OWNER = { id: 'o-1', tenant_id: 'tenant-A', postes: ['owner'], permission_overrides: null };
 const PANNE = { data: null, error: { message: 'timeout' } };
+// Le restaurant a donne billing.manage en entier au poste gerant: seul ce reglage
+// (illisible en cas de panne) accorde ce droit a un gerant sans reglage personnel.
+const REGLAGE_GERANT = { data: [{ poste: 'manager', permissions: { 'billing.manage': true } }] };
 
 beforeEach(() => {
   vi.clearAllMocks();
   mockGetUser.mockResolvedValue({ data: { user: { id: 'u1', email: 'a@b.c' } }, error: null });
 });
 
-describe('B22 - lecture role_permissions en erreur: echec ferme', () => {
-  it('getAuthenticatedUserForTenant refuse quand la surcharge de role ne peut pas etre lue', async () => {
+describe('B22 - lecture poste_permissions en erreur: echec ferme', () => {
+  it('getAuthenticatedUserForTenant refuse un droit que seuls les postes donnent', async () => {
     mockFrom.mockImplementation((t: string) =>
-      t === 'role_permissions' ? chain(PANNE) : chain({ data: MANAGER }),
+      t === 'poste_permissions' ? posteChain(PANNE) : chain({ data: MANAGER }),
     );
-    await expect(
-      getAuthenticatedUserForTenant('tenant-A', ['owner', 'admin', 'manager'], 'orders.pay'),
-    ).rejects.toMatchObject({ status: 403 });
+    await expect(getAuthenticatedUserForTenant('tenant-A', 'billing.manage')).rejects.toMatchObject(
+      { status: 403 },
+    );
   });
 
   it('getAuthenticatedUserWithTenant refuse aussi', async () => {
     mockHeaderGet.mockReturnValue('tenant-a');
     mockFrom.mockImplementation((t: string) => {
       if (t === 'tenants') return chain({ data: { id: 'tenant-A' } });
-      if (t === 'role_permissions') return chain(PANNE);
+      if (t === 'poste_permissions') return posteChain(PANNE);
       return chain({ data: MANAGER });
     });
     await expect(getAuthenticatedUserWithTenant('menu.edit')).rejects.toMatchObject({
@@ -70,30 +88,45 @@ describe('B22 - lecture role_permissions en erreur: echec ferme', () => {
     });
   });
 
-  it('temoin: une permission individuelle decide, la panne de surcharge ne compte pas', async () => {
+  it('temoin: un droit donne par permission_overrides decide, la panne ne compte pas', async () => {
     mockFrom.mockImplementation((t: string) =>
-      t === 'role_permissions'
-        ? chain(PANNE)
-        : chain({ data: { ...MANAGER, custom_permissions: { 'orders.pay': true } } }),
+      t === 'poste_permissions'
+        ? posteChain(PANNE)
+        : chain({ data: { ...MANAGER, permission_overrides: { 'billing.manage': true } } }),
     );
-    const res = await getAuthenticatedUserForTenant(
-      'tenant-A',
-      ['owner', 'admin', 'manager'],
-      'orders.pay',
-    );
+    const res = await getAuthenticatedUserForTenant('tenant-A', 'billing.manage');
     expect(res.tenantId).toBe('tenant-A');
   });
 
-  it('temoin: surcharge lue sans erreur, la matrice par defaut accorde', async () => {
+  it('temoin: le proprietaire passe toujours, sans aucune lecture de poste_permissions', async () => {
+    const lectures = vi.fn();
+    mockFrom.mockImplementation((t: string) => {
+      if (t === 'poste_permissions') {
+        lectures();
+        return posteChain(PANNE);
+      }
+      return chain({ data: OWNER });
+    });
+    const res = await getAuthenticatedUserForTenant('tenant-A', 'billing.manage');
+    expect(res.isOwner).toBe(true);
+    expect(lectures).not.toHaveBeenCalled();
+  });
+
+  it('temoin: meme membre, lecture reussie, le reglage du restaurant accorde le droit', async () => {
     mockFrom.mockImplementation((t: string) =>
-      t === 'role_permissions' ? chain({ data: null }) : chain({ data: MANAGER }),
+      t === 'poste_permissions' ? posteChain(REGLAGE_GERANT) : chain({ data: MANAGER }),
     );
-    const res = await getAuthenticatedUserForTenant(
-      'tenant-A',
-      ['owner', 'admin', 'manager'],
-      'orders.pay',
+    const res = await getAuthenticatedUserForTenant('tenant-A', 'billing.manage');
+    expect(res.postes).toEqual(['manager']);
+    expect(res.levels['billing.manage']).toBe('full');
+  });
+
+  it('temoin: lecture reussie sans reglage, la matrice par defaut accorde', async () => {
+    mockFrom.mockImplementation((t: string) =>
+      t === 'poste_permissions' ? posteChain({ data: [] }) : chain({ data: MANAGER }),
     );
-    expect(res.role).toBe('manager');
+    const res = await getAuthenticatedUserForTenant('tenant-A', 'orders.pay');
+    expect(res.postes).toEqual(['manager']);
   });
 });
 
@@ -115,7 +148,9 @@ describe('B23 - slug present mais tenant invisible', () => {
       if (t === 'tenants') return chain({ data: null });
       // La recherche super_admin passe par `.or(...)`: aucune ligne. Toute
       // autre lecture (le repli) renverrait l'appartenance A.
-      const c = chain({ data: { id: 'mem-A', tenant_id: 'tenant-A', role: 'owner' } });
+      const c = chain({
+        data: { id: 'mem-A', tenant_id: 'tenant-A', postes: ['owner'], permission_overrides: null },
+      });
       c.or = vi.fn(() => chain({ data: null }));
       return c;
     });
@@ -136,7 +171,8 @@ describe('B23 - slug present mais tenant invisible', () => {
     mockGetTenant.mockResolvedValue({ id: 'tenant-B' });
     const res = await getAuthenticatedUserWithTenant();
     expect(mockGetTenant).toHaveBeenCalledWith('client-b-suspendu');
-    expect(res).toMatchObject({ tenantId: 'tenant-B', role: 'owner' });
+    expect(res).toMatchObject({ tenantId: 'tenant-B', postes: ['owner'], isOwner: true });
+    expect(res.levels).toEqual(getEffectiveLevels({ postes: ['owner'] }));
   });
 
   it('super_admin et slug qui ne designe aucun restaurant: 403', async () => {

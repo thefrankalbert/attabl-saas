@@ -36,8 +36,9 @@ let mockUser: {
 const getUserMock = vi.fn(async () => ({ data: { user: mockUser } }));
 
 // Controls what the RBAC route guard sees for the current admin_users row.
-let mockAdminRole = 'owner';
-let mockCustomPermissions: Record<string, boolean> | null = null;
+let mockPostes: string[] = ['owner'];
+// Reglage par personne (permission_overrides) de la ligne de membre simulee.
+let mockOverrides: Record<string, boolean> | null = null;
 let mockIsSuperAdmin = false;
 // false = l'utilisateur n'a AUCUNE ligne admin_users (ni membre, ni super-admin).
 let mockIsMember = true;
@@ -47,6 +48,9 @@ type QueryBuilder = {
   eq: () => QueryBuilder;
   is: () => QueryBuilder;
   limit: () => QueryBuilder;
+  or: () => QueryBuilder;
+  // Reglages du restaurant par poste (poste_permissions): aucun, la matrice decide.
+  in: () => Promise<{ data: unknown[]; error: null }>;
   maybeSingle: () => Promise<{ data: unknown }>;
 };
 
@@ -56,13 +60,15 @@ function makeQueryBuilder(table: string): QueryBuilder {
     eq: () => qb,
     is: () => qb,
     limit: () => qb,
+    or: () => qb,
+    in: async () => ({ data: [], error: null }),
     maybeSingle: async () => {
       if (table === 'admin_users') {
         if (!mockIsMember) return { data: null };
         return {
           data: {
-            role: mockAdminRole,
-            custom_permissions: mockCustomPermissions,
+            postes: mockPostes,
+            permission_overrides: mockOverrides,
             is_super_admin: mockIsSuperAdmin,
           },
         };
@@ -164,8 +170,8 @@ function cookieNames(res: NextResponse): string[] {
 
 beforeEach(() => {
   mockUser = null;
-  mockAdminRole = 'owner';
-  mockCustomPermissions = null;
+  mockPostes = ['owner'];
+  mockOverrides = null;
   mockIsSuperAdmin = false;
   mockIsMember = true;
   getUserMock.mockClear();
@@ -715,7 +721,7 @@ describe('proxy - RBAC route gate', () => {
 
   it('redirects a waiter away from owner-only routes (users, settings, subscription)', async () => {
     authed('w-1');
-    mockAdminRole = 'waiter';
+    mockPostes = ['waiter'];
     for (const sub of ['users', 'settings', 'subscription', 'audit-logs', 'invoices']) {
       const res = await go(`/sites/radisson/admin/${sub}`);
       expect(res.status).toBe(307);
@@ -723,29 +729,43 @@ describe('proxy - RBAC route gate', () => {
     }
   });
 
-  // Depuis le 2026-11-09 le serveur prend les commandes a la caisse (pos.use):
+  // Depuis le 2026-11-09 le serveur prend les commandes a la caisse (orders.take):
   // /pos lui est ouvert. Les ardoises (argent, orders.pay) restent fermees.
   it('redirects a waiter away from reports / inventory / house accounts / marketing editors', async () => {
     authed('w-2');
-    mockAdminRole = 'waiter';
+    mockPostes = ['waiter'];
     for (const sub of ['reports', 'inventory', 'orders/house-accounts', 'coupons', 'supports']) {
       const res = await go(`/sites/radisson/admin/${sub}`);
       expect(res.status).toBe(307);
     }
   });
 
-  it('lets a waiter reach operational routes (orders, kitchen, menus, pos, dashboard)', async () => {
+  it('lets a waiter reach operational routes (orders, menus, pos, dashboard)', async () => {
     authed('w-3');
-    mockAdminRole = 'waiter';
-    for (const sub of ['orders', 'kitchen', 'menus', 'pos', '']) {
+    mockPostes = ['waiter'];
+    for (const sub of ['orders', 'menus', 'pos', '']) {
       const res = await go(`/sites/radisson/admin/${sub}`);
       expect(res.status).not.toBe(307);
     }
   });
 
+  // Cahier des charges, section 5: "Suivre en cuisine ou au bar" n'est ni au
+  // serveur ni au caissier. L'ecran de cuisine exige `kitchen.track`.
+  it('refuse la cuisine au serveur et au caissier, la laisse au cuisinier (temoin)', async () => {
+    authed('w-5');
+    for (const poste of ['waiter', 'cashier'] as const) {
+      mockPostes = [poste];
+      const res = await go('/sites/radisson/admin/kitchen');
+      expect(res.status, poste).toBe(307);
+      expect(new URL(res.headers.get('location')!).pathname, poste).toBe('/unauthorized');
+    }
+    mockPostes = ['cook'];
+    expect((await go('/sites/radisson/admin/kitchen')).status).not.toBe(307);
+  });
+
   it('lets an owner reach every sensitive route', async () => {
     authed('o-1');
-    mockAdminRole = 'owner';
+    mockPostes = ['owner'];
     for (const sub of [
       'users',
       'settings',
@@ -759,21 +779,47 @@ describe('proxy - RBAC route gate', () => {
     }
   });
 
-  it('applies role-appropriate access: cashier uses POS but not reports; manager reports but not settings', async () => {
+  it('applies poste-appropriate access: cashier uses POS but not reports; manager reports; chef inventory but not POS', async () => {
     authed('c-1');
-    mockAdminRole = 'cashier';
-    expect((await go('/sites/radisson/admin/pos')).status).not.toBe(307); // pos.use = true
-    expect((await go('/sites/radisson/admin/reports')).status).toBe(307); // reports.view = false
+    mockPostes = ['cashier'];
+    expect((await go('/sites/radisson/admin/pos')).status).not.toBe(307); // orders.take
+    expect((await go('/sites/radisson/admin/reports')).status).toBe(307); // reports.money absent
 
     authed('m-1');
-    mockAdminRole = 'manager';
-    expect((await go('/sites/radisson/admin/reports')).status).not.toBe(307); // reports.view = true
-    expect((await go('/sites/radisson/admin/settings')).status).toBe(307); // settings.view = false
+    mockPostes = ['manager'];
+    expect((await go('/sites/radisson/admin/reports')).status).not.toBe(307); // reports.money
+    // Le gerant gagne settings.edit (changement voulu du lot 1).
+    expect((await go('/sites/radisson/admin/settings')).status).not.toBe(307);
 
     authed('ch-1');
-    mockAdminRole = 'chef';
-    expect((await go('/sites/radisson/admin/pos')).status).toBe(307); // pos.use = false
-    expect((await go('/sites/radisson/admin/inventory')).status).not.toBe(307); // inventory.view = true
+    mockPostes = ['chef'];
+    expect((await go('/sites/radisson/admin/pos')).status).toBe(307); // pas de orders.take
+    expect((await go('/sites/radisson/admin/inventory')).status).not.toBe(307); // inventory.view
+  });
+
+  it('abonnement et factures: le gerant les voit (niveau borne), le chef non, un reglage retire la vue', async () => {
+    authed('m-2');
+    mockPostes = ['manager'];
+    expect((await go('/sites/radisson/admin/subscription')).status).not.toBe(307);
+    expect((await go('/sites/radisson/admin/invoices')).status).not.toBe(307);
+
+    // TEMOIN NEGATIF: meme requete, un reglage par personne retire billing.manage.
+    mockOverrides = { 'billing.manage': false };
+    expect((await go('/sites/radisson/admin/subscription')).status).toBe(307);
+    expect((await go('/sites/radisson/admin/invoices')).status).toBe(307);
+
+    authed('ch-2');
+    mockPostes = ['chef'];
+    mockOverrides = null;
+    expect((await go('/sites/radisson/admin/invoices')).status).toBe(307);
+  });
+
+  it('les postes se cumulent: caissier + chef ouvre la caisse ET le stock', async () => {
+    authed('cc-1');
+    mockPostes = ['cashier', 'chef'];
+    expect((await go('/sites/radisson/admin/pos')).status).not.toBe(307);
+    expect((await go('/sites/radisson/admin/inventory')).status).not.toBe(307);
+    expect((await go('/sites/radisson/admin/reports')).status).toBe(307);
   });
 
   it('refuse en 307 un compte SANS appartenance sur les routes ouvertes a tout membre', async () => {
@@ -799,8 +845,8 @@ describe('proxy - RBAC route gate', () => {
 
   it('temoin: un membre sans droit particulier (serveur) garde ces routes ouvertes', async () => {
     authed('w-1');
-    mockAdminRole = 'waiter';
-    for (const sub of ['', '/items', '/kitchen', '/service', '/support']) {
+    mockPostes = ['waiter'];
+    for (const sub of ['', '/items', '/service', '/support']) {
       const res = await go(`/sites/radisson/admin${sub}`);
       expect(res.status, sub).not.toBe(307);
     }
@@ -808,7 +854,7 @@ describe('proxy - RBAC route gate', () => {
 
   it('only gates the tenant admin area (super_admin platform area is unaffected)', async () => {
     authed('w-4');
-    mockAdminRole = 'waiter';
+    mockPostes = ['waiter'];
     // operational route stays reachable; gate only fires on sensitive sub-routes
     expect((await go('/sites/radisson/admin/service')).status).not.toBe(307);
   });

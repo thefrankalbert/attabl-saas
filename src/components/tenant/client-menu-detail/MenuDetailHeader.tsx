@@ -4,6 +4,8 @@ import { useTranslations } from 'next-intl';
 import { Search, ChevronLeft, MapPin, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import { HIT_AREA_ROW } from '@/lib/ui/hit-area';
 
 interface MenuDetailHeaderProps {
   tenantName: string;
@@ -65,7 +67,10 @@ export default function MenuDetailHeader({
             onClick={onOpenMenuSheet}
             aria-haspopup="dialog"
             aria-label={t('sheetMenuTitle')}
-            className="flex h-auto min-w-0 flex-1 flex-col items-start gap-0 p-0 text-left hover:bg-transparent"
+            className={cn(
+              HIT_AREA_ROW,
+              'flex h-auto min-w-0 flex-1 flex-col items-start gap-0 p-0 text-left hover:bg-transparent',
+            )}
           >
             {headerTitleInner}
           </Button>

@@ -10,11 +10,19 @@
 -- ATTENTION (B153): cet UPDATE etait actif. Executer le fichier entier pour la
 -- seule verification retirait les droits du super admin. Decommentez pour executer.
 
+-- NE JAMAIS reecrire `role` : `role = 'admin'` faisait de ce compte un
+-- administrateur complet du restaurant. Viser UNE ligne (email ET restaurant).
+-- Le declencheur prevent_super_admin_elevation exige le reglage de session
+-- ci-dessous, local a la transaction. Preferer scripts/manage-super-admin.js.
+--
+-- BEGIN;
+-- SELECT set_config('request.jwt.claim.role', 'service_role', true);
 -- UPDATE admin_users
--- SET
---   is_super_admin = false,
---   role = 'admin'
--- WHERE email = 'superadmin@attabl.com';
+-- SET is_super_admin = false, is_active = false
+-- WHERE email = 'superadmin@attabl.com'
+--   AND role = 'super_admin'
+--   AND tenant_id = (SELECT id FROM tenants WHERE slug = '<restaurant>');
+-- COMMIT;
 
 -- Vérification
 SELECT email, role, is_super_admin FROM admin_users WHERE email = 'superadmin@attabl.com';

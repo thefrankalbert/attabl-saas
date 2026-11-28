@@ -3,13 +3,14 @@ import { randomBytes } from 'crypto';
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
 import type { Invitation } from '@/types/invitation.types';
+import type { PermissionMap, StaffPoste } from '@/types/permission.types';
 
 interface CreateInvitationInput {
   tenantId: string;
   email: string;
-  role: string;
+  postes: StaffPoste[];
   invitedBy: string;
-  customPermissions?: Record<string, boolean>;
+  permissionOverrides?: PermissionMap;
 }
 
 interface AcceptInvitationInput {
@@ -160,7 +161,7 @@ export function createInvitationService(supabase: SupabaseClient): InvitationSer
       const state = await membershipState(tenantId, email);
       if (state === 'active') {
         throw new ServiceError(
-          'Cette personne fait deja partie de votre equipe. Modifiez son role depuis la liste des membres.',
+          'Cette personne fait deja partie de votre equipe. Modifiez ses postes depuis la liste des membres.',
           'VALIDATION',
         );
       }
@@ -252,15 +253,17 @@ export function createInvitationService(supabase: SupabaseClient): InvitationSer
         .insert({
           tenant_id: input.tenantId,
           email: input.email,
-          role: input.role,
-          custom_permissions: input.customPermissions || null,
+          // `role` n'est pas ecrit: la base le projette depuis `postes`
+          // (declencheur `aa_invitations_sync_postes`).
+          postes: input.postes,
+          permission_overrides: input.permissionOverrides ?? null,
           invited_by: input.invitedBy,
           token,
           expires_at: expiresAt,
           status: 'pending',
         })
         .select(
-          'id, tenant_id, email, role, custom_permissions, invited_by, token, expires_at, status, created_at, accepted_at',
+          'id, tenant_id, email, postes, permission_overrides, invited_by, token, expires_at, status, created_at, accepted_at',
         )
         .single();
 
@@ -553,7 +556,7 @@ export function createInvitationService(supabase: SupabaseClient): InvitationSer
         .eq('id', invitationId)
         .eq('status', 'pending')
         .select(
-          'id, tenant_id, email, role, custom_permissions, invited_by, token, expires_at, status, created_at, accepted_at',
+          'id, tenant_id, email, postes, permission_overrides, invited_by, token, expires_at, status, created_at, accepted_at',
         )
         .maybeSingle();
 
@@ -584,7 +587,7 @@ export function createInvitationService(supabase: SupabaseClient): InvitationSer
       const { data, error, count } = await supabase
         .from('invitations')
         .select(
-          'id, tenant_id, email, role, custom_permissions, invited_by, token, expires_at, status, created_at, accepted_at',
+          'id, tenant_id, email, postes, permission_overrides, invited_by, token, expires_at, status, created_at, accepted_at',
           { count: 'exact' },
         )
         .eq('tenant_id', tenantId)

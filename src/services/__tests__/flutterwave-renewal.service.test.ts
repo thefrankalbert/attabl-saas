@@ -48,8 +48,8 @@ function setup(opts: { dues?: Row[]; owners?: Row[]; emailOk?: boolean; freezeCo
         reminder_d1_at: null,
       })),
       admin_users: opts.owners ?? [
-        { tenant_id: T1, role: 'owner', is_active: true, email: 'owner-11@exemple.test' },
-        { tenant_id: T2, role: 'owner', is_active: true, email: 'owner-22@exemple.test' },
+        { tenant_id: T1, postes: ['owner'], is_active: true, email: 'owner-11@exemple.test' },
+        { tenant_id: T2, postes: ['owner'], is_active: true, email: 'owner-22@exemple.test' },
       ],
     },
     {
@@ -112,6 +112,20 @@ describe('rappels de renouvellement', () => {
     });
     expect(payment(db, 'pay-11').reminder_d7_at).toBe(NOW.toISOString());
     expect(payment(db, 'pay-11').reminder_d1_at).toBeNull();
+  });
+
+  it('le lien de paiement va au proprietaire seul, jamais au gerant (temoin: le gerant existe)', async () => {
+    const { service, billing } = setup({
+      dues: [due(T1)],
+      owners: [
+        { tenant_id: T1, postes: ['manager'], is_active: true, email: 'gerant@exemple.test' },
+        { tenant_id: T1, postes: ['owner'], is_active: true, email: 'owner-11@exemple.test' },
+      ],
+    });
+    await service.sendReminders();
+    expect(billing.startPayment).toHaveBeenCalledWith(
+      expect.objectContaining({ customerEmail: 'owner-11@exemple.test' }),
+    );
   });
 
   it('le rappel 1 jour memorise la colonne d1, pas d7', async () => {

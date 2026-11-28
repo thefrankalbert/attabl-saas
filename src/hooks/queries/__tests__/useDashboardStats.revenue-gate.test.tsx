@@ -5,7 +5,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useDashboardStats } from '../useDashboardStats';
 
-// X6: la page masque le chiffre d'affaires sans `reports.view`, mais ce
+// X6: la page masque le chiffre d'affaires sans `reports.money`, mais ce
 // rafraichissement client relisait `total` et `tip_amount` et recalculait la
 // recette 30 s plus tard: le chef la voyait. Sans le droit, les montants ne
 // sont plus demandes du tout (rien n'arrive dans le navigateur).
@@ -53,14 +53,14 @@ beforeEach(() => {
   selects.length = 0;
 });
 
-describe('useDashboardStats - argent selon reports.view', () => {
-  it('sans reports.view: aucune colonne de montant demandee, recette a zero', async () => {
+describe('useDashboardStats - argent selon reports.money', () => {
+  it('sans reports.money: aucune colonne de montant demandee, recette a zero', async () => {
     const { result } = renderHook(() => useDashboardStats('t1', false), { wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(selects.length).toBeGreaterThan(0);
     // Les requetes d'agregat (recette, tendance, courbe, repartition) ne
     // lisent plus l'argent. La liste des dernieres commandes garde le montant
-    // de chaque commande, deja visible sur /orders avec `orders.view`.
+    // de chaque commande, deja visible sur /orders a qui voit les commandes.
     const aggregates = selects.filter((cols) => !cols.includes('order_number'));
     expect(aggregates.length).toBeGreaterThan(0);
     for (const cols of aggregates) {
@@ -70,7 +70,7 @@ describe('useDashboardStats - argent selon reports.view', () => {
     expect(result.current.data?.revenueSparkline).toEqual([]);
   });
 
-  it('avec reports.view: les montants sont lus', async () => {
+  it('avec reports.money: les montants sont lus', async () => {
     const { result } = renderHook(() => useDashboardStats('t1', true), { wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(selects.some((cols) => /\bamount\b/.test(cols))).toBe(true);

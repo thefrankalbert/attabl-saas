@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function ReportsPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
-  await requireAdminPermission(site, 'reports.view');
+  await requireAdminPermission(site, 'reports.money');
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
@@ -28,7 +28,7 @@ export default async function ReportsPage({ params }: { params: Promise<{ site: 
   }
 
   // L'acces est decide UNE fois, par requireAdminPermission ci-dessus: session,
-  // appartenance active, puis droit `reports.view` avec les surcharges du
+  // appartenance active, puis droit `reports.money` avec les surcharges du
   // proprietaire. Une seconde liste de roles ecrite en dur refusait ici le
   // caissier a qui le proprietaire avait donne ce droit: le lien Rapports
   // apparaissait dans son menu et menait a un refus (audit 2026-11-10, C-071).

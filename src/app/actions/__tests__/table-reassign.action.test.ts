@@ -45,8 +45,8 @@ describe('actionReassignOrderTable', () => {
     const result = await actionReassignOrderTable(ORDER_ID, 'T12');
 
     expect(result).toEqual({ success: true });
-    // tenant is derived from the session, gated on orders.manage.
-    expect(mockGetAuthUserWithTenant).toHaveBeenCalledWith('orders.manage');
+    // tenant is derived from the session, gated on orders.take.
+    expect(mockGetAuthUserWithTenant).toHaveBeenCalledWith('orders.take');
     expect(mockRpc).toHaveBeenCalledWith('reassign_order_table', {
       p_order_id: ORDER_ID,
       p_tenant_id: TENANT_ID,

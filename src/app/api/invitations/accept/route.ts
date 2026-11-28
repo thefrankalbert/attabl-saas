@@ -9,7 +9,7 @@ import { verifyOrigin } from '@/lib/csrf';
 import { createInvitationService } from '@/services/invitation.service';
 import { createAuditService } from '@/services/audit.service';
 import { acceptInvitationSchema } from '@/lib/validations/invitation.schema';
-import { createPlanEnforcementService, STAFF_ROLES } from '@/services/plan-enforcement.service';
+import { createPlanEnforcementService, isAdminSeat } from '@/services/plan-enforcement.service';
 import type { Tenant } from '@/types/admin.types';
 
 export async function POST(request: Request) {
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     // CREATION de l'invitation: invitationManageLimiter, 30 par 10 minutes et
     // par IP (src/lib/rate-limit.ts), soit de l'ordre de 4300 adresses
     // sondables par jour et par IP - avec un courriel envoye a chacune, et la
-    // qualite d'owner/admin exigee. Le cout de l'oracle vient de la, pas d'ici.
+    // droit `team.manage` exige. Le cout de l'oracle vient de la, pas d'ici.
     const tokenForKey =
       typeof (body as { token?: unknown })?.token === 'string'
         ? (body as { token: string }).token
@@ -107,11 +107,13 @@ export async function POST(request: Request) {
     }
 
     const enforcement = createPlanEnforcementService(adminClient);
-    // Staff roles count against maxStaff; admin/owner count against maxAdmins
-    if ((STAFF_ROLES as readonly string[]).includes(invitation.role)) {
-      await enforcement.canAddStaff(tenant as Tenant);
-    } else {
+    // Siege d'administrateur ou de personnel: regle `isAdminSeat` (G.a). Une
+    // invitation ne porte jamais `owner`: c'est un siege de personnel tant que
+    // le gerant compte comme personnel.
+    if (isAdminSeat(invitation.postes)) {
       await enforcement.canAddAdmin(tenant as Tenant);
+    } else {
+      await enforcement.canAddStaff(tenant as Tenant);
     }
 
     const { tenantSlug } = await service.acceptInvitation({
@@ -172,12 +174,12 @@ export async function POST(request: Request) {
       tenantId: invitation.tenant_id,
       userId: memberUserId,
       userEmail: invitation.email,
-      userRole: invitation.role,
+      userRole: invitation.postes.join('+'),
     }).log({
       action: 'create',
       entityType: 'user',
       entityId: invitation.id,
-      newData: { email: invitation.email, role: invitation.role },
+      newData: { email: invitation.email, postes: invitation.postes },
       metadata: { event: 'invitation_accepted', invitation_id: invitation.id },
     });
 

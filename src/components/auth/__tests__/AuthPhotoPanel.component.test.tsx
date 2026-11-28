@@ -9,7 +9,9 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
  * module-level memory, so every test loads a fresh copy of the modules.
  */
 
-vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
+vi.mock('next-intl', () => ({
+  useTranslations: () => Object.assign((key: string) => key, { rich: (key: string) => key }),
+}));
 vi.mock('next/image', () => ({
   default: ({ src, className }: { src: string; className?: string }) => (
     <span data-photo={src} className={className} />

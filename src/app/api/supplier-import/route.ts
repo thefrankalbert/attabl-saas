@@ -32,10 +32,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Authenticate + role gate. inventory.edit resolves to owner/admin/manager
-    // (and honours per-user overrides) - bulk supplier writes must not be reachable
-    // by cashier/waiter/chef.
-    const { tenantId, supabase } = await getAuthenticatedUserWithTenant('inventory.edit');
+    // 2. Authentification + droit `suppliers.manage` (gerant et chef par defaut,
+    // reglages du proprietaire respectes): le meme droit que la politique
+    // d'ecriture de `suppliers` en base.
+    const { tenantId, supabase } = await getAuthenticatedUserWithTenant('suppliers.manage');
     // Coupure du restaurant: un import est une ecriture (403 + message via AuthError).
     await assertTenantServing(tenantId);
 
