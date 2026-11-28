@@ -18,6 +18,23 @@ import { launchFixKey } from './utils/launch-errors';
 import { stepBlockingError } from './utils/step-validation';
 import { describeLaunchIssues, isZoneLaunchIssue, type LaunchIssue } from './launch-issues';
 
+/** Marque les entrees d'historique posees par l'onboarding (une par ecran). */
+const ONBOARDING_HISTORY_KEY = 'attablOnboardingStep';
+
+interface OnboardingPosition {
+  phase: number;
+  subScreen: number;
+}
+
+function readHistoryPosition(state: unknown): OnboardingPosition | null {
+  if (!state || typeof state !== 'object') return null;
+  const raw = (state as Record<string, unknown>)[ONBOARDING_HISTORY_KEY];
+  if (!raw || typeof raw !== 'object') return null;
+  const { phase, subScreen } = raw as Record<string, unknown>;
+  if (typeof phase !== 'number' || typeof subScreen !== 'number') return null;
+  return { phase, subScreen };
+}
+
 export function useOnboarding() {
   const t = useTranslations('onboarding');
   const { toast } = useToast();
@@ -458,6 +475,54 @@ export function useOnboarding() {
     }
     scrollToTop();
   };
+
+  // --- Historique du navigateur (audit d'equipe du 2026-11-27, onboarding #20) --
+  //
+  // Chaque ecran affiche a SA propre entree d'historique, qui porte sa position
+  // absolue. Le bouton retour (ou suivant) du telephone et du navigateur replace
+  // donc l'onboarding sur l'ecran de l'entree, au lieu de quitter la page. Les
+  // changements d'ecran du parcours (Continuer, Retour, saut d'etape) ajoutent
+  // une entree; ceux qui viennent de l'historique n'en ajoutent pas.
+  const fromHistoryRef = useRef(false);
+  const historyReadyRef = useRef(false);
+  const positionRef = useRef<OnboardingPosition>({ phase, subScreen });
+  useEffect(() => {
+    positionRef.current = { phase, subScreen };
+  }, [phase, subScreen]);
+  useEffect(() => {
+    if (loading) return;
+    const position: OnboardingPosition = { phase, subScreen };
+    if (!historyReadyRef.current) {
+      historyReadyRef.current = true;
+      window.history.replaceState(
+        { ...window.history.state, [ONBOARDING_HISTORY_KEY]: position },
+        '',
+      );
+      return;
+    }
+    if (fromHistoryRef.current) {
+      fromHistoryRef.current = false;
+      return;
+    }
+    window.history.pushState({ [ONBOARDING_HISTORY_KEY]: position }, '');
+  }, [loading, phase, subScreen]);
+
+  useEffect(() => {
+    const onPop = (event: PopStateEvent) => {
+      const position = readHistoryPosition(event.state);
+      if (!position) return;
+      const current = positionRef.current;
+      // Meme ecran: aucun rendu ne suivra, ne pas armer le drapeau (il ferait
+      // sauter l'entree du prochain changement d'ecran).
+      if (current.phase === position.phase && current.subScreen === position.subScreen) return;
+      fromHistoryRef.current = true;
+      setError(null);
+      setPhase(position.phase);
+      setSubScreen(position.subScreen);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   // --- Keyboard navigation --------------------------------------------------
 

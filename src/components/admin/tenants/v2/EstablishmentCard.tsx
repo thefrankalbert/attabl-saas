@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { TrendDelta } from '@/components/admin/tenants/v2/TrendDelta';
 import type { LocationStat } from '@/types/command-center.types';
+import { getCurrencySymbol } from '@/lib/utils/currency';
 
 interface EstablishmentCardLabels {
   manage: string;
@@ -138,7 +139,9 @@ export function EstablishmentCard({
                 <span className="cc-mono text-[22px] font-semibold leading-none tabular-nums">
                   {formatFull(location.revenue_today, locale)}
                 </span>
-                <span className="text-[12px] text-[var(--cc-text-3)]">F</span>
+                <span className="text-[12px] text-[var(--cc-text-3)]">
+                  {getCurrencySymbol(location.currency)}
+                </span>
                 <TrendDelta
                   current={location.revenue_today}
                   previous={location.revenue_yesterday}

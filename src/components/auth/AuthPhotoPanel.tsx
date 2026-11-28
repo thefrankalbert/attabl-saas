@@ -84,9 +84,12 @@ export function AuthPhotoPanel({ scene: sceneProp }: { scene: AuthScene }) {
   };
 
   return (
+    // Sur telephone, bandeau compact (24 % de la hauteur), masque sous 700 px:
+    // a 38 % il poussait le bouton "Creer mon compte" sous l'ecran en 375x812
+    // (audit d'equipe du 2026-11-27, onboarding #4). Bureau inchange.
     <aside
       aria-label={t('photoLabel')}
-      className="relative order-1 h-[38svh] min-h-[240px] overflow-hidden lg:absolute lg:inset-0 lg:h-auto lg:min-h-0"
+      className="relative order-1 h-[24svh] min-h-[150px] overflow-hidden max-lg:[@media(max-height:700px)]:hidden lg:absolute lg:inset-0 lg:h-auto lg:min-h-0"
     >
       <div aria-hidden="true">
         {photos.map((src, i) =>

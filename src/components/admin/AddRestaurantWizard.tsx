@@ -11,7 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, ArrowLeft, ArrowRight, Check, X, Building2, Sparkles } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, Check, Building2, Sparkles } from 'lucide-react';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useTranslations } from 'next-intl';
 import { logger } from '@/lib/logger';
 import {
@@ -77,7 +78,6 @@ interface AddRestaurantWizardProps {
 
 export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardProps) {
   const t = useTranslations('admin');
-  const tc = useTranslations('common');
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -154,19 +154,20 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="relative w-full max-w-lg rounded-xl border border-app-border bg-app-card">
-        {/* Close button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={tc('aria.close')}
-          onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg text-app-text-muted hover:bg-app-elevated hover:text-app-text-secondary"
-        >
-          <X className="h-5 w-5" />
-        </Button>
-
+    // Vraie fenetre de dialogue (shadcn/Radix): role="dialog", aria-modal,
+    // piege du focus, fermeture par Echap et bouton Fermer, hauteur bornee qui
+    // defile sur un petit telephone (audit d'equipe du 2026-11-27, onboarding
+    // #25). Fermeture bloquee pendant la creation.
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open && !loading) onClose();
+      }}
+    >
+      <DialogContent
+        aria-describedby={undefined}
+        className="max-h-[90dvh] gap-0 overflow-y-auto p-0"
+      >
         {/* Header */}
         <div className="border-b border-app-border px-6 pt-6 pb-4">
           <div className="flex items-center gap-3">
@@ -174,7 +175,9 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
               <Building2 className="h-5 w-5 text-accent-text" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-app-text">{t('addRestaurant.title')}</h2>
+              <DialogTitle className="text-lg font-bold text-app-text">
+                {t('addRestaurant.title')}
+              </DialogTitle>
               <p className="text-xs text-app-text-muted">
                 {t('addRestaurant.stepOf', { step, total: 3 })}
               </p>
@@ -414,7 +417,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
             </Button>
           )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

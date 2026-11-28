@@ -91,7 +91,7 @@ export default async function TenantsPage() {
     const [tenantsRes, directoryRes, activeCountRes, totalCountRes] = await Promise.all([
       adminSupabase
         .from('tenants')
-        .select('id, slug, name, subscription_status, subscription_plan, is_active')
+        .select('id, slug, name, subscription_status, subscription_plan, is_active, currency')
         .order('name')
         .limit(SUPERADMIN_TENANT_LIMIT),
       adminSupabase
@@ -123,12 +123,18 @@ export default async function TenantsPage() {
     );
   }
 
-  // Owner: fetch ONLY tenants linked to this user via admin_users
-  const tenantIds = (adminUsers || []).map((au) => au.tenant_id).filter(Boolean);
+  // Owner: fetch ONLY the tenants this user OWNS. Une ligne admin_users d'un
+  // autre role (serveur, gerant d'un restaurant voisin) ne donne pas acces au
+  // plan, a l'abonnement ni aux chiffres de ce restaurant, lus ici en
+  // service_role (audit d'equipe du 2026-11-27, onboarding C1).
+  const tenantIds = (adminUsers || [])
+    .filter((au) => au.role === 'owner')
+    .map((au) => au.tenant_id)
+    .filter(Boolean);
   const adminSupabase = createAdminClient();
   const { data: ownerTenants } = await adminSupabase
     .from('tenants')
-    .select('id, name, slug, subscription_plan, subscription_status, logo_url, is_active')
+    .select('id, name, slug, subscription_plan, subscription_status, logo_url, is_active, currency')
     .in('id', tenantIds.length > 0 ? tenantIds : ['__none__']);
 
   const serverRestaurants = (ownerTenants || []).map((t) => ({
@@ -139,6 +145,7 @@ export default async function TenantsPage() {
     tenant_status: t.subscription_status,
     tenant_logo_url: t.logo_url,
     tenant_is_active: t.is_active,
+    tenant_currency: t.currency ?? null,
     orders_today: 0,
     revenue_today: 0,
     orders_month: 0,

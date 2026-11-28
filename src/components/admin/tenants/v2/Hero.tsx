@@ -5,12 +5,17 @@ import { useTranslations, useLocale } from 'next-intl';
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
 
 interface HeroProps {
-  /** Revenue today, in the display currency (FCFA by default). */
+  /** Revenue today, in `currencyLabel`. */
   revenueToday: number;
   revenueYesterday: number;
   /** ISO timestamp of the last order (drives the "il y a N min" line). */
   lastOrderAt?: string | null;
-  currencyLabel?: string;
+  /**
+   * Symbole de la devise commune des restaurants. `null` = devises differentes:
+   * aucune somme n'est affichee, elle melangerait des devises (audit d'equipe
+   * du 2026-11-27, onboarding #27).
+   */
+  currencyLabel: string | null;
 }
 
 function formatMoney(value: number, locale: string): string {
@@ -58,12 +63,7 @@ function formatRelative(iso: string | null | undefined, now: number, t: Relative
   return null;
 }
 
-export function Hero({
-  revenueToday,
-  revenueYesterday,
-  lastOrderAt,
-  currencyLabel = 'FCFA',
-}: HeroProps) {
+export function Hero({ revenueToday, revenueYesterday, lastOrderAt, currencyLabel }: HeroProps) {
   const t = useTranslations('admin.tenants.commandCenter.hero');
   const locale = useLocale();
   const [now, setNow] = useState(() => Date.now());
@@ -73,7 +73,10 @@ export function Hero({
     return () => clearInterval(timer);
   }, []);
 
-  const delta = formatDelta(revenueToday, revenueYesterday, t('vsYesterday'), locale);
+  const delta =
+    currencyLabel === null
+      ? null
+      : formatDelta(revenueToday, revenueYesterday, t('vsYesterday'), locale);
   const relative = formatRelative(lastOrderAt, now, t as unknown as RelativeT);
 
   return (
@@ -94,13 +97,24 @@ export function Hero({
           lineHeight: 1,
         }}
       >
-        <span className="truncate">{formatMoney(revenueToday, locale)}</span>
-        <span
-          className="text-[14px] font-medium sm:text-[15px]"
-          style={{ color: 'var(--cc-text-3)', fontFamily: 'var(--cc-sans)' }}
-        >
-          {currencyLabel}
-        </span>
+        {currencyLabel === null ? (
+          <span
+            className="text-[15px] font-medium"
+            style={{ color: 'var(--cc-text-2)', letterSpacing: 'normal' }}
+          >
+            {t('mixedCurrencies')}
+          </span>
+        ) : (
+          <>
+            <span className="truncate">{formatMoney(revenueToday, locale)}</span>
+            <span
+              className="text-[14px] font-medium sm:text-[15px]"
+              style={{ color: 'var(--cc-text-3)', fontFamily: 'var(--cc-sans)' }}
+            >
+              {currencyLabel}
+            </span>
+          </>
+        )}
       </div>
 
       <div

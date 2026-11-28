@@ -206,6 +206,7 @@ export function useCommandCenterData(
           created_at: o.created_at,
           tenant_name: joined?.name || tenantById.get(o.tenant_id)?.name || '',
           tenant_slug: joined?.slug || tenantById.get(o.tenant_id)?.slug || '',
+          currency: o.display_currency ?? null,
         };
       }),
     );

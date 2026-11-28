@@ -13,6 +13,12 @@ interface ChartPanelMinimalProps {
   onModeChange: (mode: ChartMode) => void;
   onPeriodChange: (period: ChartPeriod) => void;
   isLoading?: boolean;
+  /**
+   * Symbole de la devise commune. `null` = restaurants en devises differentes:
+   * le chiffre d'affaires additionne serait faux, seul le nombre de commandes
+   * est propose (audit d'equipe du 2026-11-27, onboarding #27).
+   */
+  currencyLabel: string | null;
 }
 
 const W = 800;
@@ -33,7 +39,10 @@ export function ChartPanelMinimal({
   onModeChange,
   onPeriodChange,
   isLoading = false,
+  currencyLabel,
 }: ChartPanelMinimalProps) {
+  const revenueAllowed = currencyLabel !== null;
+  const effectiveMode: ChartMode = revenueAllowed ? mode : 'orders';
   const t = useTranslations('admin.tenants.commandCenter');
   const tEst = useTranslations('admin.tenants.commandCenter.establishments');
   const locale = useLocale();
@@ -49,7 +58,7 @@ export function ChartPanelMinimal({
   // revenue and orders via this memo - NO refetch. Only the period toggle
   // triggers a parent refetch through onPeriodChange.
   const { values, labels, paths, xFor, yFor, innerH } = useMemo(() => {
-    const vals = data.map((p) => (mode === 'orders' ? p.orders : p.revenue));
+    const vals = data.map((p) => (effectiveMode === 'orders' ? p.orders : p.revenue));
     const lbls = data.map((p) => p.label);
     const iw = W - PAD_L - PAD_R;
     const ih = H - PAD_T - PAD_B;
@@ -75,7 +84,7 @@ export function ChartPanelMinimal({
       yFor: yForFn,
       innerH: ih,
     };
-  }, [data, mode]);
+  }, [data, effectiveMode]);
 
   const tickIndices = useMemo(() => {
     if (data.length === 0) return [];
@@ -128,9 +137,9 @@ export function ChartPanelMinimal({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Segmented
-            value={mode}
+            value={effectiveMode}
             options={[
-              { key: 'revenue' as const, label: t('chart.revenue') },
+              ...(revenueAllowed ? [{ key: 'revenue' as const, label: t('chart.revenue') }] : []),
               { key: 'orders' as const, label: t('chart.orders') },
             ]}
             onChange={onModeChange}
@@ -223,9 +232,9 @@ export function ChartPanelMinimal({
             >
               <div className="cc-t-time">{hoveredLabel}</div>
               <div className="cc-t-val">
-                {mode === 'orders'
+                {effectiveMode === 'orders'
                   ? `${new Intl.NumberFormat(locale).format(hovered)} ${tEst('ordersShort')}`
-                  : `${formatMoney(hovered, locale)} ${t('chart.currencyShort')}`}
+                  : `${formatMoney(hovered, locale)} ${currencyLabel}`}
               </div>
             </div>
           )}
