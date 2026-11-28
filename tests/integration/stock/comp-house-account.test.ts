@@ -282,7 +282,27 @@ describe('house accounts (real Postgres)', () => {
     expect(b2?.openOrders).toBe(1);
     expect(b2?.outstanding).toBe(1500);
 
-    // Settle.
+    // Temoin negatif: order1 doit encore 1500, la garde en base refuse le solde
+    // (trg_house_accounts_settle_guard) et l'ardoise reste ouverte.
+    await expect(
+      svc.settleHouseAccount(accountId, tenantId, { settledBy: adminId }),
+    ).rejects.toMatchObject({ code: 'CONFLICT' });
+    const { data: stillOpen } = await db
+      .from('house_accounts')
+      .select('status')
+      .eq('id', accountId)
+      .single();
+    expect(stillOpen?.status).toBe('open');
+
+    // Encaisser le reste de order1, puis solder.
+    await db.from('payments').insert({
+      tenant_id: tenantId,
+      order_id: order1,
+      amount: 1500,
+      method: 'cash',
+      status: 'completed',
+    });
+    await db.from('orders').update({ payment_status: 'paid' }).eq('id', order1);
     await svc.settleHouseAccount(accountId, tenantId, { settledBy: adminId });
     const { data: acc } = await db
       .from('house_accounts')
