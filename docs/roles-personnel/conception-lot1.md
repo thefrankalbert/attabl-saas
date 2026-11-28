@@ -861,10 +861,14 @@ rg -n "ROLE_RANK|ALL_ADMIN_ROLES|ORDER_MONEY_ROLES|ASSIGNMENT_MANAGER_ROLES|ORDE
 # 3. Anciennes colonnes : 0 ligne a la PR du lot 1 HORS types generes ; 0 ligne
 #    partout a la PR de MIG4, une fois les types regeneres.
 rg -n "custom_permissions|role_permissions" src scripts tests --glob '!src/types/database.generated.ts'
-# 4. Anciens codes : 0 ligne hors table de traduction et son test.
-rg -n "'(orders\.manage|orders\.view|reports\.view|pos\.use|settings\.view)'" src tests \
-  --glob '!src/lib/permissions-legacy.ts' --glob '!src/lib/__tests__/permission-migration.test.ts'
+# 4. Anciens codes, entre guillemets simples OU doubles : 0 ligne hors des deux
+#    fichiers qui les citent par construction (voir ci-dessous).
+rg -n "['\"](orders\.manage|orders\.view|reports\.view|pos\.use|settings\.view)['\"]" src tests \
+  --glob '!src/lib/__tests__/retour-arriere-roles-copies.test.ts' \
+  --glob '!tests/fixtures/permission-cases.json'
 ```
+
+Correction du 2026-11-28 (audit de regression B9) : la premiere version de la commande 4 ne cherchait que les guillemets simples, et ne voyait donc pas un code ecrit dans un fichier JSON. Elle excluait aussi `permissions-legacy.ts` et son test, qui n'ont jamais ete crees (ecart B1 de la phase B). Les deux exclusions reelles : `retour-arriere-roles-copies.test.ts` verifie que le script de retour retablit l'ancien etat, et `tests/fixtures/permission-cases.json` liste ces codes dans `unknown_codes`, les codes que le TypeScript et la base doivent REFUSER.
 
 Fichiers exclus et pourquoi (N3) : `src/types/database.generated.ts` est genere depuis la base et contient les anciennes colonnes tant que MIG4 n'est pas appliquee ; `src/lib/permissions-legacy.ts` porte la table de traduction B.5 (`legacyToNew`), qui cite les anciens codes par construction, avec son test. Ces deux derniers fichiers sont supprimes dans la PR de MIG4, ou la commande 4 se relance sans exclusion.
 
@@ -1930,6 +1934,15 @@ Preuve exigee sur le banc avant d'appliquer MIG2 en production : appliquer MIG1 
 **MIG3 `20261128100200_gardes_prix_et_proprietaire.sql`**
 `garder_prix_carte` et ses deux declencheurs ; `garder_proprietaire` et son declencheur.
 Retour arriere : `DROP TRIGGER`, `DROP FUNCTION`.
+Corrections du 2026-11-28 (audits) : la garde du prix couvre aussi la SUPPRESSION d'un supplement payant (sans elle, le supprimer puis le recreer a 0 changeait son prix sans `menu.price`) ; la garde du proprietaire refuse `is_active = false` seul sur le proprietaire d'un restaurant ouvert (les gestes de la plateforme, qui datent la ligne par `banned_at` ou `deleted_at`, restent permis).
+
+**`20261128100300_resolution_plus_rapide.sql`** (phase B, absente de la premiere version de ce document)
+`private.matrice_postes()` et `public.tenant_permission_level` en plpgsql, memes resultats. Sans elle la garde d'ecriture reste six fois plus lente. Retour arriere optionnel (les retours de MIG2 et MIG1 suppriment ces fonctions).
+
+**`20261128100400_garde_statut_cuisine.sql`** (corrections des audits)
+`garder_statut_cuisine` et ses deux declencheurs sur `orders.status` et `order_items.item_status` : poser `preparing` ou `ready` exige `kitchen.track`. Retour arriere : `DROP TRIGGER`, `DROP FUNCTION`, AVANT celui de MIG2.
+
+Les quatre premiers fichiers (MIG1, MIG2, MIG3, 100300) sont appliques ensemble, AVANT le deploiement du code. Le cinquieme (100400) RETIRE un geste que l'ancien code offre encore au serveur et au caissier : il s'applique APRES, des que le nouveau code est servi (mesure : l'ancien code recoit une erreur 500 sur ce geste si la garde passe avant lui). La consigne d'application est `deroule-production.md`. Dans la suite de cette section, "MIG1 a MIG3" se lit "les quatre migrations 20261128100000 a 20261128100300".
 
 MIG1 a MIG3 sont appliquees ensemble, AVANT le deploiement du code. Pourquoi c'est sur avec l'ancien code encore en service : pour chaque ancien role, les droits que donne la nouvelle base contiennent ceux que l'ancien code suppose (B.4 : aucune ligne "perd"), et l'ancien code ne passe jamais de code de droit a la base (les codes sont des litteraux dans les politiques). Les ecritures de l'ancien code (`role`, `custom_permissions`, `role_permissions`) sont traduites par les declencheurs.
 
@@ -1944,13 +1957,17 @@ Prealables : 0 ligne `role = 'admin'` dans `admin_users` et `invitations` apres 
 
 ### E.2 Deroule de mise en production du lot 1
 
+Mise a jour du 2026-11-28 : le lot compte CINQ migrations, pas trois. `20261128100300_resolution_plus_rapide.sql` s'applique avec MIG1 a MIG3, dans l'ordre des horodatages, AVANT la fusion du code. Le nouveau code lit `postes` partout : fusionne avant ces quatre migrations, il refuse toute l'equipe, et `promote-prod` le sert en trois minutes. `20261128100400_garde_statut_cuisine.sql` retire un geste a l'ancien code : elle s'applique APRES la fusion, des que le nouveau code est servi (etape 6 bis). La consigne complete, avec les verifications par objet et les trois controles prealables ajoutes par les audits, est dans `deroule-production.md`.
+
 1. Sauvegarde (procedure `reference_sauvegarde_prod_procedure`), controles E.0, resultats archives.
-2. Repetition complete sur le banc local : `schema.sql`, MIG1 a MIG3, suite pgTAP, script de retour arriere de MIG2 rejoue, puis l'ANCIEN code (`origin/main` avant la PR) lance contre cette base pour les parcours `03-staff-permissions`, `04-service-and-ordering`, `08-bola`.
+2. Repetition complete sur le banc local : `schema.sql`, les migrations (MIG1 a MIG3 et 100300, puis 100400), suite pgTAP, script de retour arriere de MIG2 rejoue, puis l'ANCIEN code (`origin/main` avant la PR) lance contre cette base pour les parcours `03-staff-permissions`, `04-service-and-ordering`, `08-bola`.
 3. Pause obligatoire : accord du proprietaire avant d'appliquer en production (regle 10).
-4. Appliquer MIG1 a MIG3 par `scripts/appliquer-migrations-ciblees.sh`. Jamais `supabase db push` ni `pnpm db:migrate:prod`. Atomicite : le script lance `psql -1 -v ON_ERROR_STOP=1` (`appliquer-migrations-ciblees.sh:121`), mais chaque fichier porte ses propres `BEGIN` et `COMMIT` : **l'atomicite est par fichier, pas par lot**. Un echec de MIG3 laisse donc MIG1 et MIG2 appliquees. C'est sans danger (l'ancien code est compatible avec MIG1 et MIG2, et MIG2 est complete a elle seule), mais il faut le savoir : dans ce cas on corrige MIG3 et on la relance seule, on ne rejoue pas MIG1 ni MIG2. Apres chaque fichier, verifier sa presence dans `supabase_migrations.schema_migrations` ET l'existence d'un objet qu'il cree (le suivi seul n'est pas fiable).
+4. Appliquer les quatre migrations (MIG1 a MIG3, puis 100300) par `scripts/appliquer-migrations-ciblees.sh`. La cinquieme (100400) attend l'etape 6 bis. Jamais `supabase db push` ni `pnpm db:migrate:prod`. Atomicite : le script lance `psql -1 -v ON_ERROR_STOP=1` (`appliquer-migrations-ciblees.sh:121`), mais chaque fichier porte ses propres `BEGIN` et `COMMIT` : **l'atomicite est par fichier, pas par lot**. Un echec de MIG3 laisse donc MIG1 et MIG2 appliquees. C'est sans danger (l'ancien code est compatible avec MIG1 et MIG2, et MIG2 est complete a elle seule), mais il faut le savoir : dans ce cas on corrige MIG3 et on la relance seule, on ne rejoue pas MIG1 ni MIG2. Apres chaque fichier, verifier sa presence dans `supabase_migrations.schema_migrations` ET l'existence d'un objet qu'il cree (le suivi seul n'est pas fiable).
 5. Verifier en base par le corps STOCKE des fonctions (`pg_get_functiondef`), pas par le nom de la migration : `tenant_permission_level` existe, `has_tenant_write_permission` ne contient plus `ELSE au.role`, chaque ligne `admin_users` vivante a des postes. Puis lancer en production, en lecture seule, la requete de balayage du test `catalogue_droits_codes_connus` : elle doit rendre 0 litteral hors catalogue (H2). Temoin : la meme requete, lancee AVANT l'application, doit rendre `orders.manage` et `reports.view` ; si elle rend 0 avant, elle ne cherche rien et ne prouve rien apres.
-   5 bis. Fenetre de retour arriere de la base : elle se ferme a l'etape 6. Avant : script de retour de MIG2 autorise. Apres : correction en avant seulement.
+   Pour 100300 : `private.matrice_postes()` est en `plpgsql`.
+   5 bis. Fenetre de retour arriere de la base : elle se ferme a l'etape 6. Avant : scripts de retour autorises, dans l'ordre 100400, 100300 (optionnel), MIG3, MIG2, MIG1. Apres : correction en avant seulement.
 6. Fusionner la PR du code (une seule fusion en cours), attendre le resultat du workflow `promote-prod`, verifier `/api/version`.
+   6 bis. Appliquer `20261128100400_garde_statut_cuisine.sql` des que le nouveau code est servi, le jour meme, puis verifier que les declencheurs `trg_orders_statut_cuisine` et `trg_order_items_statut_cuisine` existent.
 7. Verification a l'ecran de chaque poste sur telephone et ordinateur (critere d'acceptation du cahier des charges), en clair et en sombre.
 8. Regenerer `supabase/schema.sql` et les types, avancer le marqueur `SCHEMA_SNAPSHOT_MIGRATION`.
 9. **MIG4, contraction. Etape datee, pas une intention.** Soit J le jour de l'etape 6 (fusion du code), a ecrire en clair dans la PR de MIG4 avec la date reelle.
@@ -1959,7 +1976,7 @@ Prealables : 0 ligne `role = 'admin'` dans `admin_users` et `invitations` apres 
    - Ordre : sauvegarde ; MIG4 sur le banc avec la suite pgTAP ; accord du proprietaire (suppression de colonnes, regle 10) ; MIG4 en production ; types et `schema.sql` regeneres ; fusion de la PR qui supprime `permissions-legacy.ts` et son test ; relance des commandes 3 et 4 de D.2 sans exclusion (0 ligne).
    - Pourquoi ce delai compte (limite ecrite a la demande de l'auditeur) : tant que MIG4 n'est pas appliquee, un ancien deploiement encore joignable (un onglet reste ouvert) decide ses gardes TypeScript sur des reglages perimes. La base reste la garde pour tout ce qui passe par le client de session. Pour les actions de l'ancien code en role de service (equipe, invitations, abonnement), la garde est le role projete (`owner`, `admin`), qui reste juste. Le risque residuel est etroit, et il n'est borne que par cette date.
 
-`tests/journeys/fixtures/schema.sql` (copie gelee, marqueur 20260628000000) : les migrations MIG1 a MIG3 doivent s'appliquer par-dessus sans erreur ; le verifier avec `scripts/run-journeys-local.sh` a l'etape 2.
+`tests/journeys/fixtures/schema.sql` (copie gelee, marqueur 20260628000000) : les cinq migrations doivent s'appliquer par-dessus sans erreur ; le verifier avec `scripts/run-journeys-local.sh` a l'etape 2. Fait le 2026-11-28 (`preuves-corrections.md`).
 
 ---
 
