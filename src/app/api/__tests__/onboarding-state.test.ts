@@ -48,7 +48,7 @@ describe('GET /api/onboarding/state', () => {
       userId: 'user-1',
       adminUser: {
         tenant_id: 't1',
-        role: 'owner',
+        isOwner: true,
         tenant_slug: 'resto',
         onboarding_completed: false,
       },
@@ -99,7 +99,7 @@ describe('GET /api/onboarding/state', () => {
       userId: 'user-1',
       adminUser: {
         tenant_id: 't1',
-        role: 'waiter',
+        isOwner: false,
         tenant_slug: 'resto',
         onboarding_completed: false,
       },

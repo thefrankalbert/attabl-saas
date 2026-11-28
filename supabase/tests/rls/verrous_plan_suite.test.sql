@@ -27,12 +27,14 @@ insert into tenants (id, slug, name, subscription_plan, subscription_status, tri
   ('c3000000-0000-4000-8000-000000000004', 'vs-neuf-bis', 'VS Neuf bis', 'starter', 'active', null, true, false),
   ('c3000000-0000-4000-8000-000000000005', 'vs-neuf-ter', 'VS Neuf ter', 'starter', 'active', null, true, false);
 
-insert into admin_users (id, tenant_id, user_id, email, role, is_active) values
-  ('c3000000-0000-4000-8000-000000000011', 'c3000000-0000-4000-8000-000000000001', 'c3000000-0000-4000-8000-0000000000a1', 'proprio-s@test.local', 'owner', true),
-  ('c3000000-0000-4000-8000-000000000012', 'c3000000-0000-4000-8000-000000000002', 'c3000000-0000-4000-8000-0000000000a2', 'proprio-p@test.local', 'owner', true);
+-- Declencheurs coupes (replica): la synchronisation role -> postes ne tourne
+-- pas, les postes sont donc ecrits ici (contrainte admin_users_postes_non_vide).
+insert into admin_users (id, tenant_id, user_id, email, role, is_active, postes) values
+  ('c3000000-0000-4000-8000-000000000011', 'c3000000-0000-4000-8000-000000000001', 'c3000000-0000-4000-8000-0000000000a1', 'proprio-s@test.local', 'owner', true, '{owner}'),
+  ('c3000000-0000-4000-8000-000000000012', 'c3000000-0000-4000-8000-000000000002', 'c3000000-0000-4000-8000-0000000000a2', 'proprio-p@test.local', 'owner', true, '{owner}');
 
-insert into admin_users (id, tenant_id, user_id, email, role, is_active, is_super_admin) values
-  ('c3000000-0000-4000-8000-000000000013', 'c3000000-0000-4000-8000-000000000003', 'c3000000-0000-4000-8000-0000000000a3', 'super@test.local', 'owner', true, true);
+insert into admin_users (id, tenant_id, user_id, email, role, is_active, is_super_admin, postes) values
+  ('c3000000-0000-4000-8000-000000000013', 'c3000000-0000-4000-8000-000000000003', 'c3000000-0000-4000-8000-0000000000a3', 'super@test.local', 'owner', true, true, '{owner}');
 
 insert into venues (id, tenant_id, slug, name, is_active) values
   ('c3000000-0000-4000-8000-000000000021', 'c3000000-0000-4000-8000-000000000001', 'v', 'V', true),

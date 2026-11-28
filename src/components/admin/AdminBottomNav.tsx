@@ -4,27 +4,25 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
-import { NAV_GROUPS, BOTTOM_NAV_ITEMS } from '@/lib/layout/navigation-config';
+import { NAV_GROUPS, bottomNavItemsFor } from '@/lib/layout/navigation-config';
 import { isImmersivePage } from '@/lib/constants';
 import { getHiddenNav } from '@/lib/segment-features';
 import { getSegmentFamily } from '@/lib/segment-terms';
 import { canOpenAdminSubPath } from '@/lib/auth/admin-route-permissions';
 import { usePermissions } from '@/hooks/usePermissions';
-import type { AdminRole } from '@/types/admin.types';
 
 // --- Types ----------------------------------------------
 
 interface AdminBottomNavProps {
   basePath: string;
-  role: AdminRole;
   establishmentType?: string;
 }
 
 // --- Component ------------------------------------------
 
-export function AdminBottomNav({ basePath, role, establishmentType }: AdminBottomNavProps) {
+export function AdminBottomNav({ basePath, establishmentType }: AdminBottomNavProps) {
   const pathname = usePathname();
-  const { permissions } = usePermissions();
+  const { postes, levels: permissions } = usePermissions();
   const t = useTranslations('sidebar');
   const tSeg = useTranslations('segment');
 
@@ -46,8 +44,8 @@ export function AdminBottomNav({ basePath, role, establishmentType }: AdminBotto
   const resolveLabel = (key: string) =>
     (segmentLabelOverrides[key] ?? t(key)).replace(/\s*\([^)]*\)$/, '');
 
-  // Get the 5 bottom nav item IDs for this role
-  const itemIds = BOTTOM_NAV_ITEMS[role] ?? BOTTOM_NAV_ITEMS.admin;
+  // Onglets candidats de ce membre (union de ses postes, voir bottomNavItemsFor)
+  const itemIds = bottomNavItemsFor(postes);
   const { groupIds: hiddenGroupIds } = getHiddenNav(establishmentType);
 
   // Resolve each ID to its NavGroupConfig, filtering out segment-hidden groups,
@@ -66,7 +64,10 @@ export function AdminBottomNav({ basePath, role, establishmentType }: AdminBotto
       g.directPath !== undefined
         ? canOpenAdminSubPath(g.directPath, permissions)
         : g.items.length > 0,
-    );
+    )
+    // 5 onglets au plus, comptes APRES le filtre des droits: un onglet refuse
+    // ne prend pas la place d'un onglet utile.
+    .slice(0, 5);
 
   return (
     <nav

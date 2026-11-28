@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import React from 'react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
@@ -66,17 +66,20 @@ vi.mock('@/components/ui/alert-dialog', () => ({
   ),
 }));
 
-// Permissions effectives du membre courant, modifiables par test.
-const mockPerms: Record<string, boolean> = { 'settings.view': true };
-vi.mock('@/hooks/usePermissions', () => ({
-  usePermissions: () => ({
-    role: 'owner',
-    permissions: mockPerms,
-    can: (c: string) => mockPerms[c] === true,
-  }),
-}));
-
 import { ShellAccountMenu } from '../ShellAccountMenu';
+import { PermissionsProvider } from '@/contexts/PermissionsContext';
+import { getEffectiveLevels } from '@/lib/permissions';
+import type { PermissionMap, Poste } from '@/types/permission.types';
+
+// Niveaux toujours calcules par la vraie resolution des droits.
+function renderMenu(poste: Poste = 'owner', overrides: PermissionMap = {}) {
+  const levels = getEffectiveLevels({ postes: [poste], permission_overrides: overrides });
+  return render(
+    <PermissionsProvider postes={[poste]} levels={levels}>
+      <ShellAccountMenu {...props} />
+    </PermissionsProvider>,
+  );
+}
 
 const props = {
   basePath: '/sites/demo/admin',
@@ -106,7 +109,7 @@ describe('ShellAccountMenu - deconnexion et file hors ligne', () => {
 
   it('ne force JAMAIS la deconnexion sur un simple clic', async () => {
     mockPrepareLogout.mockResolvedValue({ blocked: false, pending: 0, lost: 0 });
-    render(<ShellAccountMenu {...props} />);
+    renderMenu();
 
     clickLogout();
 
@@ -118,7 +121,7 @@ describe('ShellAccountMenu - deconnexion et file hors ligne', () => {
 
   it('file vide: deconnecte sans rien demander', async () => {
     mockPrepareLogout.mockResolvedValue({ blocked: false, pending: 0, lost: 0 });
-    render(<ShellAccountMenu {...props} />);
+    renderMenu();
 
     clickLogout();
 
@@ -130,7 +133,7 @@ describe('ShellAccountMenu - deconnexion et file hors ligne', () => {
 
   it('file non vide: demande confirmation, explique le sort des commandes, ne deconnecte pas', async () => {
     mockPrepareLogout.mockResolvedValue({ blocked: true, pending: 3, lost: 0 });
-    render(<ShellAccountMenu {...props} />);
+    renderMenu();
 
     clickLogout();
 
@@ -143,7 +146,7 @@ describe('ShellAccountMenu - deconnexion et file hors ligne', () => {
 
   it('confirmation acceptee: deconnecte en force, sans jamais vider la file', async () => {
     mockPrepareLogout.mockResolvedValueOnce({ blocked: true, pending: 3, lost: 0 });
-    render(<ShellAccountMenu {...props} />);
+    renderMenu();
     clickLogout();
     await waitFor(() => expect(screen.getByTestId('confirm')).toBeInTheDocument());
 
@@ -158,7 +161,7 @@ describe('ShellAccountMenu - deconnexion et file hors ligne', () => {
 
   it('commandes detruites pendant le drain force: le dit, ne les passe pas sous silence', async () => {
     mockPrepareLogout.mockResolvedValue({ blocked: false, pending: 0, lost: 2 });
-    render(<ShellAccountMenu {...props} />);
+    renderMenu();
 
     clickLogout();
 
@@ -167,24 +170,32 @@ describe('ShellAccountMenu - deconnexion et file hors ligne', () => {
   });
 });
 
-// Le personnel n'ouvre pas /subscription ni /settings (settings.view): le menu
-// du compte les lui proposait quand meme, et le clic finissait sur /unauthorized.
+// Le personnel n'ouvre pas /subscription ni /settings: le menu du compte les
+// lui proposait quand meme, et le clic finissait sur /unauthorized. Reglages =
+// settings.edit; abonnement = BILLING_READ (billing.manage au moins limite).
 describe('ShellAccountMenu - liens selon les permissions', () => {
-  afterEach(() => {
-    mockPerms['settings.view'] = true;
-  });
-
-  it('montre abonnement et reglages a qui peut les ouvrir', () => {
-    render(<ShellAccountMenu {...props} />);
+  it('montre abonnement et reglages au proprietaire', () => {
+    renderMenu('owner');
     expect(screen.getByText('navSubscription')).toBeInTheDocument();
     expect(screen.getByText('navSettings')).toBeInTheDocument();
   });
 
-  it('les cache a un membre sans settings.view', () => {
-    mockPerms['settings.view'] = false;
-    render(<ShellAccountMenu {...props} />);
+  it('montre abonnement et reglages au gerant (settings.edit, billing borne)', () => {
+    renderMenu('manager');
+    expect(screen.getByText('navSubscription')).toBeInTheDocument();
+    expect(screen.getByText('navSettings')).toBeInTheDocument();
+  });
+
+  it('les cache a un serveur', () => {
+    renderMenu('waiter');
     expect(screen.queryByText('navSubscription')).toBeNull();
     expect(screen.queryByText('navSettings')).toBeNull();
     expect(screen.getByText('navSupport')).toBeInTheDocument();
+  });
+
+  it('gerant sans settings.edit: plus de reglages, l abonnement reste', () => {
+    renderMenu('manager', { 'settings.edit': false });
+    expect(screen.queryByText('navSettings')).toBeNull();
+    expect(screen.getByText('navSubscription')).toBeInTheDocument();
   });
 });

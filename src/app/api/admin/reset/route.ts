@@ -39,10 +39,10 @@ export async function POST(request: Request) {
     }
 
     // 1. Auth + tenant from session (IDOR prevention)
-    const { tenantId, user, role } = await getAuthenticatedUserWithTenant();
+    const { tenantId, user, isOwner } = await getAuthenticatedUserWithTenant();
 
-    // 2. Only the owner can reset (super_admin resolves to 'owner' in get-session)
-    if (role !== 'owner') {
+    // 2. Only the owner can reset (un super_admin est resolu en proprietaire virtuel)
+    if (!isOwner) {
       return NextResponse.json(
         {
           error: 'Seul le proprietaire du restaurant peut effectuer cette action.',

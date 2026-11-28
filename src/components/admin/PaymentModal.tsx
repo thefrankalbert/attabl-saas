@@ -42,7 +42,7 @@ interface PaymentModalProps {
   orderNumber?: number;
   /**
    * Whether the actor may comp (offer) the order. Comp is a MANAGER privilege -
-   * the caller passes true only for owner/admin/manager. Never exposed to a plain
+   * the caller passes true only with the money authority (four rights). Never exposed to a plain
    * server (a server zeroing out checks = fraud). ORDER mode only.
    */
   canComp?: boolean;

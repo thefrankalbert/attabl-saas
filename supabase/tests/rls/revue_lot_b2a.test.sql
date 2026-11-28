@@ -2,8 +2,9 @@
 --
 -- CE QUE CE TEST VERROUILLE (une section par constat, migrations
 -- 20261124110000 a 20261124111000):
---   B103 ecriture de `tenants` = `settings.edit` (proprietaire, admin,
---        delegation dans les deux sens), plus le gerant par defaut;
+--   B103 ecriture de `tenants` = `settings.edit` (proprietaire, gerant,
+--        delegation dans les deux sens). L'ancien role `admin` est couvert
+--        une seule fois, dans transition_anciens_roles.test.sql;
 --   B147 lecture de `tenants` par les seuls membres actifs;
 --   B148 `apply_flutterwave_payment`: "doublon" seulement pour la MEME
 --        transaction;
@@ -56,17 +57,17 @@ from (values (1, 'patron@b2a.test'), (2, 'admin@b2a.test'), (3, 'gerant@b2a.test
 
 insert into public.admin_users (id, user_id, tenant_id, email, role, is_active, custom_permissions) values
   ('b2a00000-0000-4000-8000-000000000201', 'b2a00000-0000-4000-8000-000000000101', 'b2a00000-0000-4000-8000-000000000001', 'patron@b2a.test', 'owner', true, null),
-  ('b2a00000-0000-4000-8000-000000000202', 'b2a00000-0000-4000-8000-000000000102', 'b2a00000-0000-4000-8000-000000000001', 'admin@b2a.test', 'admin', true, null),
+  ('b2a00000-0000-4000-8000-000000000202', 'b2a00000-0000-4000-8000-000000000102', 'b2a00000-0000-4000-8000-000000000001', 'admin@b2a.test', 'manager', true, null),
   ('b2a00000-0000-4000-8000-000000000203', 'b2a00000-0000-4000-8000-000000000103', 'b2a00000-0000-4000-8000-000000000001', 'gerant@b2a.test', 'manager', true, null),
-  ('b2a00000-0000-4000-8000-000000000204', 'b2a00000-0000-4000-8000-000000000104', 'b2a00000-0000-4000-8000-000000000001', 'admin-retire@b2a.test', 'admin', true, '{"settings.edit": false}'::jsonb),
+  ('b2a00000-0000-4000-8000-000000000204', 'b2a00000-0000-4000-8000-000000000104', 'b2a00000-0000-4000-8000-000000000001', 'admin-retire@b2a.test', 'manager', true, '{"settings.edit": false}'::jsonb),
   ('b2a00000-0000-4000-8000-000000000205', 'b2a00000-0000-4000-8000-000000000105', 'b2a00000-0000-4000-8000-000000000001', 'caissier-delegue@b2a.test', 'cashier', true, '{"settings.edit": true}'::jsonb),
   ('b2a00000-0000-4000-8000-000000000206', 'b2a00000-0000-4000-8000-000000000106', 'b2a00000-0000-4000-8000-000000000001', 'serveur@b2a.test', 'waiter', true, null),
-  ('b2a00000-0000-4000-8000-000000000207', 'b2a00000-0000-4000-8000-000000000107', 'b2a00000-0000-4000-8000-000000000001', 'desactive@b2a.test', 'admin', false, null),
+  ('b2a00000-0000-4000-8000-000000000207', 'b2a00000-0000-4000-8000-000000000107', 'b2a00000-0000-4000-8000-000000000001', 'desactive@b2a.test', 'manager', false, null),
   -- Le "mobile": desactive dans T1, membre actif de T2.
   ('b2a00000-0000-4000-8000-000000000208', 'b2a00000-0000-4000-8000-000000000108', 'b2a00000-0000-4000-8000-000000000001', 'mobile@b2a.test', 'waiter', false, null),
   ('b2a00000-0000-4000-8000-000000000209', 'b2a00000-0000-4000-8000-000000000108', 'b2a00000-0000-4000-8000-000000000002', 'mobile@b2a.test', 'waiter', true, null),
   -- Administrateur du futur restaurant ferme TX: la fermeture ne desactive pas les membres.
-  ('b2a00000-0000-4000-8000-000000000210', 'b2a00000-0000-4000-8000-000000000109', 'b2a00000-0000-4000-8000-000000000003', 'admin-ferme@b2a.test', 'admin', true, null);
+  ('b2a00000-0000-4000-8000-000000000210', 'b2a00000-0000-4000-8000-000000000109', 'b2a00000-0000-4000-8000-000000000003', 'admin-ferme@b2a.test', 'manager', true, null);
 
 insert into public.orders (id, tenant_id, order_number, status, payment_status, subtotal, total) values
   ('b2a00000-0000-4000-8000-000000000301', 'b2a00000-0000-4000-8000-000000000001', 'B2A-1', 'pending', 'pending', 5000, 5000);
@@ -86,21 +87,21 @@ set local "request.jwt.claims" = '{"sub":"b2a00000-0000-4000-8000-000000000102",
 update public.tenants set tax_rate = 20 where id = 'b2a00000-0000-4000-8000-000000000001';
 reset role;
 select is((select tax_rate::int from public.tenants where id = 'b2a00000-0000-4000-8000-000000000001'), 20,
-  'B103 temoin: un administrateur (settings.edit par defaut) change la TVA');
+  'B103 temoin: un gerant (settings.edit par defaut) change la TVA');
 
 set local role authenticated;
 set local "request.jwt.claims" = '{"sub":"b2a00000-0000-4000-8000-000000000103","role":"authenticated"}';
 update public.tenants set tax_rate = 21 where id = 'b2a00000-0000-4000-8000-000000000001';
 reset role;
-select is((select tax_rate::int from public.tenants where id = 'b2a00000-0000-4000-8000-000000000001'), 20,
-  'B103: un gerant (sans settings.edit) ne change PAS la TVA par appel direct (avant: 21)');
+select is((select tax_rate::int from public.tenants where id = 'b2a00000-0000-4000-8000-000000000001'), 21,
+  'B103: un second gerant change aussi la TVA (lot 1 des roles: settings.edit par defaut)');
 
 set local role authenticated;
 set local "request.jwt.claims" = '{"sub":"b2a00000-0000-4000-8000-000000000104","role":"authenticated"}';
 update public.tenants set tax_rate = 22 where id = 'b2a00000-0000-4000-8000-000000000001';
 reset role;
-select is((select tax_rate::int from public.tenants where id = 'b2a00000-0000-4000-8000-000000000001'), 20,
-  'B103: un administrateur a qui le proprietaire a retire settings.edit ne change PAS la TVA (avant: 22)');
+select is((select tax_rate::int from public.tenants where id = 'b2a00000-0000-4000-8000-000000000001'), 21,
+  'B103: un gerant a qui le proprietaire a retire settings.edit ne change PAS la TVA (avant: 22)');
 
 set local role authenticated;
 set local "request.jwt.claims" = '{"sub":"b2a00000-0000-4000-8000-000000000105","role":"authenticated"}';
@@ -121,7 +122,7 @@ set local "request.jwt.claims" = '{"sub":"b2a00000-0000-4000-8000-000000000107",
 update public.tenants set tax_rate = 25 where id = 'b2a00000-0000-4000-8000-000000000001';
 reset role;
 select is((select tax_rate::int from public.tenants where id = 'b2a00000-0000-4000-8000-000000000001'), 23,
-  'B103 temoin: un administrateur desactive ne change pas la TVA');
+  'B103 temoin: un gerant desactive ne change pas la TVA');
 
 select ok(
   (select pg_get_expr(polqual, polrelid) from pg_policy

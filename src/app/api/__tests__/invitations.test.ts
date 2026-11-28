@@ -52,20 +52,19 @@ vi.mock('@/services/email.service', () => ({
   sendInvitationEmail: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@/services/plan-enforcement.service', () => ({
-  createPlanEnforcementService: vi.fn(),
-  STAFF_ROLES: ['manager', 'cashier', 'chef', 'waiter'],
-}));
+// isAdminSeat reste la VRAIE regle (delegation), enveloppee d'un espion pour
+// prouver l'aiguillage canAddAdmin / canAddStaff.
+vi.mock('@/services/plan-enforcement.service', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/services/plan-enforcement.service')>();
+  return {
+    ...original,
+    createPlanEnforcementService: vi.fn(),
+    isAdminSeat: vi.fn(original.isAdminSeat),
+  };
+});
 
 vi.mock('@/lib/cache-headers', () => ({
   jsonWithCache: vi.fn().mockImplementation((data: unknown) => Response.json(data)),
-}));
-
-// team.manage, resolu en trois niveaux: simule ici, la resolution elle-meme a
-// ses propres tests (resolve-admin-permission, permissions).
-const mockResolvePermission = vi.fn();
-vi.mock('@/lib/auth/resolve-admin-permission', () => ({
-  resolveAdminPermission: (...a: unknown[]) => mockResolvePermission(...a),
 }));
 
 vi.mock('next/headers', () => ({
@@ -85,7 +84,7 @@ import { invitationManageLimiter, invitationTenantDailyLimiter } from '@/lib/rat
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createInvitationService } from '@/services/invitation.service';
-import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
+import { createPlanEnforcementService, isAdminSeat } from '@/services/plan-enforcement.service';
 import { ServiceError } from '@/services/errors';
 
 // ---------------------------------------------------------------------------
@@ -123,7 +122,6 @@ function buildParams(id = TEST_INVITATION_ID): { params: Promise<{ id: string }>
 }
 
 beforeEach(() => {
-  mockResolvePermission.mockResolvedValue({ allowed: true, role: 'owner' });
   mockDailyQuota(true);
 });
 
@@ -145,25 +143,33 @@ function mockDailyQuota(allowed: boolean) {
   });
 }
 
+type ActorRow = {
+  id?: string;
+  postes: string[];
+  permission_overrides?: Record<string, boolean> | null;
+} | null;
+
+const OWNER: ActorRow = { id: 'membership-1', postes: ['owner'] };
+const MANAGER: ActorRow = { id: 'membership-mgr', postes: ['manager'] };
+
+/**
+ * Client de SESSION simule. Les routes passent par le VRAI resolveLiveMember :
+ * la ligne `admin_users` de l'appelant (postes, permission_overrides) est lue
+ * ici, et les reglages du restaurant (`poste_permissions`) sont vides.
+ */
 function createMockSupabase(overrides?: {
   authUser?: { id: string; email: string } | null;
-  adminUser?: { id?: string; tenant_id: string; role: string } | null;
+  actor?: ActorRow;
 }) {
   const user = overrides?.authUser ?? { id: 'user-1', email: 'admin@test.com' };
-  const adminUser = overrides?.adminUser ?? {
-    id: 'membership-1',
-    tenant_id: 'tenant-1',
-    role: 'owner',
-  };
+  const actor = overrides?.actor === undefined ? OWNER : overrides.actor;
 
-  // The route resolves the tenant from x-tenant-slug (tenants.single), then verifies
-  // membership (admin_users.maybeSingle). Mock both table lookups.
-  const makeChain = (single: unknown, maybe: unknown): Record<string, ReturnType<typeof vi.fn>> => {
+  const makeChain = (data: unknown): Record<string, ReturnType<typeof vi.fn>> => {
+    const result = { data, error: data ? null : { message: 'Not found' } };
     const c: Record<string, ReturnType<typeof vi.fn>> = {};
-    c.single = vi.fn().mockResolvedValue(single);
-    c.maybeSingle = vi.fn().mockResolvedValue(maybe);
+    c.single = vi.fn().mockResolvedValue(result);
+    c.maybeSingle = vi.fn().mockResolvedValue(result);
     c.eq = vi.fn().mockImplementation(() => c);
-    c.in = vi.fn().mockImplementation(() => c);
     c.neq = vi.fn().mockImplementation(() => c);
     c.is = vi.fn().mockImplementation(() => c);
     return c;
@@ -178,63 +184,44 @@ function createMockSupabase(overrides?: {
     },
     from: vi.fn().mockImplementation((table: string) => {
       if (table === 'tenants') {
-        const tenantResult = { data: { id: adminUser?.tenant_id ?? 'tenant-1' }, error: null };
-        return { select: vi.fn().mockImplementation(() => makeChain(tenantResult, tenantResult)) };
+        return { select: vi.fn().mockImplementation(() => makeChain({ id: 'tenant-1' })) };
       }
-      // admin_users membership check (id + role): the route needs the
-      // membership-row PK (admin_users.id) for the invited_by FK.
-      const membership = adminUser
-        ? { id: adminUser.id ?? 'membership-1', role: adminUser.role }
+      if (table === 'poste_permissions') {
+        const c = makeChain(null);
+        c.in = vi.fn().mockResolvedValue({ data: [], error: null });
+        return { select: vi.fn().mockImplementation(() => c) };
+      }
+      // admin_users: ligne de membre vivant de l'appelant (id = cle de membre,
+      // jamais l'id du compte auth, pour la cle etrangere invited_by).
+      const row = actor
+        ? {
+            id: actor.id ?? 'membership-1',
+            postes: actor.postes,
+            permission_overrides: actor.permission_overrides ?? null,
+            is_super_admin: false,
+            role: 'staff',
+          }
         : null;
-      const result = { data: membership, error: membership ? null : { message: 'Not found' } };
-      return { select: vi.fn().mockImplementation(() => makeChain(result, result)) };
+      return { select: vi.fn().mockImplementation(() => makeChain(row)) };
     }),
   };
 }
 
-function createMockDeleteSupabase(overrides?: {
-  authUser?: { id: string } | null;
-  adminUser?: { role: string } | null;
-}) {
-  const user = overrides?.authUser ?? { id: 'user-1' };
-  const adminUser = overrides?.adminUser ?? { role: 'owner' };
-
-  const makeSingleChain = (data: unknown) => {
-    const result = { data, error: data ? null : { message: 'Not found' } };
-    const chain = (): Record<string, ReturnType<typeof vi.fn>> => {
-      const c: Record<string, ReturnType<typeof vi.fn>> = {};
-      c.single = vi.fn().mockResolvedValue(result);
-      c.maybeSingle = vi.fn().mockResolvedValue(result);
-      c.eq = vi.fn().mockImplementation(() => c);
-      c.in = vi.fn().mockImplementation(() => c);
-      c.neq = vi.fn().mockImplementation(() => c);
-      c.is = vi.fn().mockImplementation(() => c);
-      return c;
-    };
-    return { select: vi.fn().mockImplementation(() => chain()) };
-  };
-
-  return {
-    auth: {
-      getUser: vi.fn().mockResolvedValue({ data: { user }, error: null }),
-    },
-    from: vi.fn().mockImplementation((table: string) => {
-      if (table === 'admin_users') return makeSingleChain(adminUser);
-      return makeSingleChain(null);
-    }),
-  };
-}
+/** Meme client de session: DELETE et renvoi lisent la meme ligne de membre. */
+const createMockDeleteSupabase = createMockSupabase;
 
 function setupMockAdminClient(overrides?: {
   invitations?: Array<Record<string, unknown>>;
   invitation?: Record<string, unknown>;
   tenant?: Record<string, unknown>;
+  /** Ce que l'invitation lue en base donnerait (annuler / renvoyer). */
+  rights?: { postes: string[]; permission_overrides?: Record<string, boolean> | null };
 }) {
   const invitations = overrides?.invitations ?? [
     {
       id: TEST_INVITATION_ID,
       email: 'new@test.com',
-      role: 'admin',
+      postes: ['waiter'],
       status: 'pending',
       token: 'secret',
     },
@@ -242,39 +229,44 @@ function setupMockAdminClient(overrides?: {
   const invitation = overrides?.invitation ?? {
     id: TEST_INVITATION_ID,
     email: 'new@test.com',
-    role: 'admin',
+    postes: ['waiter'],
     status: 'pending',
     token: 'secret',
     tenant_id: 'tenant-1',
   };
   const tenant = overrides?.tenant ?? { name: 'Test Restaurant', logo_url: null, slug: 'test' };
+  const rights = {
+    tenant_id: 'tenant-1',
+    postes: overrides?.rights?.postes ?? ['waiter'],
+    permission_overrides: overrides?.rights?.permission_overrides ?? null,
+  };
 
-  // Includes `role` so the cancel/resend routes can run their canActOnUser
-  // anti-escalation gate (actor 'owner' may act on an 'admin' invitation).
-  const inviteSingle = vi
-    .fn()
-    .mockResolvedValue({ data: { tenant_id: 'tenant-1', role: 'admin' }, error: null });
-  const inviteEq = vi.fn().mockReturnValue({ single: inviteSingle });
-  const inviteSelect = vi.fn().mockReturnValue({ eq: inviteEq });
+  const single = (data: unknown) => ({
+    select: vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue({ data, error: null }) }),
+    }),
+  });
+  // Reglages du restaurant (poste_permissions), lus par le client admin: aucun.
+  const posteSettings = {
+    select: vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({ in: vi.fn().mockResolvedValue({ data: [], error: null }) }),
+    }),
+  };
 
-  const tenantSingle = vi.fn().mockResolvedValue({ data: tenant, error: null });
-  const tenantEq = vi.fn().mockReturnValue({ single: tenantSingle });
-  const tenantSelect = vi.fn().mockReturnValue({ eq: tenantEq });
-
-  let fromCallCount = 0;
   const adminClient = {
-    from: vi.fn().mockImplementation(() => {
-      fromCallCount++;
-      if (fromCallCount <= 1) return { select: inviteSelect };
-      return { select: tenantSelect };
+    from: vi.fn().mockImplementation((table: string) => {
+      if (table === 'invitations') return single(rights);
+      if (table === 'poste_permissions') return posteSettings;
+      return single(tenant);
     }),
   };
 
   vi.mocked(createAdminClient).mockReturnValue(adminClient as never);
+  const createInvitation = vi.fn().mockResolvedValue(invitation);
   vi.mocked(createInvitationService).mockReturnValue({
     getPendingInvitations: vi.fn().mockResolvedValue({ invitations, total: invitations.length }),
     assertNotAlreadyMember: vi.fn().mockResolvedValue(undefined),
-    createInvitation: vi.fn().mockResolvedValue(invitation),
+    createInvitation,
     cancelInvitation: vi.fn().mockResolvedValue(undefined),
     resendInvitation: vi.fn().mockResolvedValue(invitation),
   } as never);
@@ -283,7 +275,7 @@ function setupMockAdminClient(overrides?: {
     canAddStaff: vi.fn().mockResolvedValue(undefined),
   } as never);
 
-  return adminClient;
+  return Object.assign(adminClient, { createInvitation });
 }
 
 // ---------------------------------------------------------------------------
@@ -346,7 +338,7 @@ describe('POST /api/invitations', () => {
   it('returns 429 when rate limited', async () => {
     mockRateLimit(false);
 
-    const res = await POST(buildPostRequest({ email: 'new@test.com', role: 'admin' }));
+    const res = await POST(buildPostRequest({ email: 'new@test.com', postes: ['waiter'] }));
     const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(429);
@@ -359,7 +351,7 @@ describe('POST /api/invitations', () => {
     mock.auth.getUser.mockResolvedValue({ data: { user: null }, error: null });
     vi.mocked(createClient).mockResolvedValue(mock as never);
 
-    const res = await POST(buildPostRequest({ email: 'new@test.com', role: 'admin' }));
+    const res = await POST(buildPostRequest({ email: 'new@test.com', postes: ['waiter'] }));
     const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(401);
@@ -398,7 +390,7 @@ describe('POST /api/invitations', () => {
     mockRateLimit(true);
     vi.mocked(createClient).mockResolvedValue(createMockSupabase() as never);
 
-    const res = await POST(buildPostRequest({ email: 'not-an-email', role: 'waiter' }));
+    const res = await POST(buildPostRequest({ email: 'not-an-email', postes: ['waiter'] }));
     const json = (await res.json()) as { error: string };
 
     expect(json.error).toBe('Adresse email invalide');
@@ -410,7 +402,7 @@ describe('POST /api/invitations', () => {
     vi.mocked(createClient).mockResolvedValue(mock as never);
     setupMockAdminClient();
 
-    const res = await POST(buildPostRequest({ email: 'new@test.com', role: 'admin' }));
+    const res = await POST(buildPostRequest({ email: 'new@test.com', postes: ['waiter'] }));
     const json = (await res.json()) as { success: boolean; invitation: Record<string, unknown> };
 
     expect(res.status).toBe(201);
@@ -430,7 +422,7 @@ describe('POST /api/invitations', () => {
     vi.mocked(createClient).mockResolvedValue(createMockSupabase() as never);
     setupMockAdminClient();
 
-    const res = await POST(buildPostRequest({ email: 'new@test.com', role: 'admin' }));
+    const res = await POST(buildPostRequest({ email: 'new@test.com', postes: ['waiter'] }));
     const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(429);
@@ -457,7 +449,7 @@ describe('POST /api/invitations', () => {
     } as never);
     vi.mocked(invitationTenantDailyLimiter.check).mockClear();
 
-    const res = await POST(buildPostRequest({ email: 'new@test.com', role: 'admin' }));
+    const res = await POST(buildPostRequest({ email: 'new@test.com', postes: ['waiter'] }));
 
     expect(res.status).toBe(400);
     expect(invitationTenantDailyLimiter.check).not.toHaveBeenCalled();
@@ -472,7 +464,7 @@ describe('POST /api/invitations', () => {
     const canAddStaff = vi.fn().mockResolvedValue(undefined);
     vi.mocked(createPlanEnforcementService).mockReturnValue({ canAddAdmin, canAddStaff } as never);
 
-    const res = await POST(buildPostRequest({ email: 'cook@test.com', role: 'chef' }));
+    const res = await POST(buildPostRequest({ email: 'cook@test.com', postes: ['chef'] }));
 
     expect(res.status).toBe(201);
     expect(canAddStaff).toHaveBeenCalledTimes(1);
@@ -505,7 +497,7 @@ describe('POST /api/invitations', () => {
       canAddStaff,
     } as never);
 
-    const res = await POST(buildPostRequest({ email: 'cook@test.com', role: 'chef' }));
+    const res = await POST(buildPostRequest({ email: 'cook@test.com', postes: ['chef'] }));
     const body = (await res.json()) as { error: string; code?: string };
 
     expect(res.status).toBe(400);
@@ -534,7 +526,7 @@ describe('POST /api/invitations', () => {
       resendInvitation: vi.fn(),
     } as never);
 
-    const res = await POST(buildPostRequest({ email: 'awa@test.com', role: 'admin' }));
+    const res = await POST(buildPostRequest({ email: 'awa@test.com', postes: ['waiter'] }));
     const body = (await res.json()) as { error: string; code?: string };
 
     expect(res.status).toBe(409);
@@ -550,7 +542,7 @@ describe('POST /api/invitations', () => {
     mockRateLimit(true);
     const mock = createMockSupabase({
       authUser: { id: 'auth-user-99', email: 'owner@test.com' },
-      adminUser: { id: 'membership-42', tenant_id: 'tenant-1', role: 'owner' },
+      actor: { id: 'membership-42', postes: ['owner'] },
     });
     vi.mocked(createClient).mockResolvedValue(mock as never);
     setupMockAdminClient();
@@ -558,7 +550,7 @@ describe('POST /api/invitations', () => {
     const createInvitation = vi.fn().mockResolvedValue({
       id: TEST_INVITATION_ID,
       email: 'new@test.com',
-      role: 'admin',
+      postes: ['waiter'],
       status: 'pending',
       token: 'secret',
       tenant_id: 'tenant-1',
@@ -571,7 +563,7 @@ describe('POST /api/invitations', () => {
       resendInvitation: vi.fn(),
     } as never);
 
-    const res = await POST(buildPostRequest({ email: 'new@test.com', role: 'admin' }));
+    const res = await POST(buildPostRequest({ email: 'new@test.com', postes: ['waiter'] }));
 
     expect(res.status).toBe(201);
     expect(createInvitation).toHaveBeenCalledWith(
@@ -582,20 +574,88 @@ describe('POST /api/invitations', () => {
     );
   });
 
-  it('enforces the admin limit (canAddAdmin) for the admin role', async () => {
+  it('un gerant invite pour un siege de personnel (canAddStaff, decision G.a), jamais canAddAdmin', async () => {
     mockRateLimit(true);
-    const mock = createMockSupabase();
-    vi.mocked(createClient).mockResolvedValue(mock as never);
+    vi.mocked(createClient).mockResolvedValue(createMockSupabase({ actor: MANAGER }) as never);
     setupMockAdminClient();
     const canAddAdmin = vi.fn().mockResolvedValue(undefined);
     const canAddStaff = vi.fn().mockResolvedValue(undefined);
     vi.mocked(createPlanEnforcementService).mockReturnValue({ canAddAdmin, canAddStaff } as never);
 
-    const res = await POST(buildPostRequest({ email: 'admin2@test.com', role: 'admin' }));
+    const res = await POST(buildPostRequest({ email: 'new@test.com', postes: ['waiter'] }));
+
+    expect(res.status).toBe(201);
+    expect(canAddStaff).toHaveBeenCalledTimes(1);
+    expect(canAddAdmin).not.toHaveBeenCalled();
+  });
+
+  it('enforces the admin limit (canAddAdmin) quand la regle de siege (isAdminSeat) le dit', async () => {
+    mockRateLimit(true);
+    vi.mocked(createClient).mockResolvedValue(createMockSupabase() as never);
+    setupMockAdminClient();
+    const canAddAdmin = vi.fn().mockResolvedValue(undefined);
+    const canAddStaff = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(createPlanEnforcementService).mockReturnValue({ canAddAdmin, canAddStaff } as never);
+    // Reglage manager = siege d'administrateur (valeur 'admin' du choix G.a).
+    vi.mocked(isAdminSeat).mockReturnValueOnce(true);
+
+    const res = await POST(buildPostRequest({ email: 'new@test.com', postes: ['manager'] }));
 
     expect(res.status).toBe(201);
     expect(canAddAdmin).toHaveBeenCalledTimes(1);
     expect(canAddStaff).not.toHaveBeenCalled();
+  });
+
+  // Validation du corps: la conception interdit ces cinq cas, aucune ecriture.
+  it.each([
+    ['postes vide', { postes: [] }],
+    ['poste owner', { postes: ['owner'] }],
+    ['poste inconnu', { postes: ['admin'] }],
+    ['doublon', { postes: ['waiter', 'waiter'] }],
+    [
+      'code de droit inconnu dans permission_overrides',
+      {
+        postes: ['waiter'],
+        permission_overrides: { 'root.access': true },
+      },
+    ],
+  ])('refuse 400 (%s), sans rien creer', async (_label, extra) => {
+    mockRateLimit(true);
+    vi.mocked(createClient).mockResolvedValue(createMockSupabase() as never);
+    const admin = setupMockAdminClient();
+
+    const res = await POST(buildPostRequest({ email: 'new@test.com', ...extra }));
+
+    expect(res.status).toBe(400);
+    expect(admin.createInvitation).not.toHaveBeenCalled();
+  });
+
+  it('un gerant invite un serveur (oui)', async () => {
+    mockRateLimit(true);
+    vi.mocked(createClient).mockResolvedValue(createMockSupabase({ actor: MANAGER }) as never);
+    setupMockAdminClient();
+
+    const res = await POST(buildPostRequest({ email: 'new@test.com', postes: ['waiter'] }));
+
+    expect(res.status).toBe(201);
+  });
+
+  it('on ne donne pas un droit qu on n a pas: un caissier avec team.manage ne cree pas un gerant (403, rien cree)', async () => {
+    mockRateLimit(true);
+    const cashierWithTeam: ActorRow = {
+      id: 'membership-cash',
+      postes: ['cashier'],
+      permission_overrides: { 'team.manage': true },
+    };
+    vi.mocked(createClient).mockResolvedValue(
+      createMockSupabase({ actor: cashierWithTeam }) as never,
+    );
+    const admin = setupMockAdminClient();
+
+    const res = await POST(buildPostRequest({ email: 'new@test.com', postes: ['manager'] }));
+
+    expect(res.status).toBe(403);
+    expect(admin.createInvitation).not.toHaveBeenCalled();
   });
 });
 
@@ -609,7 +669,7 @@ describe('POST /api/invitations - journal d audit', () => {
     vi.mocked(createClient).mockResolvedValue(createMockSupabase() as never);
     setupMockAdminClient();
 
-    const res = await POST(buildPostRequest({ email: 'new@test.com', role: 'admin' }));
+    const res = await POST(buildPostRequest({ email: 'new@test.com', postes: ['waiter'] }));
     expect(res.status).toBe(201);
 
     expect(mockCreateAuditService).toHaveBeenCalledWith(expect.anything(), {
@@ -634,9 +694,12 @@ describe('POST /api/invitations - journal d audit', () => {
     mockRateLimit(true);
     vi.mocked(createClient).mockResolvedValue(createMockSupabase() as never);
     setupMockAdminClient();
-    mockResolvePermission.mockResolvedValue({ allowed: false, role: 'admin' });
+    // Un chef n'a pas team.manage.
+    vi.mocked(createClient).mockResolvedValue(
+      createMockSupabase({ actor: { id: 'membership-chef', postes: ['chef'] } }) as never,
+    );
 
-    const res = await POST(buildPostRequest({ email: 'new@test.com', role: 'admin' }));
+    const res = await POST(buildPostRequest({ email: 'new@test.com', postes: ['waiter'] }));
     expect(res.status).toBe(403);
     expect(mockAuditLog).not.toHaveBeenCalled();
   });
@@ -687,13 +750,35 @@ describe('DELETE /api/invitations/[id]', () => {
     expect(json.success).toBe(true);
   });
 
-  it('returns 403 when an admin tries to cancel a peer (admin-role) invitation', async () => {
-    // L1 anti-escalation: an admin cannot act on an invitation for a peer/higher
-    // role. setupMockAdminClient fetches an invitation with role 'admin'.
+  // Audit regression M3: un gerant peut INVITER un gerant (inclus ou egal). Il
+  // doit donc pouvoir defaire cette invitation, sinon une faute de frappe dans
+  // l'adresse ne se corrige que par le proprietaire. Meme regle que pour donner.
+  it('un gerant annule l invitation d un gerant (il avait le droit de la poser)', async () => {
     mockRateLimit(true);
-    const mock = createMockDeleteSupabase({ adminUser: { role: 'admin' } });
-    vi.mocked(createClient).mockResolvedValue(mock as never);
-    setupMockAdminClient();
+    vi.mocked(createClient).mockResolvedValue(
+      createMockDeleteSupabase({ actor: MANAGER }) as never,
+    );
+    setupMockAdminClient({ rights: { postes: ['manager'] } });
+    const cancelInvitation = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(createInvitationService).mockReturnValue({ cancelInvitation } as never);
+
+    const res = await DELETE(buildDeleteRequest(), buildParams());
+
+    expect(res.status).toBe(200);
+    expect(cancelInvitation).toHaveBeenCalledWith(TEST_INVITATION_ID);
+  });
+
+  it('returns 403 when a manager tries to cancel an invitation carrying a right he does not hold', async () => {
+    // Anti-escalade: le proprietaire a ajoute a cette invitation le paiement de
+    // l'abonnement, que le gerant n'a qu'au niveau borne. Il n'aurait pas pu la
+    // poser: il ne la defait pas.
+    mockRateLimit(true);
+    vi.mocked(createClient).mockResolvedValue(
+      createMockDeleteSupabase({ actor: MANAGER }) as never,
+    );
+    setupMockAdminClient({
+      rights: { postes: ['manager'], permission_overrides: { 'billing.manage': true } },
+    });
     const cancelInvitation = vi.fn().mockResolvedValue(undefined);
     vi.mocked(createInvitationService).mockReturnValue({ cancelInvitation } as never);
 
@@ -701,6 +786,34 @@ describe('DELETE /api/invitations/[id]', () => {
 
     expect(res.status).toBe(403);
     expect(cancelInvitation).not.toHaveBeenCalled();
+  });
+
+  it('temoin: le proprietaire annule l invitation d un gerant (meme requete, autre resultat)', async () => {
+    mockRateLimit(true);
+    vi.mocked(createClient).mockResolvedValue(createMockDeleteSupabase({ actor: OWNER }) as never);
+    setupMockAdminClient({ rights: { postes: ['manager'] } });
+    const cancelInvitation = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(createInvitationService).mockReturnValue({ cancelInvitation } as never);
+
+    const res = await DELETE(buildDeleteRequest(), buildParams());
+
+    expect(res.status).toBe(200);
+    expect(cancelInvitation).toHaveBeenCalledWith(TEST_INVITATION_ID);
+  });
+
+  it('temoin: un gerant annule l invitation d un serveur', async () => {
+    mockRateLimit(true);
+    vi.mocked(createClient).mockResolvedValue(
+      createMockDeleteSupabase({ actor: MANAGER }) as never,
+    );
+    setupMockAdminClient({ rights: { postes: ['waiter'] } });
+    const cancelInvitation = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(createInvitationService).mockReturnValue({ cancelInvitation } as never);
+
+    const res = await DELETE(buildDeleteRequest(), buildParams());
+
+    expect(res.status).toBe(200);
+    expect(cancelInvitation).toHaveBeenCalledTimes(1);
   });
 
   it('returns mapped status on ServiceError', async () => {
@@ -780,6 +893,45 @@ describe('POST /api/invitations/[id]/resend', () => {
     expect(json.error).toContain('Non autorise');
   });
 
+  it('refuse a un gerant de renvoyer une invitation qui porte un droit qu il n a pas (403, aucun courriel)', async () => {
+    mockRateLimit(true);
+    vi.mocked(createClient).mockResolvedValue(
+      createMockDeleteSupabase({ actor: MANAGER }) as never,
+    );
+    setupMockAdminClient({
+      rights: { postes: ['manager'], permission_overrides: { 'billing.manage': true } },
+    });
+    const resendInvitation = vi.fn();
+    vi.mocked(createInvitationService).mockReturnValue({ resendInvitation } as never);
+
+    const res = await RESEND_POST(buildResendRequest(), buildParams());
+
+    expect(res.status).toBe(403);
+    expect(resendInvitation).not.toHaveBeenCalled();
+  });
+
+  it('un gerant renvoie l invitation d un gerant (il avait le droit de la poser)', async () => {
+    mockRateLimit(true);
+    vi.mocked(createClient).mockResolvedValue(
+      createMockDeleteSupabase({ actor: MANAGER }) as never,
+    );
+    setupMockAdminClient({ rights: { postes: ['manager'] } });
+
+    const res = await RESEND_POST(buildResendRequest(), buildParams());
+
+    expect(res.status).toBe(200);
+  });
+
+  it('temoin: le proprietaire renvoie l invitation d un gerant', async () => {
+    mockRateLimit(true);
+    vi.mocked(createClient).mockResolvedValue(createMockDeleteSupabase({ actor: OWNER }) as never);
+    setupMockAdminClient({ rights: { postes: ['manager'] } });
+
+    const res = await RESEND_POST(buildResendRequest(), buildParams());
+
+    expect(res.status).toBe(200);
+  });
+
   it('returns success when invitation is resent', async () => {
     mockRateLimit(true);
     const mock = createMockDeleteSupabase();
@@ -797,76 +949,91 @@ describe('POST /api/invitations/[id]/resend', () => {
 
 /**
  * X10/X11: inviter fait entrer du personnel, donc exige team.manage comme la
- * creation directe; et seul le proprietaire attache des permissions
- * individuelles (decision du 2026-11-09).
+ * creation directe; et seul le proprietaire attache un reglage par personne
+ * (permission_overrides, decision du 2026-11-09).
  */
 describe('invitations - team.manage et permissions individuelles', () => {
+  // Un chef n'a pas team.manage par defaut.
+  const CHEF: ActorRow = { id: 'membership-chef', postes: ['chef'] };
+
   beforeEach(() => {
     vi.clearAllMocks();
-    mockResolvePermission.mockResolvedValue({ allowed: false, role: 'admin' });
     mockRateLimit(true);
+    mockDailyQuota(true);
   });
 
-  it('GET refuse un admin sans team.manage', async () => {
-    vi.mocked(createClient).mockResolvedValue(createMockSupabase() as never);
+  it('GET refuse un membre sans team.manage', async () => {
+    vi.mocked(createClient).mockResolvedValue(createMockSupabase({ actor: CHEF }) as never);
     const res = await GET(buildGetRequest());
     expect(res.status).toBe(403);
-    expect(mockResolvePermission).toHaveBeenCalledWith(
-      expect.anything(),
-      'user-1',
-      'tenant-1',
-      'team.manage',
-    );
   });
 
-  it('POST refuse un admin sans team.manage, sans rien creer', async () => {
-    vi.mocked(createClient).mockResolvedValue(createMockSupabase() as never);
+  it('temoin: GET accepte un gerant (team.manage par defaut)', async () => {
+    vi.mocked(createClient).mockResolvedValue(createMockSupabase({ actor: MANAGER }) as never);
     setupMockAdminClient();
-    const res = await POST(buildPostRequest({ email: 'new@test.com', role: 'chef' }));
+    const res = await GET(buildGetRequest());
+    expect(res.status).toBe(200);
+  });
+
+  it('GET refuse un gerant a qui le proprietaire a retire team.manage', async () => {
+    vi.mocked(createClient).mockResolvedValue(
+      createMockSupabase({
+        actor: {
+          id: 'membership-mgr',
+          postes: ['manager'],
+          permission_overrides: { 'team.manage': false },
+        },
+      }) as never,
+    );
+    const res = await GET(buildGetRequest());
     expect(res.status).toBe(403);
   });
 
-  it('DELETE refuse un admin sans team.manage', async () => {
-    vi.mocked(createClient).mockResolvedValue(createMockDeleteSupabase() as never);
+  it('POST refuse un membre sans team.manage, sans rien creer', async () => {
+    vi.mocked(createClient).mockResolvedValue(createMockSupabase({ actor: CHEF }) as never);
+    const admin = setupMockAdminClient();
+    const res = await POST(buildPostRequest({ email: 'new@test.com', postes: ['waiter'] }));
+    expect(res.status).toBe(403);
+    expect(admin.createInvitation).not.toHaveBeenCalled();
+  });
+
+  it('DELETE refuse un membre sans team.manage', async () => {
+    vi.mocked(createClient).mockResolvedValue(createMockDeleteSupabase({ actor: CHEF }) as never);
     setupMockAdminClient();
     const res = await DELETE(buildDeleteRequest(), buildParams());
     expect(res.status).toBe(403);
   });
 
-  it('renvoi refuse a un admin sans team.manage', async () => {
-    vi.mocked(createClient).mockResolvedValue(createMockDeleteSupabase() as never);
+  it('renvoi refuse a un membre sans team.manage', async () => {
+    vi.mocked(createClient).mockResolvedValue(createMockDeleteSupabase({ actor: CHEF }) as never);
     setupMockAdminClient();
     const res = await RESEND_POST(buildResendRequest(), buildParams());
     expect(res.status).toBe(403);
   });
 
-  it('un admin ne joint pas de permissions individuelles a une invitation', async () => {
-    mockResolvePermission.mockResolvedValue({ allowed: true, role: 'admin' });
-    vi.mocked(createClient).mockResolvedValue(
-      createMockSupabase({ adminUser: { tenant_id: 'tenant-1', role: 'admin' } }) as never,
-    );
+  it('un gerant ne joint pas de permission_overrides a une invitation (403)', async () => {
+    vi.mocked(createClient).mockResolvedValue(createMockSupabase({ actor: MANAGER }) as never);
     setupMockAdminClient();
     const res = await POST(
       buildPostRequest({
         email: 'new@test.com',
-        role: 'waiter',
-        custom_permissions: { 'orders.pay': true },
+        postes: ['waiter'],
+        permission_overrides: { 'orders.pay': true },
       }),
     );
     expect(res.status).toBe(403);
   });
 
-  it('refuse une cle de permission inconnue', async () => {
-    mockResolvePermission.mockResolvedValue({ allowed: true, role: 'owner' });
-    vi.mocked(createClient).mockResolvedValue(createMockSupabase() as never);
+  it('temoin: le proprietaire joint des permission_overrides (meme corps que le gerant refuse)', async () => {
+    vi.mocked(createClient).mockResolvedValue(createMockSupabase({ actor: OWNER }) as never);
     setupMockAdminClient();
     const res = await POST(
       buildPostRequest({
         email: 'new@test.com',
-        role: 'waiter',
-        custom_permissions: { root: true },
+        postes: ['waiter'],
+        permission_overrides: { 'orders.pay': true },
       }),
     );
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(201);
   });
 });

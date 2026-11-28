@@ -4,12 +4,14 @@ import type { ServicePush } from '@/services/push.service';
 
 vi.mock('@/lib/logger', () => ({ logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn() } }));
 
-const { sendGroup, recipientsAlreadySent, loadStockFacts, loadCoachFacts } = vi.hoisted(() => ({
-  sendGroup: vi.fn(),
-  recipientsAlreadySent: vi.fn(),
-  loadStockFacts: vi.fn(),
-  loadCoachFacts: vi.fn(),
-}));
+const { sendGroup, recipientsAlreadySent, loadStockFacts, loadCoachFacts, coachWindow } =
+  vi.hoisted(() => ({
+    coachWindow: { current: null as { ymd: string } | null },
+    sendGroup: vi.fn(),
+    recipientsAlreadySent: vi.fn(),
+    loadStockFacts: vi.fn(),
+    loadCoachFacts: vi.fn(),
+  }));
 
 vi.mock('../reminder-delivery', () => ({
   createReminderDelivery: () => ({ sendGroup, recipientsAlreadySent }),
@@ -21,7 +23,7 @@ vi.mock('../rules', async (importOriginal) => {
   return {
     ...actual,
     preServiceWindow: () => ({ ymd: '2026-11-24', openAt: '11:00' }),
-    weeklyCoachWindow: () => null,
+    weeklyCoachWindow: () => coachWindow.current,
   };
 });
 
@@ -76,14 +78,15 @@ describe('createReminderService.tick, rappels a heure fixe', () => {
       .mockReset()
       .mockResolvedValue({ outOfStock: ['Riz'], low: [], hiddenDishes: [] });
     loadCoachFacts.mockReset();
+    coachWindow.current = null;
   });
 
   it('B86: reprend destinataire par destinataire (celui dont la livraison a echoue est rappele)', async () => {
     const { client } = fakeDb({
       tenants: [tenantRow(1)],
       admin_users: [
-        { id: 'owner1', user_id: 'u1', tenant_id: 't1', role: 'owner' },
-        { id: 'mgr2', user_id: 'u2', tenant_id: 't1', role: 'manager' },
+        { id: 'owner1', user_id: 'u1', tenant_id: 't1', postes: ['owner'] },
+        { id: 'mgr2', user_id: 'u2', tenant_id: 't1', postes: ['manager'] },
       ],
     });
     // Au passage precedent, seule la cloche du proprietaire est partie.
@@ -102,7 +105,7 @@ describe('createReminderService.tick, rappels a heure fixe', () => {
   it('B86 temoin: tous deja servis, rien ne repart et les faits ne sont pas relus', async () => {
     const { client } = fakeDb({
       tenants: [tenantRow(1)],
-      admin_users: [{ id: 'owner1', user_id: 'u1', tenant_id: 't1', role: 'owner' }],
+      admin_users: [{ id: 'owner1', user_id: 'u1', tenant_id: 't1', postes: ['owner'] }],
     });
     recipientsAlreadySent.mockResolvedValue(new Set(['owner1']));
 
@@ -116,7 +119,7 @@ describe('createReminderService.tick, rappels a heure fixe', () => {
     const tenants = Array.from({ length: 450 }, (_, i) => tenantRow(i));
     const { client, inSizes } = fakeDb({
       tenants,
-      admin_users: [{ id: 'owner300', user_id: 'u300', tenant_id: 't300', role: 'owner' }],
+      admin_users: [{ id: 'owner300', user_id: 'u300', tenant_id: 't300', postes: ['owner'] }],
     });
 
     await createReminderService(client, { push }).tick(NOW);
@@ -125,5 +128,101 @@ describe('createReminderService.tick, rappels a heure fixe', () => {
     expect(tenantLists.length).toBeGreaterThan(0);
     expect(Math.max(...tenantLists.map((c) => c.size))).toBeLessThanOrEqual(200);
     expect(sendGroup.mock.calls.map(([g]) => g.recipient.id)).toEqual(['owner300']);
+  });
+
+  it('le coach hebdomadaire va au proprietaire ET au gerant, jamais au chef ni au serveur', async () => {
+    coachWindow.current = { ymd: '2026-11-23' };
+    loadCoachFacts.mockResolvedValue({
+      weeks: 4,
+      ordersInWindow: 100,
+      peak: { day: 6, hour: 13, avgOrders: 25 },
+      dropped: [],
+    });
+    const { client } = fakeDb({
+      tenants: [tenantRow(1)],
+      admin_users: [
+        { id: 'owner1', user_id: 'u1', tenant_id: 't1', postes: ['owner'] },
+        { id: 'mgr1', user_id: 'u2', tenant_id: 't1', postes: ['manager'] },
+        { id: 'chef1', user_id: 'u3', tenant_id: 't1', postes: ['chef'] },
+        { id: 'waiter1', user_id: 'u4', tenant_id: 't1', postes: ['waiter'] },
+      ],
+    });
+
+    await createReminderService(client, { push }).tick(NOW);
+
+    const coach = sendGroup.mock.calls
+      .map(([g]) => g)
+      .filter((g) => g.rule === 'weekly_coach')
+      .map((g) => g.recipient.id)
+      .sort();
+    expect(coach).toEqual(['mgr1', 'owner1']);
+  });
+
+  // Audit regression M5: le DROIT `reports.money` decide, pas le nom du poste.
+  it('le coach suit le droit reports.money: reglage par personne et reglage du poste', async () => {
+    coachWindow.current = { ymd: '2026-11-23' };
+    loadCoachFacts.mockResolvedValue({
+      weeks: 4,
+      ordersInWindow: 100,
+      peak: { day: 6, hour: 13, avgOrders: 25 },
+      dropped: [],
+    });
+    const staff = [
+      { id: 'owner1', user_id: 'u1', tenant_id: 't1', postes: ['owner'] },
+      // Gerant a qui le proprietaire a retire le chiffre: ne le recoit plus.
+      {
+        id: 'mgrSans',
+        user_id: 'u2',
+        tenant_id: 't1',
+        postes: ['manager'],
+        permission_overrides: { 'reports.money': false },
+      },
+      // Temoin: un gerant sans reglage le recoit.
+      { id: 'mgrAvec', user_id: 'u3', tenant_id: 't1', postes: ['manager'] },
+      // Caissier a qui le proprietaire l'a donne: le recoit.
+      {
+        id: 'caisseAvec',
+        user_id: 'u4',
+        tenant_id: 't1',
+        postes: ['cashier'],
+        permission_overrides: { 'reports.money': true },
+      },
+      { id: 'caisseSans', user_id: 'u5', tenant_id: 't1', postes: ['cashier'] },
+    ];
+    const recipients = async (postePermissions: Row[]) => {
+      sendGroup.mockClear();
+      const { client } = fakeDb({
+        tenants: [tenantRow(1)],
+        admin_users: staff,
+        poste_permissions: postePermissions,
+      });
+      await createReminderService(client, { push }).tick(NOW);
+      return sendGroup.mock.calls
+        .map(([g]) => g)
+        .filter((g) => g.rule === 'weekly_coach')
+        .map((g) => g.recipient.id)
+        .sort();
+    };
+
+    expect(await recipients([])).toEqual(['caisseAvec', 'mgrAvec', 'owner1']);
+    // Le restaurant retire le chiffre au poste Gerant: seul le reglage par
+    // personne et le proprietaire restent.
+    expect(
+      await recipients([
+        { tenant_id: 't1', poste: 'manager', permissions: { 'reports.money': false } },
+      ]),
+    ).toEqual(['caisseAvec', 'owner1']);
+  });
+
+  it('temoin: sans fenetre du bilan, personne ne recoit le coach', async () => {
+    coachWindow.current = null;
+    const { client } = fakeDb({
+      tenants: [tenantRow(1)],
+      admin_users: [{ id: 'owner1', user_id: 'u1', tenant_id: 't1', postes: ['owner'] }],
+    });
+
+    await createReminderService(client, { push }).tick(NOW);
+
+    expect(sendGroup.mock.calls.filter(([g]) => g.rule === 'weekly_coach')).toEqual([]);
   });
 });

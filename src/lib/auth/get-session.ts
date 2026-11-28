@@ -4,9 +4,16 @@ import { readTenantSlug } from '@/lib/auth/tenant-header';
 import { isMfaSatisfied, MFA_REQUIRED_MESSAGE } from '@/lib/auth/mfa-assurance';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
-import { hasPermission } from '@/lib/permissions';
-import type { AdminRole, AdminUser } from '@/types/admin.types';
-import type { PermissionCode, RolePermissions } from '@/types/permission.types';
+import { resolveMemberLevels } from '@/lib/auth/member-rights';
+import {
+  isOwner,
+  meetsRequirement,
+  toPermissionMap,
+  toPostes,
+  type PermissionLevels,
+  type PermissionRequirement,
+} from '@/lib/permissions';
+import type { Poste } from '@/types/permission.types';
 
 /**
  * Authentication & authorization helpers.
@@ -15,7 +22,7 @@ import type { PermissionCode, RolePermissions } from '@/types/permission.types';
  *   const { user, supabase } = await getAuthenticatedUser();
  *
  * Usage in protected server actions:
- *   const { user, tenantId, role, supabase } = await getAuthenticatedUserWithTenant();
+ *   const { user, tenantId, postes, supabase } = await getAuthenticatedUserWithTenant();
  */
 
 export interface AuthenticatedUser {
@@ -25,7 +32,11 @@ export interface AuthenticatedUser {
 
 export interface AuthenticatedUserWithTenant extends AuthenticatedUser {
   tenantId: string;
-  role: string;
+  /** Postes cumules du membre (`['owner']` pour un super administrateur virtuel). */
+  postes: Poste[];
+  isOwner: boolean;
+  /** Niveau effectif des 22 droits, resolu comme la base le fait. */
+  levels: PermissionLevels;
   /**
    * The actor's own `admin_users.id` (the membership-row PK) for this tenant.
    * Needed when writing FK columns that reference admin_users(id) - e.g.
@@ -36,60 +47,60 @@ export interface AuthenticatedUserWithTenant extends AuthenticatedUser {
 }
 
 /**
- * Enforce a fine-grained permission code for a resolved membership, using the
- * same 3-level resolution as `hasPermission` (individual custom_permissions ->
- * tenant role_permissions override -> default matrix). Throws 403 on failure.
- *
- * Shared by getAuthenticatedUserWithTenant and getAuthenticatedUserForTenant so
- * per-user and per-role permission overrides bite at the mutation boundary.
+ * Exigence explicite "etre membre vivant du restaurant, sans droit particulier".
+ * A passer a `getAuthenticatedUserForTenant` par les rares gestes ouverts a
+ * toute l'equipe (vider SA cloche de notifications). Nommee expres : une garde
+ * sans exigence ne doit jamais etre un oubli.
  */
-async function enforceTenantPermission(
+export const MEMBER_ONLY = 'member-only' as const;
+
+/** Ce qu'une garde par restaurant exige : un droit, ou l'appartenance nommee. */
+export type TenantGuardRequirement = PermissionRequirement | typeof MEMBER_ONLY;
+
+interface MembershipRow {
+  id: string;
+  tenant_id: string;
+  postes: unknown;
+  permission_overrides: unknown;
+}
+
+/**
+ * Resout les droits d'une ligne de membre et applique l'exigence de la garde.
+ * Meme resolution que la base (`tenant_permission_level`) : proprietaire,
+ * reglage par personne, puis cumul des postes avec les reglages du restaurant.
+ * Leve 403 si l'exigence n'est pas remplie.
+ *
+ * Partage par getAuthenticatedUserWithTenant et getAuthenticatedUserForTenant :
+ * un droit retire par le proprietaire mord donc a la frontiere de l'ecriture.
+ */
+async function resolveMembership(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  tenantId: string,
-  role: string,
-  customPermissions: AdminUser['custom_permissions'],
-  requiredPermission: PermissionCode | readonly PermissionCode[],
-): Promise<void> {
-  const principal = {
-    role: role as AdminRole,
-    custom_permissions: customPermissions,
-  } as AdminUser;
+  user: AuthenticatedUser['user'],
+  row: MembershipRow,
+  requirement: TenantGuardRequirement | undefined,
+  virtualOwnerOf?: string,
+): Promise<AuthenticatedUserWithTenant> {
+  const tenantId = virtualOwnerOf ?? row.tenant_id;
+  const postes: Poste[] = virtualOwnerOf ? ['owner'] : toPostes(row.postes);
+  const member = {
+    postes,
+    permission_overrides: virtualOwnerOf ? null : toPermissionMap(row.permission_overrides),
+  };
+  const levels = await resolveMemberLevels(supabase, tenantId, member);
 
-  const required: readonly PermissionCode[] =
-    typeof requiredPermission === 'string' ? [requiredPermission] : requiredPermission;
-
-  // Owner short-circuits inside hasPermission; skip the override lookup.
-  let override: RolePermissions | null = null;
-  if (principal.role !== 'owner') {
-    const { data: roleOverride, error: roleOverrideError } = await supabase
-      .from('role_permissions')
-      .select('permissions')
-      .eq('tenant_id', tenantId)
-      .eq('role', principal.role)
-      .maybeSingle();
-    // ECHEC FERME (audit B22), meme regle que resolve-admin-permission.ts:
-    // une panne de lecture retombait sur la matrice par defaut et
-    // REACCORDAIT une permission retiree par le restaurant. On ne refuse que
-    // si la surcharge de role decide: une permission individuelle passe avant
-    // elle (ordre de `hasPermission`).
-    const overrideDecides = required.some(
-      (perm) => (customPermissions as Record<string, boolean> | null)?.[perm] === undefined,
-    );
-    if (roleOverrideError && overrideDecides) {
-      logger.error('role_permissions read failed, refusing (fail-closed)', roleOverrideError, {
-        tenantId,
-        role: principal.role,
-      });
-      throw new AuthError('Permissions insuffisantes', 403);
-    }
-    override = roleOverride
-      ? ({ permissions: roleOverride.permissions } as unknown as RolePermissions)
-      : null;
-  }
-
-  if (!required.every((perm) => hasPermission(principal, perm, override))) {
+  if (requirement && requirement !== MEMBER_ONLY && !meetsRequirement(levels, requirement)) {
     throw new AuthError('Permissions insuffisantes', 403);
   }
+
+  return {
+    user,
+    tenantId,
+    postes,
+    isOwner: isOwner(member),
+    levels,
+    adminUserId: row.id,
+    supabase,
+  };
 }
 
 /**
@@ -125,7 +136,7 @@ export async function getAuthenticatedUser(): Promise<AuthenticatedUser> {
  * @throws {AuthError} with status 403 if user has no tenant
  */
 export async function getAuthenticatedUserWithTenant(
-  requiredPermission?: PermissionCode,
+  requiredPermission?: PermissionRequirement,
 ): Promise<AuthenticatedUserWithTenant> {
   const { user, supabase } = await getAuthenticatedUser();
 
@@ -150,7 +161,7 @@ export async function getAuthenticatedUserWithTenant(
     if (tenant?.id) {
       const { data: scoped } = await supabase
         .from('admin_users')
-        .select('id, tenant_id, role, custom_permissions')
+        .select('id, tenant_id, postes, permission_overrides')
         .eq('user_id', user.id)
         .eq('tenant_id', tenant.id)
         .eq('is_active', true)
@@ -160,22 +171,7 @@ export async function getAuthenticatedUserWithTenant(
         .maybeSingle();
 
       if (scoped) {
-        if (requiredPermission) {
-          await enforceTenantPermission(
-            supabase,
-            scoped.tenant_id,
-            scoped.role,
-            scoped.custom_permissions,
-            requiredPermission,
-          );
-        }
-        return {
-          user,
-          tenantId: scoped.tenant_id,
-          role: scoped.role,
-          adminUserId: scoped.id,
-          supabase,
-        };
+        return resolveMembership(supabase, user, scoped, requiredPermission);
       }
     }
 
@@ -188,7 +184,7 @@ export async function getAuthenticatedUserWithTenant(
     // le god mode, un operateur revoque doit le perdre.
     const { data: superRow } = await supabase
       .from('admin_users')
-      .select('id')
+      .select('id, tenant_id')
       .eq('user_id', user.id)
       .eq('is_active', true)
       .is('deleted_at', null)
@@ -205,18 +201,15 @@ export async function getAuthenticatedUserWithTenant(
       ? (tenant?.id ?? (await (await import('@/lib/cache')).getTenant(tenantSlug))?.id)
       : undefined;
     if (superRow && superTenantId) {
-      if (requiredPermission) {
-        await enforceTenantPermission(supabase, superTenantId, 'owner', null, requiredPermission);
-      }
-      // Owner virtuel SUR LE TENANT DU HEADER, comme le layout: l'operateur
+      // Proprietaire virtuel SUR LE TENANT DU HEADER, comme le layout: l'operateur
       // opere bien sur l'etablissement qu'il regarde.
-      return {
-        user,
-        tenantId: superTenantId,
-        role: 'owner',
-        adminUserId: superRow.id,
+      return resolveMembership(
         supabase,
-      };
+        user,
+        { ...superRow, postes: null, permission_overrides: null },
+        requiredPermission,
+        superTenantId,
+      );
     }
 
     // SESSION-FALLBACK. Avant, on retombait ici sur l'appartenance la plus
@@ -244,7 +237,7 @@ export async function getAuthenticatedUserWithTenant(
   // raise PGRST116 in that case and return a misleading 403.
   const { data: adminUser, error } = await supabase
     .from('admin_users')
-    .select('id, tenant_id, role, custom_permissions')
+    .select('id, tenant_id, postes, permission_overrides')
     .eq('user_id', user.id)
     .eq('is_active', true)
     .is('deleted_at', null)
@@ -257,23 +250,7 @@ export async function getAuthenticatedUserWithTenant(
     throw new AuthError('Accès non autorisé - aucun tenant associé', 403);
   }
 
-  if (requiredPermission) {
-    await enforceTenantPermission(
-      supabase,
-      adminUser.tenant_id,
-      adminUser.role,
-      adminUser.custom_permissions,
-      requiredPermission,
-    );
-  }
-
-  return {
-    user,
-    tenantId: adminUser.tenant_id,
-    role: adminUser.role,
-    adminUserId: adminUser.id,
-    supabase,
-  };
+  return resolveMembership(supabase, user, adminUser, requiredPermission);
 }
 
 /**
@@ -282,40 +259,35 @@ export async function getAuthenticatedUserWithTenant(
  * verify the user actually has access to that tenant (IDOR prevention).
  *
  * @param clientTenantId - The tenant ID provided by the client
- * @param allowedRoles - Roles that are allowed to perform the action (coarse gate).
- *   Typed `AdminRole[]`, not `string[]`: this parameter used to accept any string,
- *   so eleven order actions shipped the list `['owner','admin','manager','server']`
- *   with a role that does not exist ('server'; the enum says `waiter`) and the
- *   compiler said nothing. A non-existent role here matches nobody, and because
- *   this gate runs BEFORE `requiredPermission`, a too-narrow list silently
- *   overrides the fine permission - which is the real authorization rule.
- *   Prefer a named group from `@/lib/admin-roles` over a list written inline.
- * @param requiredPermission - Optional fine-grained permission code (or several,
- *   ALL required: e.g. cancelling an order needs `orders.manage` AND the money
- *   permission `orders.pay`). When set, the
- *   action ALSO requires this permission via the 3-level resolution
- *   (individual custom_permissions -> tenant role_permissions override -> default
- *   matrix). This is what makes per-user and per-role permission overrides actually
- *   bite at the mutation boundary: without it, only the coarse role gate applied and
- *   a member's revoked permission was ignored on writes.
+ * @param requiredPermission - Exigence OBLIGATOIRE (voir `PermissionRequirement`) :
+ *   un code, plusieurs codes (TOUS exiges), `anyOf` ou `atLeastLimited`. Le
+ *   droit decide SEUL : il n'y a plus de liste de roles a cote. Une liste de
+ *   roles posee avant le droit annulait en silence les reglages du proprietaire
+ *   (un gerant a qui l'on donnait `team.manage` restait refuse).
+ *   Pas de valeur par defaut : avant le lot des postes, l'absence d'exigence
+ *   voulait dire "proprietaire ou administrateur" ; la rendre facultative
+ *   l'aurait ouverte a tout membre. Un geste ouvert a toute l'equipe le dit en
+ *   passant `MEMBER_ONLY`.
  * @throws {AuthError} with status 401 if not authenticated
- * @throws {AuthError} with status 403 if user does not belong to the tenant, has a
- *   disallowed role, or lacks the required permission
+ * @throws {AuthError} with status 403 if user does not belong to the tenant or
+ *   lacks the required permission
  */
 export async function getAuthenticatedUserForTenant(
   clientTenantId: string,
-  allowedRoles: AdminRole[] = ['owner', 'admin'],
-  requiredPermission?: PermissionCode | readonly PermissionCode[],
+  requiredPermission: TenantGuardRequirement,
 ): Promise<AuthenticatedUserWithTenant> {
   const { user, supabase } = await getAuthenticatedUser();
 
   const { data: adminUser, error } = await supabase
     .from('admin_users')
-    .select('id, tenant_id, role, custom_permissions')
+    .select('id, tenant_id, postes, permission_overrides')
     .eq('user_id', user.id)
     .eq('tenant_id', clientTenantId)
     .eq('is_active', true)
-    .single();
+    // Un membre retire (`deleted_at`) ne doit plus agir, meme si sa ligne est
+    // restee active. L'index unique garantit une seule ligne vivante.
+    .is('deleted_at', null)
+    .maybeSingle();
 
   if (error || !adminUser) {
     logger.warn('User attempted action on unauthorized tenant', {
@@ -325,27 +297,7 @@ export async function getAuthenticatedUserForTenant(
     throw new AuthError('Acces non autorise pour ce tenant', 403);
   }
 
-  if (!allowedRoles.includes(adminUser.role)) {
-    throw new AuthError('Permissions insuffisantes', 403);
-  }
-
-  if (requiredPermission) {
-    await enforceTenantPermission(
-      supabase,
-      adminUser.tenant_id,
-      adminUser.role,
-      adminUser.custom_permissions,
-      requiredPermission,
-    );
-  }
-
-  return {
-    user,
-    tenantId: adminUser.tenant_id,
-    role: adminUser.role,
-    adminUserId: adminUser.id,
-    supabase,
-  };
+  return resolveMembership(supabase, user, adminUser, requiredPermission);
 }
 
 /**

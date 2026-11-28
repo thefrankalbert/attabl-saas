@@ -94,7 +94,7 @@ export default function SettingsDataReset({ tenantSlug }: { tenantSlug: string }
   const isConfirmed = confirmText.trim() === CONFIRMATION_PHRASE;
 
   return (
-    <RoleGuard roles={['owner']} fallback={null}>
+    <RoleGuard ownerOnly fallback={null}>
       {RESET_TYPES.map((type) => (
         <SecurityRow
           key={type}

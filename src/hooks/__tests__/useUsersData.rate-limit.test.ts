@@ -15,13 +15,27 @@ vi.mock('next-intl', () => ({
   useTranslations: (ns: string) => (key: string) => `${ns}.${key}`,
 }));
 vi.mock('@/lib/logger', () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
-vi.mock('@/hooks/usePermissions', () => ({ usePermissions: () => ({ can: () => true }) }));
 vi.mock('@/app/actions/admin', () => ({
   actionDeleteAdminUser: vi.fn(),
   actionUpdateAdminUser: vi.fn(),
 }));
 
 import { useUsersData } from '../useUsersData';
+import { createElement } from 'react';
+import { PermissionsProvider } from '@/contexts/PermissionsContext';
+import { getEffectiveLevels } from '@/lib/permissions';
+
+function wrapper({ children }: { children: React.ReactNode }) {
+  // Les enfants passent en argument de createElement, pas en prop.
+  const Provider = PermissionsProvider as React.FC<
+    Omit<React.ComponentProps<typeof PermissionsProvider>, 'children'>
+  >;
+  return createElement(
+    Provider,
+    { postes: ['owner'], levels: getEffectiveLevels({ postes: ['owner'] }) },
+    children,
+  );
+}
 
 function reponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -54,13 +68,14 @@ describe('useUsersData - limite de debit (429)', () => {
   });
 
   function hook() {
-    return renderHook(() =>
-      useUsersData({
-        tenantId: 't-1',
-        currentUserRole: 'owner',
-        initialUsers: [],
-        confirm: vi.fn(),
-      }),
+    return renderHook(
+      () =>
+        useUsersData({
+          tenantId: 't-1',
+          initialUsers: [],
+          confirm: vi.fn(),
+        }),
+      { wrapper },
     ).result;
   }
 

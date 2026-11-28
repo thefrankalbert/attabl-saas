@@ -338,7 +338,12 @@ export const sendWelcomeOnboardingEmail = async (
 
 export const sendInvitationEmail = async (
   to: string,
-  data: { restaurantName: string; restaurantLogoUrl?: string; role: string; inviteUrl: string },
+  data: {
+    restaurantName: string;
+    restaurantLogoUrl?: string;
+    postes: readonly string[];
+    inviteUrl: string;
+  },
 ): Promise<boolean> => (await _svc.sendTeamInvitationEmail(to, data)).success;
 
 export const sendContactFormEmail = async (data: {

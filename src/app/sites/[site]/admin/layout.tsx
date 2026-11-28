@@ -30,10 +30,10 @@ import {
 } from '@/lib/billing/lapsed-trial';
 import { LockedSubscriptionRedirect } from '@/components/admin/LockedSubscriptionRedirect';
 import { isTrialActive } from '@/lib/plans/features';
-import type { AdminRole } from '@/types/admin.types';
 import type { SubscriptionStatus } from '@/types/billing';
-import type { PermissionCode, RolePermissions } from '@/types/permission.types';
-import { getEffectivePermissions } from '@/lib/permissions';
+import type { PermissionMap, Poste } from '@/types/permission.types';
+import { NO_LEVELS, toPermissionMap, toPostes, type PermissionLevels } from '@/lib/permissions';
+import { resolveMemberLevels } from '@/lib/auth/member-rights';
 import { claimAndSendTrialEmail, determineTrialEventKey } from '@/services/trigger-emails.service';
 import { logger } from '@/lib/logger';
 
@@ -43,9 +43,9 @@ interface AdminUser {
   id: string;
   user_id: string;
   tenant_id: string;
-  role: AdminRole;
+  postes: Poste[];
   name?: string;
-  custom_permissions?: Record<string, boolean> | null;
+  permission_overrides?: PermissionMap | null;
 }
 
 export default async function AdminLayout({
@@ -88,7 +88,7 @@ export default async function AdminLayout({
     // super-admin check and ultimately redirectToUnauthorized().
     const { data: adminData } = await supabase
       .from('admin_users')
-      .select('id, user_id, tenant_id, email, full_name, role, is_active, custom_permissions')
+      .select('id, user_id, tenant_id, email, full_name, postes, is_active, permission_overrides')
       .eq('user_id', user.id)
       .eq('tenant_id', tenant.id)
       .eq('is_active', true)
@@ -96,16 +96,25 @@ export default async function AdminLayout({
       .maybeSingle();
 
     if (adminData) {
-      adminUser = { ...adminData, name: adminData.full_name ?? adminData.email ?? undefined };
+      adminUser = {
+        id: adminData.id,
+        user_id: adminData.user_id,
+        tenant_id: adminData.tenant_id,
+        postes: toPostes(adminData.postes),
+        name: adminData.full_name ?? adminData.email ?? undefined,
+        permission_overrides: toPermissionMap(adminData.permission_overrides),
+      };
     } else {
       // Not a direct member - check if the user is a super_admin (can access any tenant).
       // A revoked operator (banned / soft-deleted) must NOT keep this access, so
       // only a LIVE super-admin membership counts.
       const { data: superAdminCheck } = await supabase
         .from('admin_users')
-        .select('id, user_id, tenant_id, role, full_name, custom_permissions, is_super_admin')
+        .select('id, user_id, tenant_id, full_name')
         .eq('user_id', user.id)
-        .eq('is_super_admin', true)
+        // Le drapeau OU la valeur historique `role = 'super_admin'`, comme la
+        // fonction `is_super_admin()` de la base.
+        .or('is_super_admin.eq.true,role.eq.super_admin')
         .eq('is_active', true)
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
@@ -122,9 +131,9 @@ export default async function AdminLayout({
         id: superAdminCheck.id,
         user_id: superAdminCheck.user_id,
         tenant_id: tenant.id,
-        role: 'owner' as AdminRole,
+        postes: ['owner'],
         name: superAdminCheck.full_name ?? undefined,
-        custom_permissions: null,
+        permission_overrides: null,
       };
     }
   }
@@ -177,7 +186,9 @@ export default async function AdminLayout({
           .from('admin_users')
           .select('email')
           .eq('tenant_id', tenant.id)
-          .eq('role', 'owner')
+          // Un seul proprietaire vivant par restaurant (index unique en base).
+          .contains('postes', ['owner'])
+          .is('deleted_at', null)
           .maybeSingle();
         const ownerEmail = ownerUser?.email ?? user.email;
 
@@ -234,27 +245,22 @@ export default async function AdminLayout({
   // cuisine a `LockedSubscriptionRedirect`; chaque geste reste juge cote serveur.
   const kitchenMayFinish = await kitchenMayFinishForTenant(tenant.id, tenant);
 
-  const userRole = (adminUser?.role ?? 'admin') as AdminRole;
+  // Pas de ligne de membre: aucun poste, donc aucun droit (l'ancien repli sur
+  // "administrateur" dessinait la navigation complete a un inconnu).
+  const postes: Poste[] = adminUser?.postes ?? [];
+  const userIsOwner = postes.includes('owner');
 
-  // Effective permissions for sidebar nav filtering. Reflects the full 3-level
-  // resolution (per-user custom_permissions -> per-tenant role_permissions
-  // override -> default matrix) so the sidebar hides links the member cannot
-  // open, instead of showing them and bouncing to /unauthorized on click.
-  // Owner short-circuits to all-true inside getEffectivePermissions.
-  let navRoleOverride: RolePermissions | null = null;
-  if (userRole !== 'owner') {
-    const { data: ro } = await supabase
-      .from('role_permissions')
-      .select('permissions')
-      .eq('tenant_id', tenant.id)
-      .eq('role', userRole)
-      .maybeSingle();
-    navRoleOverride = ro ? ({ permissions: ro.permissions } as unknown as RolePermissions) : null;
-  }
-  const navPermissions: Record<PermissionCode, boolean> = getEffectivePermissions(
-    { role: userRole, custom_permissions: adminUser?.custom_permissions ?? null } as never,
-    navRoleOverride,
-  );
+  // Niveaux effectifs pour la navigation et tout l'ecran: la MEME resolution
+  // que le serveur (reglage par personne, cumul des postes, reglages du
+  // restaurant), pour cacher les liens que le membre ne peut pas ouvrir au
+  // lieu de l'envoyer sur /unauthorized. Echec ferme si les reglages du
+  // restaurant ne se lisent pas.
+  const navLevels: PermissionLevels = adminUser
+    ? await resolveMemberLevels(supabase, tenant.id, {
+        postes,
+        permission_overrides: adminUser.permission_overrides,
+      })
+    : NO_LEVELS;
 
   return (
     <NextIntlClientProvider>
@@ -262,23 +268,20 @@ export default async function AdminLayout({
         {/* Owner only: the onboarding (and its save/complete routes) is the
           owner's job; a waiter or a cook was offered a button leading to a
           screen they could not finish. */}
-        {showOnboardingResume && userRole === 'owner' && (
-          <OnboardingResumeDialog tenantSlug={tenant.slug} />
-        )}
+        {showOnboardingResume && userIsOwner && <OnboardingResumeDialog tenantSlug={tenant.slug} />}
         <QueryProvider>
           <SoundProvider
             tenantId={tenant.id}
             notificationSoundId={tenant.notification_sound_id ?? undefined}
           >
             {/* Au-dessus du shell: barre laterale, barre du bas, menu du compte et
-              pages lisent tous les MEMES permissions effectives que le serveur. */}
-            <PermissionsProvider role={userRole} permissions={navPermissions}>
+              pages lisent tous les MEMES droits effectifs que le serveur. */}
+            <PermissionsProvider postes={postes} levels={navLevels}>
               <PaymentMethodsProvider methods={tenant.enabled_payment_methods ?? null}>
                 <AdminLayoutClient
                   isDevMode={false}
                   basePath={`/sites/${tenantSlug}/admin`}
-                  role={userRole}
-                  navPermissions={navPermissions}
+                  navPermissions={navLevels}
                   tenant={{
                     name: tenant.name,
                     slug: tenant.slug,

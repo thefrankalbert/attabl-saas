@@ -12,8 +12,7 @@ import { SettingsDialog, type SettingsTab } from './shell/SettingsDialog';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 import { isAdminHome, isImmersivePage } from '@/lib/constants';
-import type { AdminRole } from '@/types/admin.types';
-import type { PermissionCode } from '@/types/permission.types';
+import type { PermissionLevels } from '@/lib/permissions';
 import type { TenantSwitchOption } from '@/types/tenant-switch.types';
 
 const SIDEBAR_STORAGE_KEY = 'attabl-sidebar-collapsed';
@@ -25,7 +24,6 @@ interface AdminLayoutInnerProps {
   children: React.ReactNode;
   isDevMode: boolean;
   basePath: string;
-  role: AdminRole;
   tenant: {
     name: string;
     slug: string;
@@ -41,7 +39,7 @@ interface AdminLayoutInnerProps {
   /** Bandeau d'etat (hors ligne, file d'envoi) entre la barre du haut et main: hors de la zone qui defile. */
   statusBar?: React.ReactNode;
   /** Effective permissions (3-level resolved) for hiding nav links the member cannot open */
-  navPermissions?: Record<PermissionCode, boolean>;
+  navPermissions?: PermissionLevels;
   /** Server-baked deploy sha (APP_VERSION), forwarded to ShellSidebar. */
   appVersion?: string;
 }
@@ -50,7 +48,6 @@ function AdminLayoutInner({
   children,
   isDevMode,
   basePath,
-  role,
   tenant,
   userName,
   userEmail,
@@ -275,11 +272,7 @@ function AdminLayoutInner({
         </main>
 
         {showBottomNav && (
-          <AdminBottomNav
-            basePath={basePath}
-            role={role}
-            establishmentType={tenant.establishment_type}
-          />
+          <AdminBottomNav basePath={basePath} establishmentType={tenant.establishment_type} />
         )}
 
         {/* Not on immersive POS/KDS (a floating card must not overlay the full-
@@ -318,7 +311,6 @@ interface AdminLayoutClientProps {
   children: React.ReactNode;
   isDevMode: boolean;
   basePath: string;
-  role: AdminRole;
   tenant: {
     name: string;
     slug: string;
@@ -332,7 +324,7 @@ interface AdminLayoutClientProps {
   notifications?: React.ReactNode;
   breadcrumbs?: React.ReactNode;
   statusBar?: React.ReactNode;
-  navPermissions?: Record<PermissionCode, boolean>;
+  navPermissions?: PermissionLevels;
   /** Server-baked deploy sha (APP_VERSION), forwarded to ShellSidebar. */
   appVersion?: string;
 }
@@ -341,7 +333,6 @@ export function AdminLayoutClient({
   children,
   isDevMode,
   basePath,
-  role,
   tenant,
   userName,
   userEmail,
@@ -357,7 +348,6 @@ export function AdminLayoutClient({
       <AdminLayoutInner
         isDevMode={isDevMode}
         basePath={basePath}
-        role={role}
         tenant={tenant}
         userName={userName}
         userEmail={userEmail}

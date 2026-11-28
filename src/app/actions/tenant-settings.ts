@@ -23,15 +23,15 @@ export async function actionUpdateTenantSettings(formData: FormData) {
   const t = await getTranslations('errors');
   try {
     // 1. Authenticate + get tenant from session (NOT from client)
-    const { tenantId, supabase, user, role } =
+    const { tenantId, supabase, user, postes } =
       await getAuthenticatedUserWithTenant('settings.edit');
     // Coupure du restaurant: modifier les reglages est une ecriture.
     await assertTenantServing(tenantId);
 
     // Pas de liste de roles en plus de `settings.edit`: elle annulait le droit
     // que le proprietaire accorde dans /settings/permissions. Par defaut seuls
-    // owner et admin detiennent `settings.edit` (caissier, chef, serveur et
-    // gerant non), donc la facturation et le domaine restent proteges.
+    // le proprietaire et le gerant detiennent `settings.edit` (chef, caissier
+    // et serveur non), donc la facturation et le domaine restent proteges.
 
     // 2. Extract and validate form data with Zod.
     // A field ABSENT from the FormData stays `undefined` so the service leaves
@@ -138,7 +138,7 @@ export async function actionUpdateTenantSettings(formData: FormData) {
       tenantId,
       userId: user.id,
       userEmail: user.email,
-      userRole: role,
+      userRole: postes.join('+'),
     });
     audit.log({
       action: 'update',

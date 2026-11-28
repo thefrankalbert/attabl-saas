@@ -82,13 +82,20 @@ vi.mock('@/lib/auth/redirect-to-main', () => ({
   },
 }));
 
-// Session: proprietaire du restaurant, donc aucune lecture de role_permissions.
+// Session: proprietaire du restaurant, donc aucune lecture de poste_permissions.
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => {
     const chain: Record<string, unknown> = {};
     for (const m of ['select', 'eq', 'is', 'order', 'limit']) chain[m] = () => chain;
     chain.maybeSingle = async () => ({
-      data: { id: 'a1', user_id: 'u1', tenant_id: 't1', role: 'owner', full_name: 'Awa' },
+      data: {
+        id: 'a1',
+        user_id: 'u1',
+        tenant_id: 't1',
+        postes: ['owner'],
+        permission_overrides: null,
+        full_name: 'Awa',
+      },
       error: null,
     });
     chain.then = (resolve: (v: unknown) => unknown) => resolve({ data: [], error: null });
@@ -109,7 +116,6 @@ vi.mock('@/lib/supabase/admin', () => ({
 vi.mock('@/lib/billing/tenant-billing-ids', () => ({
   getTenantBillingIds: (id: string) => state.billing(id),
 }));
-vi.mock('@/lib/permissions', () => ({ getEffectivePermissions: () => ({}) }));
 vi.mock('@/services/trigger-emails.service', () => ({
   determineTrialEventKey: () => null,
   claimAndSendTrialEmail: vi.fn(),

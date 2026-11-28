@@ -26,17 +26,12 @@ import {
 interface ReminderSettingsPanelProps {
   initial: ReminderSettings;
   hasOpeningHours: boolean;
-  canEdit: boolean;
 }
 
 const READY_CHOICES = [2, 3, 5, 8, 10, 15];
 const NOT_STARTED_CHOICES = [3, 5, 8, 10, 15, 20, 30];
 
-export function ReminderSettingsPanel({
-  initial,
-  hasOpeningHours,
-  canEdit,
-}: ReminderSettingsPanelProps) {
+export function ReminderSettingsPanel({ initial, hasOpeningHours }: ReminderSettingsPanelProps) {
   const t = useTranslations('settings.reminders');
   const tc = useTranslations('common');
   const { toast } = useToast();
@@ -69,7 +64,7 @@ export function ReminderSettingsPanel({
       <Label htmlFor={id} className="text-sm text-app-text-secondary">
         {t('after')}
       </Label>
-      <Select value={String(value)} onValueChange={(v) => onChange(Number(v))} disabled={!canEdit}>
+      <Select value={String(value)} onValueChange={(v) => onChange(Number(v))}>
         <SelectTrigger id={id} className="w-28 min-h-[44px]">
           <SelectValue />
         </SelectTrigger>
@@ -102,7 +97,6 @@ export function ReminderSettingsPanel({
               id={`rule-${rule}`}
               checked={settings.rules[rule]}
               onCheckedChange={(on) => setRule(rule, on)}
-              disabled={!canEdit}
             />
           </div>
           {rule === 'order_ready_not_served' &&
@@ -121,23 +115,21 @@ export function ReminderSettingsPanel({
         </Card>
       ))}
 
-      {canEdit && (
-        <div className="flex justify-end">
-          <Button
-            type="button"
-            onClick={save}
-            disabled={!dirty || pending}
-            className="min-h-[44px] min-w-[150px]"
-          >
-            {pending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="mr-2 h-4 w-4" />
-            )}
-            {pending ? tc('saving') : tc('saveChanges')}
-          </Button>
-        </div>
-      )}
+      <div className="flex justify-end">
+        <Button
+          type="button"
+          onClick={save}
+          disabled={!dirty || pending}
+          className="min-h-[44px] min-w-[150px]"
+        >
+          {pending ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="mr-2 h-4 w-4" />
+          )}
+          {pending ? tc('saving') : tc('saveChanges')}
+        </Button>
+      </div>
     </TabsContent>
   );
 }

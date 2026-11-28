@@ -3,6 +3,8 @@ import type { NextResponse } from 'next/server';
 import { canAccessFeature } from '@/lib/plans/features';
 import { checkAndNotifyLowStock } from '@/services/notification.service';
 import * as Sentry from '@sentry/nextjs';
+import { getEffectiveLevels } from '@/lib/permissions';
+import type { Poste } from '@/types/permission.types';
 
 // --- Mock external dependencies --------------------------------
 // after() runs its callback inline; NextResponse kept real.
@@ -109,7 +111,42 @@ vi.mock('@/lib/menu-items-query', () => ({
 
 // --- Admin Supabase client mock (chainable) --------------------
 // admin_users -> single(); tenants -> single(); notifications -> insert() thenable.
-const mockAdminUserRow = { data: { id: 'server-1', tenant_id: 'tenant-abc', role: 'cashier' } };
+const mockAdminUserRow: {
+  data: {
+    id: string;
+    tenant_id: string;
+    postes: string[];
+    permission_overrides: null;
+    is_super_admin: boolean;
+    role: string;
+  };
+} = {
+  data: {
+    id: 'server-1',
+    tenant_id: 'tenant-abc',
+    postes: ['cashier'],
+    permission_overrides: null,
+    is_super_admin: false,
+    role: 'staff',
+  },
+};
+
+/**
+ * Pose les postes du membre de caisse a la fois pour la session (postes, niveaux
+ * calcules par le VRAI getEffectiveLevels) et pour la ligne admin_users relue
+ * par resolveAdminPermission (garde `orders.pay`). Une seule source de verite.
+ */
+function asPostes(postes: Poste[]): void {
+  mockAdminUserRow.data.postes = postes;
+  mockGetAuthUser.mockResolvedValue({
+    tenantId: 'tenant-abc',
+    user: { id: 'user-1' },
+    postes,
+    isOwner: false,
+    levels: getEffectiveLevels({ postes }),
+    adminUserId: 'server-1',
+  });
+}
 interface MockTenantRow {
   is_active: boolean;
   suspended_at: string | null;
@@ -214,11 +251,7 @@ describe('POST /api/orders/pos - auto-destock wiring', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRateLimitCheck.mockResolvedValue({ success: true });
-    mockGetAuthUser.mockResolvedValue({
-      tenantId: 'tenant-abc',
-      user: { id: 'user-1' },
-      role: 'cashier',
-    });
+    asPostes(['cashier']);
     mockFindByClientRequestId.mockResolvedValue(null);
     // State read back after the payment UPDATE (the mocked UPDATE flips no row):
     // already paid, so a payment reads as booked unless a test says otherwise.
@@ -346,12 +379,12 @@ describe('POST /api/orders/pos - auto-destock wiring', () => {
 
   /**
    * Decision du proprietaire (2026-11-09): le serveur prend les commandes a la
-   * caisse (`pos.use`) mais n'encaisse pas (`orders.pay`). Avant, `pos.use`
+   * caisse (`orders.take`) mais n'encaisse pas (`orders.pay`). Avant, ce droit
    * suffisait pour creer la commande ET l'inscrire payee dans `payments`.
    */
   describe('table rattachee au serveur (decision du 14/11/2026)', () => {
     afterEach(() => {
-      mockAdminUserRow.data.role = 'cashier';
+      asPostes(['cashier']);
       ordersChain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
     });
 
@@ -363,7 +396,7 @@ describe('POST /api/orders/pos - auto-destock wiring', () => {
     };
 
     it('a waiter dine-in ticket assigns the table to that waiter', async () => {
-      mockAdminUserRow.data.role = 'waiter';
+      asPostes(['waiter']);
       placeOn('tb-5');
       const { POST } = await import('@/app/api/orders/pos/route');
 
@@ -384,7 +417,7 @@ describe('POST /api/orders/pos - auto-destock wiring', () => {
         subscription_status: 'active',
       };
       try {
-        mockAdminUserRow.data.role = 'waiter';
+        asPostes(['waiter']);
         placeOn('tb-5');
         const { POST } = await import('@/app/api/orders/pos/route');
 
@@ -397,6 +430,17 @@ describe('POST /api/orders/pos - auto-destock wiring', () => {
       }
     });
 
+    it('a cashier + waiter (cumul) dine-in ticket assigns the table', async () => {
+      asPostes(['cashier', 'waiter']);
+      placeOn('tb-5');
+      const { POST } = await import('@/app/api/orders/pos/route');
+
+      const { status } = await parseResponse(await POST(createMockRequest(validPosBody())));
+
+      expect(status).toBe(200);
+      expect(mockAssignIfFree).toHaveBeenCalledWith('tenant-abc', 'tb-5', 'server-1');
+    });
+
     it('a cashier ticket does not touch assignments', async () => {
       placeOn('tb-5');
       const { POST } = await import('@/app/api/orders/pos/route');
@@ -407,7 +451,7 @@ describe('POST /api/orders/pos - auto-destock wiring', () => {
     });
 
     it('a waiter takeaway ticket does not touch assignments', async () => {
-      mockAdminUserRow.data.role = 'waiter';
+      asPostes(['waiter']);
       placeOn('tb-5');
       const { POST } = await import('@/app/api/orders/pos/route');
 
@@ -419,7 +463,7 @@ describe('POST /api/orders/pos - auto-destock wiring', () => {
     });
 
     it('an assignment failure never fails the order', async () => {
-      mockAdminUserRow.data.role = 'waiter';
+      asPostes(['waiter']);
       placeOn('tb-5');
       mockAssignIfFree.mockRejectedValueOnce(new Error('db down'));
       const { POST } = await import('@/app/api/orders/pos/route');
@@ -432,11 +476,11 @@ describe('POST /api/orders/pos - auto-destock wiring', () => {
 
   describe('argent a la caisse', () => {
     afterEach(() => {
-      mockAdminUserRow.data.role = 'cashier';
+      asPostes(['cashier']);
     });
 
     it('refuse un encaissement du serveur, sans rien creer', async () => {
-      mockAdminUserRow.data.role = 'waiter';
+      asPostes(['waiter']);
 
       const { POST } = await import('@/app/api/orders/pos/route');
       const response = await POST(createMockRequest({ ...validPosBody(), payment_method: 'cash' }));
@@ -448,7 +492,7 @@ describe('POST /api/orders/pos - auto-destock wiring', () => {
     });
 
     it('refuse un pourboire du serveur', async () => {
-      mockAdminUserRow.data.role = 'waiter';
+      asPostes(['waiter']);
 
       const { POST } = await import('@/app/api/orders/pos/route');
       const response = await POST(createMockRequest({ ...validPosBody(), tip_amount: 500 }));
@@ -458,7 +502,7 @@ describe('POST /api/orders/pos - auto-destock wiring', () => {
     });
 
     it('refuse un coupon du serveur: une remise est un geste d argent', async () => {
-      mockAdminUserRow.data.role = 'waiter';
+      asPostes(['waiter']);
 
       const { POST } = await import('@/app/api/orders/pos/route');
       const response = await POST(createMockRequest({ ...validPosBody(), coupon_code: 'PROMO10' }));
@@ -468,7 +512,7 @@ describe('POST /api/orders/pos - auto-destock wiring', () => {
     });
 
     it('laisse le serveur envoyer une commande impayee en cuisine', async () => {
-      mockAdminUserRow.data.role = 'waiter';
+      asPostes(['waiter']);
 
       const { POST } = await import('@/app/api/orders/pos/route');
       const response = await POST(createMockRequest(validPosBody()));
@@ -591,11 +635,7 @@ describe('POST /api/orders/pos - coupure du restaurant', () => {
     vi.clearAllMocks();
     mockTenantRow.data = { ...ligneServante };
     mockRateLimitCheck.mockResolvedValue({ success: true });
-    mockGetAuthUser.mockResolvedValue({
-      tenantId: 'tenant-abc',
-      user: { id: 'user-1' },
-      role: 'cashier',
-    });
+    asPostes(['cashier']);
     mockFindByClientRequestId.mockResolvedValue(null);
     // State read back after the payment UPDATE (the mocked UPDATE flips no row):
     // already paid, so a payment reads as booked unless a test says otherwise.

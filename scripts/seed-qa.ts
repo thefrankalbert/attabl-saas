@@ -1,5 +1,5 @@
 /**
- * ATTABL SaaS — Demo Seed Script
+ * ATTABL SaaS: Demo Seed Script
  * ================================
  * Populates the database with comprehensive demo data for "L'Epicurien",
  * a luxury restaurant in N'Djamena, Chad.
@@ -19,6 +19,12 @@ import { randomUUID } from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { assertNotProduction } from './assert-not-production';
+import {
+  deleteAccountsWithoutMembership,
+  deleteStraySeedAccounts,
+  listTenantMemberUserIds,
+} from './lib/seed-accounts';
+import type { Poste } from '../src/types/permission.types';
 
 // ─── ENV LOADING (no dotenv dependency) ────────────────────────────────────
 function loadEnv(): Record<string, string> {
@@ -265,7 +271,7 @@ interface StaffMember {
   email: string;
   password: string;
   fullName: string;
-  role: string;
+  poste: Poste;
   phone: string;
   isSuperAdmin: boolean;
   userId?: string;
@@ -286,7 +292,7 @@ const STAFF: StaffMember[] = [
     email: 'owner@attabl-qa.test',
     password: QA_SEED_PASSWORD,
     fullName: 'Frank Albert',
-    role: 'owner',
+    poste: 'owner',
     phone: '+235 66 00 00 00',
     isSuperAdmin: false,
   },
@@ -294,7 +300,7 @@ const STAFF: StaffMember[] = [
     email: 'chef@attabl-qa.test',
     password: QA_SEED_PASSWORD,
     fullName: 'Chef Marco Rossi',
-    role: 'chef',
+    poste: 'chef',
     phone: '+235 66 10 10 10',
     isSuperAdmin: false,
   },
@@ -302,7 +308,7 @@ const STAFF: StaffMember[] = [
     email: 'manager@attabl-qa.test',
     password: QA_SEED_PASSWORD,
     fullName: 'Sophie Dubois',
-    role: 'manager',
+    poste: 'manager',
     phone: '+235 66 20 20 20',
     isSuperAdmin: false,
   },
@@ -310,7 +316,7 @@ const STAFF: StaffMember[] = [
     email: 'caisse@attabl-qa.test',
     password: QA_SEED_PASSWORD,
     fullName: 'Amadou Toure',
-    role: 'cashier',
+    poste: 'cashier',
     phone: '+235 66 30 30 30',
     isSuperAdmin: false,
   },
@@ -318,7 +324,7 @@ const STAFF: StaffMember[] = [
     email: 'serveur1@attabl-qa.test',
     password: QA_SEED_PASSWORD,
     fullName: 'Ibrahim Mahamat',
-    role: 'waiter',
+    poste: 'waiter',
     phone: '+235 66 40 40 40',
     isSuperAdmin: false,
   },
@@ -326,7 +332,7 @@ const STAFF: StaffMember[] = [
     email: 'serveur2@attabl-qa.test',
     password: QA_SEED_PASSWORD,
     fullName: 'Fatima Abdoulaye',
-    role: 'waiter',
+    poste: 'waiter',
     phone: '+235 66 50 50 50',
     isSuperAdmin: false,
   },
@@ -377,19 +383,14 @@ async function cleanup() {
     .eq('slug', 'attabl-qa')
     .single();
 
-  // Always clean up auth users (they may exist even if tenant was deleted)
-  const {
-    data: { users },
-  } = await supabase.auth.admin.listUsers();
-  for (const staff of STAFF) {
-    const existingUser = users?.find((u) => u.email === staff.email);
-    if (existingUser) {
-      await supabase.auth.admin.deleteUser(existingUser.id);
-      log(`  Deleted auth user: ${staff.email}`);
-    }
-  }
-
   if (!existing) {
+    // Pas de restaurant : un compte du seed ne part que s'il n'appartient a
+    // aucun restaurant (jamais de suppression decidee sur l'email seul).
+    await deleteStraySeedAccounts(
+      supabase,
+      STAFF.map((staff) => staff.email),
+      log,
+    );
     log('No existing tenant found. Starting fresh.');
     return;
   }
@@ -397,8 +398,14 @@ async function cleanup() {
   const tenantId = existing.id;
   log(`Found existing tenant ${tenantId}. Removing all associated data...`);
 
+  // Les comptes des membres, lus AVANT la suppression : le restaurant part
+  // d'abord (sa cascade emporte les lignes de membres, proprietaire compris),
+  // les comptes ensuite. L'ordre inverse est refuse par la base, qui protege
+  // le proprietaire d'un restaurant vivant.
+  const memberUserIds = await listTenantMemberUserIds(supabase, tenantId);
+
   // Delete in dependency order (child tables first)
-  // Some tables may not exist if migrations haven't been applied — skip silently.
+  // Some tables may not exist if migrations haven't been applied, skip silently.
   const tablesToClean = [
     'stock_movements',
     'recipes',
@@ -417,7 +424,6 @@ async function cleanup() {
     'zones',
     'venues',
     'onboarding_progress',
-    'admin_users',
   ];
 
   for (const table of tablesToClean) {
@@ -433,9 +439,10 @@ async function cleanup() {
 
   // Finally delete the tenant itself
   const { error: tenantDelError } = await supabase.from('tenants').delete().eq('id', tenantId);
-  if (tenantDelError) {
-    log(`  Warning deleting tenant: ${tenantDelError.message}`);
-  }
+  if (tenantDelError)
+    throw new Error(`Suppression du restaurant impossible : ${tenantDelError.message}`);
+
+  await deleteAccountsWithoutMembership(supabase, memberUserIds, log);
 
   log('Cleanup complete.');
 }
@@ -513,13 +520,14 @@ async function createUsers() {
       email: staff.email,
       full_name: staff.fullName,
       phone: staff.phone,
-      role: staff.role,
+      // `role` n'est pas ecrit : la base le projette depuis `postes`.
+      postes: [staff.poste],
       is_active: true,
       is_super_admin: staff.isSuperAdmin,
     });
 
     if (adminError) throw new Error(`Admin user ${staff.email} failed: ${adminError.message}`);
-    log(`Admin user linked: ${staff.fullName} (${staff.role})`);
+    log(`Admin user linked: ${staff.fullName} (${staff.poste})`);
   }
 
   log(`Total users created: ${STAFF.length}`);
@@ -1634,7 +1642,7 @@ async function createHistoricalOrders() {
       const taxAmount = Math.round(subtotal * TAX_RATE);
       const serviceChargeAmount = Math.round(subtotal * SERVICE_RATE);
 
-      // Apply coupon occasionally (~10%) — only if coupons table exists
+      // Apply coupon occasionally (~10%), only if coupons table exists
       let discountAmount = 0;
       let couponId: string | null = null;
       if (migrations.hasProductionUpgrade && Math.random() < 0.1 && subtotal >= 50000) {
@@ -1834,7 +1842,7 @@ async function createLiveOrders() {
 async function createStockMovements() {
   logStep(12, 'Create Stock Movements (Opening Stock)');
 
-  const owner = STAFF.find((s) => s.role === 'owner');
+  const owner = STAFF.find((s) => s.poste === 'owner');
 
   const ingredients = [
     { id: ID.ingBoeuf, stock: 25 },
@@ -1919,7 +1927,7 @@ function printSummary() {
 
 async function main() {
   console.log('='.repeat(60));
-  console.log("  ATTABL SaaS — Demo Seed: L'Epicurien");
+  console.log("  ATTABL SaaS: Demo Seed: L'Epicurien");
   console.log('='.repeat(60));
   console.log(`  Supabase URL: ${SUPABASE_URL}`);
   console.log(`  Timestamp:    ${new Date().toISOString()}\n`);

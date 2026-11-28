@@ -13,7 +13,7 @@ import { printInvoice } from '@/lib/printing/invoice-html';
 import { printKitchenTicket } from '@/lib/printing/kitchen-ticket';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import { usePermissions } from '@/hooks/usePermissions';
-import { isRoleAllowed, ORDER_MONEY_ROLES } from '@/lib/admin-roles';
+import { MONEY_PERMISSIONS, orderStatusRequirement } from '@/lib/admin-roles';
 
 interface UseOrderDetailsParams {
   order: Order;
@@ -37,11 +37,12 @@ export function useOrderDetails({
   const seg = useSegmentTerms();
   const locale = useLocale();
   const { toast } = useToast();
-  const { role, can } = usePermissions();
-  // Memes regles que le serveur: encaisser = `orders.pay`; offrir = en plus un
-  // role de gerant. Le serveur et le chef n'encaissent pas (2026-11-09).
+  const { can } = usePermissions();
+  // Memes regles que le serveur: encaisser = `orders.pay`; offrir = l'autorite
+  // d'argent (les quatre droits). Le serveur et le chef n'encaissent pas.
   const canPay = can('orders.pay');
-  const canComp = canPay && isRoleAllowed(role, ORDER_MONEY_ROLES);
+  const canComp = can(MONEY_PERMISSIONS);
+  const canSetStatus = (status: OrderStatus) => can(orderStatusRequirement(status));
   const isComp = order.payment_status === 'comp';
 
   // Transactional order/item amounts (total, subtotal, tax, tip, price_at_order)
@@ -126,6 +127,7 @@ export function useOrderDetails({
     isComp,
     fmt,
     fmtMajor,
+    canSetStatus,
     handleStatusUpdate,
     handlePrintKitchen,
     handlePrintReceipt,

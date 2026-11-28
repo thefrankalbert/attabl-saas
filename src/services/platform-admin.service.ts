@@ -163,10 +163,10 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
 
   async function getAdminUserLabel(
     adminUserId: string,
-  ): Promise<{ email: string; tenant_id: string; role: string; user_id: string | null }> {
+  ): Promise<{ email: string; tenant_id: string; user_id: string | null }> {
     const { data, error } = await admin
       .from('admin_users')
-      .select('email, tenant_id, role, user_id')
+      .select('email, tenant_id, user_id')
       .eq('id', adminUserId)
       .maybeSingle();
     if (error) throw new ServiceError('Erreur lors du chargement du compte', 'INTERNAL', error);

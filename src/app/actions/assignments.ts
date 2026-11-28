@@ -21,7 +21,7 @@ const tenantIdSchema = z.string().uuid();
 
 async function checkPermissions(tenantId: string): Promise<{ error: string | null }> {
   try {
-    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager'], 'orders.manage');
+    await getAuthenticatedUserForTenant(tenantId, 'settings.edit');
     // Coupure du restaurant: assigner un serveur est une ecriture de service.
     await assertTenantServing(tenantId);
     return { error: null };

@@ -101,8 +101,8 @@ set local role authenticated;
 set local request.jwt.claims = '{"sub":"f1111111-1111-1111-1111-111111111111"}';
 
 select ok(
-  public.has_tenant_write_permission('f5555555-5555-4555-8555-555555555555', 'orders.manage'),
-  'matrice: un serveur detient orders.manage par defaut'
+  public.has_tenant_write_permission('f5555555-5555-4555-8555-555555555555', 'orders.take'),
+  'matrice: un serveur detient orders.take par defaut (ancien orders.manage)'
 );
 select ok(
   NOT public.has_tenant_write_permission('f5555555-5555-4555-8555-555555555555', 'orders.pay'),
@@ -239,8 +239,8 @@ select ok(
   'retrait: un caissier a qui on retire orders.pay ne le detient plus'
 );
 select ok(
-  public.has_tenant_write_permission('f5555555-5555-4555-8555-555555555555', 'orders.manage'),
-  'retrait: il garde orders.manage (il fait toujours avancer les commandes)'
+  public.has_tenant_write_permission('f5555555-5555-4555-8555-555555555555', 'orders.take'),
+  'retrait: il garde orders.take (il fait toujours avancer les commandes)'
 );
 select throws_ok(
   $$insert into public.payments (tenant_id, order_id, amount, method, status)

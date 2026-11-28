@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-import type { PermissionCode } from '@/types/permission.types';
+import type { PermissionRequirement } from '@/lib/permissions';
 
 import { resolveAdminPermission } from './resolve-admin-permission';
 
@@ -19,7 +19,7 @@ export async function isAdminRouteDenied(
   supabase: SupabaseClient,
   userId: string,
   tenantId: string,
-  permission: PermissionCode,
+  permission: PermissionRequirement,
 ): Promise<boolean> {
   const { allowed } = await resolveAdminPermission(supabase, userId, tenantId, permission);
   return !allowed;
@@ -38,6 +38,6 @@ export async function isAdminMemberDenied(
   userId: string,
   tenantId: string,
 ): Promise<boolean> {
-  const { role } = await resolveAdminPermission(supabase, userId, tenantId, 'menu.view');
-  return !role;
+  const { postes } = await resolveAdminPermission(supabase, userId, tenantId, 'menu.view');
+  return !postes;
 }

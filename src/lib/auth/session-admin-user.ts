@@ -3,11 +3,13 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { createSignupService } from '@/services/signup.service';
 import { logger } from '@/lib/logger';
 import { isMfaSatisfied, MFA_REQUIRED_MESSAGE } from '@/lib/auth/mfa-assurance';
+import { toPostes } from '@/lib/permissions';
 import { pickOnboardingTenantIndex } from '@/lib/onboarding/select-onboarding-tenant';
 
 type SessionAdminUser = {
   tenant_id: string;
-  role: string;
+  /** Le membre porte le poste `owner` dans ce restaurant. */
+  isOwner: boolean;
   /** Slug of the chosen tenant (null only if the join came back empty). */
   tenant_slug: string | null;
   onboarding_completed: boolean;
@@ -77,7 +79,7 @@ export async function resolveSessionAdminUser(options?: {
   }> {
     let q = adminSupabase
       .from('admin_users')
-      .select('tenant_id, role, tenants ( slug, onboarding_completed, created_at, deleted_at )')
+      .select('tenant_id, postes, tenants ( slug, onboarding_completed, created_at, deleted_at )')
       .eq('user_id', user!.id);
     if (requireActive) {
       q = q.eq('is_active', true);
@@ -117,13 +119,13 @@ export async function resolveSessionAdminUser(options?: {
       const tenant = Array.isArray(row.tenants) ? row.tenants[0] : row.tenants;
       return {
         tenant_id: row.tenant_id,
-        role: row.role,
+        isOwner: toPostes(row.postes).includes('owner'),
         tenant_slug: tenant?.slug ?? null,
         onboarding_completed: !!tenant?.onboarding_completed,
         createdAt: tenant?.created_at ?? null,
       };
     });
-    const rows = ownerOnly ? allRows.filter((row) => row.role === 'owner') : allRows;
+    const rows = ownerOnly ? allRows.filter((row) => row.isOwner) : allRows;
 
     let chosen: (typeof rows)[number] | undefined;
     if (siteSlug) {
@@ -143,7 +145,7 @@ export async function resolveSessionAdminUser(options?: {
     return {
       data: {
         tenant_id: chosen.tenant_id,
-        role: chosen.role,
+        isOwner: chosen.isOwner,
         tenant_slug: chosen.tenant_slug,
         onboarding_completed: chosen.onboarding_completed,
       },

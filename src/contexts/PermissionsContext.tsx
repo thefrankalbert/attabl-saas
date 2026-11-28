@@ -1,16 +1,23 @@
 'use client';
 
 import { createContext, useMemo } from 'react';
-import type { AdminRole } from '@/types/admin.types';
-import type { PermissionCode } from '@/types/permission.types';
+import {
+  meetsRequirement,
+  type PermissionLevels,
+  type PermissionRequirement,
+} from '@/lib/permissions';
+import type { Poste } from '@/types/permission.types';
 
 // --- Types ----------------------------------------------
 
 export interface PermissionsContextValue {
-  role: AdminRole;
-  /** Permissions EFFECTIVES, resolues cote serveur comme pour les actions. */
-  permissions: Record<PermissionCode, boolean>;
-  can: (code: PermissionCode) => boolean;
+  /** Postes cumules du membre. Sert a l'affichage, jamais a une garde. */
+  postes: readonly Poste[];
+  isOwner: boolean;
+  /** Niveaux EFFECTIFS, resolus cote serveur comme pour les actions. */
+  levels: PermissionLevels;
+  /** Meme regle de garde que le serveur (`meetsRequirement`). */
+  can: (requirement: PermissionRequirement) => boolean;
 }
 
 // --- Context --------------------------------------------
@@ -20,25 +27,25 @@ export const PermissionsContext = createContext<PermissionsContextValue | null>(
 // --- Provider -------------------------------------------
 
 interface PermissionsProviderProps {
-  role: AdminRole;
+  postes: readonly Poste[];
   /**
-   * Resultat de `getEffectivePermissions` (defaut du role, surcharge du
-   * proprietaire, surcharge individuelle). L'interface lit la MEME resolution
-   * que le serveur: un reglage du proprietaire dans /settings/permissions
-   * change donc aussi l'ecran.
+   * Resultat de `getEffectiveLevels` (cumul des postes, reglage du restaurant,
+   * reglage par personne). L'interface lit la MEME resolution que le serveur :
+   * un reglage du proprietaire change donc aussi l'ecran.
    */
-  permissions: Record<PermissionCode, boolean>;
+  levels: PermissionLevels;
   children: React.ReactNode;
 }
 
-export function PermissionsProvider({ role, permissions, children }: PermissionsProviderProps) {
+export function PermissionsProvider({ postes, levels, children }: PermissionsProviderProps) {
   const value = useMemo(
     () => ({
-      role,
-      permissions,
-      can: (code: PermissionCode) => permissions[code] === true,
+      postes,
+      isOwner: postes.includes('owner'),
+      levels,
+      can: (requirement: PermissionRequirement) => meetsRequirement(levels, requirement),
     }),
-    [role, permissions],
+    [postes, levels],
   );
 
   return <PermissionsContext.Provider value={value}>{children}</PermissionsContext.Provider>;

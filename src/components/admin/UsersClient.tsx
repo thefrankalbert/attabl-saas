@@ -7,13 +7,6 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import AdminModal from '@/components/admin/AdminModal';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { useUsersData } from '@/hooks/useUsersData';
@@ -32,26 +25,34 @@ import {
   actionResetUserPassword,
   actionUpdateUserEmail,
 } from '@/app/actions/admin';
-import type { AdminUser, AdminRole } from '@/types/admin.types';
-import type { PermissionMap } from '@/types/permission.types';
+import PostesPicker from '@/components/features/users/PostesPicker';
+import { usePermissions } from '@/hooks/usePermissions';
+import { canGrantPostes } from '@/lib/auth/poste-authority';
+import type { PosteOverrides } from '@/lib/permissions';
+import type { AdminUser } from '@/types/admin.types';
+import { STAFF_POSTES, type StaffPoste } from '@/types/permission.types';
 
 // --- Types -------------------------------------------------
 
 interface UsersClientProps {
   tenantId: string;
-  currentUserRole: AdminRole;
+  /** `admin_users.id` du membre connecte dans ce restaurant. */
+  currentAdminUserId: string;
   initialUsers: AdminUser[];
-  roleOverrides?: Record<string, PermissionMap>;
+  /** Reglages du restaurant par poste (`poste_permissions`). */
+  posteOverrides?: PosteOverrides;
   serverListPagination?: ServerListPagination;
 }
+
+const EMPTY_POSTE_OVERRIDES: PosteOverrides = {};
 
 // --- Main Component ----------------------------------------
 
 export default function UsersClient({
   tenantId,
-  currentUserRole,
+  currentAdminUserId,
   initialUsers,
-  roleOverrides = {},
+  posteOverrides = EMPTY_POSTE_OVERRIDES,
   serverListPagination,
 }: UsersClientProps) {
   const router = useRouter();
@@ -59,6 +60,13 @@ export default function UsersClient({
   const t = useTranslations('users');
   const tc = useTranslations('common');
   const { toast } = useToast();
+  const { isOwner, levels } = usePermissions();
+  // Meme regle que le serveur (`canGrantPostes`): on ne propose que les postes
+  // que l'acteur peut donner.
+  const grantablePostes = useMemo(
+    () => STAFF_POSTES.filter((poste) => canGrantPostes(levels, [poste], posteOverrides)),
+    [levels, posteOverrides],
+  );
   const { confirm, Dialog: ConfirmDialog } = useConfirmDialog();
   const useServerPagination = !!serverListPagination;
 
@@ -104,7 +112,6 @@ export default function UsersClient({
 
   const data = useUsersData({
     tenantId,
-    currentUserRole,
     initialUsers,
     confirm: confirmWithMessage,
   });
@@ -113,7 +120,7 @@ export default function UsersClient({
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
-  const [editRole, setEditRole] = useState('');
+  const [editPostes, setEditPostes] = useState<StaffPoste[]>([]);
   const [editSaving, setEditSaving] = useState(false);
   const [sendingResetLink, setSendingResetLink] = useState(false);
 
@@ -121,7 +128,8 @@ export default function UsersClient({
     setEditingUser(user);
     setEditName(user.full_name || '');
     setEditEmail(user.email);
-    setEditRole(user.role);
+    // Le proprietaire n'est jamais ouvert ici (aucune action sur lui).
+    setEditPostes((user.postes ?? []).filter((p): p is StaffPoste => p !== 'owner'));
   };
 
   // Le champ "nouveau mot de passe" a disparu: le serveur n'ecrit plus le mot
@@ -163,13 +171,16 @@ export default function UsersClient({
     if (!editingUser) return;
     setEditSaving(true);
     try {
-      // Update name/role if changed
-      if (editName !== editingUser.full_name || editRole !== editingUser.role) {
+      // Update name/postes if changed. Les postes ne partent que s'ils ont
+      // change: les renvoyer a l'identique ferait rejouer la regle "on ne donne
+      // pas un droit qu'on n'a pas" sur un simple changement de nom.
+      const postesChanged = editPostes.join() !== (editingUser.postes ?? []).join();
+      if (editName !== editingUser.full_name || postesChanged) {
         const res = await actionUpdateAdminUser(tenantId, editingUser.id, {
           full_name: editName,
-          role: editRole as AdminRole,
+          ...(postesChanged ? { postes: editPostes } : {}),
           is_active: editingUser.is_active,
-        } as Partial<AdminUser>);
+        });
         if (res.error) {
           toast({ title: res.error, variant: 'destructive' });
           return;
@@ -225,7 +236,8 @@ export default function UsersClient({
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6 space-y-6">
           <UsersTable
             users={data.users}
-            currentUserRole={currentUserRole}
+            actor={{ id: currentAdminUserId, isOwner, levels }}
+            posteOverrides={posteOverrides}
             canManageUsers={data.canManageUsers}
             onToggleStatus={data.handleToggleStatus}
             onDeleteUser={data.handleDeleteUser}
@@ -245,6 +257,8 @@ export default function UsersClient({
           {/* Pending Invitations Section */}
           {data.canManageUsers && (
             <PendingInvitations
+              actor={{ isOwner, levels }}
+              posteOverrides={posteOverrides}
               pendingOnly={data.pendingOnly}
               loadingInvitations={data.loadingInvitations}
               resendingId={data.resendingId}
@@ -264,8 +278,9 @@ export default function UsersClient({
           <UserForm
             inviteEmail={data.inviteEmail}
             setInviteEmail={data.setInviteEmail}
-            inviteRole={data.inviteRole}
-            setInviteRole={data.setInviteRole}
+            invitePostes={data.invitePostes}
+            setInvitePostes={data.setInvitePostes}
+            grantablePostes={grantablePostes}
             inviting={data.inviting}
             onSendInvitation={data.handleSendInvitation}
             onClose={() => data.setIsModalOpen(false)}
@@ -301,19 +316,15 @@ export default function UsersClient({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="edit-user-role">{t('role')}</Label>
-              <Select value={editRole} onValueChange={setEditRole}>
-                <SelectTrigger id="edit-user-role" className="min-h-[44px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="waiter">{t('roleWaiterLabel')}</SelectItem>
-                  <SelectItem value="chef">{t('roleChefLabel')}</SelectItem>
-                  <SelectItem value="cashier">{t('roleCashierLabel')}</SelectItem>
-                  <SelectItem value="manager">{t('roleManagerLabel')}</SelectItem>
-                  <SelectItem value="admin">{t('roleAdminLabel')}</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label id="edit-postes-label">{t('postesLabel')}</Label>
+              <p className="text-xs text-app-text-secondary">{t('postesHint')}</p>
+              <PostesPicker
+                idPrefix="edit-poste"
+                labelledBy="edit-postes-label"
+                value={editPostes}
+                onChange={setEditPostes}
+                grantable={grantablePostes}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>{t('passwordSection')}</Label>
@@ -332,7 +343,11 @@ export default function UsersClient({
               <Button variant="ghost" onClick={() => setEditingUser(null)}>
                 {tc('cancel')}
               </Button>
-              <Button variant="default" disabled={editSaving} onClick={handleEditSave}>
+              <Button
+                variant="default"
+                disabled={editSaving || editPostes.length === 0}
+                onClick={handleEditSave}
+              >
                 {editSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 {tc('saveChanges')}
               </Button>
@@ -345,7 +360,7 @@ export default function UsersClient({
             key={permsUser.id}
             user={permsUser}
             tenantId={tenantId}
-            roleOverride={roleOverrides[permsUser.role] ?? {}}
+            posteOverrides={posteOverrides}
             onClose={() => setPermsUser(null)}
             onSaved={() => {
               setPermsUser(null);

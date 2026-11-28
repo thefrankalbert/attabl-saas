@@ -14,7 +14,8 @@ const state = vi.hoisted(() => ({
 
 vi.mock('next-intl/server', () => ({ getTranslations: async () => (key: string) => key }));
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }));
-vi.mock('@/lib/auth/require-admin-permission', () => ({ requireAdminMember: vi.fn() }));
+const requireAdminPermission = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/auth/require-admin-permission', () => ({ requireAdminPermission }));
 vi.mock('@/lib/cache', () => ({ getTenant: async () => state.tenant }));
 vi.mock('@/lib/billing/tenant-billing-ids', () => ({
   getTenantBillingIds: (id: string) => state.billing(id),
@@ -52,6 +53,14 @@ describe('Page cuisine - fin d essai', () => {
   beforeEach(() => {
     state.billing.mockReset();
     state.billing.mockResolvedValue({ stripe_subscription_id: null });
+  });
+
+  // Cahier des charges, section 5: l'ecran de cuisine exige `kitchen.track`
+  // (avant: toute personne de l'equipe, caissier et serveur compris).
+  it('la page exige le droit kitchen.track', async () => {
+    requireAdminPermission.mockClear();
+    await rendu({ subscription_status: 'trial', trial_ends_at: ilYa(2 * HEURE) });
+    expect(requireAdminPermission).toHaveBeenCalledWith('resto', 'kitchen.track');
   });
 
   it('essai expire pas encore gele, plan starter: la cuisine reste ouverte', async () => {

@@ -154,7 +154,9 @@ export function scheduleTriggerEmails(
           .from('admin_users')
           .select('email')
           .eq('tenant_id', tenantId)
-          .eq('role', 'owner')
+          // Un seul proprietaire vivant par restaurant (index unique en base).
+          .contains('postes', ['owner'])
+          .is('deleted_at', null)
           .maybeSingle(),
         adminSupabase.from('tenants').select('name, activation_events').eq('id', tenantId).single(),
       ]);

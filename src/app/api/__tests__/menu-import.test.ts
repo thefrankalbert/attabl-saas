@@ -1,4 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getEffectiveLevels } from '@/lib/permissions';
+import { MENU_WITH_PRICE } from '@/lib/admin-roles';
+import type { PermissionMap } from '@/types/permission.types';
 
 // Coupure du restaurant (A-02): la garde est simulee ici, ses refus sont testes
 // dans tenant-lock-routes.test.ts.
@@ -32,6 +35,14 @@ vi.mock('next/cache', () => ({
 vi.mock('@/lib/logger', () => ({
   logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn() },
 }));
+
+// Garde de droits (describe plus bas): la VRAIE getAuthenticatedUserWithTenant lit
+// la session par ces deux modules, simules ici.
+const mockCreateClient = vi.fn();
+vi.mock('@/lib/supabase/server', () => ({
+  createClient: (...args: unknown[]) => mockCreateClient(...args),
+}));
+vi.mock('next/headers', () => ({ headers: async () => new Headers() }));
 
 vi.mock('@/services/excel-import.service', () => ({
   createExcelImportService: vi.fn(() => ({
@@ -121,7 +132,9 @@ function mockAuth(supabase: unknown) {
   mockGetAuthenticatedUserWithTenant.mockResolvedValue({
     user: { id: 'user-1', email: 'owner@test.com' },
     tenantId: 'tenant-1',
-    role: 'owner',
+    postes: ['owner'],
+    isOwner: true,
+    levels: getEffectiveLevels({ postes: ['owner'] }),
     supabase,
   });
 }
@@ -180,5 +193,109 @@ describe('POST /api/menu-import', () => {
       { maxNewItems: 12 },
       'XOF',
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Garde de droits: importer une carte cree des plats AVEC leurs prix, donc
+// `menu.edit` ET `menu.price`. La VRAIE getAuthenticatedUserWithTenant resout les
+// droits sur un client de base simule; le 403 doit tomber AVANT toute ecriture.
+// ---------------------------------------------------------------------------
+
+describe('POST /api/menu-import - garde menu.edit + menu.price', () => {
+  /** Client de base: ligne de membre + reglages vides, le reste delegue au client metier. */
+  function gateClient(postes: string[], overrides: PermissionMap | null) {
+    const business = createMockSupabase({ data: { id: 'menu-1' } });
+    const writes = vi.fn();
+    const tablesRead: string[] = [];
+    const memberChain: Record<string, unknown> = {};
+    for (const m of ['select', 'eq', 'is', 'order', 'limit']) memberChain[m] = () => memberChain;
+    memberChain.maybeSingle = async () => ({
+      data: { id: 'adm-1', tenant_id: 'tenant-1', postes, permission_overrides: overrides },
+      error: null,
+    });
+    const posteChain: Record<string, unknown> = {};
+    for (const m of ['select', 'eq']) posteChain[m] = () => posteChain;
+    posteChain.in = async () => ({ data: [], error: null });
+    const client = {
+      auth: {
+        getUser: async () => ({
+          data: { user: { id: 'user-1', email: 'u@test.com' } },
+          error: null,
+        }),
+      },
+      rpc: writes,
+      from: vi.fn((table: string) => {
+        tablesRead.push(table);
+        if (table === 'admin_users') return memberChain;
+        if (table === 'poste_permissions') return posteChain;
+        // Toute ecriture sur une autre table doit etre vue: insert/update/upsert/delete.
+        const base = business.from(table) as Record<string, unknown>;
+        for (const m of ['insert', 'update', 'upsert', 'delete']) base[m] = writes;
+        return base;
+      }),
+    };
+    return { client, writes, tablesRead };
+  }
+
+  async function asMember(postes: string[], overrides: PermissionMap | null = null) {
+    const g = gateClient(postes, overrides);
+    mockCreateClient.mockResolvedValue(g.client);
+    const actual =
+      await vi.importActual<typeof import('@/lib/auth/get-session')>('@/lib/auth/get-session');
+    mockGetAuthenticatedUserWithTenant.mockImplementation(
+      (req?: Parameters<typeof actual.getAuthenticatedUserWithTenant>[0]) =>
+        actual.getAuthenticatedUserWithTenant(req),
+    );
+    return g;
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockVerifyOrigin.mockReturnValue(null);
+    mockExcelLimiterCheck.mockResolvedValue({ success: true });
+    mockRemainingItemSlots.mockResolvedValue(12);
+    mockImportFromExcel.mockResolvedValue({
+      categoriesCreated: 0,
+      categoriesExisting: 0,
+      itemsCreated: 1,
+      itemsSkipped: 0,
+    });
+  });
+
+  it('la garde exige menu.edit ET menu.price', () => {
+    expect([...MENU_WITH_PRICE].sort()).toEqual(['menu.edit', 'menu.price']);
+  });
+
+  it.each([
+    ['menu.edit SANS menu.price (chef, prix retire)', ['chef'], { 'menu.price': false }],
+    ['menu.price SANS menu.edit (gerant, edition retiree)', ['manager'], { 'menu.edit': false }],
+    ['serveur (aucun des deux)', ['waiter'], null],
+    ['caissier (aucun des deux)', ['cashier'], null],
+  ])('%s: 403 avant toute ecriture', async (_label, postes, overrides) => {
+    const g = await asMember(postes, overrides);
+    const { POST } = await import('../menu-import/route');
+
+    const res = await POST(buildRequest(buildFormData('menu-1')));
+
+    expect(res.status).toBe(403);
+    expect(mockImportFromExcel).not.toHaveBeenCalled();
+    expect(g.writes).not.toHaveBeenCalled();
+    // Le client de base n'a lu que la ligne de membre et ses reglages: rien d'autre.
+    expect(new Set(g.tablesRead)).toEqual(new Set(['admin_users', 'poste_permissions']));
+  });
+
+  it.each([
+    ['chef (menu.edit et menu.price par defaut)', ['chef'], null],
+    ['gerant', ['manager'], null],
+    ['proprietaire', ['owner'], null],
+  ])('temoin: %s passe la garde et importe', async (_label, postes, overrides) => {
+    await asMember(postes, overrides);
+    const { POST } = await import('../menu-import/route');
+
+    const res = await POST(buildRequest(buildFormData('menu-1')));
+
+    expect(res.status).toBe(200);
+    expect(mockImportFromExcel).toHaveBeenCalledTimes(1);
   });
 });

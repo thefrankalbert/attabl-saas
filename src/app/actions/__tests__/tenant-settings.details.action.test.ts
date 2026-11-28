@@ -38,7 +38,7 @@ vi.mock('@/lib/auth/get-session', () => ({
   AuthError: class AuthError extends Error {},
   getAuthenticatedUserWithTenant: async () => ({
     tenantId: 't1',
-    role: 'owner',
+    postes: ['owner'],
     user: { id: 'u1', email: 'o@x.test' },
     supabase: {
       from: () => ({
@@ -102,7 +102,7 @@ describe('actionUpdateTenantSettings - establishmentDetails', () => {
 });
 
 describe('actionUpdateTenantSettings - refus de la base (B103)', () => {
-  it('dit clairement que le role ne permet pas, sans journaliser une erreur', async () => {
+  it('dit clairement que le droit manque, sans journaliser une erreur', async () => {
     updateSettings.mockRejectedValue(
       new ServiceError('Votre role ne permet pas de modifier les parametres', 'UNAUTHORIZED'),
     );

@@ -2,7 +2,6 @@
 
 import { useContext } from 'react';
 import { PermissionsContext, type PermissionsContextValue } from '@/contexts/PermissionsContext';
-import { ASSIGNMENT_MANAGER_ROLES, isRoleAllowed } from '@/lib/admin-roles';
 
 export function usePermissions(): PermissionsContextValue {
   const context = useContext(PermissionsContext);
@@ -14,10 +13,10 @@ export function usePermissions(): PermissionsContextValue {
 
 /**
  * Assigner ou liberer un serveur sur une table: meme regle que le serveur
- * (actions/assignments.ts, policies "Floor managers"): role de gerant ET `orders.manage`. Le plan de salle reste lisible
- * pour tous; seuls les gestes d'assignation sont caches.
+ * (actions/assignments.ts) et que la base (`has_tenant_floor_permission`): le
+ * droit `settings.edit` ("Reglages du restaurant": tables, espaces). Le plan de
+ * salle reste lisible pour tous; seuls les gestes d'assignation sont caches.
  */
 export function useCanManageFloor(): boolean {
-  const { role, can } = usePermissions();
-  return isRoleAllowed(role, ASSIGNMENT_MANAGER_ROLES) && can('orders.manage');
+  return usePermissions().can('settings.edit');
 }

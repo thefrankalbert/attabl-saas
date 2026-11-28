@@ -20,10 +20,12 @@ insert into tenants (id, slug, name, subscription_plan, subscription_status, is_
   ('d4000000-0000-4000-8000-000000000003', 'vc-business', 'VC Business', 'business', 'active', true, 'XOF');
 insert into tenants (id, slug, name, subscription_plan, subscription_status, trial_ends_at, is_active, currency) values
   ('d4000000-0000-4000-8000-000000000004', 'vc-essai', 'VC Essai', 'starter', 'trial', now() + interval '5 days', true, 'XOF');
-insert into admin_users (id, tenant_id, user_id, email, role, is_active) values
-  ('d4000000-0000-4000-8000-000000000011', 'd4000000-0000-4000-8000-000000000001', 'd4000000-0000-4000-8000-0000000000a1', 'caisse-s@test.local', 'owner', true),
-  ('d4000000-0000-4000-8000-000000000012', 'd4000000-0000-4000-8000-000000000001', 'd4000000-0000-4000-8000-0000000000a2', 'caissier-s@test.local', 'cashier', true),
-  ('d4000000-0000-4000-8000-000000000013', 'd4000000-0000-4000-8000-000000000002', 'd4000000-0000-4000-8000-0000000000a3', 'caissier-p@test.local', 'cashier', true);
+-- Declencheurs coupes (replica): la synchronisation role -> postes ne tourne
+-- pas, les postes sont donc ecrits ici (contrainte admin_users_postes_non_vide).
+insert into admin_users (id, tenant_id, user_id, email, role, is_active, postes) values
+  ('d4000000-0000-4000-8000-000000000011', 'd4000000-0000-4000-8000-000000000001', 'd4000000-0000-4000-8000-0000000000a1', 'caisse-s@test.local', 'owner', true, '{owner}'),
+  ('d4000000-0000-4000-8000-000000000012', 'd4000000-0000-4000-8000-000000000001', 'd4000000-0000-4000-8000-0000000000a2', 'caissier-s@test.local', 'cashier', true, '{cashier}'),
+  ('d4000000-0000-4000-8000-000000000013', 'd4000000-0000-4000-8000-000000000002', 'd4000000-0000-4000-8000-0000000000a3', 'caissier-p@test.local', 'cashier', true, '{cashier}');
 insert into orders (id, tenant_id, order_number, subtotal, total, service_type, tip_amount) values
   ('d4000000-0000-4000-8000-0000000000b1', 'd4000000-0000-4000-8000-000000000001', 'S-1', 1000, 1000, 'dine_in', 0),
   -- Commande Starter avec un pourboire enregistre pendant l'essai.

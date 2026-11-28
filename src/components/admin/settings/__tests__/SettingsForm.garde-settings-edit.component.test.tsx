@@ -5,14 +5,16 @@ import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
 import { Input } from '@/components/ui/input';
 import { PermissionsProvider } from '@/contexts/PermissionsContext';
-import { DEFAULT_PERMISSIONS, type PermissionCode } from '@/types/permission.types';
+import { getEffectiveLevels } from '@/lib/permissions';
+import type { PermissionMap, Poste } from '@/types/permission.types';
 import type { SettingsTenant } from '@/hooks/useSettingsData';
 import { SettingsForm } from '../SettingsForm';
 import { DEFAULT_REMINDER_SETTINGS } from '@/lib/validations/reminders.schema';
 
-// /settings s'ouvre sur `settings.view`. Un role a qui le proprietaire donne
-// `settings.view` sans `settings.edit` voyait "Acces refuse": la page doit
-// rester lisible, champs figes, sans enregistrement ni editeur de permissions.
+// /settings s'ouvre sur `settings.edit`, et le formulaire est lui-meme garde par
+// ce droit. Le gerant l'a par defaut; sans lui (reglage par personne) la page
+// montre "Acces refuse" au lieu d'un formulaire que le serveur refuserait. Seul
+// le proprietaire voit le lien vers l'editeur de permissions.
 
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 vi.mock('next/navigation', () => ({
@@ -41,16 +43,10 @@ vi.mock('@/components/features/settings/SettingsSecurity', () => ({ default: () 
 vi.mock('@/components/features/settings/SettingsContact', () => ({ default: () => null }));
 vi.mock('@/components/features/settings/SettingsOpeningHours', () => ({ default: () => null }));
 
-function renderWith(
-  overrides: Partial<Record<PermissionCode, boolean>>,
-  role: 'manager' | 'admin' | 'owner' = 'manager',
-) {
-  const permissions = { ...DEFAULT_PERMISSIONS.manager, ...overrides } as Record<
-    PermissionCode,
-    boolean
-  >;
+function renderWith(poste: Poste, overrides: PermissionMap = {}) {
+  const levels = getEffectiveLevels({ postes: [poste], permission_overrides: overrides });
   render(
-    <PermissionsProvider role={role} permissions={permissions}>
+    <PermissionsProvider postes={[poste]} levels={levels}>
       <SettingsForm
         tenant={{ id: 't1', slug: 'demo' } as SettingsTenant}
         initialPaymentMethods={[]}
@@ -61,33 +57,36 @@ function renderWith(
   );
 }
 
-describe('Parametres: lecture seule sans settings.edit', () => {
-  it('settings.view seul: page lisible, champs figes, ni enregistrer ni permissions', () => {
-    renderWith({ 'settings.view': true, 'settings.edit': false });
-    expect(screen.queryByText('accessDenied')).toBeNull();
-    expect(screen.getByTestId('settings-fields')).toBeDisabled();
-    expect(screen.getByLabelText('nom')).toBeDisabled();
-    expect(screen.queryByText('saveChanges')).toBeNull();
-    expect(screen.queryByText('management.permissions')).toBeNull();
-  });
-
+describe('Parametres: garde settings.edit', () => {
   // Decision du proprietaire: seul lui regle les permissions. settings.edit
   // ouvre les champs, pas l'editeur de permissions.
-  it('settings.edit sans etre proprietaire: champs actifs, pas de lien permissions', () => {
-    renderWith({ 'settings.view': true, 'settings.edit': true }, 'admin');
-    expect(screen.getByTestId('settings-fields')).not.toBeDisabled();
+  it('gerant (settings.edit par defaut): champs actifs, pas de lien permissions', () => {
+    renderWith('manager');
     expect(screen.getByLabelText('nom')).not.toBeDisabled();
     expect(screen.getByText('saveChanges')).toBeInTheDocument();
     expect(screen.queryByText('management.permissions')).toBeNull();
   });
 
   it('proprietaire: lien vers les permissions visible', () => {
-    renderWith({ 'settings.view': true, 'settings.edit': true }, 'owner');
+    renderWith('owner');
     expect(screen.getByText('management.permissions')).toBeInTheDocument();
   });
 
-  it('sans settings.view: acces refuse', () => {
-    renderWith({ 'settings.view': false, 'settings.edit': false });
+  it('gerant a qui on retire settings.edit: acces refuse, aucun champ', () => {
+    renderWith('manager', { 'settings.edit': false });
     expect(screen.getByText('accessDenied')).toBeInTheDocument();
+    expect(screen.queryByLabelText('nom')).toBeNull();
+    expect(screen.queryByText('saveChanges')).toBeNull();
+  });
+
+  it('serveur sans settings.edit: acces refuse (temoin: meme page, autre poste)', () => {
+    renderWith('waiter');
+    expect(screen.getByText('accessDenied')).toBeInTheDocument();
+  });
+
+  it('serveur a qui le proprietaire donne settings.edit: champs actifs, pas de lien permissions', () => {
+    renderWith('waiter', { 'settings.edit': true });
+    expect(screen.getByLabelText('nom')).not.toBeDisabled();
+    expect(screen.queryByText('management.permissions')).toBeNull();
   });
 });

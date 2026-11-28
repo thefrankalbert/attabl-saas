@@ -5,7 +5,6 @@ import { createInventoryService } from '@/services/inventory.service';
 import { ServiceError } from '@/services/errors';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
 import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-tenant-serving';
-import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 import { isFeatureEntitled } from '@/lib/plans/assert-feature';
 import {
   openStockCountSchema,
@@ -26,11 +25,7 @@ async function checkStockCountPermissions(
   tenantId: string,
 ): Promise<{ error: null; supabase: SupabaseClient } | { error: string; supabase: null }> {
   try {
-    const { supabase } = await getAuthenticatedUserForTenant(
-      tenantId,
-      ALL_ADMIN_ROLES,
-      'inventory.edit',
-    );
+    const { supabase } = await getAuthenticatedUserForTenant(tenantId, 'inventory.edit');
     // Coupure du restaurant: toute action de ce fichier est une ecriture.
     await assertTenantServing(tenantId);
     if (!(await isFeatureEntitled(supabase, tenantId, 'canAccessInventory'))) {

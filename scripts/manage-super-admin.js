@@ -4,7 +4,7 @@
  * Script de gestion du Super Admin - ATTABL
  *
  * Usage:
- *   node scripts/manage-super-admin.js [action]
+ *   SUPER_ADMIN_TENANT_SLUG=<restaurant> node scripts/manage-super-admin.js [action]
  *
  * Actions:
  *   status    - Affiche le statut du super admin
@@ -12,18 +12,24 @@
  *   enable    - Réactive les privilèges super admin
  *   password  - Change le mot de passe (demande le nouveau)
  *   delete    - Supprime le compte super admin (DANGER)
+ *
+ * Chaque action cible UNE ligne : cet email dans CE restaurant
+ * (SUPER_ADMIN_TENANT_SLUG, obligatoire). Les regles sont dans
+ * scripts/lib/super-admin-ops.cjs.
  */
 
 const { createClient } = require('@supabase/supabase-js');
 const { Client } = require('pg');
 const readline = require('readline');
 const { supabasePgConfig } = require('./lib/supabase-pg-ssl.cjs');
+const ops = require('./lib/super-admin-ops.cjs');
 
 // Configuration - Load from environment variables
 // Run with: source .env.local && node scripts/manage-super-admin.js [action]
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const DATABASE_URL = process.env.DATABASE_URL;
+const TENANT_SLUG = process.env.SUPER_ADMIN_TENANT_SLUG;
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY || !DATABASE_URL) {
   console.error("❌ Variables d'environnement manquantes.");
@@ -31,7 +37,17 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY || !DATABASE_URL) {
   process.exit(1);
 }
 
-const SUPER_ADMIN_EMAIL = 'superadmin@attabl.com';
+// Un email peut exister dans plusieurs restaurants : sans le restaurant, le
+// script ne sait pas quelle ligne toucher, et il les touchait toutes.
+if (!TENANT_SLUG) {
+  console.error('❌ SUPER_ADMIN_TENANT_SLUG manquant.');
+  console.error(
+    'Indiquez le restaurant de la ligne visee : SUPER_ADMIN_TENANT_SLUG=<slug> node scripts/manage-super-admin.js [action]',
+  );
+  process.exit(1);
+}
+
+const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || 'superadmin@attabl.com';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 // Encrypted and verified, or no connection (see scripts/lib/supabase-pg-ssl.cjs).
@@ -57,73 +73,28 @@ async function prompt(question) {
 }
 
 async function getStatus() {
-  await pgClient.connect();
-
-  const result = await pgClient.query(
-    `
-    SELECT
-      au.email,
-      au.role,
-      au.is_super_admin,
-      au.is_active,
-      t.slug as tenant_slug
-    FROM admin_users au
-    LEFT JOIN tenants t ON au.tenant_id = t.id
-    WHERE au.email = $1
-  `,
-    [SUPER_ADMIN_EMAIL],
-  );
-
-  await pgClient.end();
-
-  if (result.rows.length === 0) {
-    console.log('\n❌ Super Admin non trouvé dans admin_users');
-    return null;
-  }
-
-  const admin = result.rows[0];
+  const admin = await ops.lireLigne(pgClient, SUPER_ADMIN_EMAIL, TENANT_SLUG);
   console.log('\n=== STATUT SUPER ADMIN ===');
   console.log('Email:', admin.email);
-  console.log('Role:', admin.role);
+  console.log('Postes:', (admin.postes || []).join(' + ') || '(aucun : ligne de plateforme)');
   console.log('Super Admin:', admin.is_super_admin ? '✅ ACTIVÉ' : '❌ DÉSACTIVÉ');
   console.log('Actif:', admin.is_active ? 'Oui' : 'Non');
   console.log('Tenant:', admin.tenant_slug);
-
   return admin;
 }
 
 async function disableSuperAdmin() {
-  await pgClient.connect();
-
-  await pgClient.query(
-    `
-    UPDATE admin_users
-    SET is_super_admin = false, role = 'admin'
-    WHERE email = $1
-  `,
-    [SUPER_ADMIN_EMAIL],
-  );
-
-  await pgClient.end();
-
+  const { lignePlateforme } = await ops.revoquer(pgClient, SUPER_ADMIN_EMAIL, TENANT_SLUG);
   console.log('\n✅ Privilèges Super Admin DÉSACTIVÉS');
-  console.log('Le compte peut toujours accéder à son tenant assigné.');
+  console.log(
+    lignePlateforme
+      ? 'Ligne de plateforme désactivée. "enable" la rétablit.'
+      : 'Le compte reste membre actif de son restaurant, avec ses postes.',
+  );
 }
 
 async function enableSuperAdmin() {
-  await pgClient.connect();
-
-  await pgClient.query(
-    `
-    UPDATE admin_users
-    SET is_super_admin = true, role = 'super_admin'
-    WHERE email = $1
-  `,
-    [SUPER_ADMIN_EMAIL],
-  );
-
-  await pgClient.end();
-
+  await ops.activer(pgClient, SUPER_ADMIN_EMAIL, TENANT_SLUG);
   console.log('\n✅ Privilèges Super Admin ACTIVÉS');
 }
 
@@ -167,19 +138,20 @@ async function deleteSuperAdmin() {
     return;
   }
 
-  // Supprimer de admin_users
-  await pgClient.connect();
-  await pgClient.query('DELETE FROM admin_users WHERE email = $1', [SUPER_ADMIN_EMAIL]);
-  await pgClient.end();
+  // La ligne ciblee seulement ; refuse pour un proprietaire.
+  const { userId, lignesRestantes } = await ops.supprimer(pgClient, SUPER_ADMIN_EMAIL, TENANT_SLUG);
 
-  // Supprimer de auth.users
-  const {
-    data: { users },
-  } = await supabase.auth.admin.listUsers();
-  const user = users?.find((u) => u.email === SUPER_ADMIN_EMAIL);
-
-  if (user) {
-    await supabase.auth.admin.deleteUser(user.id);
+  // Le compte d'authentification ne part que s'il n'appartient plus a aucun
+  // restaurant : sinon on detruirait l'acces d'un membre d'un autre restaurant.
+  if (lignesRestantes > 0) {
+    console.log(
+      `\n✅ Ligne supprimée. Le compte est conservé : il lui reste ${lignesRestantes} ligne(s) ailleurs.`,
+    );
+    return;
+  }
+  if (userId) {
+    const { error } = await supabase.auth.admin.deleteUser(userId);
+    if (error) throw new Error(`compte auth non supprimé : ${error.message}`);
   }
 
   console.log('\n✅ Compte Super Admin SUPPRIMÉ');
@@ -191,7 +163,9 @@ async function main() {
   console.log('🔐 Gestion Super Admin - ATTABL');
   console.log('================================\n');
 
+  let code = 0;
   try {
+    await pgClient.connect();
     switch (action) {
       case 'status':
         await getStatus();
@@ -215,9 +189,12 @@ async function main() {
     }
   } catch (error) {
     console.error('Erreur:', error.message);
+    code = 1;
+  } finally {
+    await pgClient.end().catch(() => {});
   }
 
-  process.exit(0);
+  process.exit(code);
 }
 
 main();

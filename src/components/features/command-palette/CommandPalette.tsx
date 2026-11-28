@@ -16,6 +16,7 @@ import {
 import { usePermissions } from '@/hooks/usePermissions';
 import { NAV_GROUPS } from '@/lib/layout/navigation-config';
 import { canOpenAdminSubPath } from '@/lib/auth/admin-route-permissions';
+import { MENU_WITH_PRICE } from '@/lib/admin-roles';
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
@@ -23,7 +24,7 @@ export function CommandPalette() {
   const params = useParams();
   const t = useTranslations('sidebar');
   const tc = useTranslations('commandPalette');
-  const { permissions, can } = usePermissions();
+  const { levels: permissions, can } = usePermissions();
 
   const site = params?.site as string | undefined;
   const basePath = site ? `/sites/${site}/admin` : '/admin';
@@ -102,10 +103,10 @@ export function CommandPalette() {
 
     // Each quick action needs the permission its server action enforces, not
     // just the right to open the page.
-    if (can('pos.use')) {
+    if (can('orders.take')) {
       actions.push({ label: tc('newOrder'), path: `${basePath}/pos`, icon: Plus });
     }
-    if (can('menu.edit')) {
+    if (can(MENU_WITH_PRICE)) {
       actions.push({ label: tc('addDish'), path: `${basePath}/items?action=add`, icon: Plus });
     }
     if (can('team.manage')) {

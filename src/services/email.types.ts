@@ -48,7 +48,8 @@ export interface EmailChangeApprovalEmailData {
 }
 export interface TeamInvitationEmailData {
   restaurantName: string;
-  role: string;
+  /** Postes de l'invitation (un ou plusieurs). */
+  postes: readonly string[];
   inviteUrl: string;
 }
 

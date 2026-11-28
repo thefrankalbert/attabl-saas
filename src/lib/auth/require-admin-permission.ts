@@ -5,15 +5,16 @@ import { headers } from 'next/headers';
 
 import { getTenant } from '@/lib/cache';
 import { createClient } from '@/lib/supabase/server';
-import type { AdminRole } from '@/types/admin.types';
-import type { PermissionCode } from '@/types/permission.types';
+import type { PermissionLevels, PermissionRequirement } from '@/lib/permissions';
+import type { Poste } from '@/types/permission.types';
 
 import { redirectToLogin, redirectToUnauthorized } from './redirect-to-main';
 import { resolveAdminPermission } from './resolve-admin-permission';
 
 export interface AdminPermissionContext {
   tenantId: string;
-  role: AdminRole;
+  postes: Poste[];
+  levels: PermissionLevels;
 }
 
 /**
@@ -29,9 +30,9 @@ export interface AdminPermissionContext {
  *
  * The resolution lives in `resolve-admin-permission`, shared with the
  * middleware gate: live membership (is_active, no deleted_at) OR live platform
- * super_admin, then the 3-level `hasPermission` model.
+ * super_admin, then the `permissionLevel` resolution (postes cumules).
  */
-async function resolvePageAccess(site: string, permission: PermissionCode) {
+async function resolvePageAccess(site: string, permission: PermissionRequirement) {
   const headersList = await headers();
   const tenantSlug = readTenantSlug(headersList).slug || site;
 
@@ -52,21 +53,21 @@ async function resolvePageAccess(site: string, permission: PermissionCode) {
     redirectToLogin();
   }
 
-  const { allowed, role } = await resolveAdminPermission(supabase, user.id, tenant.id, permission);
-  return { tenantId: tenant.id, allowed, role };
+  const resolution = await resolveAdminPermission(supabase, user.id, tenant.id, permission);
+  return { tenantId: tenant.id, ...resolution };
 }
 
 export async function requireAdminPermission(
   site: string,
-  permission: PermissionCode,
+  permission: PermissionRequirement,
 ): Promise<AdminPermissionContext> {
-  const { tenantId, allowed, role } = await resolvePageAccess(site, permission);
+  const { tenantId, allowed, postes, levels } = await resolvePageAccess(site, permission);
 
-  if (!allowed || !role) {
+  if (!allowed || !postes) {
     redirectToUnauthorized();
   }
 
-  return { tenantId, role };
+  return { tenantId, postes, levels };
 }
 
 /**
@@ -79,27 +80,27 @@ export async function requireAdminPermission(
  * utilisateur d'un autre restaurant.
  */
 export async function requireAdminMember(site: string): Promise<AdminPermissionContext> {
-  // La permission demandee ne sert pas a la decision: seul le role compte.
-  const { tenantId, role } = await resolvePageAccess(site, 'menu.view');
+  // Le droit demande ne sert pas a la decision: seule l'appartenance compte.
+  const { tenantId, postes, levels } = await resolvePageAccess(site, 'menu.view');
 
-  if (!role) {
+  if (!postes) {
     redirectToUnauthorized();
   }
 
-  return { tenantId, role };
+  return { tenantId, postes, levels };
 }
 
 /**
  * Non-redirecting permission check for pages that must stay reachable for all
  * roles but conditionally hide sensitive widgets (e.g. the admin dashboard home
- * hides revenue from roles without `reports.view`).
+ * hides revenue from members without `reports.money`).
  *
  * Returns `false` on any failure (no session, no tenant, non-member) so the
  * caller defaults to hiding the gated content.
  */
 export async function getAdminPermission(
   site: string,
-  permission: PermissionCode,
+  permission: PermissionRequirement,
 ): Promise<boolean> {
   const headersList = await headers();
   const tenantSlug = readTenantSlug(headersList).slug || site;

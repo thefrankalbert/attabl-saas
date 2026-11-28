@@ -18,7 +18,7 @@ export async function loadSessionMemberships(
   const { data, error } = await supabase
     .from('admin_users')
     .select(
-      'tenant_id, is_super_admin, role, is_active, deleted_at, tenants(slug, onboarding_completed, created_at, deleted_at)',
+      'tenant_id, is_super_admin, role, postes, is_active, deleted_at, tenants(slug, onboarding_completed, created_at, deleted_at)',
     )
     .eq('user_id', userId);
   if (error) return null;

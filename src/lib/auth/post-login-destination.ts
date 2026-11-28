@@ -1,4 +1,4 @@
-import type { AdminRole } from '@/types/admin.types';
+import { toPostes } from '@/lib/permissions';
 
 /**
  * Ou envoyer un utilisateur qui vient de se connecter.
@@ -17,13 +17,15 @@ import type { AdminRole } from '@/types/admin.types';
  * que des lignes de membership deja chargees, donc elle se teste directement.
  *
  * ELLE N'OUVRE AUCUN ACCES. L'espace d'un etablissement accepte deja tout
- * membre vivant quel que soit son role (voir `sites/[site]/admin/layout.tsx`),
+ * membre vivant quel que soit son poste (voir `sites/[site]/admin/layout.tsx`),
  * et chaque page sensible reste gardee par sa permission (voir
  * `admin-route-permissions.ts` applique dans le middleware). On repare une
  * adresse, pas un droit.
  */
 export interface PostLoginMembership {
-  role: AdminRole | null;
+  /** Le membre porte le poste `owner` dans cet etablissement. */
+  isOwner: boolean;
+  /** Ligne de plateforme: drapeau `is_super_admin` OU `role = 'super_admin'`. */
   isSuperAdmin: boolean;
   isActive: boolean;
   deletedAt: string | null;
@@ -52,7 +54,9 @@ export interface PostLoginMembership {
  * requete, d'ou la normalisation ici plutot que dans chaque appelant.
  */
 export interface RawMembershipRow {
+  /** Transition: ne sert plus qu'a reconnaitre la ligne de plateforme. */
   role?: string | null;
+  postes?: unknown;
   is_active?: boolean | null;
   deleted_at?: string | null;
   is_super_admin?: boolean | null;
@@ -74,8 +78,11 @@ export function mapMembershipRows(
     const tenant = (joined ?? null) as RawTenant | null;
 
     return {
-      role: (row.role ?? null) as AdminRole | null,
-      isSuperAdmin: row.is_super_admin === true,
+      isOwner: toPostes(row.postes).includes('owner'),
+      // `role === 'super_admin'` est reconnu en plus du drapeau, comme la
+      // fonction `is_super_admin()` de la base: des comptes historiques portent
+      // la qualite dans le role seul.
+      isSuperAdmin: row.is_super_admin === true || row.role === 'super_admin',
       // `is_active` absent d'un select ancien ne doit pas tuer la session: on
       // considere la ligne vivante, comme avant l'ajout du filtre.
       isActive: row.is_active !== false,
@@ -135,15 +142,11 @@ export function postLoginDestination(rows: readonly PostLoginMembership[]): stri
   // Les super-admins plateforme n'appartiennent qu'au tenant technique
   // `__platform`, laisse volontairement non onboarde: la verification
   // d'onboarding ci-dessous les renverrait creer un restaurant.
-  //
-  // `role === 'super_admin'` est reconnu en plus du drapeau, comme le fait
-  // deja la garde de `/admin/tenants`: des comptes historiques portent la
-  // qualite dans le role seul, et les deux endroits doivent en juger pareil.
-  if (live.some((row) => row.isSuperAdmin || row.role === ('super_admin' as AdminRole))) {
+  if (live.some((row) => row.isSuperAdmin)) {
     return '/admin/platform';
   }
 
-  const isOwner = live.some((row) => row.role === 'owner');
+  const isOwner = live.some((row) => row.isOwner);
 
   if (isOwner) {
     // Decision produit (2026-11-08): un seul etablissement -> on entre
@@ -166,7 +169,7 @@ export function postLoginDestination(rows: readonly PostLoginMembership[]): stri
     return '/admin/tenants';
   }
 
-  // Tout autre role: son espace. L'onboarding est l'affaire du proprietaire, on
+  // Tout autre poste: son espace. L'onboarding est l'affaire du proprietaire, on
   // n'y envoie donc jamais un serveur ou un cuisinier.
   const slug = pickHomeTenantSlug(live);
   return slug ? `/sites/${slug}/admin` : '/unauthorized';
@@ -183,7 +186,7 @@ export function postLoginDestination(rows: readonly PostLoginMembership[]): stri
 export function onboardingGateDestination(rows: readonly PostLoginMembership[]): string | null {
   if (rows.length === 0) return null;
   const hasUnfinished = liveOnly(rows).some(
-    (row) => row.role === 'owner' && row.onboardingCompleted === false,
+    (row) => row.isOwner && row.onboardingCompleted === false,
   );
   return hasUnfinished ? null : postLoginDestination(rows);
 }
