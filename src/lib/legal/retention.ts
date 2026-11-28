@@ -38,6 +38,12 @@ export const RETENTION = {
    * messagerie, pas une purge automatique.
    */
   contactMailDays: 365,
+  /**
+   * Sauvegardes chiffrees de la base (artefacts GitHub). Doit rester egale a
+   * `retention-days` de `.github/workflows/sauvegarde.yml` (test
+   * `__tests__/retention.test.ts`).
+   */
+  backupDays: 35,
 } as const;
 
 /** Nombre de mois annonces pour une duree en jours (12 mois pour 365 jours). */

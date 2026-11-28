@@ -588,7 +588,7 @@
       "metaTitle": "Politique de Confidentialité",
       "metaDescription": "Quelles données ATTABL collecte, qui les héberge, combien de temps on les garde et comment exercer vos droits.",
       "heading": "Politique de Confidentialité",
-      "lastUpdate": "Dernière mise à jour : 24 novembre 2026",
+      "lastUpdate": "Dernière mise à jour : 27 novembre 2026",
       "section1Title": "1. Qui est responsable de vos données",
       "section1Body": "ATTABL est responsable du traitement des données de son site et des comptes des restaurateurs et hôteliers (compte, abonnement, connexion). Pour les clients d'un restaurant (nom, téléphone, adresse de livraison d'une commande) et pour l'équipe d'un restaurant, c'est le restaurant qui décide de l'usage des données. ATTABL agit alors pour son compte, comme sous-traitant.",
       "companyHeading": "Identité de l'entreprise",
@@ -660,6 +660,16 @@
           "name": "Flutterwave",
           "role": "Paiement de l'abonnement par mobile money, au moment où ce moyen de paiement sera activé. Il n'est pas encore actif.",
           "country": "Selon le prestataire"
+        },
+        "google": {
+          "name": "Google",
+          "role": "Connexion avec un compte Google, si vous la choisissez : Google nous transmet votre nom et votre adresse e-mail",
+          "country": "États-Unis"
+        },
+        "github": {
+          "name": "GitHub",
+          "role": "Conservation des sauvegardes chiffrées de la base de données ({days} jours)",
+          "country": "États-Unis"
         }
       },
       "section5Title": "5. Les lois qui s'appliquent",
@@ -683,6 +693,7 @@
       "retentionClosed": "Restaurant supprimé, {days} jours après la suppression : adresse e-mail, nom et téléphone de l'équipe (les comptes de connexion sont supprimés, y compris la connexion Google), comptes clients à crédit, contacts des fournisseurs, journaux d'audit du restaurant, téléphone et adresse du restaurant. Passé ce délai, le restaurant ne peut plus être restauré.",
       "retentionAccount": "Compte et établissement actifs : conservés pendant l'abonnement.",
       "retentionAccounting": "Paiements, factures et événements de paiement : jamais effacés avant la fin de la durée légale de conservation des pièces comptables.",
+      "retentionBackups": "Sauvegardes de la base : chiffrées, conservées {days} jours puis effacées. Une donnée supprimée de la base disparaît des sauvegardes au plus tard {days} jours après.",
       "retentionContact": "Messages envoyés par le formulaire de contact : ils nous arrivent par e-mail, nous ne les enregistrons pas dans notre base et nous les supprimons de notre messagerie après {months} mois.",
       "section9Title": "9. Application mobile Atfood",
       "section9Body": "Atfood est l'application iPhone d'ATTABL pour le personnel du restaurant. Elle utilise l'appareil photo uniquement pour photographier les plats. Les photos sont envoyées dans l'espace de stockage du menu du restaurant (Supabase) et s'affichent publiquement sur le menu du restaurant. Le détourage, optionnel, et les contrôles de qualité des photos se font sur le téléphone (Apple Vision) : rien n'est envoyé à un tiers. L'application utilise les données de votre compte : adresse email, identifiant utilisateur et restaurant auquel vous êtes rattaché. En cas de plantage, un rapport anonyme, sans aucune donnée personnelle, peut être envoyé à Sentry pour corriger le problème. Vous pouvez demander la suppression de votre compte depuis l'application : Profil > Supprimer mon compte.",
