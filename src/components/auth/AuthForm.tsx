@@ -368,6 +368,25 @@ function AuthForm({ mode }: AuthFormProps) {
           {isLogin ? tForm('submitSignup') : tForm('submitLogin')}
         </Link>
       </p>
+
+      {/* D1: politique et conditions joignables depuis la connexion et l'inscription.
+          Sous 1024px la page defile normalement; a partir de 1024px ces liens
+          vivent sur le panneau photo (AuthPhotoPanel) pour ne pas allonger la
+          carte, qui ne doit pas defiler sur ecran court (regle 12). */}
+      <p className="mt-3 text-center text-xs text-[var(--muted)] lg:hidden">
+        {tForm.rich('legalNotice', {
+          terms: (chunks) => (
+            <Link href="/legal" className="auth-link">
+              {chunks}
+            </Link>
+          ),
+          privacy: (chunks) => (
+            <Link href="/privacy" className="auth-link">
+              {chunks}
+            </Link>
+          ),
+        })}
+      </p>
     </div>
   );
 }

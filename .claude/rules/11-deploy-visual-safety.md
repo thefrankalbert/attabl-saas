@@ -62,7 +62,7 @@ visuel prod post-deploy :
 - `src/components/admin/AdminLayoutClient.tsx`, `ShellSidebar.tsx`, `AdminBottomNav.tsx`
 - `src/app/sites/[site]/admin/layout.tsx` (shell tenant)
 - Tout recalibrage global de container-queries (`@sm/@md/@lg/@xl` -> `@3xl/@5xl/...`)
-- `src/app/globals.css`, tokens de theme, contrat viewport
+- `src/app/globals.css` (tokens de theme, contrat viewport, perimetre du site public), `src/styles/app.css` (classes de l'application)
 - Composants `fixed`/`sticky` (banniere, bottom-nav, toolbars) : verifier qu'ils ne
   se superposent PAS entre eux (memes `bottom-0`/`z-index`).
 

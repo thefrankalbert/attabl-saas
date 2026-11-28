@@ -1,4 +1,50 @@
-@import 'tailwindcss';
+/*
+ * Feuille racine, chargee sur TOUTES les pages: theme, jetons, composants,
+ * contrat de defilement, et les classes du SITE PUBLIC seulement (vitrine,
+ * connexion, inscription, pages d'erreur). Elle bloque le premier affichage sur
+ * telephone: 25 Ko compresses au lieu de 37 Ko quand elle portait les classes
+ * de toute l'application (mesure du 2026-11-27).
+ *
+ * - `theme(static)` et `@theme static`: toutes les variables du theme sont
+ *   ecrites, meme celles qu'aucune classe publique n'utilise, car les classes
+ *   de l'application (src/styles/app.css) les lisent.
+ * - Les zones de l'application chargent EN PLUS src/styles/app.css, qui ne
+ *   contient que des classes et lit ce theme par @reference.
+ * - Un fichier public qui importerait un composant de l'application perdrait
+ *   ses styles ici: le test zones-css le refuse.
+ */
+@import 'tailwindcss' source(none) theme(static);
+
+@source "./(marketing)";
+@source "./login";
+@source "./signup";
+@source "./forgot-password";
+@source "./reset-password";
+@source "./auth";
+@source "./unauthorized";
+@source "./unsubscribe";
+@source "./offline";
+@source "./layout.tsx";
+@source "./error.tsx";
+@source "./global-error.tsx";
+@source "./not-found.tsx";
+@source "./loading.tsx";
+@source "../components/marketing";
+@source "../components/auth";
+@source "../components/ui";
+@source "../components/shared";
+@source "../components/theme";
+@source "../components/providers";
+@source "../lib";
+@source "../hooks";
+@source "../components/ThemeProvider.tsx";
+@source "../contexts";
+@source "./fonts.ts";
+/* Composants hors zone atteints depuis une page publique (test zones-css). */
+@source "../components/features/settings/DeleteAccountSection.tsx";
+@source "../components/features/shortcuts/ShortcutsHelp.tsx";
+@source "../components/tenant/UpgradePromptModal.tsx";
+@source "../components/qr";
 
 /* SCROLL CONTRACT: Only <main#main-content> scrolls.
    Child pages must NOT set viewport heights (100dvh, 100vh).
@@ -6,7 +52,7 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-@theme {
+@theme static {
   /* ===== DUAL-THEME TOKEN SYSTEM ===== */
   /* Tailwind generates utilities like bg-app-bg, text-app-text, etc. */
 
