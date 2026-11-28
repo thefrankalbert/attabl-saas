@@ -34,6 +34,7 @@ describe('SubscriptionManager - choix de formule', () => {
           trial_ends_at: '2026-12-01T00:00:00Z',
         }}
         siteSlug="demo"
+        canPay
       />,
       { wrapper },
     );
@@ -48,10 +49,38 @@ describe('SubscriptionManager - choix de formule', () => {
       <SubscriptionManager
         tenant={{ ...baseTenant, subscription_plan: 'business', subscription_status: 'active' }}
         siteSlug="demo"
+        canPay
       />,
       { wrapper },
     );
     expect(screen.queryByText('Le plus populaire')).not.toBeInTheDocument();
+  });
+
+  // Audit regression M2: le gerant ouvre la page (niveau borne) mais les routes
+  // de paiement exigent `billing.manage` entier. Aucun bouton ne doit y mener.
+  it('sans billing.manage entier (gerant): ni formule a choisir ni portail, une phrase le dit', () => {
+    const tenant = {
+      ...baseTenant,
+      subscription_plan: 'pro',
+      subscription_status: 'active',
+      stripe_subscription_id: 'sub_123',
+    };
+    const { unmount } = render(
+      <SubscriptionManager tenant={tenant} siteSlug="demo" canPay={false} />,
+      { wrapper },
+    );
+    expect(screen.getByText(messages.admin.subscription.ownerPaysOnly)).toBeInTheDocument();
+    expect(screen.queryByText('Changer de plan')).toBeNull();
+    expect(screen.queryByRole('button')).toBeNull();
+    // La formule en cours reste lisible.
+    expect(screen.getByText('Pro')).toBeInTheDocument();
+    unmount();
+
+    // Temoin: le proprietaire voit les gestes de paiement.
+    render(<SubscriptionManager tenant={tenant} siteSlug="demo" canPay />, { wrapper });
+    expect(screen.queryByText(messages.admin.subscription.ownerPaysOnly)).toBeNull();
+    expect(screen.getByText('Changer de plan')).toBeInTheDocument();
+    expect(screen.getAllByRole('button').length).toBeGreaterThan(0);
   });
 
   it('ne pousse jamais un client Pro abonne vers une autre formule', () => {
@@ -64,6 +93,7 @@ describe('SubscriptionManager - choix de formule', () => {
           stripe_subscription_id: 'sub_123',
         }}
         siteSlug="demo"
+        canPay
       />,
       { wrapper },
     );

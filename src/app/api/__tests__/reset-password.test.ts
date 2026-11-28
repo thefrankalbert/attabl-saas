@@ -55,6 +55,7 @@ describe('POST /api/reset-password (A-06)', () => {
     limiterCheck.mockResolvedValue({ success: true });
     getUser.mockResolvedValue({ data: { user: { id: 'u-1', email: 'titulaire@resto.test' } } });
     updateUser.mockResolvedValue({ error: null });
+    signOut.mockResolvedValue({ error: null });
     cookieGet.mockImplementation((name: string) =>
       name === RECOVERY_MARKER_COOKIE ? { value: signRecoveryMarker('u-1') } : undefined,
     );
@@ -70,6 +71,25 @@ describe('POST /api/reset-password (A-06)', () => {
     expect(res.status).toBe(200);
     expect(updateUser).toHaveBeenCalledWith({ password: VALID.password });
     expect(cookieDelete).toHaveBeenCalledWith(RECOVERY_MARKER_COOKIE);
+    // K6.29: une session volee ne survit pas a la reinitialisation.
+    expect(signOut).toHaveBeenCalledWith({ scope: 'others' });
+  });
+
+  it('reste un succes si la fermeture des autres sessions echoue (mot de passe deja change)', async () => {
+    signOut.mockResolvedValue({ error: { message: 'network' } });
+
+    const res = await POST(req(VALID));
+
+    expect(res.status).toBe(200);
+    expect(signOut).toHaveBeenCalledWith({ scope: 'others' });
+  });
+
+  it('ne ferme aucune session quand le changement echoue', async () => {
+    updateUser.mockResolvedValue({ error: { code: 'weak_password', message: 'weak' } });
+
+    await POST(req(VALID));
+
+    expect(signOut).not.toHaveBeenCalled();
   });
 
   it('refuse une mauvaise adresse: deconnexion locale, marqueur efface, rien ne change', async () => {

@@ -6,8 +6,8 @@ import { useToast } from '@/components/ui/use-toast';
 import { useTranslations } from 'next-intl';
 import { logger } from '@/lib/logger';
 import { usePermissions } from '@/hooks/usePermissions';
-import { isRoleAllowed } from '@/lib/admin-roles';
-import type { AdminUser, AdminRole } from '@/types/admin.types';
+import type { AdminUser } from '@/types/admin.types';
+import type { StaffPoste } from '@/types/permission.types';
 import type { Invitation } from '@/types/invitation.types';
 
 // --- Types -------------------------------------------------
@@ -21,7 +21,6 @@ type ConfirmFn = (message: string) => Promise<boolean>;
 
 export interface UseUsersDataParams {
   tenantId: string;
-  currentUserRole: AdminRole;
   initialUsers: AdminUser[];
   /** Required: no-window.confirm fallback to avoid the native prompt. */
   confirm: ConfirmFn;
@@ -30,7 +29,7 @@ export interface UseUsersDataParams {
 export interface UseUsersDataReturn {
   users: AdminUser[];
   canManageUsers: boolean;
-  /** Proprietaire seulement: il est le seul a regler des permissions. */
+  /** Proprietaire seulement: il est le seul a regler des droits. */
   canEditPermissions: boolean;
 
   // Modal state
@@ -40,8 +39,9 @@ export interface UseUsersDataReturn {
   // Invitation form state
   inviteEmail: string;
   setInviteEmail: (email: string) => void;
-  inviteRole: string;
-  setInviteRole: (role: string) => void;
+  /** Postes de l'invitation (au moins un, cumul possible). */
+  invitePostes: StaffPoste[];
+  setInvitePostes: (postes: StaffPoste[]) => void;
   inviting: boolean;
   /** Message du dernier refus d'invitation pour limite de plan (bandeau). */
   planLimitMessage: string | null;
@@ -60,6 +60,9 @@ export interface UseUsersDataReturn {
   handleDeleteUser: (userId: string) => Promise<void>;
   handleToggleStatus: (user: AdminUser) => Promise<void>;
 }
+
+/** Poste propose par defaut dans le formulaire d'invitation. */
+const DEFAULT_INVITE_POSTES: StaffPoste[] = ['waiter'];
 
 // --- Helpers -----------------------------------------------
 
@@ -112,7 +115,6 @@ function reportsEmailNotSent(data: unknown): boolean {
 
 export function useUsersData({
   tenantId,
-  currentUserRole,
   initialUsers,
   confirm,
 }: UseUsersDataParams): UseUsersDataReturn {
@@ -126,7 +128,7 @@ export function useUsersData({
 
   // Invitation form state
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<string>('waiter');
+  const [invitePostes, setInvitePostes] = useState<StaffPoste[]>(DEFAULT_INVITE_POSTES);
   const [inviting, setInviting] = useState(false);
   const [planLimitMessage, setPlanLimitMessage] = useState<string | null>(null);
 
@@ -136,13 +138,13 @@ export function useUsersData({
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
-  // Meme regle que le serveur (check-tenant-admin + invitations): role owner
-  // ou admin ET permission team.manage, que le proprietaire peut retirer.
-  const { can } = usePermissions();
-  const canManageUsers = isRoleAllowed(currentUserRole, ['owner', 'admin']) && can('team.manage');
-  // Les permissions individuelles priment sur tout le reste: seul le
-  // proprietaire les regle (decision du 2026-11-09).
-  const canEditPermissions = currentUserRole === 'owner';
+  // Meme regle que le serveur (check-tenant-admin + invitations): le droit
+  // `team.manage` decide seul, et le proprietaire peut le retirer.
+  const { can, isOwner } = usePermissions();
+  const canManageUsers = can('team.manage');
+  // Le reglage par personne prime sur tout le reste: seul le proprietaire le
+  // pose (decision du 2026-11-09).
+  const canEditPermissions = isOwner;
 
   // Fetch pending invitations
   const fetchInvitations = useCallback(async () => {
@@ -179,13 +181,17 @@ export function useUsersData({
       toast({ title: t('emailRequired'), variant: 'destructive' });
       return;
     }
+    if (invitePostes.length === 0) {
+      toast({ title: t('posteRequired'), variant: 'destructive' });
+      return;
+    }
 
     setInviting(true);
     try {
       const response = await fetch('/api/invitations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
+        body: JSON.stringify({ email: inviteEmail, postes: invitePostes }),
       });
 
       if (!response.ok) {
@@ -220,7 +226,7 @@ export function useUsersData({
           : { title: t('inviteEmailNotSent'), variant: 'destructive' },
       );
       setInviteEmail('');
-      setInviteRole('waiter');
+      setInvitePostes(DEFAULT_INVITE_POSTES);
       setIsModalOpen(false);
       void fetchInvitations();
     } catch (e: unknown) {
@@ -339,8 +345,8 @@ export function useUsersData({
 
     inviteEmail,
     setInviteEmail,
-    inviteRole,
-    setInviteRole,
+    invitePostes,
+    setInvitePostes,
     inviting,
     planLimitMessage,
 

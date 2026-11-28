@@ -52,13 +52,13 @@ vi.mock('@/services/qr-design.service', () => ({
   }),
 }));
 
-const member = { role: 'manager' };
+const member = { poste: 'manager' };
 function chain(table: string) {
   const c: Record<string, unknown> = {};
-  for (const m of ['select', 'eq', 'is', 'order', 'limit', 'or']) c[m] = vi.fn(() => c);
+  for (const m of ['select', 'eq', 'is', 'in', 'order', 'limit', 'or']) c[m] = vi.fn(() => c);
   const row =
     table === 'admin_users'
-      ? { id: 'admin-1', tenant_id: 'tenant-1', role: member.role, custom_permissions: null }
+      ? { id: 'admin-1', tenant_id: 'tenant-1', postes: [member.poste], permission_overrides: null }
       : null;
   c.maybeSingle = vi.fn(async () => ({ data: row, error: null }));
   c.single = vi.fn(async () => ({ data: row, error: null }));
@@ -75,16 +75,16 @@ const TABLE_ID = '550e8400-e29b-41d4-a716-446655440001';
 
 beforeEach(() => {
   vi.clearAllMocks();
-  member.role = 'manager';
+  member.poste = 'manager';
   mockResolve.mockResolvedValue({ [TABLE_ID]: { size: 200 } });
   mockResolveLimit.mockResolvedValue({ success: true });
 });
 
-describe('QR: imprimer oui, modifier non sans settings.edit', () => {
+describe('QR: imprimer oui, modifier seulement avec settings.edit', () => {
   it.each(['manager', 'waiter', 'cashier', 'chef'])(
     '%s resout les designs pour imprimer les tables',
-    async (role) => {
-      member.role = role;
+    async (poste) => {
+      member.poste = poste;
       const { actionResolveDesignsForTables } = await import('@/app/actions/qr-design');
       const res = await actionResolveDesignsForTables([TABLE_ID]);
       expect(res.success).toBe(true);
@@ -92,11 +92,21 @@ describe('QR: imprimer oui, modifier non sans settings.edit', () => {
     },
   );
 
-  it('un gerant n assigne PAS de design (settings.edit)', async () => {
+  it('un serveur n assigne PAS de design (settings.edit)', async () => {
+    member.poste = 'waiter';
     const { actionAssignQrDesign } = await import('@/app/actions/qr-design');
     const res = await actionAssignQrDesign({ target: 'table', targetId: TABLE_ID, designId: null });
     expect(res.success).toBe(false);
     expect(mockAssignTable).not.toHaveBeenCalled();
+  });
+
+  // Temoin: le gerant detient `settings.edit` (lot 1 des roles). Sans lui, le
+  // refus ci-dessus pourrait venir d'une autre cause que le droit.
+  it('un gerant assigne un design (temoin du refus ci-dessus)', async () => {
+    const { actionAssignQrDesign } = await import('@/app/actions/qr-design');
+    const res = await actionAssignQrDesign({ target: 'table', targetId: TABLE_ID, designId: null });
+    expect(res.success).toBe(true);
+    expect(mockAssignTable).toHaveBeenCalled();
   });
 
   // Revue L013 (A9): lecture ouverte a tout membre, donc bornee et limitee.

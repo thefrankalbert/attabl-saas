@@ -67,7 +67,25 @@ type TenantRow = {
   suspended_at?: string | null;
   deleted_at?: string | null;
 };
-type AdminRow = { role: string };
+type AdminRow = {
+  id: string;
+  postes: string[];
+  permission_overrides?: Record<string, boolean> | null;
+  is_super_admin?: boolean;
+  role?: string;
+};
+
+const ownerRow = (): MockResult<AdminRow> => ({
+  data: { id: 'admin-1', postes: ['owner'] },
+  error: null,
+});
+const memberRow = (
+  postes: string[],
+  permission_overrides: Record<string, boolean> | null = null,
+): MockResult<AdminRow> => ({
+  data: { id: 'admin-2', postes, permission_overrides },
+  error: null,
+});
 
 interface MockSupabaseClient {
   auth: { getUser: ReturnType<typeof vi.fn> };
@@ -119,12 +137,15 @@ function mockRateLimitBlocked(): void {
 }
 
 /**
- * Builds a chainable mock: select().eq()...().maybeSingle() resolves to result.
+ * Builds a chainable mock: select().eq().is()...maybeSingle() resolves to result.
+ * `.in()` termine la lecture des reglages du restaurant (poste_permissions): aucun reglage.
  */
 function chain<T>(result: MockResult<T>) {
   const obj: Record<string, unknown> = {};
   obj.select = vi.fn(() => obj);
   obj.eq = vi.fn(() => obj);
+  obj.is = vi.fn(() => obj);
+  obj.in = vi.fn(() => Promise.resolve({ data: [], error: null }));
   obj.maybeSingle = vi.fn(() => Promise.resolve(result));
   return obj;
 }
@@ -142,10 +163,7 @@ function createMockSupabase(overrides?: {
     data: { id: 'tenant-abc', stripe_subscription_id: 'sub_test_123' },
     error: null,
   };
-  const adminResult: MockResult<AdminRow> = overrides?.adminUser ?? {
-    data: { role: 'owner' },
-    error: null,
-  };
+  const adminResult: MockResult<AdminRow> = overrides?.adminUser ?? ownerRow();
 
   // The Stripe id is no longer read by the session client (column revoked for
   // `authenticated`): it comes from the service-role helper. Same fixture.
@@ -245,8 +263,12 @@ describe('POST /api/update-subscription', () => {
     expect(json.error).toContain('Acces refuse');
   });
 
-  it('returns 403 when user is not owner or admin', async () => {
-    setupAuthenticatedMocks({ adminUser: { data: { role: 'manager' }, error: null } });
+  it.each([
+    ['manager', ['manager']],
+    ['chef', ['chef']],
+    ['cashier', ['cashier']],
+  ])('returns 403 for %s (billing.manage en entier exige)', async (_label, postes) => {
+    setupAuthenticatedMocks({ adminUser: memberRow(postes) });
 
     const res = await POST(buildRequest({ plan: 'pro' }));
     expect(getTenantBillingIds).not.toHaveBeenCalled();
@@ -254,6 +276,34 @@ describe('POST /api/update-subscription', () => {
 
     expect(res.status).toBe(403);
     expect(json.error).toContain('propri');
+    expect(stripe.subscriptions.update).not.toHaveBeenCalled();
+  });
+
+  it('temoin: un gerant avec permission_overrides billing.manage change la formule', async () => {
+    setupAuthenticatedMocks({ adminUser: memberRow(['manager'], { 'billing.manage': true }) });
+    mockActiveSubscription();
+    vi.mocked(stripe.subscriptions.update).mockResolvedValue({
+      id: 'sub_test_123',
+      status: 'active',
+    } as never);
+
+    const res = await POST(buildRequest({ plan: 'pro' }));
+
+    expect(res.status).toBe(200);
+    expect(stripe.subscriptions.update).toHaveBeenCalledTimes(1);
+  });
+
+  it('temoin: le proprietaire change la formule (meme requete que le gerant refuse)', async () => {
+    setupAuthenticatedMocks({ adminUser: ownerRow() });
+    mockActiveSubscription();
+    vi.mocked(stripe.subscriptions.update).mockResolvedValue({
+      id: 'sub_test_123',
+      status: 'active',
+    } as never);
+
+    const res = await POST(buildRequest({ plan: 'pro' }));
+
+    expect(res.status).toBe(200);
   });
 
   it('returns 400 when tenant has no active stripe subscription', async () => {

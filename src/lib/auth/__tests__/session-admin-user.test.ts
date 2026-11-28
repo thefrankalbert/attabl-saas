@@ -51,10 +51,10 @@ vi.mock('@/lib/supabase/admin', () => ({
 
 import { resolveSessionAdminUser } from '../session-admin-user';
 
-function tenantRow(tenantId: string, role = 'owner', onboardingCompleted = true, createdAt = '1') {
+function tenantRow(tenantId: string, poste = 'owner', onboardingCompleted = true, createdAt = '1') {
   return {
     tenant_id: tenantId,
-    role,
+    postes: [poste],
     tenants: { slug: tenantId, onboarding_completed: onboardingCompleted, created_at: createdAt },
   };
 }
@@ -101,7 +101,7 @@ describe('resolveSessionAdminUser', () => {
     expect(ensureTenantForOnboarding).not.toHaveBeenCalled();
   });
 
-  it('rend le tenant et le role de l utilisateur', async () => {
+  it('rend le tenant et le statut de proprietaire de l utilisateur', async () => {
     query.rows = [tenantRow('t1', 'manager')];
 
     const r = await resolveSessionAdminUser();
@@ -111,7 +111,7 @@ describe('resolveSessionAdminUser', () => {
       expect(r.userId).toBe('u1');
       expect(r.adminUser).toEqual({
         tenant_id: 't1',
-        role: 'manager',
+        isOwner: false,
         tenant_slug: 't1',
         onboarding_completed: true,
       });

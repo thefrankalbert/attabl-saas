@@ -34,6 +34,7 @@ import OrdersBulkActionBar from '@/components/admin/orders/OrdersBulkActionBar';
 import OrdersBulkDeleteDialog from '@/components/admin/orders/OrdersBulkDeleteDialog';
 import OrderMobileCard from '@/components/admin/orders/OrderMobileCard';
 import { orderDisplayLabel } from '@/components/admin/orders/order-display-label';
+import { ORDERS_VIEW } from '@/lib/admin-roles';
 
 interface OrdersClientProps {
   tenantId: string;
@@ -228,7 +229,7 @@ export default function OrdersClient({
   );
 
   return (
-    <RoleGuard permission="orders.view">
+    <RoleGuard permission={ORDERS_VIEW}>
       <div className="h-full flex flex-col overflow-hidden">
         <h1 className="sr-only">{t('title')}</h1>
         <OrdersToolbar

@@ -14,13 +14,17 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { getRoleConfig } from '@/lib/role-config';
-import { canActOnUser } from '@/lib/auth/role-hierarchy';
-import type { AdminUser, AdminRole } from '@/types/admin.types';
+import { getPostesConfig } from '@/lib/role-config';
+import { canActOnMember, type TeamActor } from '@/lib/auth/poste-authority';
+import { getEffectiveLevels, type PosteOverrides } from '@/lib/permissions';
+import type { AdminUser } from '@/types/admin.types';
 
 interface UsersTableProps {
   users: AdminUser[];
-  currentUserRole: AdminRole;
+  /** L'acteur (ligne de membre et droits effectifs), pour `canActOnMember`. */
+  actor: TeamActor;
+  /** Reglages du restaurant par poste: les droits effectifs de chaque membre. */
+  posteOverrides: PosteOverrides;
   canManageUsers: boolean;
   onToggleStatus: (user: AdminUser) => Promise<void>;
   onDeleteUser: (userId: string) => Promise<void>;
@@ -32,7 +36,8 @@ interface UsersTableProps {
 
 export default function UsersTable({
   users,
-  currentUserRole,
+  actor,
+  posteOverrides,
   canManageUsers,
   onToggleStatus,
   onDeleteUser,
@@ -47,8 +52,17 @@ export default function UsersTable({
     <div className="bg-app-card border border-app-border rounded-xl overflow-hidden">
       <div className="divide-y divide-app-border">
         {users.map((user) => {
-          const roleConfig = getRoleConfig(user.role, t);
-          const RoleIcon = roleConfig.icon;
+          const badges = getPostesConfig(user.postes, t);
+          const canAct =
+            canManageUsers &&
+            canActOnMember(actor, {
+              id: user.id,
+              postes: user.postes ?? [],
+              levels: getEffectiveLevels(
+                { postes: user.postes ?? [], permission_overrides: user.permission_overrides },
+                posteOverrides,
+              ),
+            });
           return (
             <div
               key={user.id}
@@ -78,19 +92,33 @@ export default function UsersTable({
                   <p className="truncate text-sm text-app-text-secondary" title={user.email}>
                     {user.email}
                   </p>
-                  {/* Phone: the role sits under the email. Beside it, the badge
+                  {/* Phone: the postes sit under the email. Beside it, the badge
                       squeezed the name and email down to a single letter. */}
-                  <div className="mt-1 inline-flex sm:hidden items-center gap-1.5 rounded-[0.625rem] border border-[var(--border)] px-2 py-0.5 text-xs text-[var(--muted-foreground)]">
-                    <RoleIcon className="w-3.5 h-3.5" />
-                    {roleConfig.label}
+                  <div className="mt-1 flex flex-wrap gap-1 sm:hidden">
+                    {badges.map((badge) => (
+                      <span
+                        key={badge.label}
+                        className="inline-flex items-center gap-1.5 rounded-[0.625rem] border border-[var(--border)] px-2 py-0.5 text-xs text-[var(--muted-foreground)]"
+                      >
+                        <badge.icon className="w-3.5 h-3.5" />
+                        {badge.label}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>
 
               <div className="flex shrink-0 items-center gap-6">
-                <div className="hidden sm:inline-flex items-center gap-1.5 rounded-[0.625rem] border border-[var(--border)] px-2 py-0.5 text-xs text-[var(--muted-foreground)]">
-                  <RoleIcon className="w-3.5 h-3.5" />
-                  {roleConfig.label}
+                <div className="hidden max-w-[16rem] flex-wrap justify-end gap-1 sm:flex">
+                  {badges.map((badge) => (
+                    <span
+                      key={badge.label}
+                      className="inline-flex items-center gap-1.5 rounded-[0.625rem] border border-[var(--border)] px-2 py-0.5 text-xs text-[var(--muted-foreground)]"
+                    >
+                      <badge.icon className="w-3.5 h-3.5" />
+                      {badge.label}
+                    </span>
+                  ))}
                 </div>
 
                 <div className="hidden md:block text-xs text-app-text-muted">
@@ -107,11 +135,10 @@ export default function UsersTable({
                   )}
                 </div>
 
-                {/* Meme regle que le serveur (canActOnUser): aucune action sur un
-                    rang egal ou superieur, donc ni sur soi-meme ni sur le
-                    proprietaire. Supprimer le dernier membre supprimerait le
-                    restaurant. */}
-                {canManageUsers && canActOnUser(currentUserRole, user.role) && (
+                {/* Meme regle que le serveur (canActOnMember): aucune action sur le
+                    proprietaire, sur soi-meme ni sur un pair. Supprimer le
+                    dernier membre supprimerait le restaurant. */}
+                {canAct && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button

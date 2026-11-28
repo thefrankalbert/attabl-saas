@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import React from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { render, renderHook, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
@@ -10,12 +10,19 @@ import type { Order } from '@/types/admin.types';
 import { useOrdersColumns } from '../use-orders-columns';
 import { useOrderStatusConfig } from '../use-order-status-config';
 import OrderMobileCard from '../OrderMobileCard';
+import { PermissionsProvider } from '@/contexts/PermissionsContext';
+import { getEffectiveLevels } from '@/lib/permissions';
+import type { Poste } from '@/types/permission.types';
 
 // The provider deliberately gets NO timeZone: in production next-intl falls back
 // to the server zone (UTC on Vercel). The restaurant zone must win over it.
+// Le statut suivant depend des droits: le poste rendu est regle par test.
+let poste: Poste = 'manager';
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <NextIntlClientProvider locale="fr-FR" messages={messages}>
-    {children}
+    <PermissionsProvider postes={[poste]} levels={getEffectiveLevels({ postes: [poste] })}>
+      {children}
+    </PermissionsProvider>
   </NextIntlClientProvider>
 );
 
@@ -60,6 +67,45 @@ function renderColumns(timeZone: string, o: Order = order) {
 }
 
 describe('useOrdersColumns', () => {
+  beforeEach(() => {
+    poste = 'manager';
+  });
+
+  // Audit de conformite M2: le bouton "statut suivant" n'est propose qu'a qui
+  // peut le poser. Une commande en preparation avance vers "pret", geste de
+  // cuisine: ni le serveur ni le caissier ne le voient.
+  // Carte de la liste (meme source que la colonne: `useOrderStatusConfig`).
+  const renderCard = (o: Order) => {
+    const Card = () => (
+      <OrderMobileCard
+        order={o}
+        getStatusConfig={useOrderStatusConfig()}
+        formatNumber={String}
+        handleStatusChange={() => {}}
+        timeZone="Africa/Abidjan"
+      />
+    );
+    render(<Card />, { wrapper });
+  };
+  it.each(['waiter', 'cashier'] as Poste[])(
+    '%s: pas de bouton vers "pret" sur une commande en preparation',
+    (p) => {
+      poste = p;
+      renderCard(order);
+      expect(screen.queryByText(messages.orders.actionReady)).not.toBeInTheDocument();
+    },
+  );
+  it('temoin, cuisinier: le bouton vers "pret" est la', () => {
+    poste = 'cook';
+    renderCard(order);
+    expect(screen.getByText(messages.orders.actionReady)).toBeInTheDocument();
+  });
+  it('serveur: une commande prete garde son bouton "servir"', () => {
+    poste = 'waiter';
+    renderCard({ ...order, status: 'ready' });
+    expect(screen.getByText(messages.orders.actionDeliver)).toBeInTheDocument();
+  });
+
   it('shows the order number, the time and the status of each order', () => {
     renderColumns('Africa/Abidjan');
     expect(screen.getByText('CMD-20261109-002')).toBeInTheDocument();

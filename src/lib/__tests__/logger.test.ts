@@ -37,4 +37,39 @@ describe('logger production JSON output', () => {
     expect(payload.correlationId).toBe('corr-test-123');
     expect(payload.orderId).toBe('ord-1');
   });
+
+  it('K5.3: masque les valeurs secretes a toute profondeur, sans toucher au reste', async () => {
+    const { logger } = await import('@/lib/logger');
+    const Sentry = await import('@sentry/nextjs');
+
+    logger.error(
+      'Upstream failed',
+      { status: 401, headers: { Authorization: 'Bearer abc' } },
+      {
+        orderId: 'ord-1',
+        refresh_token: 'rt-secret',
+        nested: { apiKey: 'k-1', items: [{ password: 'p' }, { ok: true }] },
+      },
+    );
+
+    const line = String((console.error as ReturnType<typeof vi.fn>).mock.calls[0][0]);
+    expect(line).not.toMatch(/Bearer abc|rt-secret|k-1|"p"/);
+    const payload = JSON.parse(line);
+    expect(payload.orderId).toBe('ord-1');
+    expect(payload.refresh_token).toBe('[masque]');
+    expect(payload.nested.apiKey).toBe('[masque]');
+    expect(payload.nested.items[1].ok).toBe(true);
+    expect(payload.error.status).toBe(401);
+    expect(payload.error.headers.Authorization).toBe('[masque]');
+
+    const extra = JSON.stringify((Sentry.captureMessage as ReturnType<typeof vi.fn>).mock.calls[0]);
+    expect(extra).not.toMatch(/Bearer abc|rt-secret|k-1/);
+  });
+
+  it('K5.3: coupe les cycles au lieu de planter', async () => {
+    const { redactSecrets } = await import('@/lib/logger');
+    const a: Record<string, unknown> = { name: 'a' };
+    a.self = a;
+    expect(redactSecrets(a)).toEqual({ name: 'a', self: '[cycle]' });
+  });
 });

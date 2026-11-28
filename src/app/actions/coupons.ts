@@ -3,7 +3,6 @@
 import { z } from 'zod';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
 import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-tenant-serving';
-import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 import { createCouponService } from '@/services/coupon.service';
 import { ServiceError } from '@/services/errors';
 import { couponPayloadSchema } from '@/lib/validations/coupon.schema';
@@ -20,7 +19,7 @@ const couponIdSchema = z.string().uuid();
 
 async function checkPermissions(tenantId: string): Promise<{ error: string | null }> {
   try {
-    await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
+    await getAuthenticatedUserForTenant(tenantId, 'orders.discount');
     // Coupure du restaurant: toute action de ce fichier est une ecriture.
     await assertTenantServing(tenantId);
     return { error: null };

@@ -14,6 +14,7 @@ import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import type { Category } from '@/types/admin.types';
+import { MENU_WITH_PRICE } from '@/lib/admin-roles';
 
 interface ItemsHeaderProps {
   categories: Category[];
@@ -34,8 +35,9 @@ export function ItemsHeader({
 }: ItemsHeaderProps) {
   const t = useTranslations('items');
   const seg = useSegmentTerms();
-  // Sans `menu.edit`, pas de bouton d'ajout: le serveur refuserait l'enregistrement.
-  const canEdit = usePermissions().can('menu.edit');
+  // Creer un plat fixe aussi son prix: sans `menu.edit` ET `menu.price`, pas de
+  // bouton d'ajout (le serveur refuserait l'enregistrement).
+  const canEdit = usePermissions().can(MENU_WITH_PRICE);
 
   return (
     <AdminPageHeader

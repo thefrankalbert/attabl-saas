@@ -19,9 +19,10 @@ set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
 ROOT="$(pwd)"
 
-# Migration deja refletee dans la fixture (= dernier point applique en prod).
+# Migration deja refletee dans la fixture (ecrite aussi en tete de la fixture
+# et dans scripts/run-stock-integration.sh : les changer ensemble).
 # Les migrations dont le timestamp est STRICTEMENT superieur sont rejouees.
-FIXTURE_MARKER="20260628000000"
+FIXTURE_MARKER="20261128120000"
 SCHEMA_FIXTURE="tests/journeys/fixtures/schema.sql"
 # JOURNEY_SCHEMA_SNAPSHOT=supabase/schema.sql -> utilise l'instantane de reference
 # du depot (plus recent que la fixture figee) et lit son propre marqueur
@@ -63,7 +64,7 @@ trap cleanup EXIT
 
 command -v supabase >/dev/null || { echo "supabase CLI absent"; exit 1; }
 docker info >/dev/null 2>&1 || { echo "Docker non lance"; exit 1; }
-[ -f "$SCHEMA_FIXTURE" ] || { echo "fixture absente: $SCHEMA_FIXTURE (regenere via supabase db dump --schema public)"; exit 1; }
+[ -f "$SCHEMA_FIXTURE" ] || { echo "fixture absente: $SCHEMA_FIXTURE (regenere via supabase db dump --schema public,private, voir son en-tete)"; exit 1; }
 
 log "init + ecarte les migrations repo (sinon supabase start rejoue la chaine cassee)"
 supabase init >/dev/null 2>&1 || true

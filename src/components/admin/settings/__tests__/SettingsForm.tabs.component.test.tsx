@@ -5,7 +5,7 @@ import '@testing-library/jest-dom/vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Input } from '@/components/ui/input';
 import { PermissionsProvider } from '@/contexts/PermissionsContext';
-import { DEFAULT_PERMISSIONS, type PermissionCode } from '@/types/permission.types';
+import { getEffectiveLevels } from '@/lib/permissions';
 import type { SettingsTenant } from '@/hooks/useSettingsData';
 import { SettingsForm } from '../SettingsForm';
 import { DEFAULT_REMINDER_SETTINGS } from '@/lib/validations/reminders.schema';
@@ -43,9 +43,8 @@ vi.mock('@/components/features/settings/SettingsContact', () => ({ default: () =
 vi.mock('@/components/features/settings/SettingsOpeningHours', () => ({ default: () => null }));
 
 function renderForm() {
-  const permissions = { ...DEFAULT_PERMISSIONS.owner } as Record<PermissionCode, boolean>;
   render(
-    <PermissionsProvider role="owner" permissions={permissions}>
+    <PermissionsProvider postes={['owner']} levels={getEffectiveLevels({ postes: ['owner'] })}>
       <SettingsForm
         tenant={{ id: 't1', slug: 'demo' } as SettingsTenant}
         initialPaymentMethods={[]}

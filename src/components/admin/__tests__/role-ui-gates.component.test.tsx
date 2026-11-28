@@ -4,8 +4,10 @@ import { describe, it, expect, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
 import { PermissionsProvider } from '@/contexts/PermissionsContext';
-import { DEFAULT_PERMISSIONS, type PermissionCode } from '@/types/permission.types';
-import type { AdminRole, Order } from '@/types/admin.types';
+import { getEffectiveLevels, meetsRequirement } from '@/lib/permissions';
+import { orderStatusRequirement } from '@/lib/admin-roles';
+import type { PermissionMap, Poste } from '@/types/permission.types';
+import type { Order } from '@/types/admin.types';
 import { ItemsHeader } from '../items/ItemsHeader';
 import OrdersBulkActionBar from '../orders/OrdersBulkActionBar';
 import { OrderActionsPanel } from '../order-details/OrderActionsPanel';
@@ -13,9 +15,10 @@ import { POSCartFooter } from '@/components/features/pos/POSCartFooter';
 import type { PricingBreakdown } from '@/types/admin.types';
 
 // Fait 1 et X5: l'ecran montrait des gestes que le serveur refusait ensuite
-// (le chef remplissait tout le formulaire "Ajouter un plat" avant le refus; un
-// gerant voyait la corbeille des commandes, reservee a owner/admin). Fait 2 et
-// X1: le serveur et le chef n'encaissent pas, ils marquent la commande servie.
+// (le caissier remplissait tout le formulaire "Ajouter un plat" avant le refus;
+// un caissier voyait la corbeille des commandes, reservee a l'autorite d'argent).
+// Fait 2 et X1: le serveur et le chef n'encaissent pas, ils marquent la
+// commande servie. Les niveaux viennent de la vraie resolution des droits.
 
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 vi.mock('@/hooks/useSegmentTerms', () => ({
@@ -26,10 +29,10 @@ vi.mock('../OrderPaymentPanel', () => ({ default: () => null }));
 // Le bouton d'annulation de la fiche appelle une action serveur: simulee ici.
 vi.mock('@/app/actions/orders', () => ({ actionUpdateOrderStatus: vi.fn() }));
 
-function withRole(role: AdminRole, ui: React.ReactElement) {
-  const permissions = DEFAULT_PERMISSIONS[role] as Record<PermissionCode, boolean>;
+function withRole(poste: Poste, ui: React.ReactElement, overrides: PermissionMap = {}) {
+  const levels = getEffectiveLevels({ postes: [poste], permission_overrides: overrides });
   return render(
-    <PermissionsProvider role={role} permissions={permissions}>
+    <PermissionsProvider postes={[poste]} levels={levels}>
       {ui}
     </PermissionsProvider>,
   );
@@ -48,17 +51,17 @@ describe('Ajouter un plat (menu.edit)', () => {
       onAddItem={noop}
     />
   );
-  it.each(['chef', 'cashier', 'waiter'] as AdminRole[])('%s ne voit pas le bouton', (role) => {
-    withRole(role, header);
+  it.each(['cashier', 'waiter'] as Poste[])('%s ne voit pas le bouton', (poste) => {
+    withRole(poste, header);
     expect(screen.queryByText('addItem')).toBeNull();
   });
-  it('le gerant le voit', () => {
-    withRole('manager', header);
+  it.each(['manager', 'chef'] as Poste[])('%s le voit (menu.edit)', (poste) => {
+    withRole(poste, header);
     expect(screen.getByText('addItem')).toBeInTheDocument();
   });
 });
 
-describe('Suppression groupee des commandes (owner/admin)', () => {
+describe('Suppression groupee des commandes (autorite d argent)', () => {
   const bar = (
     <OrdersBulkActionBar
       selectedIds={new Set(['o1'])}
@@ -69,37 +72,48 @@ describe('Suppression groupee des commandes (owner/admin)', () => {
       setShowDeleteConfirm={noop}
     />
   );
-  it('le gerant ne voit pas la corbeille', () => {
+  it('le gerant (les quatre droits d argent) voit la corbeille', () => {
     withRole('manager', bar);
+    expect(screen.getByLabelText('delete')).toBeInTheDocument();
+    expect(screen.getByLabelText('aria.next')).toBeInTheDocument();
+  });
+  it('le caissier ne voit pas la corbeille mais peut faire avancer', () => {
+    withRole('cashier', bar);
     expect(screen.queryByLabelText('delete')).toBeNull();
     expect(screen.getByLabelText('aria.next')).toBeInTheDocument();
   });
-  it('l admin la voit', () => {
-    withRole('admin', bar);
+  it('un caissier avec UN SEUL des quatre droits ne la voit pas', () => {
+    withRole('cashier', bar, { 'orders.refund': true });
+    expect(screen.queryByLabelText('delete')).toBeNull();
+  });
+  it('un caissier avec les quatre droits la voit', () => {
+    withRole('cashier', bar, {
+      'orders.pay': true,
+      'orders.refund': true,
+      'orders.cancel': true,
+      'orders.discount': true,
+    });
     expect(screen.getByLabelText('delete')).toBeInTheDocument();
   });
-  it('l admin a qui le proprietaire retire orders.pay ne la voit plus', () => {
-    render(
-      <PermissionsProvider
-        role="admin"
-        permissions={{ ...DEFAULT_PERMISSIONS.admin, 'orders.pay': false }}
-      >
-        {bar}
-      </PermissionsProvider>,
-    );
+  it('le gerant a qui le proprietaire retire orders.pay ne la voit plus', () => {
+    withRole('manager', bar, { 'orders.pay': false });
     expect(screen.queryByLabelText('delete')).toBeNull();
   });
 });
 
 describe('Detail de commande: encaisser ou marquer servie', () => {
   const order = { id: 'o1', tenant_id: 't1', status: 'ready' } as Order;
-  const panel = (canPay: boolean) => (
+  // `canSetStatus` suit la vraie regle (`orderStatusRequirement`) pour le poste rendu.
+  const panel = (canPay: boolean, poste: Poste = canPay ? 'cashier' : 'waiter') => (
     <OrderActionsPanel
       order={order}
       loading={false}
       isComp={false}
       canPay={canPay}
       canComp={false}
+      canSetStatus={(status) =>
+        meetsRequirement(getEffectiveLevels({ postes: [poste] }), orderStatusRequirement(status))
+      }
       currency="XAF"
       onUpdate={noop}
       onStatusUpdate={noop}
@@ -118,6 +132,24 @@ describe('Detail de commande: encaisser ou marquer servie', () => {
     withRole('cashier', panel(true));
     expect(screen.getByText('statusButtonCheckout')).toBeInTheDocument();
     expect(screen.queryByText('statusButtonServed')).toBeNull();
+  });
+  // Audit de conformite M2: "en preparation" et "pret" sont des gestes de
+  // cuisine (`kitchen.track`). Ni le serveur ni le caissier n'en voient le
+  // bouton (le serveur les refuserait) ; le cuisinier les voit.
+  it.each(['waiter', 'cashier'] as Poste[])(
+    '%s: pas de bouton "en preparation" ni "pret", mais "en attente"',
+    (poste) => {
+      withRole(poste, panel(poste === 'cashier', poste));
+      expect(screen.queryByText('statusButtonPreparing')).toBeNull();
+      expect(screen.queryByText('statusButtonReady')).toBeNull();
+      expect(screen.getByText('statusButtonPending')).toBeInTheDocument();
+    },
+  );
+  it('temoin, cuisinier: les boutons "en preparation" et "pret" sont la', () => {
+    withRole('cook', panel(false, 'cook'));
+    expect(screen.getByText('statusButtonPreparing')).toBeInTheDocument();
+    expect(screen.getByText('statusButtonReady')).toBeInTheDocument();
+    expect(screen.getByText('statusButtonServed')).toBeInTheDocument();
   });
   // Annuler depuis la fiche exige le meme droit que l'action (orders.pay).
   it('sans orders.pay: pas de bouton "annuler la commande"', () => {

@@ -1,10 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/logger';
-import { canActOnUser } from '@/lib/auth/role-hierarchy';
+import { loadPosteOverrides } from '@/lib/auth/member-rights';
+import { canActOnMember } from '@/lib/auth/poste-authority';
+import { getEffectiveLevels, isOwner, toPermissionMap, toPostes } from '@/lib/permissions';
 import { checkTargetAccountScope } from '@/lib/auth/target-account-scope';
 import { signEmailChangeToken, type EmailChangeClaims } from '@/lib/auth/email-change-token';
 import { sendEmailChangeConfirmationEmail } from '@/services/email.service';
-import type { AdminRole } from '@/types/admin.types';
 
 export type EmailChangeOutcome =
   'expired' | 'refused' | 'failed' | 'new_address_notified' | 'applied';
@@ -19,8 +20,8 @@ export type EmailChangeOutcome =
  * A chaque etape on RELIT l'etat, car le jeton date de la demande et le monde a
  * pu bouger depuis (contre-audit M1):
  *  - le compte a toujours l'adresse et le nonce du jeton (sinon: caduc);
- *  - le demandeur est toujours membre actif du restaurant, owner/admin, et
- *    surclasse toujours la cible;
+ *  - le demandeur est toujours membre actif du restaurant, detient toujours
+ *    `team.manage`, et a toujours autorite sur la cible (`canActOnMember`);
  *  - le compte est toujours entierement contenu dans ce restaurant (garde de
  *    perimetre stricte, aucune appartenance retiree ignoree).
  */
@@ -28,23 +29,51 @@ export function createEmailChangeService(supabase: SupabaseClient) {
   async function authorizationStillHolds(claims: EmailChangeClaims): Promise<boolean> {
     const { data: requester } = await supabase
       .from('admin_users')
-      .select('role, is_active')
+      .select('id, postes, permission_overrides, is_active')
       .eq('id', claims.requesterId)
       .eq('tenant_id', claims.tenantId)
       .is('deleted_at', null)
       .maybeSingle();
     if (!requester || requester.is_active === false) return false;
-    if (!['owner', 'admin'].includes(requester.role as string)) return false;
 
     const { data: target } = await supabase
       .from('admin_users')
-      .select('role')
+      .select('id, postes, permission_overrides')
       .eq('user_id', claims.userId)
       .eq('tenant_id', claims.tenantId)
       .is('deleted_at', null)
       .maybeSingle();
     if (!target) return false;
-    if (!canActOnUser(requester.role as string, target.role as AdminRole)) return false;
+
+    // Droits EFFECTIFS des deux, relus maintenant. ECHEC FERME si les reglages
+    // du restaurant ne se lisent pas.
+    const actorMember = {
+      postes: toPostes(requester.postes),
+      permission_overrides: toPermissionMap(requester.permission_overrides),
+    };
+    const targetMember = {
+      postes: toPostes(target.postes),
+      permission_overrides: toPermissionMap(target.permission_overrides),
+    };
+    const { overrides, failed } = await loadPosteOverrides(supabase, claims.tenantId, [
+      ...actorMember.postes,
+      ...targetMember.postes,
+    ]);
+    if (failed) return false;
+    const actorLevels = getEffectiveLevels(actorMember, overrides);
+    if (actorLevels['team.manage'] !== 'full') return false;
+    if (
+      !canActOnMember(
+        { id: requester.id, isOwner: isOwner(actorMember), levels: actorLevels },
+        {
+          id: target.id,
+          postes: targetMember.postes,
+          levels: getEffectiveLevels(targetMember, overrides),
+        },
+      )
+    ) {
+      return false;
+    }
 
     const scope = await checkTargetAccountScope(supabase, claims.userId, claims.tenantId);
     return scope.allowed;

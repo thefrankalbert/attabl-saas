@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   assertOrderFeaturesAllowed,
   createPlanEnforcementService,
+  isAdminSeat,
 } from '../plan-enforcement.service';
 import { getPlanLimits } from '@/lib/plans/features';
 import { ServiceError } from '../errors';
@@ -21,6 +22,8 @@ function chainable(result: { count?: number | null; error?: unknown; data?: unkn
   obj.in = vi.fn(() => obj);
   obj.gte = vi.fn(() => obj);
   obj.neq = vi.fn(() => obj);
+  obj.or = vi.fn(() => obj);
+  obj.not = vi.fn(() => obj);
   obj.single = vi.fn(() => Promise.resolve(result));
   // Make the chain itself thenable (await-able)
   obj.then = (resolve: (v: unknown) => void, reject?: (e: unknown) => void) =>
@@ -70,16 +73,33 @@ describe('canAddAdmin', () => {
     await expect(service.canAddAdmin(makeTenant())).rejects.toThrow(ServiceError);
   });
 
-  it('counts only owner/admin seats, not staff', async () => {
-    const supabase = createMockSupabase({
-      admin_users: { count: 0, error: null },
-    });
-    const service = createPlanEnforcementService(supabase);
-    await service.canAddAdmin(makeTenant());
-    const chain = (supabase.from as ReturnType<typeof vi.fn>).mock.results[0].value as {
-      in: ReturnType<typeof vi.fn>;
-    };
-    expect(chain.in).toHaveBeenCalledWith('role', ['owner', 'admin']);
+  type Chain = {
+    or: ReturnType<typeof vi.fn>;
+    not: ReturnType<typeof vi.fn>;
+    neq: ReturnType<typeof vi.fn>;
+  };
+  const firstChain = (supabase: SupabaseClient) =>
+    (supabase.from as ReturnType<typeof vi.fn>).mock.results[0].value as Chain;
+
+  it("managerSeat 'staff' (defaut): owner et ancien role admin comptent, pas le gerant", async () => {
+    const supabase = createMockSupabase({ admin_users: { count: 0, error: null } });
+    await createPlanEnforcementService(supabase).canAddAdmin(makeTenant());
+    expect(firstChain(supabase).or).toHaveBeenCalledWith('postes.cs.{owner},role.eq.admin');
+  });
+
+  it("managerSeat 'admin': le gerant compte aussi comme administrateur", async () => {
+    const supabase = createMockSupabase({ admin_users: { count: 0, error: null } });
+    await createPlanEnforcementService(supabase, 'admin').canAddAdmin(makeTenant());
+    expect(firstChain(supabase).or).toHaveBeenCalledWith(
+      'postes.cs.{owner},postes.cs.{manager},role.eq.admin',
+    );
+  });
+
+  it("managerSeat 'admin': la limite d'administrateurs mord (starter = 1, count = 1)", async () => {
+    const supabase = createMockSupabase({ admin_users: { count: 1, error: null } });
+    await expect(
+      createPlanEnforcementService(supabase, 'admin').canAddAdmin(makeTenant()),
+    ).rejects.toThrow(ServiceError);
   });
 
   it('uses pro limits during active trial', async () => {
@@ -147,6 +167,29 @@ describe('canAddStaff', () => {
     await expect(service.canAddStaff(makeTenant({ subscription_plan: 'pro' }))).rejects.toThrow(
       ServiceError,
     );
+  });
+
+  it("managerSeat 'staff' (defaut): compte tout sauf owner, ancien admin et plateforme, gerant INCLUS", async () => {
+    const supabase = createMockSupabase({ admin_users: { count: 0, error: null } });
+    await createPlanEnforcementService(supabase).canAddStaff(makeTenant());
+    const chain = (supabase.from as ReturnType<typeof vi.fn>).mock.results[0].value as {
+      not: ReturnType<typeof vi.fn>;
+      neq: ReturnType<typeof vi.fn>;
+    };
+    expect(chain.not).toHaveBeenCalledTimes(1);
+    expect(chain.not).toHaveBeenCalledWith('postes', 'cs', '{owner}');
+    expect(chain.neq).toHaveBeenCalledWith('role', 'admin');
+    expect(chain.neq).toHaveBeenCalledWith('role', 'super_admin');
+  });
+
+  it("managerSeat 'admin': le gerant sort du compte du personnel", async () => {
+    const supabase = createMockSupabase({ admin_users: { count: 0, error: null } });
+    await createPlanEnforcementService(supabase, 'admin').canAddStaff(makeTenant());
+    const chain = (supabase.from as ReturnType<typeof vi.fn>).mock.results[0].value as {
+      not: ReturnType<typeof vi.fn>;
+    };
+    expect(chain.not).toHaveBeenCalledWith('postes', 'cs', '{owner}');
+    expect(chain.not).toHaveBeenCalledWith('postes', 'cs', '{manager}');
   });
 
   it('business maxStaff = -1 -> never throws even at 500 staff', async () => {
@@ -299,5 +342,26 @@ describe('assertOrderFeaturesAllowed', () => {
         assertOrderFeaturesAllowed(limits('starter'), { service_type }, 'XOF'),
       ).not.toThrow();
     }
+  });
+});
+
+describe('isAdminSeat', () => {
+  it("managerSeat 'staff' (defaut): seul le proprietaire occupe un siege", () => {
+    expect(isAdminSeat(['owner'])).toBe(true);
+    expect(isAdminSeat(['manager'])).toBe(false);
+    expect(isAdminSeat(['waiter', 'cashier'])).toBe(false);
+  });
+
+  it("managerSeat 'admin': le gerant occupe un siege, le caissier non", () => {
+    expect(isAdminSeat(['manager'], null, 'admin')).toBe(true);
+    expect(isAdminSeat(['manager', 'cashier'], null, 'admin')).toBe(true);
+    expect(isAdminSeat(['cashier'], null, 'admin')).toBe(false);
+  });
+
+  it("une ligne dont role vaut encore 'admin' occupe un siege dans les deux cas", () => {
+    expect(isAdminSeat(['waiter'], 'admin', 'staff')).toBe(true);
+    expect(isAdminSeat(['waiter'], 'admin', 'admin')).toBe(true);
+    // temoin: sans l'ancien role, le meme poste n'occupe aucun siege
+    expect(isAdminSeat(['waiter'], 'cashier', 'staff')).toBe(false);
   });
 });

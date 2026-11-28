@@ -10,6 +10,7 @@ import { createPlanEnforcementService } from '@/services/plan-enforcement.servic
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 import { assertTenantServing } from '@/lib/billing/assert-tenant-serving';
 import type { Tenant } from '@/types/admin.types';
+import { MENU_WITH_PRICE } from '@/lib/admin-roles';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 // .xlsx uniquement: exceljs ne lit pas l'ancien format .xls (Excel 97-2003).
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
 
     // 2. Authenticate user and derive tenant from session (not from header)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars -- user kept in destructure to force auth assertion; remove when auth helper exposes a void-return variant
-    const { user, tenantId, supabase } = await getAuthenticatedUserWithTenant('menu.edit');
+    const { user, tenantId, supabase } = await getAuthenticatedUserWithTenant(MENU_WITH_PRICE);
     // Coupure du restaurant: un import est une ecriture (403 + message via AuthError).
     await assertTenantServing(tenantId);
 

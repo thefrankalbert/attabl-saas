@@ -123,7 +123,7 @@ export async function POST(request: Request) {
   let supabase: Auth['supabase'];
   let user: Auth['user'];
   try {
-    ({ tenantId, supabase, user } = await getAuthenticatedUserWithTenant('menu.edit'));
+    ({ tenantId, supabase, user } = await getAuthenticatedUserWithTenant('settings.edit'));
   } catch (error) {
     if (error instanceof AuthError) {
       return NextResponse.json({ error: error.message }, { status: error.status });

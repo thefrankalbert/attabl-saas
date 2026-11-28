@@ -441,7 +441,20 @@ describe('service-manager.service', () => {
   it('loadDashboard fetches zones + admin_users + ready orders, all tenant-filtered', async () => {
     const supabase = buildSupabase({
       zones: { data: [{ id: 'z1' }], error: null },
-      admin_users: { data: [{ id: 'u1' }], error: null },
+      admin_users: {
+        data: [
+          {
+            id: 'u1',
+            tenant_id: 'tenant-A',
+            user_id: 'auth-1',
+            full_name: 'Awa',
+            postes: ['waiter'],
+            permission_overrides: null,
+            is_active: true,
+          },
+        ],
+        error: null,
+      },
       orders: { data: [{ id: 'o1' }], error: null },
     });
     const svc = createServiceManagerService(asSupabase(supabase));
@@ -453,10 +466,20 @@ describe('service-manager.service', () => {
       ),
     ).toBe(true);
     expect(hasTenantFilter(supabase._chains.admin_users[0], 'tenant-A')).toBe(true);
+    expect(hasTenantFilter(supabase._chains.poste_permissions[0], 'tenant-A')).toBe(true);
     expect(hasTenantFilter(supabase._chains.orders[0], 'tenant-A')).toBe(true);
 
     expect(result.zones).toEqual([{ id: 'z1' }]);
-    expect(result.servers).toEqual([{ id: 'u1' }]);
+    expect(result.servers).toEqual([
+      {
+        id: 'u1',
+        tenant_id: 'tenant-A',
+        user_id: 'auth-1',
+        full_name: 'Awa',
+        postes: ['waiter'],
+        is_active: true,
+      },
+    ]);
     expect(result.readyOrders).toEqual([{ id: 'o1' }]);
   });
 

@@ -79,50 +79,66 @@ const USER_ID = 'user-1';
 const SLUG_TENANT_ID = 'tenant-A';
 const OTHER_TENANT_ID = 'tenant-B';
 
-// The role editor (PermissionsClient) sends ONLY the overrides that differ from
-// the role defaults, never a complete map. The happy path must use that shape.
-function buildPutRequest(permissions: Record<string, unknown> = { 'pos.use': true }): Request {
+// The poste editor (PermissionsClient) sends ONLY the overrides that differ from
+// the poste defaults, never a complete map. The happy path must use that shape.
+function buildPutRequest(
+  permissions: Record<string, unknown> = { 'orders.take': true },
+  poste: string = 'cashier',
+): Request {
   return new Request('http://localhost/api/permissions', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ role: 'manager', permissions }),
+    body: JSON.stringify({ poste, permissions }),
   });
 }
 
-function buildDeleteRequest(): Request {
+function buildDeleteRequest(poste: string = 'cashier'): Request {
   return new Request('http://localhost/api/permissions', {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ role: 'manager' }),
+    body: JSON.stringify({ poste }),
   });
 }
 
+type MemberRow = { id?: string; tenant_id: string; postes: string[] };
+
 /**
  * Builds a chainable admin_users query stub for verifyOwner. `eqCalls` captures
- * every .eq(column, value) so tests can assert the tenant scoping, and
- * `ownerRow` is what .maybeSingle() resolves to.
+ * every .eq(column, value) so tests can assert the tenant scoping. Like the real
+ * query, `.contains('postes', [...])` FILTERS: `.maybeSingle()` resolves to the
+ * member row only if it carries every requested poste, so a manager row yields
+ * null when the route asks for the owner poste (and would NOT if the route
+ * dropped that filter).
  */
-function buildAdminUsersChain(
-  eqCalls: Array<[string, unknown]>,
-  ownerRow: { id?: string; tenant_id: string; role: string } | null,
-) {
+function buildAdminUsersChain(eqCalls: Array<[string, unknown]>, memberRow: MemberRow | null) {
+  let requiredPostes: string[] = [];
   const chain = {
     select: vi.fn(() => chain),
+    is: vi.fn(() => chain),
     eq: vi.fn((column: string, value: unknown) => {
       eqCalls.push([column, value]);
       return chain;
     }),
-    maybeSingle: vi.fn(() => Promise.resolve({ data: ownerRow })),
+    contains: vi.fn((column: string, value: string[]) => {
+      if (column === 'postes') requiredPostes = value;
+      return chain;
+    }),
+    maybeSingle: vi.fn(() =>
+      Promise.resolve({
+        data:
+          memberRow && requiredPostes.every((p) => memberRow.postes.includes(p)) ? memberRow : null,
+      }),
+    ),
   };
   return chain;
 }
 
 /**
- * Builds a role_permissions stub for the happy-path write. upsert resolves
+ * Builds a poste_permissions stub for the happy-path write. upsert resolves
  * directly; delete().eq().eq() returns a thenable so the final await yields
  * { error: null } regardless of how many .eq() calls are chained.
  */
-function buildRolePermissionsChain() {
+function buildPostePermissionsChain() {
   const deleteChain = {
     eq: vi.fn(() => deleteChain),
     then: (resolve: (value: { error: null }) => unknown) => resolve({ error: null }),
@@ -181,17 +197,18 @@ describe('permissions API route', () => {
     mockGetTenant.mockResolvedValue({ id: SLUG_TENANT_ID });
 
     const eqCalls: Array<[string, unknown]> = [];
-    mockFrom.mockReturnValue(buildAdminUsersChain(eqCalls, null));
+    const chain = buildAdminUsersChain(eqCalls, null);
+    mockFrom.mockReturnValue(chain);
 
     const res = await PUT(buildPutRequest());
 
     expect(res.status).toBe(403);
+    expect(chain.contains).toHaveBeenCalledWith('postes', ['owner']);
     const json = (await res.json()) as { error: string };
     expect(json.error).toBe('Accès refusé');
     // The ownership lookup must be scoped to the resolved tenant id.
     expect(eqCalls).toContainEqual(['tenant_id', SLUG_TENANT_ID]);
     expect(eqCalls).toContainEqual(['user_id', USER_ID]);
-    expect(eqCalls).toContainEqual(['role', 'owner']);
     expect(eqCalls).toContainEqual(['is_active', true]);
   });
 
@@ -224,11 +241,11 @@ describe('permissions API route', () => {
     const adminUsersChain = buildAdminUsersChain(eqCalls, {
       id: 'membership-A',
       tenant_id: SLUG_TENANT_ID,
-      role: 'owner',
+      postes: ['owner'],
     });
-    const { chain: rolePermissionsChain } = buildRolePermissionsChain();
+    const { chain: postePermissionsChain } = buildPostePermissionsChain();
     mockFrom.mockImplementation((table: string) =>
-      table === 'admin_users' ? adminUsersChain : rolePermissionsChain,
+      table === 'admin_users' ? adminUsersChain : postePermissionsChain,
     );
 
     const res = await PUT(buildPutRequest());
@@ -237,10 +254,48 @@ describe('permissions API route', () => {
     const json = (await res.json()) as { success: boolean };
     expect(json.success).toBe(true);
     expect(eqCalls).toContainEqual(['tenant_id', SLUG_TENANT_ID]);
-    expect(rolePermissionsChain.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({ tenant_id: SLUG_TENANT_ID, role: 'manager' }),
-      expect.objectContaining({ onConflict: 'tenant_id,role' }),
+    expect(postePermissionsChain.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ tenant_id: SLUG_TENANT_ID, poste: 'cashier' }),
+      expect.objectContaining({ onConflict: 'tenant_id,poste' }),
     );
+  });
+
+  // 3b. TEMOIN NEGATIF: un gerant (membre vivant, tous droits sauf facturation) ne
+  // regle pas les postes: seul le proprietaire. Meme requete que l'ecriture du
+  // proprietaire, resultat oppose, et rien n'est ecrit.
+  it.each(['manager', 'cashier', 'chef'])(
+    'PUT et DELETE refusent le poste %s (403, rien ecrit)',
+    async (poste) => {
+      setupAllowed();
+      mockGetHeader.mockReturnValue('restaurant-a');
+      mockGetTenant.mockResolvedValue({ id: SLUG_TENANT_ID });
+      const adminUsersChain = buildAdminUsersChain([], {
+        id: 'membership-X',
+        tenant_id: SLUG_TENANT_ID,
+        postes: [poste],
+      });
+      const { chain: postePermissionsChain } = buildPostePermissionsChain();
+      mockFrom.mockImplementation((table: string) =>
+        table === 'admin_users' ? adminUsersChain : postePermissionsChain,
+      );
+
+      expect((await PUT(buildPutRequest())).status).toBe(403);
+      expect((await DELETE(buildDeleteRequest())).status).toBe(403);
+      expect(postePermissionsChain.upsert).not.toHaveBeenCalled();
+      expect(postePermissionsChain.delete).not.toHaveBeenCalled();
+    },
+  );
+
+  it('PUT et DELETE refusent owner et un poste inconnu au schema (400, aucune lecture)', async () => {
+    setupAllowed();
+    mockGetHeader.mockReturnValue('restaurant-a');
+    mockGetTenant.mockResolvedValue({ id: SLUG_TENANT_ID });
+
+    expect((await PUT(buildPutRequest({ 'orders.take': true }, 'owner'))).status).toBe(400);
+    expect((await PUT(buildPutRequest({ 'orders.take': true }, 'admin'))).status).toBe(400);
+    expect((await DELETE(buildDeleteRequest('owner'))).status).toBe(400);
+    expect((await DELETE(buildDeleteRequest('inconnu'))).status).toBe(400);
+    expect(mockFrom).not.toHaveBeenCalled();
   });
 
   // 4a. The owner toggles a single permission: the partial map is stored as is.
@@ -253,17 +308,17 @@ describe('permissions API route', () => {
     const adminUsersChain = buildAdminUsersChain(eqCalls, {
       id: 'membership-A',
       tenant_id: SLUG_TENANT_ID,
-      role: 'owner',
+      postes: ['owner'],
     });
-    const { chain: rolePermissionsChain } = buildRolePermissionsChain();
+    const { chain: postePermissionsChain } = buildPostePermissionsChain();
     mockFrom.mockImplementation((table: string) =>
-      table === 'admin_users' ? adminUsersChain : rolePermissionsChain,
+      table === 'admin_users' ? adminUsersChain : postePermissionsChain,
     );
 
     const res = await PUT(buildPutRequest({ 'orders.pay': false }));
 
     expect(res.status).toBe(200);
-    expect(rolePermissionsChain.upsert).toHaveBeenCalledWith(
+    expect(postePermissionsChain.upsert).toHaveBeenCalledWith(
       expect.objectContaining({ permissions: { 'orders.pay': false } }),
       expect.anything(),
     );
@@ -276,12 +331,12 @@ describe('permissions API route', () => {
 
     expect((await PUT(buildPutRequest({ 'orders.everything': true }))).status).toBe(400);
     expect((await PUT(buildPutRequest({}))).status).toBe(400);
-    expect((await PUT(buildPutRequest({ 'pos.use': 'yes' }))).status).toBe(400);
+    expect((await PUT(buildPutRequest({ 'orders.take': 'yes' }))).status).toBe(400);
     expect(mockFrom).not.toHaveBeenCalled();
   });
 
   // 4b. Regression guard: updated_by must be the actor's admin_users.id (the
-  // membership PK), NEVER the auth user id. role_permissions.updated_by is a FK
+  // membership PK), NEVER the auth user id. poste_permissions.updated_by is a FK
   // to admin_users(id); writing user.id (== admin_users.user_id) caused FK
   // violations / wrong-actor records - the same ID-space bug fixed in invitations.
   it('PUT writes updated_by as the actor admin_users.id, never the auth user id', async () => {
@@ -293,21 +348,21 @@ describe('permissions API route', () => {
     const adminUsersChain = buildAdminUsersChain(eqCalls, {
       id: 'membership-A',
       tenant_id: SLUG_TENANT_ID,
-      role: 'owner',
+      postes: ['owner'],
     });
-    const { chain: rolePermissionsChain } = buildRolePermissionsChain();
+    const { chain: postePermissionsChain } = buildPostePermissionsChain();
     mockFrom.mockImplementation((table: string) =>
-      table === 'admin_users' ? adminUsersChain : rolePermissionsChain,
+      table === 'admin_users' ? adminUsersChain : postePermissionsChain,
     );
 
     const res = await PUT(buildPutRequest());
 
     expect(res.status).toBe(200);
-    expect(rolePermissionsChain.upsert).toHaveBeenCalledWith(
+    expect(postePermissionsChain.upsert).toHaveBeenCalledWith(
       expect.objectContaining({ updated_by: 'membership-A' }),
       expect.anything(),
     );
-    expect(rolePermissionsChain.upsert).not.toHaveBeenCalledWith(
+    expect(postePermissionsChain.upsert).not.toHaveBeenCalledWith(
       expect.objectContaining({ updated_by: USER_ID }),
       expect.anything(),
     );
@@ -322,11 +377,11 @@ describe('permissions API route', () => {
     const eqCalls: Array<[string, unknown]> = [];
     const adminUsersChain = buildAdminUsersChain(eqCalls, {
       tenant_id: SLUG_TENANT_ID,
-      role: 'owner',
+      postes: ['owner'],
     });
-    const { chain: rolePermissionsChain, deleteChain } = buildRolePermissionsChain();
+    const { chain: postePermissionsChain, deleteChain } = buildPostePermissionsChain();
     mockFrom.mockImplementation((table: string) =>
-      table === 'admin_users' ? adminUsersChain : rolePermissionsChain,
+      table === 'admin_users' ? adminUsersChain : postePermissionsChain,
     );
 
     const res = await DELETE(buildDeleteRequest());
@@ -335,7 +390,7 @@ describe('permissions API route', () => {
     const json = (await res.json()) as { success: boolean };
     expect(json.success).toBe(true);
     expect(eqCalls).toContainEqual(['tenant_id', SLUG_TENANT_ID]);
-    expect(rolePermissionsChain.delete).toHaveBeenCalled();
+    expect(postePermissionsChain.delete).toHaveBeenCalled();
     expect(deleteChain.eq).toHaveBeenCalledWith('tenant_id', SLUG_TENANT_ID);
   });
 });

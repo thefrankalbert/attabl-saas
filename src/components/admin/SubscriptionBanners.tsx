@@ -6,7 +6,6 @@ import { FrozenBanner } from '@/components/shared/FrozenBanner';
 import { PastDueBanner } from '@/components/shared/PastDueBanner';
 import { usePermissions } from '@/hooks/usePermissions';
 import { canOpenAdminSubPath } from '@/lib/auth/admin-route-permissions';
-import { isRoleAllowed } from '@/lib/admin-roles';
 
 interface SubscriptionBannersProps {
   tenantSlug: string;
@@ -21,11 +20,12 @@ interface SubscriptionBannersProps {
 export function SubscriptionBanners({ tenantSlug, menuDaysLeft = null }: SubscriptionBannersProps) {
   const { isFrozen, isPastDue } = useSubscription();
   // Le message reste visible pour toute l'equipe; le bouton d'action seulement
-  // pour qui peut agir. /subscription exige settings.view, et le portail de
-  // facturation (/api/billing-portal) n'accepte que owner et admin.
-  const { role, permissions } = usePermissions();
-  const canOpenPlans = canOpenAdminSubPath('/subscription', permissions);
-  const canOpenBillingPortal = canOpenPlans && isRoleAllowed(role, ['owner', 'admin']);
+  // pour qui peut agir. /subscription s'ouvre avec `billing.manage` (niveau
+  // borne compris: le gerant voit), et le portail de facturation
+  // (/api/billing-portal) exige ce droit EN ENTIER (payer).
+  const { levels, can } = usePermissions();
+  const canOpenPlans = canOpenAdminSubPath('/subscription', levels);
+  const canOpenBillingPortal = can('billing.manage');
 
   if (isFrozen) {
     return (

@@ -9,6 +9,9 @@ import messages from '@/messages/fr-FR.json';
 import type { PaymentSummary } from '@/services/payment.service';
 import { PaymentMethodsProvider } from '@/contexts/PaymentMethodsContext';
 import OrderPaymentPanel from '../OrderPaymentPanel';
+import { PermissionsProvider } from '@/contexts/PermissionsContext';
+import { getEffectiveLevels } from '@/lib/permissions';
+import type { PermissionMap, Poste } from '@/types/permission.types';
 
 const summary: PaymentSummary = {
   orderId: 'o1',
@@ -39,18 +42,9 @@ vi.mock('@/components/admin/orders/OrderNotesSection', () => ({ default: () => n
 vi.mock('@/components/admin/orders/AttachToHouseAccount', () => ({ default: () => null }));
 vi.mock('@/components/ui/use-toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
 
-// Acteur courant: modifiable par test (role + permissions effectives).
-const actor: { role: string; perms: Record<string, boolean> } = {
-  role: 'manager',
-  perms: { 'orders.pay': true },
-};
-vi.mock('@/hooks/usePermissions', () => ({
-  usePermissions: () => ({
-    role: actor.role,
-    permissions: actor.perms,
-    can: (code: string) => actor.perms[code] === true,
-  }),
-}));
+// Acteur courant: modifiable par test (poste + reglage par personne), niveaux
+// toujours calcules par la vraie resolution.
+const actor: { poste: Poste; overrides: PermissionMap } = { poste: 'manager', overrides: {} };
 
 function renderPanel(methods: readonly string[] | null = null) {
   // onError rethrows: a message rendered without its {amount} value (or a
@@ -61,9 +55,17 @@ function renderPanel(methods: readonly string[] | null = null) {
   return render(
     <QueryClientProvider client={new QueryClient()}>
       <NextIntlClientProvider locale="fr-FR" messages={messages} onError={onError}>
-        <PaymentMethodsProvider methods={methods}>
-          <OrderPaymentPanel tenantId="t" orderId="o1" currency="XAF" onUpdate={() => {}} />
-        </PaymentMethodsProvider>
+        <PermissionsProvider
+          postes={[actor.poste]}
+          levels={getEffectiveLevels({
+            postes: [actor.poste],
+            permission_overrides: actor.overrides,
+          })}
+        >
+          <PaymentMethodsProvider methods={methods}>
+            <OrderPaymentPanel tenantId="t" orderId="o1" currency="XAF" onUpdate={() => {}} />
+          </PaymentMethodsProvider>
+        </PermissionsProvider>
       </NextIntlClientProvider>
     </QueryClientProvider>,
   );
@@ -129,28 +131,55 @@ describe('OrderPaymentPanel', () => {
 
   describe('argent selon le role', () => {
     afterEach(() => {
-      actor.role = 'manager';
-      actor.perms = { 'orders.pay': true };
+      actor.poste = 'manager';
+      actor.overrides = {};
     });
 
     // Decision du 2026-11-09: le serveur et le chef ne touchent pas a l'argent.
     // Ils voient ce qui est paye, sans champ d'encaissement ni de remboursement.
     it('montre le detail en lecture seule au serveur', async () => {
-      actor.role = 'waiter';
-      actor.perms = { 'orders.pay': false };
+      actor.poste = 'waiter';
       renderPanel();
       expect(await screen.findByText('Espèces')).toBeInTheDocument();
       expect(screen.queryByLabelText('Montant')).toBeNull();
       expect(screen.queryByRole('button', { name: /Rembourser/ })).toBeNull();
     });
 
+    it('montre le detail en lecture seule au chef (aucun droit d encaisser)', async () => {
+      actor.poste = 'chef';
+      renderPanel();
+      expect(await screen.findByText('Espèces')).toBeInTheDocument();
+      expect(screen.queryByLabelText('Montant')).toBeNull();
+    });
+
     // Le caissier encaisse mais ne rembourse pas: le serveur le refusait apres
     // coup, le bouton etait pourtant affiche.
     it('laisse le caissier encaisser sans lui montrer le remboursement', async () => {
-      actor.role = 'cashier';
+      actor.poste = 'cashier';
       renderPanel();
       expect(await screen.findByLabelText('Montant')).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /Rembourser/ })).toBeNull();
+    });
+
+    // MONEY_PERMISSIONS exige les QUATRE droits: un seul ne suffit pas.
+    it('un caissier avec UN SEUL des quatre droits ne voit pas le remboursement', async () => {
+      actor.poste = 'cashier';
+      actor.overrides = { 'orders.refund': true };
+      renderPanel();
+      expect(await screen.findByLabelText('Montant')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Rembourser/ })).toBeNull();
+    });
+
+    it('un caissier avec les quatre droits voit le remboursement', async () => {
+      actor.poste = 'cashier';
+      actor.overrides = {
+        'orders.pay': true,
+        'orders.refund': true,
+        'orders.cancel': true,
+        'orders.discount': true,
+      };
+      renderPanel();
+      expect(await screen.findByRole('button', { name: /Rembourser/ })).toBeInTheDocument();
     });
 
     it('montre le remboursement au gerant', async () => {

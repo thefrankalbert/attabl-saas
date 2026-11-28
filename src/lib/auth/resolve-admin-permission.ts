@@ -1,8 +1,16 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-import { hasPermission } from '@/lib/permissions';
-import type { AdminRole, AdminUser } from '@/types/admin.types';
-import type { PermissionCode, RolePermissions } from '@/types/permission.types';
+import { resolveMemberLevels } from '@/lib/auth/member-rights';
+import {
+  getEffectiveLevels,
+  meetsRequirement,
+  NO_LEVELS,
+  toPermissionMap,
+  toPostes,
+  type PermissionLevels,
+  type PermissionRequirement,
+} from '@/lib/permissions';
+import type { Poste } from '@/types/permission.types';
 
 /**
  * Resolution UNIQUE de "cet utilisateur a-t-il cette permission dans ce tenant".
@@ -30,96 +38,125 @@ import type { PermissionCode, RolePermissions } from '@/types/permission.types';
  *
  * La resolution reproduite ici est celle du garde du middleware, la plus
  * stricte des trois:
- *   1. membre VIVANT du tenant (`is_active`, pas de `deleted_at`) -> son role
- *      et ses `custom_permissions`;
- *   2. sinon super-admin plateforme VIVANT -> acces de niveau owner partout;
+ *   1. membre VIVANT du tenant (`is_active`, pas de `deleted_at`) -> ses postes
+ *      et son reglage par personne (`permission_overrides`) ;
+ *   2. sinon super-admin plateforme VIVANT -> acces de proprietaire partout.
+ *      Il est reconnu par `is_super_admin` OU par `role = 'super_admin'`, comme
+ *      la fonction `is_super_admin()` de la base ;
  *   3. sinon refuse.
  *
- * Puis le modele a 3 niveaux de `hasPermission`: surcharge individuelle ->
- * surcharge de role du tenant -> matrice par defaut.
+ * Puis la resolution de `permissionLevel` : proprietaire, reglage par personne,
+ * cumul des postes avec les reglages du restaurant.
  *
  * ECHEC FERME: toute erreur de resolution refuse l'acces.
  */
 export interface AdminPermissionResolution {
   allowed: boolean;
   /**
-   * Le role retenu pour la decision: celui du membre, ou `owner` pour un
-   * super-admin non membre. `null` quand l'utilisateur n'est ni l'un ni l'autre.
+   * Les postes retenus pour la decision: ceux du membre, ou `['owner']` pour un
+   * super-admin. `null` quand l'utilisateur n'est ni l'un ni l'autre.
    */
-  role: AdminRole | null;
+  postes: Poste[] | null;
+  /** Niveaux effectifs (aucun droit quand `postes` est `null`). */
+  levels: PermissionLevels;
+  /**
+   * `admin_users.id` de la ligne retenue (celle du membre, ou la ligne de
+   * plateforme du super-admin). Sert aux cles etrangeres (`invited_by`).
+   */
+  adminUserId: string | null;
 }
 
-export async function resolveAdminPermission(
+const OWNER_POSTES: Poste[] = ['owner'];
+const OWNER_LEVELS = getEffectiveLevels({ postes: OWNER_POSTES });
+
+/** Un membre VIVANT du restaurant, avec ses droits effectifs. */
+export interface LiveMember {
+  /** `admin_users.id` de sa ligne dans ce restaurant. */
+  adminUserId: string;
+  postes: Poste[];
+  isOwner: boolean;
+  levels: PermissionLevels;
+  /** Ligne de plateforme (`is_super_admin` ou `role = 'super_admin'`). */
+  isPlatformRow: boolean;
+}
+
+/**
+ * Le membre VIVANT (actif, non retire) de ce restaurant, ou `null`. SANS le
+ * passe-droit du super-administrateur : a utiliser la ou seule une vraie ligne
+ * de membre doit compter (abonnement, factures, invitations, prise en charge
+ * d'une commande). `supabase` peut etre le client de session ou de service.
+ */
+export async function resolveLiveMember(
   supabase: SupabaseClient,
   userId: string,
   tenantId: string,
-  permission: PermissionCode,
-): Promise<AdminPermissionResolution> {
+): Promise<LiveMember | null> {
   // Seuls les memberships VIVANTS comptent: un membre banni (is_active=false)
   // ou supprime en douceur (deleted_at) doit etre refuse.
   const { data: adminData } = await supabase
     .from('admin_users')
-    .select('role, custom_permissions, is_super_admin')
+    .select('id, postes, permission_overrides, is_super_admin, role')
     .eq('user_id', userId)
     .eq('tenant_id', tenantId)
     .eq('is_active', true)
     .is('deleted_at', null)
     .maybeSingle();
 
-  if (!adminData) {
+  if (!adminData) return null;
+
+  const postes = toPostes(adminData.postes);
+  const levels = await resolveMemberLevels(supabase, tenantId, {
+    postes,
+    permission_overrides: toPermissionMap(adminData.permission_overrides),
+  });
+  return {
+    adminUserId: adminData.id,
+    postes,
+    isOwner: postes.includes('owner'),
+    levels,
+    // Transition: `role` ne sert plus qu'a reconnaitre la ligne de plateforme.
+    isPlatformRow: adminData.is_super_admin === true || adminData.role === 'super_admin',
+  };
+}
+
+export async function resolveAdminPermission(
+  supabase: SupabaseClient,
+  userId: string,
+  tenantId: string,
+  requirement: PermissionRequirement,
+): Promise<AdminPermissionResolution> {
+  const member = await resolveLiveMember(supabase, userId, tenantId);
+
+  if (!member) {
     // Pas membre direct: on n'autorise que les super-admins plateforme VIVANTS.
     const { data: superAdmin } = await supabase
       .from('admin_users')
       .select('id')
       .eq('user_id', userId)
-      .eq('is_super_admin', true)
+      .or('is_super_admin.eq.true,role.eq.super_admin')
       .eq('is_active', true)
       .is('deleted_at', null)
       .limit(1)
       .maybeSingle();
 
     return superAdmin
-      ? { allowed: true, role: 'owner' as AdminRole }
-      : { allowed: false, role: null };
+      ? { allowed: true, postes: OWNER_POSTES, levels: OWNER_LEVELS, adminUserId: superAdmin.id }
+      : { allowed: false, postes: null, levels: NO_LEVELS, adminUserId: null };
   }
 
-  const role = adminData.role as AdminRole;
-
-  if (adminData.is_super_admin) {
-    return { allowed: true, role };
+  if (member.isPlatformRow) {
+    return {
+      allowed: true,
+      postes: OWNER_POSTES,
+      levels: OWNER_LEVELS,
+      adminUserId: member.adminUserId,
+    };
   }
 
-  const { data: roleOverride, error: roleOverrideError } = await supabase
-    .from('role_permissions')
-    .select('permissions')
-    .eq('tenant_id', tenantId)
-    .eq('role', role)
-    .maybeSingle();
-
-  // ECHEC FERME. Sans cette lecture, une panne retombait sur la matrice par
-  // defaut et REACCORDAIT une permission que le restaurant avait retiree.
-  // Le refus ne vaut que la ou la surcharge DECIDE: le proprietaire a tous les
-  // droits et une permission individuelle passe avant la surcharge de role
-  // (ordre de `hasPermission`). Les refuser sur une panne fermerait la caisse
-  // au proprietaire pour une lecture dont sa reponse ne depend pas.
-  const overrideDecides =
-    role !== 'owner' &&
-    (adminData.custom_permissions as Record<string, boolean> | null)?.[permission] === undefined;
-  if (roleOverrideError && overrideDecides) {
-    return { allowed: false, role };
-  }
-
-  // hasPermission ne lit que `.permissions`; le select omet les autres champs
-  // de RolePermissions, d'ou le cast.
-  const override = roleOverride
-    ? ({ permissions: roleOverride.permissions } as unknown as RolePermissions)
-    : null;
-
-  // hasPermission ne lit que `role` et `custom_permissions`.
-  const principal = {
-    role,
-    custom_permissions: adminData.custom_permissions,
-  } as unknown as AdminUser;
-
-  return { allowed: hasPermission(principal, permission, override), role };
+  return {
+    allowed: meetsRequirement(member.levels, requirement),
+    postes: member.postes,
+    levels: member.levels,
+    adminUserId: member.adminUserId,
+  };
 }

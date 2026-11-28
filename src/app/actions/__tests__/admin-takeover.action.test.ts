@@ -46,7 +46,10 @@ type MembershipRow = {
 type TargetRow = {
   user_id: string;
   email: string;
-  role: string;
+  postes: string[];
+  permission_overrides?: Record<string, boolean> | null;
+  /** Ancien role (transition): seul `admin` compte encore, pour le siege. */
+  role?: string | null;
   full_name?: string | null;
   /**
    * Retire par la plateforme. Le mock de lecture ci-dessous se comporte comme
@@ -61,6 +64,9 @@ type TargetRow = {
 
 let membershipRows: MembershipRow[] = [];
 let targetRow: TargetRow = null;
+// Reglages du restaurant par poste (poste_permissions) et echec de lecture.
+let posteRows: { poste: string; permissions: Record<string, boolean> }[] = [];
+let posteReadFails = false;
 
 const updateUserById = vi.fn();
 const generateLink = vi.fn();
@@ -123,6 +129,21 @@ function buildAdminClient() {
           },
         };
       }
+      if (table === 'poste_permissions') {
+        const result = () =>
+          posteReadFails
+            ? { data: null, error: { message: 'boom' } }
+            : { data: posteRows, error: null };
+        return {
+          select: () => ({
+            eq: () => ({
+              in: () => ({
+                then: (ok: (v: unknown) => unknown) => ok(result()),
+              }),
+            }),
+          }),
+        };
+      }
       if (table === 'tenants') {
         return {
           select: () => ({
@@ -171,8 +192,8 @@ vi.mock('@/lib/auth/get-session', () => ({
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => adminClient }));
 const canAddStaff = vi.fn();
 const canAddAdmin = vi.fn();
-vi.mock('@/services/plan-enforcement.service', () => ({
-  STAFF_ROLES: ['manager', 'cashier', 'chef', 'waiter'],
+vi.mock('@/services/plan-enforcement.service', async (importActual) => ({
+  ...(await importActual<typeof import('@/services/plan-enforcement.service')>()),
   createPlanEnforcementService: () => ({ canAddStaff, canAddAdmin }),
 }));
 const mockRevokeSessions = vi.fn();
@@ -199,19 +220,37 @@ import {
 import * as adminActions from '@/app/actions/admin';
 import { verifyEmailChangeToken } from '@/lib/auth/email-change-token';
 import { TenantLockedError } from '@/lib/billing/assert-tenant-serving';
+import { getEffectiveLevels } from '@/lib/permissions';
+import type { PermissionMap, Poste } from '@/types/permission.types';
 
 const TENANT_A = 'tenant-a';
 const TENANT_B = 'tenant-b';
 const VICTIM_AUTH_ID = 'victim-auth-id';
 
-function actorIsOwnerOfTenantA() {
+// Acteur: les niveaux viennent de la VRAIE resolution, jamais ecrits a la main.
+function actorWithPostes(
+  postes: Poste[],
+  adminUserId: string,
+  permissionOverrides?: PermissionMap,
+) {
+  const member = { postes, permission_overrides: permissionOverrides ?? null };
   mockGetAuthForTenant.mockResolvedValue({
-    user: { id: 'actor-auth-id', email: 'owner@resto-a.test' },
-    role: 'owner',
-    adminUserId: 'actor-admin-row',
+    user: { id: 'actor-auth-id', email: 'actor@resto-a.test' },
+    postes,
+    isOwner: postes.includes('owner'),
+    levels: getEffectiveLevels(member),
+    adminUserId,
     tenantId: TENANT_A,
     supabase: {},
   });
+}
+
+function actorIsOwnerOfTenantA() {
+  actorWithPostes(['owner'], 'actor-admin-row');
+}
+
+function actorIsManagerOfTenantA() {
+  actorWithPostes(['manager'], 'manager-row');
 }
 
 describe('prise de controle de compte via les actions admin', () => {
@@ -221,6 +260,8 @@ describe('prise de controle de compte via les actions admin', () => {
     adminClient = buildAdminClient();
     membershipRows = [];
     targetRow = null;
+    posteRows = [];
+    posteReadFails = false;
     updateUserById.mockResolvedValue({ error: null });
     generateLink.mockResolvedValue({
       data: { properties: { hashed_token: 'hashed-token-123' } },
@@ -254,7 +295,7 @@ describe('prise de controle de compte via les actions admin', () => {
     // ligne parasite (test suivant).
     it('refuse (fail-closed) quand le compte cible appartient aussi a un AUTRE tenant', async () => {
       actorIsOwnerOfTenantA();
-      targetRow = { user_id: VICTIM_AUTH_ID, email: 'equipier@resto-a.test', role: 'manager' };
+      targetRow = { user_id: VICTIM_AUTH_ID, email: 'equipier@resto-a.test', postes: ['manager'] };
       membershipRows = [
         { tenant_id: TENANT_A, role: 'manager', is_super_admin: false },
         { tenant_id: TENANT_B, role: 'owner', is_super_admin: false },
@@ -291,7 +332,7 @@ describe('prise de controle de compte via les actions admin', () => {
     it("envoie le lien a l'adresse du COMPTE AUTH, jamais au miroir admin_users", async () => {
       actorIsOwnerOfTenantA();
       // Miroir reecrit par l'attaquant vers une adresse qu'il controle.
-      targetRow = { user_id: VICTIM_AUTH_ID, email: 'pirate@attaquant.test', role: 'manager' };
+      targetRow = { user_id: VICTIM_AUTH_ID, email: 'pirate@attaquant.test', postes: ['manager'] };
       membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: false }];
       getUserById.mockResolvedValue({
         data: { user: { id: VICTIM_AUTH_ID, email: 'titulaire@resto-a.test' } },
@@ -325,7 +366,7 @@ describe('prise de controle de compte via les actions admin', () => {
       mockGetAuthForTenant.mockRejectedValue(
         Object.assign(new Error('non authentifie'), { status: 401 }),
       );
-      targetRow = { user_id: 'local-auth-id', email: 'equipier@resto-a.test', role: 'manager' };
+      targetRow = { user_id: 'local-auth-id', email: 'equipier@resto-a.test', postes: ['manager'] };
       membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: false }];
 
       const res = await actionResetUserPassword(TENANT_A, 'target-admin-row');
@@ -338,7 +379,7 @@ describe('prise de controle de compte via les actions admin', () => {
 
     it('borne le debit par IP avant toute authentification', async () => {
       actorIsOwnerOfTenantA();
-      targetRow = { user_id: 'local-auth-id', email: 'equipier@resto-a.test', role: 'manager' };
+      targetRow = { user_id: 'local-auth-id', email: 'equipier@resto-a.test', postes: ['manager'] };
       membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: false }];
       resetLinkIpLimiterCheck.mockResolvedValue({ success: false });
 
@@ -358,7 +399,7 @@ describe('prise de controle de compte via les actions admin', () => {
     // legitime.
     it('envoie le lien quand la ligne etrangere a ete retiree par la plateforme (soft-delete)', async () => {
       actorIsOwnerOfTenantA();
-      targetRow = { user_id: VICTIM_AUTH_ID, email: 'equipier@resto-a.test', role: 'manager' };
+      targetRow = { user_id: VICTIM_AUTH_ID, email: 'equipier@resto-a.test', postes: ['manager'] };
       membershipRows = [
         { tenant_id: TENANT_A, role: 'manager', is_super_admin: false, deleted_at: null },
         {
@@ -386,7 +427,7 @@ describe('prise de controle de compte via les actions admin', () => {
     // passage sur un compte d'operateur.
     it('refuse un compte plateforme meme quand sa ligne est soft-deleted', async () => {
       actorIsOwnerOfTenantA();
-      targetRow = { user_id: VICTIM_AUTH_ID, email: 'platform@attabl.test', role: 'manager' };
+      targetRow = { user_id: VICTIM_AUTH_ID, email: 'platform@attabl.test', postes: ['manager'] };
       membershipRows = [
         {
           tenant_id: TENANT_A,
@@ -408,7 +449,7 @@ describe('prise de controle de compte via les actions admin', () => {
     // boite aux lettres, et un restaurant entier est derriere une seule IP.
     it('borne le debit sur le compte cible et refuse au-dela du quota', async () => {
       actorIsOwnerOfTenantA();
-      targetRow = { user_id: 'local-auth-id', email: 'equipier@resto-a.test', role: 'manager' };
+      targetRow = { user_id: 'local-auth-id', email: 'equipier@resto-a.test', postes: ['manager'] };
       membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: false }];
       getUserById.mockResolvedValue({
         data: { user: { id: 'local-auth-id', email: 'equipier@resto-a.test' } },
@@ -435,7 +476,7 @@ describe('prise de controle de compte via les actions admin', () => {
 
     it('refuse quand le compte cible est un compte plateforme (super_admin)', async () => {
       actorIsOwnerOfTenantA();
-      targetRow = { user_id: VICTIM_AUTH_ID, email: 'platform@attabl.test', role: 'manager' };
+      targetRow = { user_id: VICTIM_AUTH_ID, email: 'platform@attabl.test', postes: ['manager'] };
       membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: true }];
 
       const res = await actionResetUserPassword(TENANT_A, 'target-admin-row');
@@ -447,7 +488,7 @@ describe('prise de controle de compte via les actions admin', () => {
 
     it('refuse quand les appartenances du compte cible sont illisibles (fail-closed)', async () => {
       actorIsOwnerOfTenantA();
-      targetRow = { user_id: VICTIM_AUTH_ID, email: 'equipier@resto-a.test', role: 'manager' };
+      targetRow = { user_id: VICTIM_AUTH_ID, email: 'equipier@resto-a.test', postes: ['manager'] };
       membershipRows = [];
 
       const res = await actionResetUserPassword(TENANT_A, 'target-admin-row');
@@ -458,7 +499,7 @@ describe('prise de controle de compte via les actions admin', () => {
 
     it("ne fixe jamais le mot de passe d'autrui: envoie un lien de reinitialisation au titulaire", async () => {
       actorIsOwnerOfTenantA();
-      targetRow = { user_id: 'local-auth-id', email: 'equipier@resto-a.test', role: 'manager' };
+      targetRow = { user_id: 'local-auth-id', email: 'equipier@resto-a.test', postes: ['manager'] };
       membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: false }];
       getUserById.mockResolvedValue({
         data: { user: { id: 'local-auth-id', email: 'equipier@resto-a.test' } },
@@ -483,7 +524,11 @@ describe('prise de controle de compte via les actions admin', () => {
   describe('actionUpdateUserEmail', () => {
     it("refuse de changer l'email d'un compte appartenant a un autre tenant", async () => {
       actorIsOwnerOfTenantA();
-      targetRow = { user_id: VICTIM_AUTH_ID, email: 'victime@autre-resto.test', role: 'manager' };
+      targetRow = {
+        user_id: VICTIM_AUTH_ID,
+        email: 'victime@autre-resto.test',
+        postes: ['manager'],
+      };
       membershipRows = [
         { tenant_id: TENANT_A, role: 'manager', is_super_admin: false },
         { tenant_id: TENANT_B, role: 'owner', is_super_admin: false },
@@ -502,7 +547,7 @@ describe('prise de controle de compte via les actions admin', () => {
 
     it("refuse de changer l'email d'un compte plateforme (super_admin)", async () => {
       actorIsOwnerOfTenantA();
-      targetRow = { user_id: VICTIM_AUTH_ID, email: 'platform@attabl.test', role: 'manager' };
+      targetRow = { user_id: VICTIM_AUTH_ID, email: 'platform@attabl.test', postes: ['manager'] };
       membershipRows = [{ tenant_id: TENANT_A, role: 'super_admin', is_super_admin: null }];
 
       const res = await actionUpdateUserEmail(
@@ -529,7 +574,7 @@ describe('prise de controle de compte via les actions admin', () => {
     // tenant le droit de reecrire l'adresse du compte auth de cet employe.
     it("refuse meme quand l'appartenance etrangere a ete retiree par la plateforme", async () => {
       actorIsOwnerOfTenantA();
-      targetRow = { user_id: VICTIM_AUTH_ID, email: 'equipier@resto-a.test', role: 'manager' };
+      targetRow = { user_id: VICTIM_AUTH_ID, email: 'equipier@resto-a.test', postes: ['manager'] };
       membershipRows = [
         { tenant_id: TENANT_A, role: 'manager', is_super_admin: false, deleted_at: null },
         {
@@ -559,7 +604,7 @@ describe('prise de controle de compte via les actions admin', () => {
       targetRow = {
         user_id: VICTIM_AUTH_ID,
         email: 'equipier@resto-a.test',
-        role: 'manager',
+        postes: ['manager'],
         deleted_at: '2026-11-04T10:00:00.000Z',
       };
       membershipRows = [
@@ -586,7 +631,7 @@ describe('prise de controle de compte via les actions admin', () => {
     // du compte ni sur le miroir tant que les deux adresses n'ont pas approuve.
     function liveTarget() {
       actorIsOwnerOfTenantA();
-      targetRow = { user_id: 'local-auth-id', email: 'equipier@resto-a.test', role: 'manager' };
+      targetRow = { user_id: 'local-auth-id', email: 'equipier@resto-a.test', postes: ['manager'] };
       membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: false }];
     }
 
@@ -687,7 +732,7 @@ describe('prise de controle de compte via les actions admin', () => {
         user_id: VICTIM_AUTH_ID,
         email: 'platform@attabl.test',
         full_name: 'Operateur',
-        role: 'manager',
+        postes: ['manager'],
       };
       membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: true }];
 
@@ -703,7 +748,7 @@ describe('prise de controle de compte via les actions admin', () => {
         user_id: VICTIM_AUTH_ID,
         email: 'equipier@resto-a.test',
         full_name: 'Equipier',
-        role: 'manager',
+        postes: ['manager'],
       };
       membershipRows = [];
 
@@ -719,7 +764,7 @@ describe('prise de controle de compte via les actions admin', () => {
         user_id: 'local-auth-id',
         email: 'equipier@resto-a.test',
         full_name: 'Equipier',
-        role: 'manager',
+        postes: ['manager'],
       };
       membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: false }];
 
@@ -738,7 +783,7 @@ describe('prise de controle de compte via les actions admin', () => {
         user_id: 'partage-auth-id',
         email: 'partage@resto-a.test',
         full_name: 'Employe partage',
-        role: 'manager',
+        postes: ['manager'],
       };
       membershipRows = [
         { tenant_id: TENANT_A, role: 'manager', is_super_admin: false },
@@ -779,7 +824,7 @@ describe('prise de controle de compte via les actions admin', () => {
       targetRow = {
         user_id: VICTIM_AUTH_ID,
         email: 'equipier@resto-a.test',
-        role: 'manager',
+        postes: ['manager'],
         deleted_at: '2026-11-04T10:00:00.000Z',
       };
 
@@ -795,7 +840,7 @@ describe('prise de controle de compte via les actions admin', () => {
       targetRow = {
         user_id: 'local-auth-id',
         email: 'equipier@resto-a.test',
-        role: 'manager',
+        postes: ['manager'],
         deleted_at: null,
       };
 
@@ -816,7 +861,7 @@ describe('prise de controle de compte via les actions admin', () => {
       targetRow = {
         user_id: 'local-auth-id',
         email: 'caissier@resto-a.test',
-        role: 'cashier',
+        postes: ['cashier'],
         deleted_at: null,
         is_active: false,
       };
@@ -829,22 +874,48 @@ describe('prise de controle de compte via les actions admin', () => {
       expect(adminUsersUpdate).not.toHaveBeenCalled();
     });
 
-    it('refuse de promouvoir un caissier admin quand la place admin est prise', async () => {
+    // `manager` occupe un siege du personnel (MANAGER_SEAT = 'staff'). Seul
+    // l'ancien administrateur (colonne `role = 'admin'`, transition) tient un
+    // siege d'administrateur: changer ses postes le fait passer au quota du
+    // personnel, que l'action doit verifier avant d'ecrire.
+    it('refuse de changer les postes d un ancien administrateur quand la place du personnel est prise', async () => {
       actorIsOwnerOfTenantA();
       targetRow = {
         user_id: 'local-auth-id',
-        email: 'caissier@resto-a.test',
-        role: 'cashier',
+        email: 'ancien-admin@resto-a.test',
+        postes: ['manager'],
+        role: 'admin',
         deleted_at: null,
         is_active: true,
       };
       const { ServiceError } = await import('@/services/errors');
-      canAddAdmin.mockRejectedValue(new ServiceError('Limite admin', 'VALIDATION'));
+      canAddStaff.mockRejectedValue(new ServiceError('Limite du personnel', 'VALIDATION'));
 
-      const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', { role: 'admin' });
+      const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', {
+        postes: ['cashier'],
+      });
 
-      expect(res.error).toBe('Limite admin');
+      expect(res.error).toBe('Limite du personnel');
       expect(adminUsersUpdate).not.toHaveBeenCalled();
+    });
+
+    it('temoin: un changement de poste du personnel au personnel ne consulte pas le quota', async () => {
+      actorIsOwnerOfTenantA();
+      targetRow = {
+        user_id: 'local-auth-id',
+        email: 'caissier@resto-a.test',
+        postes: ['cashier'],
+        deleted_at: null,
+        is_active: true,
+      };
+
+      const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', {
+        postes: ['waiter'],
+      });
+
+      expect(res.success).toBe(true);
+      expect(canAddStaff).not.toHaveBeenCalled();
+      expect(canAddAdmin).not.toHaveBeenCalled();
     });
 
     it('ne consulte pas le quota pour un simple changement de nom', async () => {
@@ -852,7 +923,7 @@ describe('prise de controle de compte via les actions admin', () => {
       targetRow = {
         user_id: 'local-auth-id',
         email: 'caissier@resto-a.test',
-        role: 'cashier',
+        postes: ['cashier'],
         deleted_at: null,
         is_active: true,
       };
@@ -874,34 +945,22 @@ describe('prise de controle de compte via les actions admin', () => {
       targetRow = {
         user_id: 'local-auth-id',
         email: 'serveur@resto-a.test',
-        role: 'waiter',
+        postes: ['waiter'],
         deleted_at: null,
       };
     });
 
-    it('refuse a un admin de regler des permissions individuelles', async () => {
-      mockGetAuthForTenant.mockResolvedValue({
-        user: { id: 'admin-auth-id', email: 'gerant@resto-a.test' },
-        role: 'admin',
-        adminUserId: 'admin-row',
-        tenantId: TENANT_A,
-        supabase: {},
-      });
+    it('refuse a un gerant de regler des permissions individuelles', async () => {
+      actorIsManagerOfTenantA();
       const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', {
-        custom_permissions: { 'orders.pay': true },
+        permission_overrides: { 'orders.pay': true },
       });
       expect(res.error).toBe('permissionDenied');
       expect(adminUsersUpdate).not.toHaveBeenCalled();
     });
 
-    it('laisse un admin modifier le nom sans toucher aux permissions', async () => {
-      mockGetAuthForTenant.mockResolvedValue({
-        user: { id: 'admin-auth-id', email: 'gerant@resto-a.test' },
-        role: 'admin',
-        adminUserId: 'admin-row',
-        tenantId: TENANT_A,
-        supabase: {},
-      });
+    it('laisse un gerant modifier le nom sans toucher aux permissions', async () => {
+      actorIsManagerOfTenantA();
       const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', {
         full_name: 'Awa',
       });
@@ -911,11 +970,11 @@ describe('prise de controle de compte via les actions admin', () => {
     it('laisse le proprietaire regler des permissions individuelles', async () => {
       actorIsOwnerOfTenantA();
       const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', {
-        custom_permissions: { 'orders.pay': true },
+        permission_overrides: { 'orders.pay': true },
       });
       expect(res.success).toBe(true);
       expect(adminUsersUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({ custom_permissions: { 'orders.pay': true } }),
+        expect.objectContaining({ permission_overrides: { 'orders.pay': true } }),
       );
     });
   });
@@ -931,7 +990,7 @@ describe('prise de controle de compte via les actions admin', () => {
       targetRow = {
         user_id: 'local-auth-id',
         email: 'equipier@resto-a.test',
-        role: 'manager',
+        postes: ['manager'],
         deleted_at: null,
         is_active: true,
       };
@@ -946,9 +1005,11 @@ describe('prise de controle de compte via les actions admin', () => {
       expect(Object.keys(adminActions)).not.toContain('actionCreateAdminUser');
     });
 
-    it('actionUpdateAdminUser refuse un changement de role', async () => {
+    it('actionUpdateAdminUser refuse un changement de poste', async () => {
       lockedWithLiveTarget();
-      const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', { role: 'cashier' });
+      const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', {
+        postes: ['cashier'],
+      });
       expect(res.error).toBe(LOCK_MESSAGE);
       expect(adminUsersUpdate).not.toHaveBeenCalled();
     });
@@ -1004,12 +1065,14 @@ describe('prise de controle de compte via les actions admin', () => {
       targetRow = {
         user_id: 'local-auth-id',
         email: 'equipier@resto-a.test',
-        role: 'manager',
+        postes: ['manager'],
         deleted_at: null,
         is_active: true,
       };
       membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: false }];
-      const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', { role: 'cashier' });
+      const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', {
+        postes: ['cashier'],
+      });
       expect(res.success).toBe(true);
       expect(mockRevokeSessions).not.toHaveBeenCalled();
     });

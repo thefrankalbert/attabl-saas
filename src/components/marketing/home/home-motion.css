@@ -333,6 +333,7 @@
 .home-panneau-bouton,
 .home-panneau-bouton:hover,
 .home-panneau-bouton:active {
+  position: relative;
   display: inline-block;
   height: auto;
   min-height: 32px;
@@ -346,6 +347,17 @@
   white-space: normal;
   cursor: pointer;
   scale: none;
+}
+/* Zone tactile de 44 px (regle .claude/rules/03) autour du bouton, sans changer
+   son aspect. Des 1024 px, le ::after ci-dessous prend le relais (toute la
+   hauteur du panneau). */
+.home-panneau-bouton::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  height: 44px;
+  translate: 0 -50%;
 }
 .home-panneau-bouton:focus-visible {
   outline: 2px solid #fff;
@@ -370,13 +382,20 @@
   .home-panneau[data-actif] {
     flex-grow: 3.28;
   }
+  .home-panneau-bouton,
+  .home-panneau-bouton:hover,
+  .home-panneau-bouton:active {
+    position: static;
+  }
   .home-panneau-bouton::after {
     content: '';
     position: absolute;
+    top: auto;
     right: 0;
     bottom: 0;
     left: 0;
     height: 540px;
+    translate: none;
   }
   .home-panneau > img {
     transition: filter 0.4s;

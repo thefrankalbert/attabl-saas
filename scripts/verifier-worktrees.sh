@@ -36,6 +36,25 @@ BLOQUANT=0
 SIGNAL=0
 say() { [[ "$QUIET" == false ]] && echo "$@"; return 0; }
 
+# Les worktrees vivent a DEUX endroits. `.worktrees/` est celui qu'on cree a la
+# main; `.claude/worktrees/` est celui que cree l'application quand elle ouvre
+# une session de travail. Le script ne regardait que le premier: constate le
+# 2026-11-28, 31 worktrees du second echappaient donc a la verification du
+# magasin ET a l'inventaire, dont un dossier fantome portant 6 fichiers non
+# commites (`feat+qr-reports-overhaul`). Un garde-fou qui ne regarde qu'une
+# moitie du disque fait croire que l'autre est saine.
+#
+# Ajouter un emplacement ici suffit: les trois sections lisent cette liste.
+EMPLACEMENTS=(.worktrees .claude/worktrees)
+dossiers_worktrees() {
+  local e d
+  for e in "${EMPLACEMENTS[@]}"; do
+    for d in "$e"/*/; do
+      [[ -d "$d" ]] && echo "${d%/}"
+    done
+  done
+}
+
 # --- 1. Magasin pnpm ancre au projet ---------------------------------------
 # Le magasin doit etre RELATIF et rester sous le projet. Un `..` signifie qu'il
 # sort du checkout courant : c'est exactement la panne qu'on ne veut plus.
@@ -56,13 +75,13 @@ verifier_magasin() {
 
 say "Magasin pnpm"
 verifier_magasin "depot principal" "node_modules/.modules.yaml"
-for d in .worktrees/*/; do
-  [[ -d "$d" ]] || continue
-  verifier_magasin "${d%/}" "${d}node_modules/.modules.yaml"
-done
+while read -r nom; do
+  verifier_magasin "$nom" "$nom/node_modules/.modules.yaml"
+done < <(dossiers_worktrees)
 
 # --- 2. Dossiers fantomes ---------------------------------------------------
-# Un dossier de .worktrees/ que git ne connait pas n'est PAS un worktree : c'est
+# Un dossier d'un de ces emplacements que git ne connait pas n'est PAS un
+# worktree : c'est
 # un residu de `git worktree remove` (artefacts de build laisses derriere, que
 # git n'avait pas a supprimer puisqu'ils ne sont pas suivis).
 #
@@ -72,24 +91,23 @@ done
 # Le script ne supprime rien de lui-meme : il compte les fichiers pour qu'on
 # distingue d'un coup d'oeil un residu de build d'un vrai travail oublie.
 say ""
-say "Dossiers fantomes dans .worktrees/"
+say "Dossiers fantomes"
 CONNUS="$(git worktree list --porcelain 2>/dev/null | sed -n 's/^worktree //p')"
-for d in .worktrees/*/; do
-  [[ -d "$d" ]] || continue
-  chemin="$ROOT/${d%/}"
+while read -r nom; do
+  chemin="$ROOT/$nom"
   if ! echo "$CONNUS" | grep -qxF "$chemin"; then
-    nb="$(find "$d" -type f 2>/dev/null | wc -l | tr -d ' ')"
-    src="$(find "$d" -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.sql' \) \
+    nb="$(find "$nom" -type f 2>/dev/null | wc -l | tr -d ' ')"
+    src="$(find "$nom" -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.sql' \) \
       -not -path '*/.next/*' -not -path '*/node_modules/*' 2>/dev/null | wc -l | tr -d ' ')"
-    say "ANOMALIE  ${d%/} : inconnu de git ($nb fichier(s), dont $src source)"
+    say "ANOMALIE  $nom : inconnu de git ($nb fichier(s), dont $src source)"
     if [[ "$src" == "0" ]]; then
-      say "          Residu de build, aucun code. Supprimer : rm -rf '${d%/}'"
+      say "          Residu de build, aucun code. Supprimer : rm -rf '$nom'"
     else
       say "          CONTIENT DU CODE SOURCE - ne pas supprimer, inspecter d'abord."
     fi
     SIGNAL=$((SIGNAL + 1))
   fi
-done
+done < <(dossiers_worktrees)
 
 # --- 3. Inventaire : qu'est-ce qui est SUR a supprimer ? --------------------
 # On ne supprime un worktree que si sa branche est fusionnee dans origin/main ET
@@ -98,16 +116,15 @@ if [[ "$QUIET" == false ]]; then
   echo ""
   echo "Inventaire des worktrees"
   git fetch -q origin 2>/dev/null || true
-  for d in .worktrees/*/; do
-    [[ -d "$d" ]] || continue
-    nom="${d%/}"
+  while read -r nom; do
+    d="$nom/"
     # PIEGE: `git -C <dossier-fantome>` REMONTE au depot principal et rapporte
     # SON etat. Sans ce garde-fou, un residu de build etait inventorie comme un
     # worktree portant la branche `main`: bonne reponse par accident, et
     # trompeuse des que main est sale ou sur une branche non fusionnee.
     # Les fantomes sont deja traites en section 2, on ne les inventorie pas ici.
     if [[ "$(git -C "$d" rev-parse --show-toplevel 2>/dev/null)" != "$ROOT/$nom" ]]; then
-      printf '  %-28s %-22s %s\n' "$(basename "$nom")" "-" "dossier fantome (voir plus haut)"
+      printf '  %-46s %-22s %s\n' "$nom" "-" "dossier fantome (voir plus haut)"
       continue
     fi
     branche="$(git -C "$d" rev-parse --abbrev-ref HEAD 2>/dev/null || echo '?')"
@@ -130,8 +147,8 @@ if [[ "$QUIET" == false ]]; then
     else
       verdict="A GARDER ($fusionnee, $sale fichier(s) non commite(s))"
     fi
-    printf '  %-28s %-22s %s\n' "$(basename "$nom")" "$branche" "$verdict"
-  done
+    printf '  %-46s %-22s %s\n' "$nom" "$branche" "$verdict"
+  done < <(dossiers_worktrees)
 fi
 
 [[ "$QUIET" == false || "$BLOQUANT" -gt 0 ]] && echo ""

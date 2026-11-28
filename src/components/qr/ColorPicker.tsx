@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { isEnterToSubmit } from '@/lib/utils/enter-key';
 
 // --- Types ---------------------------------------------
 
@@ -151,7 +152,7 @@ export function ColorPicker({
           onChange={(e) => handleHexChange(e.target.value)}
           onBlur={handleHexBlur}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') {
+            if (isEnterToSubmit(e)) {
               handleHexBlur();
             }
           }}

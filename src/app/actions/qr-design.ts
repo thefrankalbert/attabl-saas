@@ -52,7 +52,7 @@ export async function actionSaveQrDesign(input: unknown) {
     const { success: allowed } = await uploadLimiter.check(getClientIpFromHeaders(await headers()));
     if (!allowed) return { success: false as const, error: t('rateLimited') };
 
-    const { tenantId, supabase, user, role } =
+    const { tenantId, supabase, user, postes } =
       await getAuthenticatedUserWithTenant('settings.edit');
     // Coupure du restaurant: enregistrer, supprimer ou assigner un design est une ecriture.
     await assertTenantServing(tenantId);
@@ -77,7 +77,7 @@ export async function actionSaveQrDesign(input: unknown) {
       tenantId,
       userId: user.id,
       userEmail: user.email,
-      userRole: role,
+      userRole: postes.join('+'),
     }).log({
       action: parsed.data.id ? 'update' : 'create',
       entityType: 'setting',

@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function SuppliersPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
-  await requireAdminPermission(site, 'inventory.view');
+  await requireAdminPermission(site, { anyOf: ['inventory.view', 'suppliers.manage'] });
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 

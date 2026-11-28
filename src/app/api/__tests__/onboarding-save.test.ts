@@ -35,7 +35,7 @@ function session(over: Record<string, unknown> = {}) {
     userId: 'u1',
     adminUser: {
       tenant_id: 't1',
-      role: 'owner',
+      isOwner: true,
       tenant_slug: 'resto',
       onboarding_completed: false,
       ...over,
@@ -83,7 +83,7 @@ describe('POST /api/onboarding/save', () => {
   });
 
   it('refuse 403 a un non proprietaire', async () => {
-    mockResolveSessionAdminUser.mockResolvedValue(session({ role: 'waiter' }));
+    mockResolveSessionAdminUser.mockResolvedValue(session({ isOwner: false }));
     const { POST } = await import('@/app/api/onboarding/save/route');
     const res = await POST(post());
 

@@ -9,8 +9,7 @@ import {
   loginPageDestination,
 } from '../post-login-destination';
 import { permissionForAdminSubPath } from '../admin-route-permissions';
-import { hasPermission } from '@/lib/permissions';
-import type { AdminRole, AdminUser } from '@/types/admin.types';
+import { meetsRequirement, getEffectiveLevels } from '@/lib/permissions';
 
 /**
  * Preuve de la destination apres connexion, role par role.
@@ -21,11 +20,9 @@ import type { AdminRole, AdminUser } from '@/types/admin.types';
  * admin voyait donc "Page not found" a chaque connexion.
  */
 
-const ROLES: AdminRole[] = ['owner', 'admin', 'manager', 'cashier', 'chef', 'waiter'];
-
 function member(overrides: Partial<PostLoginMembership> = {}): PostLoginMembership {
   return {
-    role: 'waiter',
+    isOwner: false,
     isSuperAdmin: false,
     isActive: true,
     deletedAt: null,
@@ -41,20 +38,20 @@ describe('postLoginDestination', () => {
   // Decision produit du 2026-11-08: un seul etablissement -> son espace,
   // plusieurs -> l'annuaire pour choisir.
   it('fait entrer le proprietaire d UN seul etablissement directement dans son espace', () => {
-    expect(postLoginDestination([member({ role: 'owner' })])).toBe('/sites/chez-nous/admin');
+    expect(postLoginDestination([member({ isOwner: true })])).toBe('/sites/chez-nous/admin');
   });
 
   it('envoie le proprietaire de PLUSIEURS etablissements choisir dans l annuaire', () => {
     expect(
       postLoginDestination([
-        member({ role: 'owner', tenantSlug: 'a' }),
-        member({ role: 'owner', tenantSlug: 'b' }),
+        member({ isOwner: true, tenantSlug: 'a' }),
+        member({ isOwner: true, tenantSlug: 'b' }),
       ]),
     ).toBe('/admin/tenants');
   });
 
   it('reprend l onboarding du proprietaire dont l UNIQUE etablissement est inacheve', () => {
-    expect(postLoginDestination([member({ role: 'owner', onboardingCompleted: false })])).toBe(
+    expect(postLoginDestination([member({ isOwner: true, onboardingCompleted: false })])).toBe(
       '/onboarding',
     );
   });
@@ -64,8 +61,8 @@ describe('postLoginDestination', () => {
     // ses restaurants qui tournent.
     expect(
       postLoginDestination([
-        member({ role: 'owner', tenantSlug: 'tourne', onboardingCompleted: true }),
-        member({ role: 'owner', tenantSlug: 'nouveau', onboardingCompleted: false }),
+        member({ isOwner: true, tenantSlug: 'tourne', onboardingCompleted: true }),
+        member({ isOwner: true, tenantSlug: 'nouveau', onboardingCompleted: false }),
       ]),
     ).toBe('/admin/tenants');
   });
@@ -73,39 +70,36 @@ describe('postLoginDestination', () => {
   it('compte un etablissement banni comme absent (un seul vivant -> son espace)', () => {
     expect(
       postLoginDestination([
-        member({ role: 'owner', tenantSlug: 'vivant' }),
-        member({ role: 'owner', tenantSlug: 'retire', isActive: false }),
+        member({ isOwner: true, tenantSlug: 'vivant' }),
+        member({ isOwner: true, tenantSlug: 'retire', isActive: false }),
       ]),
     ).toBe('/sites/vivant/admin');
   });
 
-  it('envoie tout role non proprietaire a l espace de son etablissement', () => {
-    for (const role of ROLES.filter((r) => r !== 'owner')) {
-      expect(postLoginDestination([member({ role })])).toBe('/sites/chez-nous/admin');
-    }
+  it('envoie tout poste non proprietaire a l espace de son etablissement', () => {
+    // Un membre sans poste proprietaire: la destination ne depend d'aucun poste.
+    expect(postLoginDestination([member({ isOwner: false })])).toBe('/sites/chez-nous/admin');
   });
 
   it('n envoie JAMAIS un non proprietaire vers /admin/tenants', () => {
-    for (const role of ROLES.filter((r) => r !== 'owner')) {
-      expect(postLoginDestination([member({ role })])).not.toBe('/admin/tenants');
-    }
+    expect(postLoginDestination([member({ isOwner: false })])).not.toBe('/admin/tenants');
   });
 
   it('envoie le super admin plateforme a la console, meme avec un role faible', () => {
-    expect(postLoginDestination([member({ role: 'waiter', isSuperAdmin: true })])).toBe(
+    expect(postLoginDestination([member({ isOwner: false, isSuperAdmin: true })])).toBe(
       '/admin/platform',
     );
   });
 
   it('fait reprendre son onboarding au proprietaire d un etablissement inacheve', () => {
-    expect(postLoginDestination([member({ role: 'owner', onboardingCompleted: false })])).toBe(
+    expect(postLoginDestination([member({ isOwner: true, onboardingCompleted: false })])).toBe(
       '/onboarding',
     );
   });
 
   it('n envoie pas a l onboarding un membre dont l etablissement est inacheve', () => {
     // L'onboarding est l'affaire du proprietaire: un serveur n'a rien a y faire.
-    expect(postLoginDestination([member({ role: 'chef', onboardingCompleted: false })])).toBe(
+    expect(postLoginDestination([member({ onboardingCompleted: false })])).toBe(
       '/sites/chez-nous/admin',
     );
   });
@@ -124,8 +118,8 @@ describe('postLoginDestination', () => {
   it('ignore un membership mort et retient le vivant', () => {
     expect(
       postLoginDestination([
-        member({ role: 'waiter', isActive: false, tenantSlug: 'ancien' }),
-        member({ role: 'waiter', tenantSlug: 'actuel' }),
+        member({ isActive: false, tenantSlug: 'ancien' }),
+        member({ tenantSlug: 'actuel' }),
       ]),
     ).toBe('/sites/actuel/admin');
   });
@@ -141,8 +135,8 @@ describe('postLoginDestination', () => {
   it('privilegie l annuaire des que la personne est proprietaire quelque part', () => {
     expect(
       postLoginDestination([
-        member({ role: 'waiter', tenantSlug: 'ou-je-sers' }),
-        member({ role: 'owner', tenantSlug: 'le-mien' }),
+        member({ tenantSlug: 'ou-je-sers' }),
+        member({ isOwner: true, tenantSlug: 'le-mien' }),
       ]),
     ).toBe('/admin/tenants');
   });
@@ -155,16 +149,13 @@ describe('postLoginDestination', () => {
     // La correction change une adresse, pas un droit. La destination d'un role
     // non proprietaire est l'accueil du tableau de bord, route ouverte a tout
     // membre; les pages gardees restent gardees (voir role-access-matrix).
-    for (const role of ROLES.filter((r) => r !== 'owner')) {
-      const dest = postLoginDestination([member({ role })]);
-      const subPath = dest.replace(/^\/sites\/[^/]+\/admin/, '');
-      const required = permissionForAdminSubPath(subPath);
-      expect(required).toBeNull();
-    }
+    const dest = postLoginDestination([member({ isOwner: false })]);
+    const subPath = dest.replace(/^\/sites\/[^/]+\/admin/, '');
+    expect(permissionForAdminSubPath(subPath)).toBeNull();
   });
 
-  it('laisse les pages d un autre role refusees apres la correction', () => {
-    const principal = { role: 'waiter' as AdminRole, custom_permissions: null } as AdminUser;
+  it('laisse les pages d un autre poste refusees apres la correction', () => {
+    const levels = getEffectiveLevels({ postes: ['waiter'] });
     for (const gated of [
       '/users',
       '/settings',
@@ -174,7 +165,7 @@ describe('postLoginDestination', () => {
     ]) {
       const required = permissionForAdminSubPath(gated);
       expect(required).not.toBeNull();
-      expect(hasPermission(principal, required!)).toBe(false);
+      expect(meetsRequirement(levels, required!)).toBe(false);
     }
   });
 });
@@ -183,7 +174,7 @@ describe('mapMembershipRows', () => {
   it('normalise la jointure tenants, objet ou tableau', () => {
     const asObject = mapMembershipRows([
       {
-        role: 'manager',
+        postes: ['manager'],
         is_active: true,
         deleted_at: null,
         is_super_admin: false,
@@ -192,7 +183,7 @@ describe('mapMembershipRows', () => {
     ]);
     const asArray = mapMembershipRows([
       {
-        role: 'manager',
+        postes: ['manager'],
         is_active: true,
         deleted_at: null,
         is_super_admin: false,
@@ -209,7 +200,7 @@ describe('mapMembershipRows', () => {
   });
 
   it('considere vivante une ligne dont is_active n est pas selectionne', () => {
-    const rows = mapMembershipRows([{ role: 'waiter', tenants: { slug: 'a' } }]);
+    const rows = mapMembershipRows([{ postes: ['waiter'], tenants: { slug: 'a' } }]);
     expect(rows[0].isActive).toBe(true);
     // Colonne non selectionnee: inconnu, et non "onboarding a refaire".
     expect(rows[0].onboardingCompleted).toBeNull();
@@ -245,14 +236,14 @@ describe('robustesse du mappage (relecture du 2026-11-06)', () => {
   it('ne renvoie PAS a l onboarding quand la colonne n a pas ete selectionnee', () => {
     // Un appelant qui omet `onboarding_completed` renverrait sinon tous ses
     // proprietaires refaire leur installation.
-    const rows = mapMembershipRows([{ role: 'owner', tenants: { slug: 'le-mien' } }]);
+    const rows = mapMembershipRows([{ postes: ['owner'], tenants: { slug: 'le-mien' } }]);
     expect(rows[0].onboardingCompleted).toBeNull();
     expect(postLoginDestination(rows)).toBe('/sites/le-mien/admin');
   });
 
   it('renvoie a l onboarding seulement sur un onboarding EXPLICITEMENT inacheve', () => {
     const rows = mapMembershipRows([
-      { role: 'owner', tenants: { slug: 'le-mien', onboarding_completed: false } },
+      { postes: ['owner'], tenants: { slug: 'le-mien', onboarding_completed: false } },
     ]);
     expect(postLoginDestination(rows)).toBe('/onboarding');
   });
@@ -273,7 +264,7 @@ describe('etablissement supprime en douceur (audit 2026-11-08)', () => {
     // qui le renvoyait dans l'espace.
     const rows = mapMembershipRows([
       {
-        role: 'owner',
+        postes: ['owner'],
         is_active: true,
         tenants: { slug: 'ferme', onboarding_completed: true, deleted_at: '2026-11-01T00:00:00Z' },
       },
@@ -283,9 +274,9 @@ describe('etablissement supprime en douceur (audit 2026-11-08)', () => {
 
   it('garde l etablissement vivant quand un autre est supprime', () => {
     const rows = mapMembershipRows([
-      { role: 'owner', tenants: { slug: 'vivant', onboarding_completed: true } },
+      { postes: ['owner'], tenants: { slug: 'vivant', onboarding_completed: true } },
       {
-        role: 'owner',
+        postes: ['owner'],
         tenants: { slug: 'ferme', onboarding_completed: true, deleted_at: '2026-11-01T00:00:00Z' },
       },
     ]);
@@ -300,26 +291,26 @@ describe('onboardingGateDestination (onboarding une seule fois)', () => {
 
   it('laisse passer le proprietaire d un etablissement inacheve', () => {
     expect(
-      onboardingGateDestination([member({ role: 'owner', onboardingCompleted: false })]),
+      onboardingGateDestination([member({ isOwner: true, onboardingCompleted: false })]),
     ).toBeNull();
   });
 
   it('renvoie le proprietaire d un etablissement FINI dans son espace', () => {
-    expect(onboardingGateDestination([member({ role: 'owner' })])).toBe('/sites/chez-nous/admin');
+    expect(onboardingGateDestination([member({ isOwner: true })])).toBe('/sites/chez-nous/admin');
   });
 
   it('renvoie un serveur, meme si l etablissement est inacheve', () => {
-    expect(
-      onboardingGateDestination([member({ role: 'waiter', onboardingCompleted: false })]),
-    ).toBe('/sites/chez-nous/admin');
+    expect(onboardingGateDestination([member({ onboardingCompleted: false })])).toBe(
+      '/sites/chez-nous/admin',
+    );
   });
 
   it('ignore un etablissement inacheve mais supprime', () => {
     expect(
       onboardingGateDestination([
-        member({ role: 'owner', tenantSlug: 'vivant' }),
+        member({ isOwner: true, tenantSlug: 'vivant' }),
         member({
-          role: 'owner',
+          isOwner: true,
           tenantSlug: 'ferme',
           onboardingCompleted: false,
           tenantDeletedAt: '2026-11-01T00:00:00Z',
@@ -331,7 +322,7 @@ describe('onboardingGateDestination (onboarding une seule fois)', () => {
 
 describe('loginPageDestination (/login deja connecte)', () => {
   it('fait entrer directement dans l espace', () => {
-    expect(loginPageDestination([member({ role: 'owner' })])).toBe('/sites/chez-nous/admin');
+    expect(loginPageDestination([member({ isOwner: true })])).toBe('/sites/chez-nous/admin');
   });
 
   it('garde le formulaire pour un compte sans acces (sinon impasse /unauthorized)', () => {

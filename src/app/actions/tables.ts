@@ -33,11 +33,7 @@ const TABLES_PLAN_ERROR = 'Le plan de salle est reserve au plan Pro.';
 
 async function checkPermissions(tenantId: string): Promise<{ error: string | null }> {
   try {
-    const { supabase } = await getAuthenticatedUserForTenant(
-      tenantId,
-      ['owner', 'admin', 'manager'],
-      'orders.manage',
-    );
+    const { supabase } = await getAuthenticatedUserForTenant(tenantId, 'settings.edit');
     // Coupure du restaurant: toute action de ce fichier est une ecriture.
     await assertTenantServing(tenantId);
     if (!(await isFeatureEntitled(supabase, tenantId, 'canAccessTables'))) {

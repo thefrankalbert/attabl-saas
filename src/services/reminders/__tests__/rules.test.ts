@@ -17,12 +17,12 @@ import { serviceMessage, preServiceMessage, coachMessage, formatRef, localeOf } 
 const T = 'tenant-a';
 const NOW = new Date('2026-11-16T12:00:00Z'); // lundi
 const staff: StaffMember[] = [
-  { id: 'owner', userId: 'u-owner', tenantId: T, role: 'owner' },
-  { id: 'manager', userId: 'u-manager', tenantId: T, role: 'manager' },
-  { id: 'waiter1', userId: 'u-w1', tenantId: T, role: 'waiter' },
-  { id: 'waiter2', userId: 'u-w2', tenantId: T, role: 'waiter' },
-  { id: 'chef', userId: 'u-chef', tenantId: T, role: 'chef' },
-  { id: 'other-owner', userId: 'u-x', tenantId: 'tenant-b', role: 'owner' },
+  { id: 'owner', userId: 'u-owner', tenantId: T, postes: ['owner'] },
+  { id: 'manager', userId: 'u-manager', tenantId: T, postes: ['manager'] },
+  { id: 'waiter1', userId: 'u-w1', tenantId: T, postes: ['waiter'] },
+  { id: 'waiter2', userId: 'u-w2', tenantId: T, postes: ['waiter'] },
+  { id: 'chef', userId: 'u-chef', tenantId: T, postes: ['chef'] },
+  { id: 'other-owner', userId: 'u-x', tenantId: 'tenant-b', postes: ['owner'] },
 ];
 const settings =
   (over: Partial<ReminderSettings> = {}) =>
@@ -109,11 +109,52 @@ describe('dueNotStarted', () => {
   });
 
   it('sans compte cuisine: les responsables', () => {
-    const noChef = staff.filter((s) => s.role !== 'chef');
+    const noChef = staff.filter((s) => !s.postes.includes('chef'));
     expect(recipients(dueNotStarted([waiting(5)], settings(), noChef, NOW))).toEqual([
       'manager@1',
       'owner@1',
     ]);
+  });
+});
+
+describe('destinataires par poste (cumul compris)', () => {
+  const mixed: StaffMember[] = [
+    { id: 'm-cash', userId: 'u-mc', tenantId: T, postes: ['manager', 'cashier'] },
+    { id: 'cook', userId: 'u-cook', tenantId: T, postes: ['cook'] },
+    { id: 'w', userId: 'u-w', tenantId: T, postes: ['waiter'] },
+    { id: 'cash', userId: 'u-cash', tenantId: T, postes: ['cashier'] },
+  ];
+
+  it('responsables = postes contenant owner ou manager, meme cumules', () => {
+    const d = dueReadyNotServed([ready(3, { server_id: null })], settings(), noAssign, mixed, NOW);
+    expect(recipients(d)).toEqual(['m-cash@1']);
+    // temoin: le serveur et le caissier seuls ne sont jamais responsables
+    expect(recipients(d)).not.toContain('w@1');
+    expect(recipients(d)).not.toContain('cash@1');
+  });
+
+  it('cuisine = chef ou cuisinier', () => {
+    const d = dueNotStarted(
+      [{ id: 'o3', tenant_id: T, created_at: minAgo(5), table_number: null, order_number: 'C3' }],
+      settings(),
+      mixed,
+      NOW,
+    );
+    expect(recipients(d)).toEqual(['cook@1']);
+  });
+
+  it('un poste de cuisine cumule avec un autre reste cuisine; le chef est cuisine', () => {
+    const team: StaffMember[] = [
+      { id: 'chef-bar', userId: 'u1', tenantId: T, postes: ['chef', 'bartender'] },
+      { id: 'w', userId: 'u2', tenantId: T, postes: ['waiter'] },
+    ];
+    const d = dueNotStarted(
+      [{ id: 'o4', tenant_id: T, created_at: minAgo(5), table_number: null, order_number: 'C4' }],
+      settings(),
+      team,
+      NOW,
+    );
+    expect(recipients(d)).toEqual(['chef-bar@1']);
   });
 });
 

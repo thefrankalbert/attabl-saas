@@ -44,19 +44,19 @@ values
 
 -- e1..1 owner Biz, ..2 owner Pro, ..3 owner Starter, ..4 owner essai, ..5 owner
 -- Ent, ..6 owner gele, ..7 owner essai fini, ..8 serveur Biz, ..9 caissier Biz
--- a qui le proprietaire a donne reports.view.
-insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, custom_permissions)
+-- a qui le proprietaire a donne les rapports.
+insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, permission_overrides)
 select ('e3000000-0000-4000-8000-00000000000' || n)::uuid,
        ('e2000000-0000-4000-8000-00000000000' || least(n, 7))::uuid,
        ('e1000000-0000-4000-8000-00000000000' || n)::uuid,
        'esp' || n || '@test.local', 'owner', true, null::jsonb
 from generate_series(1, 7) n;
-insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, custom_permissions)
+insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, permission_overrides)
 values
   ('e3000000-0000-4000-8000-000000000008', 'e2000000-0000-4000-8000-000000000001',
    'e1000000-0000-4000-8000-000000000008', 'esp8@test.local', 'waiter', true, null),
   ('e3000000-0000-4000-8000-000000000009', 'e2000000-0000-4000-8000-000000000001',
-   'e1000000-0000-4000-8000-000000000009', 'esp9@test.local', 'cashier', true, '{"reports.view": true}');
+   'e1000000-0000-4000-8000-000000000009', 'esp9@test.local', 'cashier', true, '{"reports.money": true, "reports.menu": true}');
 
 insert into public.venues (id, tenant_id, slug, name, is_active)
 values
@@ -257,13 +257,13 @@ select throws_like(
 set local request.jwt.claims = '{"sub":"e1000000-0000-4000-8000-000000000008"}';
 select throws_like(
   $$select * from public.get_venue_report('e2000000-0000-4000-8000-000000000001', now() - interval '1 day', now())$$,
-  '%reports.view%', 'serveur: rapport par espace refuse (droit reports.view)');
+  '%reports.money%', 'serveur: rapport par espace refuse (droit reports.view)');
 select throws_like(
   $$select * from public.get_order_summary('e2000000-0000-4000-8000-000000000001', now() - interval '1 day', now())$$,
-  '%reports.view%', 'serveur: resume des ventes refuse aussi (faille des rapports Pro fermee)');
+  '%reports.money%', 'serveur: resume des ventes refuse aussi (faille des rapports Pro fermee)');
 select throws_like(
   $$select * from public.get_daily_revenue('e2000000-0000-4000-8000-000000000001', now() - interval '1 day', now())$$,
-  '%reports.view%', 'serveur: chiffre par jour refuse');
+  '%reports.money%', 'serveur: chiffre par jour refuse');
 set local request.jwt.claims = '{"sub":"e1000000-0000-4000-8000-000000000009"}';
 select lives_ok(
   $$select * from public.get_venue_report('e2000000-0000-4000-8000-000000000001', now() - interval '1 day', now())$$,
@@ -273,20 +273,20 @@ select lives_ok(
   'caissier avec le droit: resume des ventes autorise');
 
 reset role;
--- Le droit retire par le proprietaire sur un role l'emporte aussi.
-insert into public.role_permissions (tenant_id, role, permissions)
-values ('e2000000-0000-4000-8000-000000000001', 'manager', '{"reports.view": false}')
-on conflict (tenant_id, role) do update set permissions = excluded.permissions;
-update public.admin_users set role = 'manager', custom_permissions = null
+-- Le droit retire par le proprietaire sur un poste l'emporte aussi.
+insert into public.poste_permissions (tenant_id, poste, permissions)
+values ('e2000000-0000-4000-8000-000000000001', 'manager', '{"reports.money": false, "reports.menu": false}')
+on conflict (tenant_id, poste) do update set permissions = excluded.permissions;
+update public.admin_users set role = 'manager', permission_overrides = null
  where id = 'e3000000-0000-4000-8000-000000000008';
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"e1000000-0000-4000-8000-000000000008"}';
 select throws_like(
   $$select * from public.get_venue_report('e2000000-0000-4000-8000-000000000001', now() - interval '1 day', now())$$,
-  '%reports.view%', 'gerant dont le proprietaire a retire le droit: refuse');
+  '%reports.money%', 'gerant dont le proprietaire a retire le droit: refuse');
 
 reset role;
-delete from public.role_permissions where tenant_id = 'e2000000-0000-4000-8000-000000000001';
+delete from public.poste_permissions where tenant_id = 'e2000000-0000-4000-8000-000000000001';
 set local role authenticated;
 select lives_ok(
   $$select * from public.get_venue_report('e2000000-0000-4000-8000-000000000001', now() - interval '1 day', now())$$,

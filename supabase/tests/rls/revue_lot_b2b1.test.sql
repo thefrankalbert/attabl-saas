@@ -52,7 +52,7 @@ from (values (1, 'patron@b2b1.test'), (2, 'gerant@b2b1.test'), (3, 'caissier@b2b
              (4, 'chef@b2b1.test'), (5, 'serveur@b2b1.test'), (6, 'caissier-stock@b2b1.test'),
              (7, 'patron-deux@b2b1.test')) v(n, e);
 
-insert into public.admin_users (id, user_id, tenant_id, email, role, is_active, custom_permissions) values
+insert into public.admin_users (id, user_id, tenant_id, email, role, is_active, permission_overrides) values
   ('b2b10000-0000-4000-8000-000000000201', 'b2b10000-0000-4000-8000-000000000101', 'b2b10000-0000-4000-8000-000000000001', 'patron@b2b1.test', 'owner', true, null),
   ('b2b10000-0000-4000-8000-000000000202', 'b2b10000-0000-4000-8000-000000000102', 'b2b10000-0000-4000-8000-000000000001', 'gerant@b2b1.test', 'manager', true, null),
   ('b2b10000-0000-4000-8000-000000000203', 'b2b10000-0000-4000-8000-000000000103', 'b2b10000-0000-4000-8000-000000000001', 'caissier@b2b1.test', 'cashier', true, null),
@@ -91,13 +91,13 @@ select throws_ok(
   '42501', null, 'B144: meme un gerant ne fait pas revenir une commande annulee (avant: accepte)');
 set local "request.jwt.claims" = '{"sub":"b2b10000-0000-4000-8000-000000000105","role":"authenticated"}';
 select lives_ok(
-  $$update public.orders set status = 'preparing' where id = 'b2b10000-0000-4000-8000-000000000303'$$,
-  'B144 temoin: le serveur fait avancer une commande non annulee');
+  $$update public.orders set status = 'delivered' where id = 'b2b10000-0000-4000-8000-000000000303'$$,
+  'B144 temoin: le serveur fait avancer une commande non annulee (il la sert)');
 reset role;
 select is((select status from public.orders where id = 'b2b10000-0000-4000-8000-000000000301'), 'cancelled',
   'B144: la commande annulee reste annulee (effet)');
-select is((select status from public.orders where id = 'b2b10000-0000-4000-8000-000000000303'), 'preparing',
-  'B144 temoin: la commande avancee est bien en preparation (effet)');
+select is((select status from public.orders where id = 'b2b10000-0000-4000-8000-000000000303'), 'delivered',
+  'B144 temoin: la commande avancee est bien servie (effet)');
 
 -- ===========================================================================
 -- B68 en base: une commande payee ne s'annule pas (elle se rembourse)

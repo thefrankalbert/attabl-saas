@@ -17,40 +17,35 @@ vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
 
-import { PERMISSION_CODES, type PermissionCode } from '@/types/permission.types';
+import { PermissionsProvider } from '@/contexts/PermissionsContext';
+import { getEffectiveLevels } from '@/lib/permissions';
+import type { PermissionMap, Poste } from '@/types/permission.types';
 
-const mockPermissions = Object.fromEntries(PERMISSION_CODES.map((c) => [c, true])) as Record<
-  PermissionCode,
-  boolean
->;
-
-vi.mock('@/hooks/usePermissions', () => ({
-  usePermissions: () => ({
-    role: 'admin',
-    permissions: mockPermissions,
-    can: (key: PermissionCode) => mockPermissions[key] === true,
-  }),
-}));
+// Niveaux toujours calcules par la vraie resolution des droits.
+function renderPalette(poste: Poste = 'manager', overrides: PermissionMap = {}) {
+  const levels = getEffectiveLevels({ postes: [poste], permission_overrides: overrides });
+  return render(
+    <PermissionsProvider postes={[poste]} levels={levels}>
+      <CommandPalette />
+    </PermissionsProvider>,
+  );
+}
 
 // --- Tests ----------------------------------------------
 
 describe('CommandPalette', () => {
   beforeEach(() => {
     mockPush.mockClear();
-    // Reset all permissions to true
-    Object.keys(mockPermissions).forEach((key) => {
-      mockPermissions[key as keyof typeof mockPermissions] = true;
-    });
   });
 
   it('renders without crash (closed by default)', () => {
-    const { container } = render(<CommandPalette />);
+    const { container } = renderPalette();
     // Dialog should be in DOM but not visible (closed)
     expect(container).toBeDefined();
   });
 
   it('opens on Cmd+K keyboard shortcut', async () => {
-    render(<CommandPalette />);
+    renderPalette();
 
     fireEvent.keyDown(document, { key: 'k', metaKey: true });
 
@@ -60,7 +55,7 @@ describe('CommandPalette', () => {
   });
 
   it('opens on Ctrl+K keyboard shortcut', async () => {
-    render(<CommandPalette />);
+    renderPalette();
 
     fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
 
@@ -70,7 +65,7 @@ describe('CommandPalette', () => {
   });
 
   it('shows quick actions when permitted', async () => {
-    render(<CommandPalette />);
+    renderPalette();
 
     fireEvent.keyDown(document, { key: 'k', metaKey: true });
 
@@ -82,11 +77,12 @@ describe('CommandPalette', () => {
   });
 
   it('hides quick actions when permissions are missing', async () => {
-    mockPermissions['pos.use'] = false;
-    mockPermissions['menu.edit'] = false;
-    mockPermissions['team.manage'] = false;
-
-    render(<CommandPalette />);
+    // Temoin du cas "permis" ci-dessus: meme palette, trois droits retires.
+    renderPalette('manager', {
+      'orders.take': false,
+      'menu.edit': false,
+      'team.manage': false,
+    });
 
     fireEvent.keyDown(document, { key: 'k', metaKey: true });
 
@@ -100,7 +96,7 @@ describe('CommandPalette', () => {
   });
 
   it('shows navigation items', async () => {
-    render(<CommandPalette />);
+    renderPalette();
 
     fireEvent.keyDown(document, { key: 'k', metaKey: true });
 
@@ -111,7 +107,7 @@ describe('CommandPalette', () => {
   });
 
   it('navigates on item select', async () => {
-    render(<CommandPalette />);
+    renderPalette();
 
     fireEvent.keyDown(document, { key: 'k', metaKey: true });
 
@@ -125,7 +121,7 @@ describe('CommandPalette', () => {
   });
 
   it('shows settings/users when permitted', async () => {
-    render(<CommandPalette />);
+    renderPalette();
 
     fireEvent.keyDown(document, { key: 'k', metaKey: true });
 
@@ -136,23 +132,17 @@ describe('CommandPalette', () => {
   });
 
   // Chef par defaut: la palette lisait l'ancienne matrice et lui proposait
-  // "Ajouter un plat", "Nouvelle commande" et "Rapports", trois refus serveur.
-  it('follows the effective permissions of a chef (no POS, no menu edit, no reports)', async () => {
-    mockPermissions['pos.use'] = false;
-    mockPermissions['menu.edit'] = false;
-    mockPermissions['reports.view'] = false;
-    mockPermissions['settings.view'] = false;
-    mockPermissions['team.view'] = false;
-    mockPermissions['team.manage'] = false;
-
-    render(<CommandPalette />);
+  // "Nouvelle commande" et "Rapports", deux refus serveur. Il garde "Ajouter un
+  // plat" (menu.edit).
+  it('follows the effective permissions of a chef (no order, no reports, no settings)', async () => {
+    renderPalette('chef');
     fireEvent.keyDown(document, { key: 'k', metaKey: true });
 
     await waitFor(() => {
       expect(screen.getByText('navDashboard')).toBeInTheDocument();
     });
     expect(screen.queryByText('newOrder')).not.toBeInTheDocument();
-    expect(screen.queryByText('addDish')).not.toBeInTheDocument();
+    expect(screen.getByText('addDish')).toBeInTheDocument();
     expect(screen.queryByText('navReports')).not.toBeInTheDocument();
     expect(screen.queryByText('navPos')).not.toBeInTheDocument();
     expect(screen.queryByText('settings')).not.toBeInTheDocument();
@@ -161,17 +151,23 @@ describe('CommandPalette', () => {
     expect(screen.getByText('navInventory')).toBeInTheDocument();
   });
 
-  // Un gerant (menu.edit) ouvre Annonces/Coupons: l'ancienne matrice les cachait.
+  // Annonces = settings.edit, coupons = orders.discount: chaque route suit SON droit.
   it('lists a route as soon as its route permission is held', async () => {
-    mockPermissions['settings.edit'] = false;
-    mockPermissions['settings.view'] = false;
+    renderPalette('manager', { 'settings.edit': false });
+    fireEvent.keyDown(document, { key: 'k', metaKey: true });
 
-    render(<CommandPalette />);
+    await waitFor(() => {
+      expect(screen.getByText('navCoupons')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('navAnnouncements')).not.toBeInTheDocument();
+  });
+
+  it('temoin: le gerant avec settings.edit voit Annonces', async () => {
+    renderPalette('manager');
     fireEvent.keyDown(document, { key: 'k', metaKey: true });
 
     await waitFor(() => {
       expect(screen.getByText('navAnnouncements')).toBeInTheDocument();
     });
-    expect(screen.getByText('navCoupons')).toBeInTheDocument();
   });
 });

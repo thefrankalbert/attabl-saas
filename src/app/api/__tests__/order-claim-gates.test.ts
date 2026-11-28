@@ -8,8 +8,9 @@ vi.mock('@/lib/billing/tenant-lock-response', () => ({
 
 /**
  * X12: la prise en charge d'une commande (claim) verifiait une liste de roles
- * qui oubliait `admin` et ignorait les reglages du proprietaire. Elle suit
- * desormais la meme regle que l'action serveur equivalente.
+ * qui oubliait `admin` et ignorait les reglages du proprietaire. Elle exige
+ * desormais `orders.take` (geste de salle), resolu par le VRAI
+ * resolveLiveMember sur un client simule: le chef est refuse, le serveur passe.
  */
 
 vi.mock('@/lib/rate-limit', () => ({
@@ -30,10 +31,8 @@ vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
-const mockResolve = vi.fn();
-vi.mock('@/lib/auth/resolve-admin-permission', () => ({
-  resolveAdminPermission: (...a: unknown[]) => mockResolve(...a),
-}));
+/** Postes du membre simule, modifie par chaque test. */
+let memberPostes: string[] | null = ['waiter'];
 
 const mockClaim = vi.fn();
 vi.mock('@/services/assignment.service', () => ({
@@ -47,13 +46,27 @@ function chain(row: unknown) {
   for (const m of ['select', 'eq', 'is']) c[m] = vi.fn(() => c);
   c.single = vi.fn(async () => ({ data: row, error: null }));
   c.maybeSingle = vi.fn(async () => ({ data: row, error: null }));
+  // Reglages du restaurant par poste (poste_permissions): aucun.
+  c.in = vi.fn(async () => ({ data: [], error: null }));
   return c;
 }
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(async () => ({
     auth: { getUser: async () => ({ data: { user: { id: 'u-1' } } }) },
     from: (table: string) =>
-      chain(table === 'tenants' ? { id: 'tenant-1' } : { id: 'admin-1', role: 'waiter' }),
+      chain(
+        table === 'tenants'
+          ? { id: 'tenant-1' }
+          : memberPostes
+            ? {
+                id: 'admin-1',
+                postes: memberPostes,
+                permission_overrides: null,
+                is_super_admin: false,
+                role: 'staff',
+              }
+            : null,
+      ),
   })),
 }));
 
@@ -68,21 +81,32 @@ const params = { params: Promise.resolve({ id: ORDER_ID }) };
 
 beforeEach(() => {
   vi.clearAllMocks();
+  memberPostes = ['waiter'];
   mockClaim.mockResolvedValue(undefined);
 });
 
 describe('POST /api/orders/[id]/claim', () => {
-  it('suit orders.manage: refuse sans', async () => {
-    mockResolve.mockResolvedValue({ allowed: false, role: 'waiter' });
+  it.each([
+    ['chef', ['chef']],
+    ['cuisinier', ['cook']],
+    ['aucune ligne de membre', null],
+  ])('exige orders.take: refuse %s, rien n est pris en charge', async (_label, postes) => {
+    memberPostes = postes;
     const res = await CLAIM(claimRequest(), params);
     expect(res.status).toBe(403);
     expect(mockClaim).not.toHaveBeenCalled();
   });
 
-  it('suit orders.manage: accepte avec (admin compris)', async () => {
-    mockResolve.mockResolvedValue({ allowed: true, role: 'admin' });
+  it.each([
+    ['serveur', ['waiter']],
+    ['caissier', ['cashier']],
+    ['gerant', ['manager']],
+    ['proprietaire', ['owner']],
+  ])('exige orders.take: accepte %s', async (_label, postes) => {
+    memberPostes = postes;
     const res = await CLAIM(claimRequest(), params);
     expect(res.status).toBe(200);
-    expect(mockResolve).toHaveBeenCalledWith(expect.anything(), 'u-1', 'tenant-1', 'orders.manage');
+    // La commande est prise au nom de la ligne de membre, pas du compte auth.
+    expect(mockClaim).toHaveBeenCalledWith(ORDER_ID, 'admin-1', 'tenant-1');
   });
 });

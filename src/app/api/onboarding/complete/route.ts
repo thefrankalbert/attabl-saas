@@ -12,7 +12,6 @@ import { onboardingCompleteLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createOnboardingService } from '@/services/onboarding.service';
 import { getStorageCleanup } from '@/services/storage-cleanup.service';
-import { isRoleAllowed, ONBOARDING_COMPLETE_ROLES } from '@/lib/admin-roles';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 
 export async function POST(request: Request) {
@@ -68,7 +67,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: session.error }, { status: session.status });
     }
 
-    if (!isRoleAllowed(session.adminUser.role, ONBOARDING_COMPLETE_ROLES)) {
+    if (!session.adminUser.isOwner) {
       return NextResponse.json({ error: 'Permissions insuffisantes' }, { status: 403 });
     }
 

@@ -79,7 +79,7 @@ export interface Order {
   server_id?: string;
   cashier_id?: string;
   assigned_to?: string;
-  server?: { id: string; full_name: string; role: string };
+  server?: { id: string; full_name: string; postes: string[] };
 }
 
 // --- Pricing -----------------------------------------------

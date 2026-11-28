@@ -27,22 +27,23 @@ vi.mock('@/lib/csrf', () => ({ verifyOrigin: () => null }));
 // Resultat du lookup de propriete (null = l'appelant n'est pas owner actif).
 let ownershipRow: { tenant_id: string } | null = null;
 
+// Chaine de la recherche du proprietaire vivant:
+// select().eq(user_id).contains('postes', ['owner']).eq(is_active).is(deleted_at).limit().maybeSingle()
+const mockContains = vi.fn();
 vi.mock('@/lib/supabase/server', () => ({
-  createClient: () =>
-    Promise.resolve({
+  createClient: () => {
+    const chain: Record<string, unknown> = {};
+    for (const m of ['select', 'eq', 'is', 'limit']) chain[m] = () => chain;
+    chain.contains = (...args: unknown[]) => {
+      mockContains(...args);
+      return chain;
+    };
+    chain.maybeSingle = () => Promise.resolve({ data: ownershipRow });
+    return Promise.resolve({
       auth: { getUser: () => Promise.resolve({ data: { user: { id: 'u1', email: 'a@b.c' } } }) },
-      from: () => ({
-        select: () => ({
-          eq: () => ({
-            eq: () => ({
-              eq: () => ({
-                limit: () => ({ maybeSingle: () => Promise.resolve({ data: ownershipRow }) }),
-              }),
-            }),
-          }),
-        }),
-      }),
-    }),
+      from: () => chain,
+    });
+  },
 }));
 
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => ({}) }));
@@ -93,6 +94,8 @@ describe('POST /api/restaurants/create (F1)', () => {
     const res = await POST(post(VALID));
 
     expect(res.status).toBe(403);
+    // La recherche exige bien le poste owner (temoin: sans cette exigence, un serveur passerait).
+    expect(mockContains).toHaveBeenCalledWith('postes', ['owner']);
     // Rien ne doit avoir ete cree.
     expect(addRestaurant).not.toHaveBeenCalled();
   });

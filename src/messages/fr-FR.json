@@ -290,7 +290,7 @@
     "cancelOrderKeep": "Garder la commande",
     "cancelOrderDone": "Commande annulée",
     "cancelOrderFailed": "Annulation impossible",
-    "cancelNeedsMoneyAuthority": "Un acompte est au registre. Seul un gérant, un administrateur ou le propriétaire peut annuler cette commande.",
+    "cancelNeedsMoneyAuthority": "Un acompte est au registre. Seul le propriétaire ou un gérant peut annuler cette commande.",
     "statusLabel": "Statut",
     "printLabel": "Impression",
     "printKitchenTicket": "Ticket Cuisine",
@@ -588,7 +588,7 @@
       "metaTitle": "Politique de Confidentialité",
       "metaDescription": "Quelles données ATTABL collecte, qui les héberge, combien de temps on les garde et comment exercer vos droits.",
       "heading": "Politique de Confidentialité",
-      "lastUpdate": "Dernière mise à jour : 24 novembre 2026",
+      "lastUpdate": "Dernière mise à jour : 27 novembre 2026",
       "section1Title": "1. Qui est responsable de vos données",
       "section1Body": "ATTABL est responsable du traitement des données de son site et des comptes des restaurateurs et hôteliers (compte, abonnement, connexion). Pour les clients d'un restaurant (nom, téléphone, adresse de livraison d'une commande) et pour l'équipe d'un restaurant, c'est le restaurant qui décide de l'usage des données. ATTABL agit alors pour son compte, comme sous-traitant.",
       "companyHeading": "Identité de l'entreprise",
@@ -660,6 +660,16 @@
           "name": "Flutterwave",
           "role": "Paiement de l'abonnement par mobile money, au moment où ce moyen de paiement sera activé. Il n'est pas encore actif.",
           "country": "Selon le prestataire"
+        },
+        "google": {
+          "name": "Google",
+          "role": "Connexion avec un compte Google, si vous la choisissez : Google nous transmet votre nom et votre adresse e-mail",
+          "country": "États-Unis"
+        },
+        "github": {
+          "name": "GitHub",
+          "role": "Conservation des sauvegardes chiffrées de la base de données ({days} jours)",
+          "country": "États-Unis"
         }
       },
       "section5Title": "5. Les lois qui s'appliquent",
@@ -683,6 +693,7 @@
       "retentionClosed": "Restaurant supprimé, {days} jours après la suppression : adresse e-mail, nom et téléphone de l'équipe (les comptes de connexion sont supprimés, y compris la connexion Google), comptes clients à crédit, contacts des fournisseurs, journaux d'audit du restaurant, téléphone et adresse du restaurant. Passé ce délai, le restaurant ne peut plus être restauré.",
       "retentionAccount": "Compte et établissement actifs : conservés pendant l'abonnement.",
       "retentionAccounting": "Paiements, factures et événements de paiement : jamais effacés avant la fin de la durée légale de conservation des pièces comptables.",
+      "retentionBackups": "Sauvegardes de la base : chiffrées, conservées {days} jours puis effacées. Une donnée supprimée de la base disparaît des sauvegardes au plus tard {days} jours après.",
       "retentionContact": "Messages envoyés par le formulaire de contact : ils nous arrivent par e-mail, nous ne les enregistrons pas dans notre base et nous les supprimons de notre messagerie après {months} mois.",
       "section9Title": "9. Application mobile Atfood",
       "section9Body": "Atfood est l'application iPhone d'ATTABL pour le personnel du restaurant. Elle utilise l'appareil photo uniquement pour photographier les plats. Les photos sont envoyées dans l'espace de stockage du menu du restaurant (Supabase) et s'affichent publiquement sur le menu du restaurant. Le détourage, optionnel, et les contrôles de qualité des photos se font sur le téléphone (Apple Vision) : rien n'est envoyé à un tiers. L'application utilise les données de votre compte : adresse email, identifiant utilisateur et restaurant auquel vous êtes rattaché. En cas de plantage, un rapport anonyme, sans aucune donnée personnelle, peut être envoyé à Sentry pour corriger le problème. Vous pouvez demander la suppression de votre compte depuis l'application : Profil > Supprimer mon compte.",
@@ -725,7 +736,7 @@
             },
             "truck": {
               "title": "Commandes en livraison",
-              "desc": "Suivi des courses et des livreurs."
+              "desc": "Commandes avec adresse de livraison, suivies comme les autres."
             },
             "bed": {
               "title": "Service en chambre",
@@ -1912,6 +1923,7 @@
       "restaurantPlaceholder": "Le Jardin",
       "termsNote": "En créant un compte, vous acceptez les <terms>conditions d'utilisation</terms> et la <privacy>politique de confidentialité</privacy>.",
       "trialNote": "14 jours gratuits - aucun engagement",
+      "legalNotice": "<terms>Conditions d'utilisation</terms> et <privacy>confidentialité</privacy>",
       "accountDeletedSuccess": "C'est fait : votre compte est supprimé. Merci d'avoir travaillé avec ATTABL."
     },
     "confirm": {
@@ -2458,6 +2470,7 @@
       "venues": "Espaces",
       "unlimited": "Illimité",
       "changePlan": "Changer de plan",
+      "ownerPaysOnly": "Seul le propriétaire paie l'abonnement et change de formule.",
       "manageBilling": "Gérer la facturation",
       "planChanged": "Plan mis à jour. Votre facturation est calculée au prorata.",
       "planChangeError": "Impossible de changer le plan. Réessayez.",
@@ -3340,13 +3353,6 @@
     "navTheme": "Mode sombre / clair",
     "navInvoices": "Factures",
     "navAuditLogs": "Journal d'audit",
-    "roleOwner": "Administrateur général",
-    "roleAdmin": "Administrateur",
-    "roleManager": "Gérant",
-    "roleStaff": "Personnel",
-    "roleKitchen": "Cuisine",
-    "roleServer": "Serveur",
-    "roleUnknown": "Inconnu",
     "groupMarketing": "Marketing",
     "groupSettings": "Paramètres",
     "groupAnalyse": "Analyse",
@@ -3576,18 +3582,19 @@
     "editPermissions": "Gérer les permissions",
     "deleteUser": "Supprimer l'utilisateur",
     "email": "E-mail",
-    "role": "Rôle",
     "lastLogin": "Dernière connexion",
     "createdAt": "Créé le",
-    "roleOwner": "Administrateur général",
-    "roleAdmin": "Administrateur",
+    "roleOwner": "Propriétaire",
     "roleManager": "Gérant",
     "roleCashier": "Caissier",
-    "roleChef": "Chef cuisinier",
+    "roleChef": "Chef",
+    "roleBartender": "Barman",
+    "roleReception": "Réception",
     "roleWaiter": "Serveur",
-    "roleStaff": "Personnel",
-    "roleKitchen": "Cuisine",
-    "roleServer": "Serveur",
+    "roleCook": "Cuisinier",
+    "roleCrew": "Équipier polyvalent",
+    "roleSales": "Vente",
+    "roleProduction": "Fabrication",
     "noUsers": "Aucun utilisateur",
     "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet utilisateur ?",
     "userAdded": "Utilisateur ajouté",
@@ -3597,13 +3604,22 @@
     "inviteUser": "Inviter un utilisateur",
     "inviteSent": "Invitation envoyée",
     "newMember": "Nouveau Membre",
-    "roleOwnerLabel": "Administrateur général",
-    "roleAdminLabel": "Administrateur",
-    "roleManagerLabel": "Gérant",
-    "roleCashierLabel": "Caissier",
-    "roleChefLabel": "Chef cuisinier",
-    "roleWaiterLabel": "Serveur",
     "roleDefaultLabel": "Utilisateur",
+    "postesLabel": "Postes",
+    "postesHint": "Cochez un ou plusieurs postes. La personne obtient les droits de chacun.",
+    "posteRequired": "Choisissez au moins un poste.",
+    "posteDesc": {
+      "manager": "Fait tourner le restaurant au quotidien. Voit les factures, ne paie pas l'abonnement.",
+      "chef": "Tient la carte, les prix, le stock et la cuisine.",
+      "cashier": "Prend les commandes et encaisse.",
+      "bartender": "Sert au bar, prépare les boissons et encaisse.",
+      "reception": "Accueille, prend les commandes et encaisse.",
+      "waiter": "Prend les commandes en salle. N'encaisse pas.",
+      "cook": "Suit les commandes en cuisine et voit le stock.",
+      "crew": "Fait la salle, la caisse et la cuisine.",
+      "sales": "Vend au comptoir et encaisse.",
+      "production": "Fabrique ce qui est commandé et voit le stock."
+    },
     "inactive": "Inactif",
     "neverConnected": "Jamais connecté",
     "neverLoggedIn": "Jamais connecté",
@@ -3614,12 +3630,6 @@
     "addMember": "Ajouter un membre",
     "fullName": "Nom complet",
     "emailPlaceholder": "jean@restaurant.com",
-    "roleAndPermissions": "Rôle & Permissions",
-    "roleDescAdmin": "Gère l'équipe, les réglages et tout le restaurant, sauf les droits du propriétaire.",
-    "roleDescManager": "Suit les commandes, le stock et les rapports au quotidien.",
-    "roleDescCashier": "Encaisse les commandes et tient la caisse.",
-    "roleDescChef": "Suit la cuisine et prépare les commandes.",
-    "roleDescWaiter": "Prend les commandes et les marque servies, sans toucher à l'argent.",
     "cancel": "Annuler",
     "deleteUserConfirm": "Voulez-vous vraiment supprimer cet utilisateur ?",
     "userDeletedConfirm": "Utilisateur supprimé",
@@ -3831,62 +3841,74 @@
     "retry": "Réessayer"
   },
   "permissions": {
-    "title": "Permissions par rôle",
-    "permissionColumn": "Permission",
+    "title": "Droits par poste",
+    "permissionColumn": "Droit",
     "saving": "Sauvegarde...",
     "loadError": "Erreur lors du chargement des permissions",
     "saveError": "Erreur lors de la sauvegarde",
     "deleteError": "Erreur lors de la suppression",
     "restoreError": "Erreur lors de la restauration",
-    "restoreSuccess": "Permissions par défaut restaurées pour {role}",
+    "restoreSuccess": "Droits par défaut rétablis pour le poste {poste}",
     "accessDenied": "Accès refusé",
-    "noAccessHint": "Votre rôle ne donne pas accès à cette page. Demandez au propriétaire si vous en avez besoin.",
-    "restoreDefaults": "Restaurer les défauts",
+    "noAccessHint": "Vos postes ne donnent pas accès à cette page. Demandez au propriétaire si vous en avez besoin.",
     "reset": "Réinitialiser",
     "modified": "modifié",
     "legendAllowed": "autorisé",
     "legendDenied": "refusé",
     "legendModified": "valeur différente du défaut",
     "autoSaveNote": "Les modifications sont sauvegardées automatiquement.",
-    "userTitle": "Permissions du membre",
-    "userSubtitle": "Ajustez les accès de {name} au-dela de son rôle.",
-    "useRoleDefault": "Défaut du rôle",
+    "userTitle": "Droits du membre",
+    "userSubtitle": "Ajustez les droits de {name} au-delà de ses postes.",
+    "useRoleDefault": "Défaut des postes",
     "autoSaveHint": "Vos changements sont enregistrés automatiquement.",
     "saved": "Enregistré",
-    "ownerAllAccess": "Le propriétaire a tous les accès. Rien à ajuster.",
+    "ownerAllAccess": "Le propriétaire a tous les droits. Rien à ajuster.",
     "perm": {
-      "menu_view": "Voir les menus",
-      "menu_edit": "Modifier les menus",
-      "orders_view": "Voir les commandes",
-      "orders_manage": "Gérer les commandes",
-      "orders_pay": "Encaisser l'argent (paiements, ardoises, annulations)",
-      "reports_view": "Voir les rapports",
-      "pos_use": "Utiliser la caisse",
-      "inventory_view": "Voir l'inventaire",
-      "inventory_edit": "Modifier l'inventaire",
+      "menu_view": "Voir la carte",
+      "menu_edit": "Modifier la carte",
+      "menu_price": "Modifier les prix",
+      "orders_take": "Prendre une commande",
+      "kitchen_track": "Suivre en cuisine ou au bar",
+      "orders_cancel": "Annuler une commande",
+      "orders_discount": "Faire une remise",
+      "orders_refund": "Rembourser",
+      "orders_pay": "Encaisser",
+      "cash_close": "Clôturer la caisse",
+      "cash_count": "Compter sa caisse à l'aveugle",
+      "reports_menu": "Rapports de la carte",
+      "reports_money": "Rapports d'argent",
+      "reports_own": "Ses propres ventes",
+      "inventory_view": "Voir le stock",
+      "inventory_edit": "Saisir le stock",
+      "suppliers_manage": "Fournisseurs et commandes d'achat",
       "team_view": "Voir l'équipe",
-      "team_manage": "Gérer l'équipe",
-      "settings_view": "Voir les paramètres",
-      "settings_edit": "Modifier les paramètres"
+      "team_manage": "Recruter et retirer",
+      "settings_edit": "Réglages du restaurant",
+      "audit_view": "Journal d'audit",
+      "billing_manage": "Abonnement ATTABL"
     },
-    "role": {
-      "owner": "Administrateur général",
-      "admin": "Administrateur",
-      "manager": "Gérant",
-      "cashier": "Caissier",
-      "chef": "Chef Cuisine",
-      "waiter": "Serveur"
+    "limited": {
+      "code": "bientôt, avec un code responsable",
+      "merchantQr": "bientôt, par QR marchand",
+      "invoices": "factures seulement",
+      "removed": "retiré"
     },
     "category": {
-      "menu": "Menu",
+      "menu": "Carte",
       "orders": "Commandes",
+      "cash": "Caisse",
       "reports": "Rapports",
-      "pos": "Point de vente",
-      "inventory": "Inventaire",
+      "inventory": "Stock",
       "team": "Équipe",
-      "settings": "Paramètres"
+      "settings": "Réglages"
     },
-    "ownerOnlyHint": "Seul le propriétaire du restaurant modifie les permissions."
+    "ownerOnlyHint": "Seul le propriétaire du restaurant règle les droits.",
+    "comingSoon": "à venir",
+    "note": {
+      "orders_cancel": "Pour l'instant, annuler une commande non réglée suit le droit Encaisser.",
+      "orders_discount": "Gère les codes promo. À la caisse, appliquer un code suit le droit Encaisser.",
+      "orders_refund": "Pour l'instant, rembourser demande aussi Encaisser, Annuler et Faire une remise."
+    }
   },
   "coupons": {
     "disabledTitle": "Vos clients ne peuvent pas utiliser ces codes.",
@@ -5527,7 +5549,9 @@
     "namePlaceholder": "Nom",
     "nameEnPlaceholder": "Nom (traduction)",
     "pricePlaceholder": "Prix",
-    "priceNegative": "Le prix ne peut pas être négatif."
+    "priceNegative": "Le prix ne peut pas être négatif.",
+    "needsPriceRight": "Ce supplément a un prix. Le créer ou le supprimer demande le droit Modifier les prix.",
+    "needsEditRight": "Vous n'avez pas le droit de modifier la carte."
   },
   "allergens": {
     "title": "Allergènes",
@@ -5697,7 +5721,7 @@
       "ouaga": {
         "name": "Ouagadougou",
         "country": "Burkina Faso",
-        "phone": "+226 55 21 22 93"
+        "phone": "+226 65 56 54 11"
       },
       "ndjamena": {
         "name": "N'Djamena",
@@ -5923,7 +5947,8 @@
       "reset": "Un mot de passe neuf, et on reprend.",
       "invite": "Votre équipe vous attend en salle.",
       "unauthorized": "Chaque établissement a ses clés.",
-      "emailChange": "Une adresse à jour, et on continue."
+      "emailChange": "Une adresse à jour, et on continue.",
+      "unsubscribe": "Vos e-mails, vos règles."
     }
   },
   "accountDeletion": {
@@ -6001,5 +6026,22 @@
       "invalidInput": "Tapez les 6 chiffres du code.",
       "unauthenticated": "Votre session a expiré. Reconnectez-vous."
     }
+  },
+  "unsubscribe": {
+    "metaTitle": "Se désabonner - ATTABL",
+    "title": "Moins d'e-mails ?",
+    "subtitle": "Un clic, et ATTABL arrête ses conseils et ses rappels d'essai. Les e-mails utiles à votre compte continuent d'arriver : mot de passe, paiement, alertes de stock.",
+    "confirm": "Me désabonner",
+    "doneTitle": "C'est fait.",
+    "doneBody": "Vous ne recevrez plus nos relances à cette adresse. Vous avez changé d'avis ?",
+    "resubscribe": "Me réabonner",
+    "resubscribedTitle": "Vous êtes réabonné.",
+    "resubscribedBody": "Nos conseils reviendront dans votre boîte.",
+    "unsubscribeAgain": "Me désabonner à nouveau",
+    "invalidTitle": "Ce lien ne marche pas.",
+    "invalidBody": "Il est incomplet ou abîmé. Ouvrez-le depuis l'e-mail reçu, ou écrivez-nous à support@attabl.com.",
+    "error": "Ça n'a pas marché. Réessayez dans un instant.",
+    "rateLimited": "Trop d'essais. Patientez une minute, puis réessayez.",
+    "backHome": "Retour à l'accueil"
   }
 }

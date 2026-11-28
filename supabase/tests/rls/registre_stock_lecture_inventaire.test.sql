@@ -37,7 +37,7 @@ insert into public.tenants (id, slug, name, is_active, subscription_plan, subscr
 values ('f5000000-0000-4000-8000-00000000000a', 'rs-a', 'RS A', true, 'business', 'active'),
        ('f5000000-0000-4000-8000-00000000000b', 'rs-b', 'RS B', true, 'business', 'active');
 
-insert into public.admin_users (tenant_id, user_id, email, role, is_active, custom_permissions)
+insert into public.admin_users (tenant_id, user_id, email, role, is_active, permission_overrides)
 values
   ('f5000000-0000-4000-8000-00000000000a', 'f5000000-0000-4000-8000-0000000000a1', 'proprio-rs@test.local', 'owner', true, null),
   ('f5000000-0000-4000-8000-00000000000a', 'f5000000-0000-4000-8000-0000000000a2', 'gerant-rs@test.local', 'manager', true, null),

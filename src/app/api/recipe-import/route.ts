@@ -32,9 +32,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Authenticate + role gate (owner/admin/manager via inventory.edit, honours
-    // per-user overrides). Bulk recipe/ingredient writes must not be reachable by
-    // cashier/waiter/chef.
+    // 2. Authenticate + permission gate (`inventory.edit`: owner, manager and
+    // chef by default, honours per-user overrides). Bulk recipe/ingredient
+    // writes must not be reachable by cashier or waiter.
     const { tenantId, supabase } = await getAuthenticatedUserWithTenant('inventory.edit');
     // Coupure du restaurant: un import est une ecriture (403 + message via AuthError).
     await assertTenantServing(tenantId);

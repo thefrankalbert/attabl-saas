@@ -72,8 +72,10 @@ select is(has_function_privilege('authenticated', 'public.provision_group_restau
 select is(has_function_privilege('service_role', 'public.decide_owner_trial(uuid)', 'EXECUTE'), true, 'decide_owner_trial: service_role peut executer');
 
 -- 6. Compte confirme supprime pendant l'essai, reinscription (M2): fin partagee.
+-- Le restaurant est supprime AVANT le compte: la ligne du proprietaire d'un
+-- restaurant vivant ne se supprime plus (garder_proprietaire, lot 1 des roles),
+-- elle part avec la cascade du restaurant.
 select lives_ok($$select provision_signup_tenant('c-un', 'c-un', 'starter', 'e3333333-3333-4333-8333-333333333333', 'x@x.local', 'N', null)$$, 'confirme: premier essai');
-delete from admin_users where user_id = 'e3333333-3333-4333-8333-333333333333';
 delete from tenants where group_id in (select id from restaurant_groups where owner_user_id = 'e3333333-3333-4333-8333-333333333333');
 delete from restaurant_groups where owner_user_id = 'e3333333-3333-4333-8333-333333333333';
 delete from auth.users where id = 'e3333333-3333-4333-8333-333333333333';
@@ -87,7 +89,6 @@ select is((select trial_ends_at from tenants where slug = 'c-deux'), (select tri
 
 -- 7. Fenetre expiree puis reinscription: pas d'essai.
 update owner_trial_ledger set trial_ends_at = now() - interval '1 day' where email_key = 'c@test.local';
-delete from admin_users where user_id = 'ec000000-0000-4000-8000-000000000001';
 delete from tenants where group_id in (select id from restaurant_groups where owner_user_id = 'ec000000-0000-4000-8000-000000000001');
 delete from restaurant_groups where owner_user_id = 'ec000000-0000-4000-8000-000000000001';
 delete from auth.users where id = 'ec000000-0000-4000-8000-000000000001';
@@ -99,7 +100,6 @@ select is((select subscription_status from tenants where slug = 'c-trois'), 'fro
 -- 8. Squatteur jamais confirme, supprime: ne bloque pas le vrai proprietaire (M1).
 select lives_ok($$select provision_signup_tenant('squat', 'squat', 'starter', 'e5555555-5555-4555-8555-555555555555', 'x@x.local', 'N', null)$$, 'squatteur: essai cree');
 select is((select confirmed_at is null from owner_trial_ledger where email_key = 's@test.local'), true, 'squatteur: ligne non confirmee');
-delete from admin_users where user_id = 'e5555555-5555-4555-8555-555555555555';
 delete from tenants where group_id in (select id from restaurant_groups where owner_user_id = 'e5555555-5555-4555-8555-555555555555');
 delete from restaurant_groups where owner_user_id = 'e5555555-5555-4555-8555-555555555555';
 delete from auth.users where id = 'e5555555-5555-4555-8555-555555555555';
@@ -133,7 +133,6 @@ select lives_ok($$select provision_signup_tenant('bd-un', 'bd-un', 'starter', 'e
 select is((select confirmed_at is null from owner_trial_ledger where email_key = 'bd@test.local'), true, 'bd: ligne non confirmee au depart');
 update auth.users set email_confirmed_at = now() where id = 'ea111111-1111-4111-8111-111111111111';
 update owner_trial_ledger set confirmed_at = null where email_key = 'bd@test.local';
-delete from admin_users where user_id = 'ea111111-1111-4111-8111-111111111111';
 delete from tenants where group_id in (select id from restaurant_groups where owner_user_id = 'ea111111-1111-4111-8111-111111111111');
 delete from restaurant_groups where owner_user_id = 'ea111111-1111-4111-8111-111111111111';
 delete from auth.users where id = 'ea111111-1111-4111-8111-111111111111';

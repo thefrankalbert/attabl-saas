@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import type { MenuItem } from '@/types/admin.types';
 import type { MenuDetailVM } from './use-menu-detail';
+import { isEnterToSubmit } from '@/lib/utils/enter-key';
 
 interface Props {
   vm: MenuDetailVM;
@@ -52,7 +53,7 @@ export function MenuItemRow({ vm, item }: Props) {
           onChange={(e) => setEditingPriceValue(e.target.value)}
           onBlur={() => saveInlinePrice(item)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') saveInlinePrice(item);
+            if (isEnterToSubmit(e)) saveInlinePrice(item);
             if (e.key === 'Escape') setEditingPriceId(null);
           }}
           min={0}

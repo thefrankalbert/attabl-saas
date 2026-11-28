@@ -445,8 +445,7 @@ export default function ItemDetailSheet({
                     />
                     <div className="flex gap-2" role="radiogroup" aria-label={t('size')}>
                       {item
-                        .price_variants!.slice()
-                        .sort((a, b) => a.display_order - b.display_order)
+                        .price_variants!.toSorted((a, b) => a.display_order - b.display_order)
                         .map((variant) => {
                           const isActive = selectedVariant?.id === variant.id;
                           return (

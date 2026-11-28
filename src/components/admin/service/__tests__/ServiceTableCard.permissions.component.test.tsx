@@ -5,17 +5,14 @@ import { render, screen } from '@testing-library/react';
 import { ServiceTableCard } from '../ServiceTableCard';
 import type { ServiceTableVM } from '../service.types';
 import { PermissionsProvider } from '@/contexts/PermissionsContext';
-import type { AdminRole } from '@/types/admin.types';
-import type { PermissionCode } from '@/types/permission.types';
+import { getEffectiveLevels } from '@/lib/permissions';
+import type { PermissionMap, Poste } from '@/types/permission.types';
 
 // X13: la page /service est ouverte a tous, mais assigner ou liberer un serveur
-// exige un role de gerant ET orders.manage (actions/assignments.ts). Le bouton
+// exige settings.edit (plan de salle, actions/assignments.ts). Le bouton
 // "liberer" etait offert a tous, et le serveur refusait ensuite.
 
-const actor: { role: string; perms: Record<string, boolean> } = {
-  role: 'manager',
-  perms: { 'orders.manage': true },
-};
+const actor: { poste: Poste; overrides: PermissionMap } = { poste: 'manager', overrides: {} };
 const vm = {
   table: { id: 't1', table_number: '5', display_name: null, capacity: 4 },
   zone: undefined,
@@ -41,8 +38,8 @@ function renderCard() {
   const noop = () => {};
   return render(
     <PermissionsProvider
-      role={actor.role as AdminRole}
-      permissions={actor.perms as Record<PermissionCode, boolean>}
+      postes={[actor.poste]}
+      levels={getEffectiveLevels({ postes: [actor.poste], permission_overrides: actor.overrides })}
     >
       <ServiceTableCard
         vm={vm}
@@ -61,8 +58,8 @@ function renderCard() {
 }
 
 afterEach(() => {
-  actor.role = 'manager';
-  actor.perms = { 'orders.manage': true };
+  actor.poste = 'manager';
+  actor.overrides = {};
 });
 
 describe('ServiceTableCard - liberer une table', () => {
@@ -71,14 +68,21 @@ describe('ServiceTableCard - liberer une table', () => {
     expect(screen.getByLabelText('release')).toBeInTheDocument();
   });
 
-  it('un serveur ne le voit pas, meme avec orders.manage', () => {
-    actor.role = 'waiter';
+  it('un serveur ne le voit pas', () => {
+    actor.poste = 'waiter';
     renderCard();
     expect(screen.queryByLabelText('release')).toBeNull();
   });
 
-  it('un gerant a qui on a retire orders.manage ne le voit pas', () => {
-    actor.perms = { 'orders.manage': false };
+  it('un serveur a qui le proprietaire donne settings.edit le voit', () => {
+    actor.poste = 'waiter';
+    actor.overrides = { 'settings.edit': true };
+    renderCard();
+    expect(screen.getByLabelText('release')).toBeInTheDocument();
+  });
+
+  it('un gerant a qui on a retire settings.edit ne le voit pas', () => {
+    actor.overrides = { 'settings.edit': false };
     renderCard();
     expect(screen.queryByLabelText('release')).toBeNull();
   });

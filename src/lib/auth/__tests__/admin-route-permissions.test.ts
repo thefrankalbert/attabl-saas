@@ -1,17 +1,24 @@
 import { describe, it, expect } from 'vitest';
 import { canOpenAdminSubPath } from '../admin-route-permissions';
+import { getEffectiveLevels, NO_LEVELS } from '@/lib/permissions';
 
 describe('canOpenAdminSubPath - orders', () => {
-  it('hides the orders routes from a member without orders.view', () => {
-    expect(canOpenAdminSubPath('/orders', { 'orders.view': false })).toBe(false);
-    expect(canOpenAdminSubPath('/orders/abc', {})).toBe(false);
+  it('cache les commandes a qui ne prend, ne suit ni n encaisse', () => {
+    expect(canOpenAdminSubPath('/orders', NO_LEVELS)).toBe(false);
+    expect(canOpenAdminSubPath('/orders/abc', NO_LEVELS)).toBe(false);
+    const stripped = getEffectiveLevels({
+      postes: ['waiter'],
+      permission_overrides: { 'orders.take': false },
+    });
+    expect(canOpenAdminSubPath('/orders', stripped)).toBe(false);
   });
 
-  it('keeps the orders routes for a member with orders.view', () => {
-    expect(canOpenAdminSubPath('/orders', { 'orders.view': true })).toBe(true);
+  it('les ouvre a qui detient un seul des trois droits', () => {
+    expect(canOpenAdminSubPath('/orders', getEffectiveLevels({ postes: ['waiter'] }))).toBe(true);
+    expect(canOpenAdminSubPath('/orders', getEffectiveLevels({ postes: ['cook'] }))).toBe(true);
   });
 
-  it('keeps the dashboard open to every member', () => {
-    expect(canOpenAdminSubPath('', {})).toBe(true);
+  it('garde l accueil ouvert a tout membre', () => {
+    expect(canOpenAdminSubPath('', NO_LEVELS)).toBe(true);
   });
 });

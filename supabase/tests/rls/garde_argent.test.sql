@@ -81,11 +81,11 @@ insert into public.venues (id, tenant_id, slug, name)
 values ('ba000000-0000-4000-8000-00000000000a', 'b3333333-3333-3333-3333-333333333333',
         'lieu-argent', 'Lieu Argent');
 
--- AUCUNE ligne dans `role_permissions` pour ce tenant, et aucune
--- `custom_permissions` sauf pour le gerant limite. C'est tout l'interet du
+-- AUCUNE ligne dans `poste_permissions` pour ce tenant, et aucun
+-- `permission_overrides` sauf pour le gerant limite. C'est tout l'interet du
 -- test: la caisse doit fonctionner sur le DEFAUT, sans qu'un proprietaire ait
 -- eu a deleguer quoi que ce soit.
-insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, custom_permissions)
+insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, permission_overrides)
 values
   (gen_random_uuid(), 'b3333333-3333-3333-3333-333333333333',
    'b1111111-1111-1111-1111-111111111111', 'caissier@test.local', 'cashier', true, null),
@@ -100,7 +100,7 @@ values
   -- repasser par la branche de role.
   (gen_random_uuid(), 'b3333333-3333-3333-3333-333333333333',
    'b8888888-8888-8888-8888-888888888888', 'gerant-limite@test.local', 'manager', true,
-   '{"orders.manage": false}'::jsonb),
+   '{"orders.take": false, "kitchen.track": false, "orders.cancel": false, "orders.discount": false, "orders.refund": false}'::jsonb),
   -- LE MEME caissier, membre AUSSI du restaurant voisin. C'est ce qui rend la
   -- section 11 honnete: sans cette ligne, la policy refuse deja le changement
   -- de tenant parce qu'il n'y est pas membre, et l'assertion passerait pour une
@@ -152,18 +152,18 @@ set local role authenticated;
 set local request.jwt.claims = '{"sub":"b1111111-1111-1111-1111-111111111111"}';
 
 select ok(
-  public.has_tenant_write_permission('b3333333-3333-3333-3333-333333333333', 'orders.manage'),
-  'matrice: un caissier detient orders.manage PAR DEFAUT, comme dans l app'
+  public.has_tenant_write_permission('b3333333-3333-3333-3333-333333333333', 'orders.take'),
+  'matrice: un caissier detient orders.take PAR DEFAUT (ancien orders.manage), comme dans l app'
 );
 
 select lives_ok(
-  $$update public.orders set status = 'ready'
+  $$update public.orders set status = 'delivered'
     where id = 'b4444444-4444-4444-4444-444444444444'$$,
-  'caisse: un caissier fait avancer une commande'
+  'caisse: un caissier fait avancer une commande (il la marque servie ; "prete" est un geste de cuisine)'
 );
 select is(
   (select status from public.orders where id = 'b4444444-4444-4444-4444-444444444444'),
-  'ready',
+  'delivered',
   'caisse: la commande a REELLEMENT avance (pas un refus masque)'
 );
 
@@ -281,16 +281,20 @@ select throws_ok(
 set local request.jwt.claims = '{"sub":"b7777777-7777-7777-7777-777777777777"}';
 
 select ok(
-  public.has_tenant_write_permission('b3333333-3333-3333-3333-333333333333', 'orders.manage'),
-  'matrice: un chef detient orders.manage par defaut'
+  public.has_tenant_write_permission('b3333333-3333-3333-3333-333333333333', 'kitchen.track'),
+  'matrice: un chef suit la cuisine par defaut (kitchen.track, ancien orders.manage)'
+);
+-- Lot 1 des roles (conception B.4): le chef GAGNE menu.edit et inventory.edit.
+-- Ce qu'il n'a toujours pas: prendre une commande et encaisser.
+select ok(
+  public.has_tenant_write_permission('b3333333-3333-3333-3333-333333333333', 'menu.edit')
+  AND NOT public.has_tenant_write_permission('b3333333-3333-3333-3333-333333333333', 'orders.take'),
+  'matrice: un chef modifie le menu mais ne prend PAS de commande'
 );
 select ok(
-  NOT public.has_tenant_write_permission('b3333333-3333-3333-3333-333333333333', 'menu.edit'),
-  'matrice: un chef ne modifie PAS le menu'
-);
-select ok(
-  NOT public.has_tenant_write_permission('b3333333-3333-3333-3333-333333333333', 'inventory.edit'),
-  'matrice: un chef ne modifie PAS les stocks par defaut (il faut une delegation)'
+  public.has_tenant_write_permission('b3333333-3333-3333-3333-333333333333', 'inventory.edit')
+  AND NOT public.has_tenant_write_permission('b3333333-3333-3333-3333-333333333333', 'orders.pay'),
+  'matrice: un chef saisit le stock mais n encaisse PAS'
 );
 
 set local request.jwt.claims = '{"sub":"b9999999-9999-9999-9999-999999999999"}';
@@ -303,11 +307,12 @@ select ok(
 );
 
 set local request.jwt.claims = '{"sub":"b2222222-2222-2222-2222-222222222222"}';
--- L'ecart qui allait dans le sens d'une PERMISSION DE TROP: la base laissait
--- un gerant ecrire les reglages alors que l'app le lui refuse.
+-- Lot 1 des roles (conception B.4): le gerant GAGNE settings.edit. Ce qui lui
+-- reste ferme: payer l'abonnement (billing.manage est limite aux factures).
 select ok(
-  NOT public.has_tenant_write_permission('b3333333-3333-3333-3333-333333333333', 'settings.edit'),
-  'matrice: un gerant n ecrit PAS les reglages (la base etait trop permissive)'
+  public.has_tenant_write_permission('b3333333-3333-3333-3333-333333333333', 'settings.edit')
+  AND NOT public.has_tenant_write_permission('b3333333-3333-3333-3333-333333333333', 'billing.manage'),
+  'matrice: un gerant ecrit les reglages mais ne paie PAS l abonnement'
 );
 select ok(
   public.has_tenant_write_permission('b3333333-3333-3333-3333-333333333333', 'menu.edit'),
@@ -320,8 +325,8 @@ select ok(
 set local request.jwt.claims = '{"sub":"b8888888-8888-8888-8888-888888888888"}';
 
 select ok(
-  NOT public.has_tenant_write_permission('b3333333-3333-3333-3333-333333333333', 'orders.manage'),
-  'retrait: un gerant a qui on RETIRE orders.manage reste refuse'
+  NOT public.has_tenant_write_permission('b3333333-3333-3333-3333-333333333333', 'orders.take'),
+  'retrait: un gerant a qui on RETIRE orders.manage (traduit en orders.take) reste refuse'
 );
 select ok(
   NOT public.has_tenant_money_permission('b3333333-3333-3333-3333-333333333333'),

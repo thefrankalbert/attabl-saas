@@ -305,16 +305,26 @@ describe('supplier import service (real DB)', () => {
     await db.from('suppliers').insert({ tenant_id: tenantBId, name: existingName });
 
     const newName = `Nouveau-${randomUUID().slice(0, 6)}`;
+    const badPhoneName = `Mauvais-${randomUUID().slice(0, 6)}`;
     const buffer = await buildXlsx([
       ['Name', 'Phone', 'Email'],
-      [existingName.toLowerCase(), '+225 99', 'up@x.ci'], // update (case-insensitive)
-      [newName, '+225 88', 'new@x.ci'], // insert
+      [existingName.toLowerCase(), '+225 07 08 09 10', 'up@x.ci'], // update (case-insensitive)
+      [newName, '+225 05 06 07 08', 'new@x.ci'], // insert
+      // Temoin negatif: 5 chiffres, refuse par phoneSchema (6 minimum).
+      [badPhoneName, '+225 99', 'bad@x.ci'],
     ]);
 
     const result = await svc.importFromExcel(tenantId, buffer);
     expect(result.suppliersUpdated).toBe(1);
     expect(result.suppliersCreated).toBe(1);
-    expect(result.errors).toHaveLength(0);
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]?.row).toBe(4);
+    const { data: badRows } = await db
+      .from('suppliers')
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .eq('name', badPhoneName);
+    expect(badRows).toHaveLength(0);
 
     const { data: updated } = await db
       .from('suppliers')
@@ -322,7 +332,7 @@ describe('supplier import service (real DB)', () => {
       .eq('tenant_id', tenantId)
       .ilike('name', existingName)
       .single();
-    expect(updated?.phone).toBe('+225 99');
+    expect(updated?.phone).toBe('+225 07 08 09 10');
 
     // Tenant B row untouched.
     const { data: bRow } = await db

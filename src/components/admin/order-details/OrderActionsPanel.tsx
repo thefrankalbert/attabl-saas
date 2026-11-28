@@ -7,6 +7,13 @@ import type { Order, OrderStatus, CurrencyCode } from '@/types/admin.types';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import OrderPaymentPanel from '../OrderPaymentPanel';
 import { CancelOrderButton } from './CancelOrderButton';
+import { cn } from '@/lib/utils';
+
+const STATUS_BUTTON_KEY = {
+  pending: 'statusButtonPending',
+  preparing: 'statusButtonPreparing',
+  ready: 'statusButtonReady',
+} as const;
 
 interface OrderActionsPanelProps {
   order: Order;
@@ -15,6 +22,11 @@ interface OrderActionsPanelProps {
   /** `orders.pay`: sans lui, la commande se marque servie au lieu d'etre encaissee. */
   canPay: boolean;
   canComp: boolean;
+  /**
+   * Le membre peut-il poser ce statut ? Meme regle que le serveur
+   * (`orderStatusRequirement`): "en preparation" et "pret" = `kitchen.track`.
+   */
+  canSetStatus: (status: OrderStatus) => boolean;
   currency: CurrencyCode;
   onUpdate: () => void;
   onStatusUpdate: (status: OrderStatus) => void;
@@ -30,6 +42,7 @@ export function OrderActionsPanel({
   isComp,
   canPay,
   canComp,
+  canSetStatus,
   currency,
   onUpdate,
   onStatusUpdate,
@@ -45,7 +58,11 @@ export function OrderActionsPanel({
   // doit rester encaissable. Une note payee en partie se solde dans le registre
   // ci-dessous (le bouton rapide ne sait regler qu'une note entiere intacte).
   const paymentStatus = order.payment_status ?? 'pending';
-  const showStatusButtons = order.status !== 'delivered' && order.status !== 'cancelled';
+  const open = order.status !== 'delivered' && order.status !== 'cancelled';
+  // Un bouton de statut n'est rendu que si le serveur l'acceptera.
+  const stepStatuses = (['pending', 'preparing', 'ready'] as const).filter(canSetStatus);
+  const canServe = canSetStatus('delivered');
+  const showStatusButtons = open && (stepStatuses.length > 0 || canServe);
   const showCheckout =
     !isComp && canPay && order.status !== 'cancelled' && paymentStatus === 'pending';
 
@@ -63,40 +80,25 @@ export function OrderActionsPanel({
             </p>
           )}
           <div className="grid grid-cols-1 gap-1.5">
-            {showStatusButtons && (
-              <>
+            {open &&
+              stepStatuses.map((status) => (
                 <Button
+                  key={status}
                   variant="outline"
                   size="sm"
-                  onClick={() => onStatusUpdate('pending')}
-                  disabled={loading || order.status === 'pending'}
+                  onClick={() => onStatusUpdate(status)}
+                  disabled={loading || order.status === status}
                   className="justify-start h-8 text-xs"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-status-warning mr-1.5" />
-                  {t('statusButtonPending')}
+                  <span
+                    className={cn(
+                      'w-1.5 h-1.5 rounded-full mr-1.5',
+                      status === 'ready' ? 'bg-status-success' : 'bg-status-warning',
+                    )}
+                  />
+                  {t(STATUS_BUTTON_KEY[status])}
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onStatusUpdate('preparing')}
-                  disabled={loading || order.status === 'preparing'}
-                  className="justify-start h-8 text-xs"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-status-warning mr-1.5" />
-                  {t('statusButtonPreparing')}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onStatusUpdate('ready')}
-                  disabled={loading || order.status === 'ready'}
-                  className="justify-start h-8 text-xs"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-status-success mr-1.5" />
-                  {t('statusButtonReady')}
-                </Button>
-              </>
-            )}
+              ))}
             {showCheckout && (
               <Button
                 size="sm"
@@ -111,7 +113,7 @@ export function OrderActionsPanel({
                 le caissier l'encaisse ensuite. Avec ce droit, le meme geste reste
                 offert des que rien n'est a encaisser par le bouton rapide
                 (payee, payee en partie, remboursee). */}
-            {showStatusButtons && (!canPay || paymentStatus !== 'pending') && (
+            {open && canServe && (!canPay || paymentStatus !== 'pending') && (
               <Button
                 variant="outline"
                 size="sm"

@@ -57,6 +57,8 @@ export interface MenuItemService {
   toggleAvailable(itemId: string, isAvailable: boolean, tenantId: string): Promise<void>;
   toggleFeatured(itemId: string, isFeatured: boolean, tenantId: string): Promise<void>;
   updatePrice(itemId: string, price: number, tenantId: string): Promise<void>;
+  /** Prix actuels d'un plat, pour comparer avant une ecriture sans `menu.price`. */
+  getPrices(itemId: string, tenantId: string): Promise<{ price: unknown; prices: unknown }>;
 }
 
 /**
@@ -181,6 +183,19 @@ export function createMenuItemService(supabase: SupabaseClient): MenuItemService
         await updateMenuItemScoped(supabase, itemId, tenantId, { price }),
         'Erreur lors de la mise a jour du prix',
       );
+    },
+
+    async getPrices(itemId: string, tenantId: string) {
+      const { data, error } = await supabase
+        .from('menu_items')
+        .select('price, prices')
+        .eq('id', itemId)
+        .eq('tenant_id', tenantId)
+        .is('deleted_at', null)
+        .maybeSingle();
+      if (error) throw new ServiceError('Erreur lors de la lecture du plat', 'INTERNAL', error);
+      if (!data) throw new ServiceError(ITEM_NOT_FOUND, 'NOT_FOUND');
+      return data as { price: unknown; prices: unknown };
     },
   };
 }

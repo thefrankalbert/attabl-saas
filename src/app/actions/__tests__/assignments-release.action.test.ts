@@ -2,8 +2,8 @@
  * Liberer une assignation: la garde de l'action serveur.
  *
  * Les routes /api/assignments ont ete supprimees (aucun appelant). Le seul
- * chemin restant est cette action: sa garde (appartenance au restaurant, role
- * de gerant, `orders.manage`) n'etait testee nulle part.
+ * chemin restant est cette action: sa garde (appartenance au restaurant et
+ * droit `settings.edit`, le plan de salle) n'etait testee nulle part.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -51,10 +51,10 @@ describe('actionReleaseAssignment', () => {
     expect(mockRelease).not.toHaveBeenCalled();
   });
 
-  it('exige un role de gerant ET orders.manage sur le restaurant vise', async () => {
+  it('exige settings.edit sur le restaurant vise', async () => {
     await actionReleaseAssignment(TENANT_A, ASSIGNMENT_OF_B);
 
-    expect(mockAuth).toHaveBeenCalledWith(TENANT_A, ['owner', 'admin', 'manager'], 'orders.manage');
+    expect(mockAuth).toHaveBeenCalledWith(TENANT_A, 'settings.edit');
   });
 
   it('libere en bornant au restaurant verifie (jamais un autre)', async () => {

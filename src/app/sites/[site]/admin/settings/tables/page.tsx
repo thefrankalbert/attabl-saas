@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function TablesPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
-  await requireAdminPermission(site, 'settings.view');
+  await requireAdminPermission(site, 'settings.edit');
   const supabase = await createClient();
 
   // --- Auth check --------------------------------------

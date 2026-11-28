@@ -4,6 +4,8 @@ import { useMemo, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { STATUS_STYLES } from '@/lib/design-tokens';
 import type { OrderStatus } from '@/lib/design-tokens';
+import { orderStatusRequirement } from '@/lib/admin-roles';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface OrderStatusConfigEntry {
   label: string;
@@ -22,6 +24,7 @@ export type GetOrderStatusConfig = (status: string | null | undefined) => OrderS
  */
 export function useOrderStatusConfig(): GetOrderStatusConfig {
   const t = useTranslations('orders');
+  const { can } = usePermissions();
 
   const statusConfig: Record<string, OrderStatusConfigEntry> = useMemo(() => {
     const pending: OrderStatusConfigEntry = {
@@ -77,16 +80,27 @@ export function useOrderStatusConfig(): GetOrderStatusConfig {
 
   // Safe lookup: unknown/null status falls back to a neutral terminal config
   // so the component never crashes on unexpected DB values.
+  // Le statut suivant n'est propose qu'a qui a le droit de le poser (meme
+  // regle que le serveur, `orderStatusRequirement`): un caissier ou un serveur
+  // ne voit pas "Preparer" ni "Pret", gestes de cuisine, mais garde "Servir".
   const getStatusConfig = useCallback<GetOrderStatusConfig>(
-    (status) =>
-      (status && statusConfig[status]) || {
-        label: status ?? '-',
-        bg: 'bg-app-elevated',
-        text: 'text-app-text-muted',
-        nextStatus: null as OrderStatus | null,
-        nextLabel: null as string | null,
-      },
-    [statusConfig],
+    (status) => {
+      const entry = status ? statusConfig[status] : undefined;
+      if (!entry) {
+        return {
+          label: status ?? '-',
+          bg: 'bg-app-elevated',
+          text: 'text-app-text-muted',
+          nextStatus: null,
+          nextLabel: null,
+        };
+      }
+      if (entry.nextStatus && !can(orderStatusRequirement(entry.nextStatus))) {
+        return { ...entry, nextStatus: null, nextLabel: null };
+      }
+      return entry;
+    },
+    [statusConfig, can],
   );
 
   return getStatusConfig;

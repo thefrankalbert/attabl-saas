@@ -39,7 +39,7 @@ values
 insert into public.tenants (id, slug, name, is_active)
 values ('f5555555-5555-4555-8555-555555555555', 'tenant-orders-pay', 'Tenant Pay', true);
 
-insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, custom_permissions)
+insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, permission_overrides)
 values
   (gen_random_uuid(), 'f5555555-5555-4555-8555-555555555555',
    'f1111111-1111-1111-1111-111111111111', 'serveur.pay@test.local', 'waiter', true, null),
@@ -50,13 +50,13 @@ values
   -- Caissier a qui le proprietaire a RETIRE l'argent: la surcharge tranche.
   (gen_random_uuid(), 'f5555555-5555-4555-8555-555555555555',
    'f4444444-4444-4444-4444-444444444444', 'caissier.retire@test.local', 'cashier', true,
-   '{"orders.pay": false}'::jsonb),
+   '{"orders.pay": false, "orders.discount": false, "orders.refund": false}'::jsonb),
   (gen_random_uuid(), 'f5555555-5555-4555-8555-555555555555',
    'f7777777-7777-7777-7777-777777777777', 'gerant.pay@test.local', 'manager', true, null),
   -- Gerant a qui le proprietaire a RETIRE l'argent: il garde orders.manage.
   (gen_random_uuid(), 'f5555555-5555-4555-8555-555555555555',
    'f8888888-8888-8888-8888-888888888888', 'gerant.retire@test.local', 'manager', true,
-   '{"orders.pay": false}'::jsonb);
+   '{"orders.pay": false, "orders.discount": false, "orders.refund": false}'::jsonb);
 
 insert into public.orders (id, tenant_id, order_number, subtotal, total, status, payment_status)
 values
@@ -101,8 +101,8 @@ set local role authenticated;
 set local request.jwt.claims = '{"sub":"f1111111-1111-1111-1111-111111111111"}';
 
 select ok(
-  public.has_tenant_write_permission('f5555555-5555-4555-8555-555555555555', 'orders.manage'),
-  'matrice: un serveur detient orders.manage par defaut'
+  public.has_tenant_write_permission('f5555555-5555-4555-8555-555555555555', 'orders.take'),
+  'matrice: un serveur detient orders.take par defaut (ancien orders.manage)'
 );
 select ok(
   NOT public.has_tenant_write_permission('f5555555-5555-4555-8555-555555555555', 'orders.pay'),
@@ -239,8 +239,8 @@ select ok(
   'retrait: un caissier a qui on retire orders.pay ne le detient plus'
 );
 select ok(
-  public.has_tenant_write_permission('f5555555-5555-4555-8555-555555555555', 'orders.manage'),
-  'retrait: il garde orders.manage (il fait toujours avancer les commandes)'
+  public.has_tenant_write_permission('f5555555-5555-4555-8555-555555555555', 'orders.take'),
+  'retrait: il garde orders.take (il fait toujours avancer les commandes)'
 );
 select throws_ok(
   $$insert into public.payments (tenant_id, order_id, amount, method, status)

@@ -41,10 +41,17 @@ function planRank(plan: string): number {
 export function SubscriptionManager({
   tenant,
   siteSlug,
+  canPay,
   mobileMoney = false,
 }: {
   tenant: Tenant;
   siteSlug: string;
+  /**
+   * `billing.manage` ENTIER (le proprietaire). Le gerant ouvre la page avec le
+   * niveau borne: il voit la formule, pas les gestes de paiement, que les
+   * routes lui refuseraient (403).
+   */
+  canPay: boolean;
   /** Paiement par mobile money ou carte (Flutterwave) propose: devise XOF/XAF et cles configurees. */
   mobileMoney?: boolean;
 }) {
@@ -160,57 +167,61 @@ export function SubscriptionManager({
           }
           billingInterval={billingInterval}
           hasSubscription={hasSubscription}
-          canOpenPortal={billingCapabilities().hostedPortal}
+          canOpenPortal={canPay && billingCapabilities().hostedPortal}
           isBillingLoading={isBillingLoading}
           onManageBilling={handleManageBilling}
         />
       </div>
 
-      <div className="mt-5 min-h-0 flex-1 overflow-y-auto scrollbar-hide">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="shrink-0 text-sm font-semibold text-app-text">
-            {t('subscription.changePlan')}
-          </h2>
-          <BillingIntervalToggle value={billingInterval} onChange={setBillingInterval} />
-        </div>
-        {payByMobileMoney && (
-          <p className="mb-4 text-xs text-app-text-muted">{t('subscription.mobileMoneyHint')}</p>
-        )}
+      {canPay ? (
+        <div className="mt-5 min-h-0 flex-1 overflow-y-auto scrollbar-hide">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="shrink-0 text-sm font-semibold text-app-text">
+              {t('subscription.changePlan')}
+            </h2>
+            <BillingIntervalToggle value={billingInterval} onChange={setBillingInterval} />
+          </div>
+          {payByMobileMoney && (
+            <p className="mb-4 text-xs text-app-text-muted">{t('subscription.mobileMoneyHint')}</p>
+          )}
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {SELF_SERVICE_PLANS.map((plan) => (
-            <PlanCard
-              key={plan}
-              plan={plan}
-              features={PLAN_FEATURES[plan]}
-              includesPlan={INCLUDES_PLAN[plan]}
-              billingInterval={billingInterval}
-              isCurrent={currentPlan === plan}
-              isRecommended={plan === RECOMMENDED_PLAN && planRank(plan) > planRank(currentPlan)}
-              isLoading={isLoading === plan}
-              disabled={isLoading !== null || isBillingLoading}
-              onChoose={() => handleChangePlan(plan)}
-              ctaLabel={
-                payByMobileMoney
-                  ? t(
-                      currentPlan === plan && currentStatus === 'active'
-                        ? 'subscription.renewMobileMoney'
-                        : 'subscription.payMobileMoney',
-                    )
-                  : !hasSubscription && currentPlan === plan
-                    ? t('subscription.subscribeTo', { plan: PLAN_NAMES[plan] })
-                    : undefined
-              }
-              // Sans abonnement (essai, gele, resilie), la formule actuelle se paie aussi.
-              repayable={!hasSubscription}
-            />
-          ))}
-        </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {SELF_SERVICE_PLANS.map((plan) => (
+              <PlanCard
+                key={plan}
+                plan={plan}
+                features={PLAN_FEATURES[plan]}
+                includesPlan={INCLUDES_PLAN[plan]}
+                billingInterval={billingInterval}
+                isCurrent={currentPlan === plan}
+                isRecommended={plan === RECOMMENDED_PLAN && planRank(plan) > planRank(currentPlan)}
+                isLoading={isLoading === plan}
+                disabled={isLoading !== null || isBillingLoading}
+                onChoose={() => handleChangePlan(plan)}
+                ctaLabel={
+                  payByMobileMoney
+                    ? t(
+                        currentPlan === plan && currentStatus === 'active'
+                          ? 'subscription.renewMobileMoney'
+                          : 'subscription.payMobileMoney',
+                      )
+                    : !hasSubscription && currentPlan === plan
+                      ? t('subscription.subscribeTo', { plan: PLAN_NAMES[plan] })
+                      : undefined
+                }
+                // Sans abonnement (essai, gele, resilie), la formule actuelle se paie aussi.
+                repayable={!hasSubscription}
+              />
+            ))}
+          </div>
 
-        <div className="mt-3 pb-4">
-          <EnterpriseStrip supportHref={`/sites/${siteSlug}/admin/support`} />
+          <div className="mt-3 pb-4">
+            <EnterpriseStrip supportHref={`/sites/${siteSlug}/admin/support`} />
+          </div>
         </div>
-      </div>
+      ) : (
+        <p className="mt-5 text-sm text-app-text-secondary">{t('subscription.ownerPaysOnly')}</p>
+      )}
     </div>
   );
 }
