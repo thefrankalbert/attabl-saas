@@ -736,7 +736,7 @@
             },
             "truck": {
               "title": "Delivery orders",
-              "desc": "Track runs and drivers."
+              "desc": "Orders with a delivery address, tracked like any other."
             },
             "bed": {
               "title": "Room service",
@@ -1923,6 +1923,7 @@
       "restaurantPlaceholder": "The Garden",
       "termsNote": "By creating an account, you accept the <terms>terms of use</terms> and the <privacy>privacy policy</privacy>.",
       "trialNote": "14 days free - no commitment",
+      "legalNotice": "<terms>Terms of use</terms> and <privacy>privacy</privacy>",
       "accountDeletedSuccess": "Done: your account is deleted. Thank you for working with ATTABL."
     },
     "confirm": {
@@ -5929,7 +5930,8 @@
       "reset": "A fresh password, and back to work.",
       "invite": "Your team is waiting on the floor.",
       "unauthorized": "Every venue has its own keys.",
-      "emailChange": "An up-to-date address, and on we go."
+      "emailChange": "An up-to-date address, and on we go.",
+      "unsubscribe": "Your inbox, your rules."
     }
   },
   "accountDeletion": {
@@ -6007,5 +6009,22 @@
       "invalidInput": "Type the 6 digits of the code.",
       "unauthenticated": "Your session has expired. Sign in again."
     }
+  },
+  "unsubscribe": {
+    "metaTitle": "Unsubscribe - ATTABL",
+    "title": "Fewer emails?",
+    "subtitle": "One click, and ATTABL stops its tips and trial reminders. Emails your account needs keep coming: password, payment, stock alerts.",
+    "confirm": "Unsubscribe me",
+    "doneTitle": "Done.",
+    "doneBody": "You will no longer get our reminders at this address. Changed your mind?",
+    "resubscribe": "Subscribe me again",
+    "resubscribedTitle": "You are subscribed again.",
+    "resubscribedBody": "Our tips will be back in your inbox.",
+    "unsubscribeAgain": "Unsubscribe me again",
+    "invalidTitle": "This link does not work.",
+    "invalidBody": "It is incomplete or damaged. Open it from the email you received, or write to us at support@attabl.com.",
+    "error": "That did not work. Try again in a moment.",
+    "rateLimited": "Too many tries. Wait a minute, then try again.",
+    "backHome": "Back to home"
   }
 }

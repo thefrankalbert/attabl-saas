@@ -736,7 +736,7 @@
             },
             "truck": {
               "title": "Commandes en livraison",
-              "desc": "Suivi des courses et des livreurs."
+              "desc": "Commandes avec adresse de livraison, suivies comme les autres."
             },
             "bed": {
               "title": "Service en chambre",
@@ -1923,6 +1923,7 @@
       "restaurantPlaceholder": "Le Jardin",
       "termsNote": "En créant un compte, vous acceptez les <terms>conditions d'utilisation</terms> et la <privacy>politique de confidentialité</privacy>.",
       "trialNote": "14 jours gratuits - aucun engagement",
+      "legalNotice": "<terms>Conditions d'utilisation</terms> et <privacy>confidentialité</privacy>",
       "accountDeletedSuccess": "C'est fait : votre compte est supprimé. Merci d'avoir travaillé avec ATTABL."
     },
     "confirm": {
@@ -5929,7 +5930,8 @@
       "reset": "Un mot de passe neuf, et on reprend.",
       "invite": "Votre équipe vous attend en salle.",
       "unauthorized": "Chaque établissement a ses clés.",
-      "emailChange": "Une adresse à jour, et on continue."
+      "emailChange": "Une adresse à jour, et on continue.",
+      "unsubscribe": "Vos e-mails, vos règles."
     }
   },
   "accountDeletion": {
@@ -6007,5 +6009,22 @@
       "invalidInput": "Tapez les 6 chiffres du code.",
       "unauthenticated": "Votre session a expiré. Reconnectez-vous."
     }
+  },
+  "unsubscribe": {
+    "metaTitle": "Se désabonner - ATTABL",
+    "title": "Moins d'e-mails ?",
+    "subtitle": "Un clic, et ATTABL arrête ses conseils et ses rappels d'essai. Les e-mails utiles à votre compte continuent d'arriver : mot de passe, paiement, alertes de stock.",
+    "confirm": "Me désabonner",
+    "doneTitle": "C'est fait.",
+    "doneBody": "Vous ne recevrez plus nos relances à cette adresse. Vous avez changé d'avis ?",
+    "resubscribe": "Me réabonner",
+    "resubscribedTitle": "Vous êtes réabonné.",
+    "resubscribedBody": "Nos conseils reviendront dans votre boîte.",
+    "unsubscribeAgain": "Me désabonner à nouveau",
+    "invalidTitle": "Ce lien ne marche pas.",
+    "invalidBody": "Il est incomplet ou abîmé. Ouvrez-le depuis l'e-mail reçu, ou écrivez-nous à support@attabl.com.",
+    "error": "Ça n'a pas marché. Réessayez dans un instant.",
+    "rateLimited": "Trop d'essais. Patientez une minute, puis réessayez.",
+    "backHome": "Retour à l'accueil"
   }
 }

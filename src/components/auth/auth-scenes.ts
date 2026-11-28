@@ -19,6 +19,7 @@ export const AUTH_SCENES = {
   emailChange: [photo('accueil')],
   invite: [photo('service')],
   unauthorized: [photo('bar')],
+  unsubscribe: [photo('salle')],
 } as const satisfies Record<string, readonly string[]>;
 
 export type AuthScene = keyof typeof AUTH_SCENES;

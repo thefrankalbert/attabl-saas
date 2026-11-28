@@ -19,6 +19,11 @@ import {
 } from '../email-suppression.service';
 import { createEmailService } from '../email.service';
 
+const DESINSCRIPTION = {
+  pageUrl: 'https://attabl.com/unsubscribe?t=jeton',
+  oneClickUrl: 'https://attabl.com/api/email/unsubscribe?t=jeton',
+};
+
 /** Faux client limite a la table `adresses_email_bloquees`, tenue en memoire. */
 function fausseBase() {
   const lignes = new Map<string, { raison: string }>();
@@ -111,6 +116,7 @@ describe('liste des adresses bloquees', () => {
     const r = await emails.sendTrialIdleEmail('vivante@exemple.com', {
       restaurantName: 'Le Jardin',
       dashboardUrl: 'https://attabl.com/admin',
+      unsubscribe: DESINSCRIPTION,
     });
     expect(r.success).toBe(true);
     expect(envoyer).toHaveBeenCalledTimes(1);
@@ -125,6 +131,7 @@ describe('liste des adresses bloquees', () => {
     const r = await emails.sendTrialIdleEmail('vivante@exemple.com', {
       restaurantName: 'Le Jardin',
       dashboardUrl: 'https://attabl.com/admin',
+      unsubscribe: DESINSCRIPTION,
     });
     expect(r.success).toBe(true);
   });
@@ -134,6 +141,7 @@ describe('liste des adresses bloquees', () => {
     await emails.sendTrialIdleEmail('a@exemple.com', {
       restaurantName: 'Le Jardin',
       dashboardUrl: 'https://attabl.com/admin',
+      unsubscribe: DESINSCRIPTION,
     });
     await emails.sendNewLoginEmail('a@exemple.com', {
       dateLabel: '24 novembre 2026 a 10:00 (heure GMT)',
@@ -150,6 +158,7 @@ describe('liste des adresses bloquees', () => {
     await emails.sendTrialIdleEmail('a@exemple.com', {
       restaurantName: 'Le Jardin',
       dashboardUrl: 'https://attabl.com/admin',
+      unsubscribe: DESINSCRIPTION,
     });
     expect(envoyer.mock.calls[0][0].from).toBe('ATTABL <noreply@attabl.com>');
   });
