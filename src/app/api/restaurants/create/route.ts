@@ -86,10 +86,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Données invalides', details: errors }, { status: 400 });
     }
 
-    // F1. `plan` est volontairement IGNORE, meme s'il est encore accepte par le
-    // schema (le formulaire l'envoie). Un plan payant ne s'obtient que par un
-    // paiement Stripe abouti, via le webhook. Le lire ici revenait a laisser le
-    // client choisir ce qu'il facture.
+    // F1. Le client ne choisit pas sa formule ici: le schema n'a plus de champ
+    // `plan` (l'assistant ne la propose plus, audit d'equipe du 2026-11-27). Un
+    // plan payant ne s'obtient que par un paiement Stripe abouti, via le webhook.
+    // Le service decide ensuite essai ou attente d'abonnement (trialMode).
     const { name, type, slug: requestedSlug } = parseResult.data;
     const plan = 'trial';
 

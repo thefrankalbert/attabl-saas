@@ -11,6 +11,7 @@ export const revalidate = 3600; // ISR
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('marketing.solutions');
   return {
+    alternates: { canonical: '/solutions' },
     title: t('metaTitle'),
     description: t('metaDescription'),
   };

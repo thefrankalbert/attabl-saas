@@ -47,7 +47,7 @@ insert into public.platform_settings (key, value) values
 -- 1. cron_heartbeats: service_role seulement (3)
 -- ===========================================================================
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"e2222222-2222-2222-2222-222222222222"}';
+set local request.jwt.claims = '{"sub":"e2222222-2222-2222-2222-222222222222","aal":"aal2"}';
 select throws_ok(
   $$select count(*) from public.cron_heartbeats$$,
   '42501', null,
@@ -101,7 +101,7 @@ select is(
 );
 
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"e2222222-2222-2222-2222-222222222222"}';
+set local request.jwt.claims = '{"sub":"e2222222-2222-2222-2222-222222222222","aal":"aal2"}';
 select lives_ok(
   $$update public.platform_settings set value = '{"phone": "+237 6 99 00 11 22"}'
     where key = 'support_contact'$$,
@@ -129,7 +129,7 @@ select is(
 
 delete from public.platform_settings;
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"e2222222-2222-2222-2222-222222222222"}';
+set local request.jwt.claims = '{"sub":"e2222222-2222-2222-2222-222222222222","aal":"aal2"}';
 select lives_ok(
   $$insert into public.platform_settings (key, value) values ('support_contact', '{"phone": "+221 77 000 00 00"}')$$,
   'super admin: ajoute le numero du support'

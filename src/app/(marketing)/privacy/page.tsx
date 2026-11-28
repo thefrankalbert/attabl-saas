@@ -41,6 +41,7 @@ const COMPANY_LABEL_KEYS = {
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('marketing.privacy');
   return {
+    alternates: { canonical: '/privacy' },
     title: t('metaTitle'),
     description: t('metaDescription'),
   };

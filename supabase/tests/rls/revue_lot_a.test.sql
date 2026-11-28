@@ -150,7 +150,7 @@ select set_config('request.jwt.claims', '{"sub":"a2222222-2222-4222-8222-2222222
 select lives_ok(
   $$ select reassign_order_table('0a000000-0000-4000-8000-000000000005', 'aa000000-0000-4000-8000-000000000001', 'T5') $$,
   'A15 temoin: avec orders.manage, le deplacement passe');
-select set_config('request.jwt.claims', '{"sub":"a4444444-4444-4444-8444-444444444444","role":"authenticated"}', true);
+select set_config('request.jwt.claims', '{"sub":"a4444444-4444-4444-8444-444444444444","role":"authenticated","aal":"aal2"}', true);
 select lives_ok(
   $$ select reassign_order_table('0a000000-0000-4000-8000-000000000005', 'aa000000-0000-4000-8000-000000000001', 'T6') $$,
   'A15: le super administrateur non membre deplace une commande, comme le permet l action');

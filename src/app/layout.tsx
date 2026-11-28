@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   applicationName: 'ATTABL',
   title: 'Attabl - Menu digital & gestion pour la restauration',
   description:
-    "La plateforme tout-en-un pour la restauration et l'hôtellerie en Afrique. Menu, commandes, stock, analytics en temps réel.",
+    "Caisse, commandes, menu QR et stock pour les restaurants et hôtels d'Afrique francophone. Tout se suit en temps réel.",
   manifest: '/manifest.json',
   // Lets iOS Safari (which ignores most of the web manifest) install ATTABL as a
   // full-screen home-screen app - key for the offline tablet use case.
@@ -54,9 +54,6 @@ export const metadata: Metadata = {
   },
   formatDetection: {
     telephone: false,
-  },
-  alternates: {
-    canonical: '/',
   },
   // Prevent Chrome/Edge auto-translate from mangling the UI (the app handles
   // i18n internally via next-intl, browser translation produces garbage like
