@@ -12,7 +12,15 @@ import { getSegmentFamily } from '@/lib/segment-terms';
 import { UpdateAvailableBanner } from '@/components/admin/UpdateAvailableBanner';
 import type { SettingsTab } from './SettingsDialog';
 import type { TenantSwitchOption } from '@/types/tenant-switch.types';
-import { MAIN, CATALOGUE, GESTION, ANALYSE, isPathActive, type ShellNavItem } from './shell-nav';
+import {
+  MAIN,
+  CATALOGUE,
+  MARKETING,
+  GESTION,
+  ANALYSE,
+  activeNavPath,
+  type ShellNavItem,
+} from './shell-nav';
 import { ShellBrandSwitcher } from './ShellBrandSwitcher';
 import { ShellAccountMenu } from './ShellAccountMenu';
 import { SidebarPlanCard } from './SidebarPlanCard';
@@ -91,8 +99,16 @@ export function ShellSidebar({
 
   const main = visible(MAIN);
   const catalogue = visible(CATALOGUE);
+  const marketing = visible(MARKETING);
   const gestion = visible(GESTION);
   const analyse = visible(ANALYSE);
+  const activePath = activeNavPath(pathname, basePath, [
+    ...main,
+    ...catalogue,
+    ...marketing,
+    ...gestion,
+    ...analyse,
+  ]);
 
   const initials =
     (userName || tenant.name)
@@ -111,7 +127,7 @@ export function ShellSidebar({
 
   const renderItem = (item: ShellNavItem) => {
     const Icon = item.icon;
-    const active = isPathActive(pathname, basePath, item.path);
+    const active = item.path === activePath;
     const text = label(item.labelKey);
     return (
       <Link
@@ -198,6 +214,7 @@ export function ShellSidebar({
           </div>
 
           {renderGroup('secCatalogue', catalogue)}
+          {renderGroup('groupMarketing', marketing)}
           {renderGroup('secGestion', gestion)}
           {renderGroup('groupAnalyse', analyse)}
         </div>

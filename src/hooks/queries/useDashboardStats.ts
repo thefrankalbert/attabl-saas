@@ -4,30 +4,28 @@ import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
 import { getDayStartInZone } from '@/lib/timezones';
-import {
-  averageLedgerTicket,
-  ledgerValue,
-  PAYMENT_STATUSES_WITH_MONEY,
-  sumLedgerNet,
-  type LedgerRow,
-} from '@/lib/orders/revenue';
-import { CHART_PALETTE, CHART_NEUTRAL } from '@/lib/design-tokens';
-import type {
-  DashboardStats,
-  Order,
-  CategoryBreakdown,
-  HourlyOrderCount,
-  SparklinePoint,
-} from '@/types/admin.types';
+import { averageLedgerTicket, sumLedgerNet, type LedgerRow } from '@/lib/orders/revenue';
+import type { DashboardStats, Order } from '@/types/admin.types';
 
 interface DashboardData {
   stats: DashboardStats;
   recentOrders: Order[];
-  categoryBreakdown: CategoryBreakdown[];
-  hourlyOrders: HourlyOrderCount[];
-  revenueSparkline: SparklinePoint[];
-  ordersSparkline: SparklinePoint[];
-  itemsSparkline: SparklinePoint[];
+  /**
+   * Nombre TOTAL de commandes de la periode. La liste s'arrete a
+   * RECENT_ORDERS_LIMIT: l'ecart est annonce au lieu d'etre tu (contre-audit
+   * du lot 4, meme defaut que DASH-03).
+   */
+  recentOrdersTotal: number;
+}
+
+/** Periodes du selecteur de l'en-tete (`?range=`). */
+export type DashboardRange = 'today' | 'yesterday' | '7d' | '30d';
+
+/** Lignes de la liste des commandes, pour la periode choisie. */
+export const RECENT_ORDERS_LIMIT = 200;
+
+export function parseDashboardRange(value: string | null | undefined): DashboardRange {
+  return value === 'yesterday' || value === '7d' || value === '30d' ? value : 'today';
 }
 
 /** Debut de journee du restaurant; sans fuseau connu, minuit de l'appareil (ancien comportement). */
@@ -74,18 +72,33 @@ export function useDashboardStats(
   canViewRevenue: boolean,
   initialData?: DashboardData,
   timeZone?: string,
+  /**
+   * Periode de la liste des commandes. Elle est lue EN BASE, dans le fuseau du
+   * restaurant: le selecteur filtrait les 12 dernieres commandes deja chargees,
+   * a minuit de l'appareil ("Hier: 0 commande" des la 13e commande du jour).
+   * Audit d'equipe du 2026-11-27, dashboard N1.
+   */
+  range: DashboardRange = 'today',
 ) {
   return useQuery<DashboardData>({
-    queryKey: ['dashboard-stats', tenantId, canViewRevenue],
+    queryKey: ['dashboard-stats', tenantId, canViewRevenue, range],
     queryFn: async () => {
       const supabase = createClient();
       // Meme journee que la page serveur: celle du restaurant (audit R-02).
       const today = dayStart(timeZone, 0);
       const yesterday = dayStart(timeZone, 1);
-      const sevenDaysAgo = dayStart(timeZone, 7);
+      const rangeStart =
+        range === 'yesterday'
+          ? yesterday
+          : range === '7d'
+            ? dayStart(timeZone, 6)
+            : range === '30d'
+              ? dayStart(timeZone, 29)
+              : today;
+      const rangeEnd = range === 'yesterday' ? today : null;
 
       // -- Fire all queries in parallel with individual error isolation --
-      const [ordersRes, itemsRes, venuesRes, recentRes, yesterdayRes, weekRes] = await Promise.all([
+      const [ordersRes, itemsRes, venuesRes, recentRes, yesterdayRes] = await Promise.all([
         // Today's orders for stats
         safeQuery(
           () =>
@@ -117,20 +130,21 @@ export function useDashboardStats(
               .eq('is_active', true),
           'activeVenues',
         ),
-        // Recent orders with items
-        safeQuery(
-          () =>
-            supabase
-              .from('orders')
-              .select(
-                `id, order_number, table_number, status, total, tip_amount, created_at, service_type, payment_status,
-                 order_items(id, quantity, price_at_order, menu_items(name))`,
-              )
-              .eq('tenant_id', tenantId)
-              .order('created_at', { ascending: false })
-              .limit(12),
-          'recentOrders',
-        ),
+        // Commandes de la periode choisie, avec leurs plats
+        safeQuery(() => {
+          const query = supabase
+            .from('orders')
+            .select(
+              `id, order_number, table_number, status, total, tip_amount, created_at, service_type, payment_status,
+               order_items(id, quantity, price_at_order, menu_items(name))`,
+              { count: 'exact' },
+            )
+            .eq('tenant_id', tenantId)
+            .gte('created_at', rangeStart.toISOString());
+          return (rangeEnd ? query.lt('created_at', rangeEnd.toISOString()) : query)
+            .order('created_at', { ascending: false })
+            .limit(RECENT_ORDERS_LIMIT);
+        }, 'recentOrders'),
         // Yesterday's orders for trend comparison
         safeQuery(
           () =>
@@ -142,22 +156,12 @@ export function useDashboardStats(
               .lt('created_at', today.toISOString()),
           'yesterdayOrders',
         ),
-        // Last 7 days for sparklines
-        safeQuery(
-          () =>
-            supabase
-              .from('orders')
-              .select('id, created_at, status, payment_status')
-              .eq('tenant_id', tenantId)
-              .gte('created_at', sevenDaysAgo.toISOString()),
-          'weekOrders',
-        ),
       ]);
 
       // Money received (payments ledger, owner decision C-041 - see
       // src/lib/orders/revenue.ts). Not even requested without `reports.money`.
       type LedgerEntry = LedgerRow & { order_id?: string | null; created_at?: string };
-      const weekPaymentsRes = !canViewRevenue
+      const recentPaymentsRes = !canViewRevenue
         ? { data: null, count: null }
         : await safeQuery<LedgerEntry[]>(
             () =>
@@ -165,38 +169,17 @@ export function useDashboardStats(
                 .from('payments')
                 .select('order_id, amount, status, created_at')
                 .eq('tenant_id', tenantId)
-                .gte('created_at', sevenDaysAgo.toISOString()),
-            'weekPayments',
+                .gte('created_at', yesterday.toISOString()),
+            'recentPayments',
           );
-      const weekPayments = weekPaymentsRes.data || [];
+      const recentPayments = recentPaymentsRes.data || [];
       const paymentsBetween = (from: Date, to?: Date) =>
-        weekPayments.filter((p) => {
+        recentPayments.filter((p) => {
           const at = p.created_at ? new Date(p.created_at) : null;
           return !!at && at >= from && (!to || at < to);
         });
       const todayPayments = paymentsBetween(today);
       const yesterdayPayments = paymentsBetween(yesterday, today);
-
-      // Category query is non-critical - fire separately so it never blocks core data.
-      // Bounded to today (matches revenueToday semantics: the donut breaks down today's
-      // revenue by category) and capped so an all-time order_items join can never grow
-      // unbounded as a tenant accumulates history.
-      // Repartition du chiffre d'affaires: pas demandee sans `reports.money`.
-      const categoryRes = !canViewRevenue
-        ? { data: null, count: null }
-        : await safeQuery(
-            () =>
-              supabase
-                .from('order_items')
-                .select(
-                  'quantity, price_at_order, menu_items!inner(categories!inner(name)), orders!inner(tenant_id, created_at, payment_status)',
-                )
-                .eq('orders.tenant_id', tenantId)
-                .in('orders.payment_status', [...PAYMENT_STATUSES_WITH_MONEY])
-                .gte('orders.created_at', today.toISOString())
-                .limit(2000),
-            'categoryBreakdown',
-          );
 
       // -- Build stats from isolated results --
       const ordersData = (ordersRes.data || []) as unknown as Array<Record<string, unknown>>;
@@ -259,89 +242,15 @@ export function useDashboardStats(
         );
       }
 
-      // -- Sparklines: group 7-day orders by date --
-      const weekOrders = (weekRes.data || []) as unknown as Array<Record<string, unknown>>;
-      const dayBuckets: Record<string, { revenue: number; count: number }> = {};
-      for (let i = 0; i < 7; i++) {
-        const d = new Date();
-        d.setDate(d.getDate() - (6 - i));
-        const key = d.toISOString().slice(0, 10);
-        dayBuckets[key] = { revenue: 0, count: 0 };
-      }
-      for (const o of weekOrders) {
-        const key = (o.created_at as string)?.slice(0, 10);
-        if (key && dayBuckets[key]) {
-          // count = orders placed (all).
-          dayBuckets[key].count++;
-        }
-      }
-      for (const p of weekPayments) {
-        // revenue = money received that day (ledger).
-        const key = p.created_at?.slice(0, 10);
-        if (key && dayBuckets[key]) dayBuckets[key].revenue += ledgerValue(p);
-      }
-      const bucketValues = Object.values(dayBuckets);
-      const revenueSparkline: SparklinePoint[] = canViewRevenue
-        ? bucketValues.map((b) => ({ value: b.revenue }))
-        : [];
-      const ordersSparkline: SparklinePoint[] = bucketValues.map((b) => ({
-        value: b.count,
-      }));
-      const itemsSparkline: SparklinePoint[] = []; // No per-day item count available
-
-      // -- Hourly orders: group today's orders by hour --
-      const hourlyMap: Record<number, number> = {};
-      for (let h = 8; h <= 22; h++) hourlyMap[h] = 0;
-      for (const o of ordersData) {
-        if (o.created_at) {
-          const hour = new Date(o.created_at as string).getHours();
-          if (hourlyMap[hour] !== undefined) hourlyMap[hour]++;
-        }
-      }
-      const hourlyOrders: HourlyOrderCount[] = Object.entries(hourlyMap).map(([h, count]) => ({
-        hour: `${h}h`,
-        count,
-      }));
-
-      // -- Category breakdown (non-critical) --
-      const categoryMap: Record<string, number> = {};
-      const categoryItems = (categoryRes.data || []) as Array<Record<string, unknown>>;
-      for (const item of categoryItems) {
-        const menuItem = item.menu_items as Record<string, unknown> | null;
-        const category = menuItem?.categories as Record<string, unknown> | null;
-        const name = (category?.name as string) || 'Autres';
-        const revenue = Number(item.quantity || 0) * Number(item.price_at_order || 0);
-        categoryMap[name] = (categoryMap[name] || 0) + revenue;
-      }
-      const sortedCategories = Object.entries(categoryMap).sort(([, a], [, b]) => b - a);
-      const top3 = sortedCategories.slice(0, 3);
-      const othersValue = sortedCategories.slice(3).reduce((sum, [, v]) => sum + v, 0);
-      const categoryBreakdown: CategoryBreakdown[] = top3.map(([name, value], i) => ({
-        name,
-        value,
-        color: CHART_PALETTE[i % CHART_PALETTE.length],
-      }));
-      if (othersValue > 0) {
-        categoryBreakdown.push({
-          name: 'Autres',
-          value: othersValue,
-          // Neutral gray on purpose: "Autres" is a catch-all bucket, not a category.
-          color: CHART_NEUTRAL,
-        });
-      }
-
       return {
         stats,
         recentOrders,
-        categoryBreakdown,
-        hourlyOrders,
-        revenueSparkline,
-        ordersSparkline,
-        itemsSparkline,
+        recentOrdersTotal: recentRes.count ?? recentOrders.length,
       };
     },
     enabled: !!tenantId,
-    initialData,
+    // Le serveur ne precharge que la periode "Aujourd'hui".
+    initialData: range === 'today' ? initialData : undefined,
     staleTime: 30_000,
     refetchInterval: 30_000,
   });

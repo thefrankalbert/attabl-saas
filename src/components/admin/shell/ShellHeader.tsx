@@ -2,6 +2,7 @@
 
 import { PanelLeft, Sun, Moon, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { TopbarSearch } from '../topbar/TopbarSearch';
 import { HeaderDateFilter } from './HeaderDateFilter';
@@ -23,6 +24,12 @@ export function ShellHeader({
   notifications,
 }: ShellHeaderProps) {
   const t = useTranslations('common');
+  // Le selecteur de periode n'agit que sur le tableau de bord: affiche sur les
+  // autres pages, il promettait un filtre sans effet (audit d'equipe du
+  // 2026-11-27, dashboard N2). Tableau de bord = `/sites/<slug>/admin` ou
+  // `/admin` sur le sous-domaine.
+  const pathname = usePathname();
+  const onDashboard = /^(\/sites\/[^/]+)?\/admin\/?$/.test(pathname);
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-2 border-b border-[var(--border)] px-4">
@@ -63,7 +70,7 @@ export function ShellHeader({
         >
           <Search className="size-4" />
         </Button>
-        <HeaderDateFilter isDark={isDark} />
+        {onDashboard && <HeaderDateFilter isDark={isDark} />}
         {notifications}
         <Button
           type="button"
