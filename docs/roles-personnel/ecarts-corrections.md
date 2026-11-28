@@ -17,7 +17,7 @@ Identifiants : S = audit de securite, R = audit de regression, C = audit de conf
 | S-L3 la garde du proprietaire ne couvre pas la desactivation     | corrige                     | la base refuse `is_active = false` seul sur le proprietaire d'un restaurant ouvert (voir C4)                                                                                  |
 | S-L4 changer un prix sans toucher la colonne prix                | non corrige, justifie       | limite inherente a une garde par colonne (echanger deux noms, supprimer un plat). L'audit la classe "a savoir, pas a corriger au lot 1". Le journal d'audit en garde la trace |
 | S-P1 et H5 liberer une table avec `kitchen.track` seul           | corrige                     | confirme par lecture, puis `actionReleaseTable` et son bouton exigent `orders.take`                                                                                           |
-| R-H1 aucune verification a l'ecran                               | corrige, avec limites       | 80 cas regardes dans un vrai navigateur, un defaut trouve et corrige (voir C9)                                                                                                |
+| R-H1 aucune verification a l'ecran                               | corrige, sauf appareil reel | 80 cas en developpement puis 230 cas sur le build de production servi, un defaut trouve et corrige (voir C9 et C16)                                                           |
 | R-H2 parcours et ancien code contre nouvelle base                | corrige                     | parcours 03 etendu et joue, parcours 04 et 08, tests d'integration, ancien code contre la nouvelle base (`preuves-corrections.md`)                                            |
 | R-M2 le gerant voit des boutons de paiement refuses              | corrige                     | `SubscriptionManager` recoit `canPay` (droit entier) : sans lui, ni formules ni portail, une phrase le dit                                                                    |
 | R-M3 invitation qu'on peut envoyer mais pas annuler              | corrige                     | annuler ou renvoyer suit la regle pour donner ; boutons par ligne avec la meme regle                                                                                          |
@@ -88,7 +88,7 @@ Le navigateur integre a la session ne rendait pas la page de facon fiable (volet
 
 Un defaut a ete trouve et corrige : a 375 px, le bouton "Annuler" d'une invitation en attente sortait de sa carte. Il existait deja sur `origin/main`, mais il est sur un ecran que ce lot modifie.
 
-Ce qui reste non verifie, et que la regle 11 du depot demande avant fusion : le build de production servi (`pnpm build && pnpm start`), un appareil reel, l'ecran de cuisine et la caisse pleins (le banc local bloque les lectures du navigateur vers la base, voir la meme section).
+Au second tour, le build de production a ete servi et regarde (`pnpm build && pnpm start`, 230 cas, cuisine et caisse pleines) : `preuves-corrections.md` section 7 bis et C16 ci-dessous. Ce qui reste non verifie : un appareil reel.
 
 ### C10. Le banc des parcours : un script isole, pas `scripts/run-journeys-local.sh`
 
@@ -113,6 +113,43 @@ Le script du depot fixe les ports 54321 a 54324, deja pris sur cette machine par
 
 `tests/integration` n'etait pas rejoue depuis le debut du lot. Un echec venait du lot (le bilan du lundi attendu "au proprietaire seulement") : le test est corrige. Deux autres existent aussi avec le code de `origin/main`, pour des causes sans rapport avec les postes (une garde des ardoises, un import de fournisseurs). Ils sont decrits dans `preuves-corrections.md` section 6 et ne sont pas corriges ici : chaque ligne modifiee de ce tour doit se rattacher aux roles.
 
-## 3. Fichiers proteges
+## 3. Contre-audit du tour de corrections
+
+Le contre-audit a rendu "ACCEPT WITH FIXES". Le responsable a accepte les ecarts C1, C2 et C12. Ses six constats :
+
+| Constat                                                   | Etat                 | Ce qui a ete fait                                                                                                            |
+| --------------------------------------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| N1 `.gitleaks.toml` cite un fichier supprime              | corrige              | phrase retiree                                                                                                               |
+| N2 commentaires perimes                                   | corrige              | les 7 endroits cites, plus 13 autres trouves par un balayage des anciens codes sans guillemets et des mentions "owner/admin" |
+| N3 corbeille d'un supplement payant sans le droit de prix | corrige              | la corbeille n'est plus proposee ; tout refus de droit affiche une phrase precise, en francais et en anglais                 |
+| N4 retirer un droit borne passait par le droit entier     | corrige              | decision du responsable : depuis le niveau borne, un seul clic ecrit `false`. L'ordre est borne, retire, entier              |
+| N5 rendre indisponible puis creer un jumeau gratuit       | accepte comme limite | voir C14                                                                                                                     |
+| N6 deux controles manquants au deroule                    | corrige              | controles 3.4 et 3.5 de `deroule-production.md`, requetes jouees sur le banc avec leurs temoins                              |
+| F1 build de production servi, cuisine et caisse pleines   | fait                 | voir `preuves-corrections.md` section 7 bis, captures dans `docs/roles-personnel/captures/`                                  |
+
+### C14. Limite acceptee : un supplement gratuit qui remplace un supplement payant (N5)
+
+Decision du responsable : limite inherente, de la meme famille que L4.
+
+Le detour : avec "Modifier la carte" seul, on rend "Fromage 500" indisponible, puis on cree un supplement "Fromage" a 0. Le client obtient le fromage sans le payer, et personne n'a touche a un prix.
+
+Pourquoi ce n'est pas ferme par une garde. La garde du prix juge une COLONNE : elle refuse de changer un prix, de creer un supplement payant, de supprimer un supplement payant. Ici aucune de ces ecritures n'a lieu. Les deux gestes du detour sont des gestes ordinaires de la carte, que le droit "Modifier la carte" doit garder :
+
+- rendre un supplement indisponible, c'est la rupture de stock en plein service. L'interdire sans "Modifier les prix" bloquerait la cuisine le jour ou il n'y a plus de fromage ;
+- creer un supplement gratuit, c'est "sans oignon" ou "bien cuit". C'est de l'edition de carte, a n'importe quel prix que le droit de prix autorise, zero compris.
+
+Pour le fermer il faudrait que la base sache que deux supplements sont "le meme", ce qu'un nom ne dit pas. C'est le meme constat que L4 (echanger les noms de deux plats, deplacer un supplement) : qui peut modifier la carte peut en changer le sens. La reponse n'est pas une garde de plus mais la trace : chaque ecriture de la carte est au journal d'audit, avec son auteur.
+
+A savoir pour le proprietaire : retirer "Modifier les prix" a quelqu'un l'empeche de changer un prix affiche. Cela ne l'empeche pas de reorganiser la carte. S'il ne fait pas confiance a une personne pour la carte, c'est "Modifier la carte" qu'il faut lui retirer.
+
+### C15. Le premier clic sur une case bornee la laisse eteinte (N4)
+
+Consequence de la decision N4. Une case bornee par defaut s'affiche eteinte. Un clic ecrit `false` : l'interrupteur reste eteint, parce que le droit etait deja "non" a l'ecran. Pour que le geste se voie, la mention change : "factures seulement" (ou "bientot, ...") disparait et le mot "retire" apparait a la place de "modifie". Le clic suivant donne le droit entier. "Reinitialiser" (par poste) ou "Defaut des postes" (par personne) ramene au niveau borne.
+
+### C16. Le build de production local passe par un mandataire
+
+La CSP de production n'admet, pour les appels du navigateur, que l'origine de la page et `https://*.supabase.co`. Une base locale en `http://localhost:<port>` est donc refusee, quel que soit le nom d'hote (c'etait la cause de la cuisine et de la caisse vides au tour precedent ; en developpement la CSP n'ouvre que le port 54321, pris ici par une autre pile). Sans toucher `next.config.mjs` ni `src/lib/csp.ts` : un petit mandataire local, garde hors du depot, sert l'application et l'API de la base sur UNE origine, `http://localhost:3190`. Le build est fait avec cette adresse. Une doublure locale de l'API du limiteur de debit laisse passer les routes limitees, qui repondent 429 en production sans limiteur. Rien de cela n'est dans le depot.
+
+## 4. Fichiers proteges
 
 Aucun fichier protege n'est modifie.

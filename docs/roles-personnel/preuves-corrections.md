@@ -23,10 +23,10 @@ La pile `roles-lot1-corr` a ete chargee comme le fait `scripts/run-journeys-loca
 | `pnpm typecheck`             | 0 erreur                              |
 | `pnpm lint --max-warnings 0` | 0 erreur, 0 avertissement             |
 | `pnpm format:check`          | conforme                              |
-| `pnpm test`                  | 480 fichiers, 5680 tests, tous passes |
+| `pnpm test`                  | 481 fichiers, 5686 tests, tous passes |
 | `pnpm build`                 | code de retour 0                      |
 
-Avant ce tour : 478 fichiers, 5584 tests. 96 tests de plus, 2 fichiers de plus, aucun test retire.
+Avant ce tour : 478 fichiers, 5584 tests. 102 tests de plus, 3 fichiers de plus, aucun test retire. Ces chiffres sont ceux de l'arbre final, apres le contre-audit (section 11) ; a la fin du premier tour : 480 fichiers, 5680 tests.
 
 ## 2. Suite pgTAP
 
@@ -167,12 +167,58 @@ Constats lus sur les captures et dans la page :
 
 Un defaut trouve a l'ecran et corrige : a 375 px, sur une invitation en attente, le bouton "Annuler" sortait de la carte et se lisait "A". Les boutons passent sous le texte sur telephone. Mesure apres correction : 0 bouton hors de sa carte. Ce defaut existait deja sur `origin/main` (memes classes).
 
-Limites, a lire comme non verifie :
+Limites de ce premier passage, levees depuis par la section 7 bis sauf l'appareil reel :
 
-- Mode developpement, pas le build de production, et pas d'appareil reel. La regle 8 du depot demande aussi `pnpm build && pnpm start` pour un changement de mise en page : le build passe, il n'a pas ete servi ni regarde.
-- La pile locale est sur un port que la politique de securite du navigateur ne connait pas : les lectures faites par le navigateur vers la base sont bloquees (cloche de notifications, plan de salle). Les ecrans verifies ici recoivent leurs donnees du serveur et ne sont pas concernes. L'ecran de cuisine et la caisse, eux, n'ont pas ete regardes pleins.
+- Mode developpement, pas le build de production, et pas d'appareil reel.
+- La pile locale est sur un port que la politique de securite du navigateur ne connait pas : les lectures faites par le navigateur vers la base sont bloquees (cloche de notifications, plan de salle). Les ecrans verifies ici recoivent leurs donnees du serveur et ne sont pas concernes. L'ecran de cuisine et la caisse, eux, n'ont pas ete regardes pleins dans ce passage (ils le sont en 7 bis).
 - Deux pastilles flottantes visibles sur les captures (en bas a gauche et en bas a droite) sont des outils de developpement, absents en production.
 - 28 cas signalent deux liens "coupes" a 375 et 768 : ce sont le premier et le dernier onglet de la barre du bas, fixee a l'ecran, que ma mesure compare a tort a un cadre parent. Verifie sur les captures : les cinq onglets sont entiers.
+
+## 7 bis. Verification a l'ecran sur le build de production
+
+Demandee par le contre-audit (R-H1). `pnpm build` puis `pnpm start`, contre la pile `roles-lot1-corr`, atteint par `http://localhost`. `next.config.mjs` n'est pas modifie.
+
+Methode. La politique de securite du build de production n'autorise le navigateur a parler qu'a l'origine de la page et a `https://*.supabase.co`. Un petit mandataire local, garde hors du depot, sert donc l'application et la base sous la meme origine `http://localhost:3190` : les lectures du navigateur vers la base passent, sans toucher a la politique. Un second petit serveur local remplace le service de limitation de debit (il repond toujours "autorise"), parce qu'aucun identifiant reel n'est lu. Detail et limites de ce montage : `ecarts-corrections.md` C16.
+
+Donnees : un restaurant avec des commandes dans chaque statut (en attente, en preparation, prete, servie, payee, annulee), des tables ouvertes, un plat avec supplement payant, trois invitations en attente, et un panier de caisse rempli avant chaque capture de la caisse (deux plats simples, un plat avec son supplement).
+
+230 cas : 6 personnes (proprietaire, gerant, chef, caissier, serveur, et une personne chef et caissier), 23 couples personne et ecran, 5 largeurs (375, 768, 1024, 1280, 1440), clair et sombre. Vrai navigateur (Chromium de Playwright).
+
+| Mesure                                                  | Resultat sur les 230 cas |
+| ------------------------------------------------------- | ------------------------ |
+| debordement horizontal de la page                       | 0                        |
+| element visible hors de l'ecran                         | 0                        |
+| erreur dans la console du navigateur                    | 0                        |
+| requete bloquee par la politique de securite            | 0                        |
+| theme rendu = theme demande (classe et couleur de fond) | 230 sur 230              |
+
+Ecrans regardes : cuisine pleine (proprietaire, gerant, chef, chef et caissier), caisse pleine avec panier (proprietaire, gerant, caissier, serveur, chef et caissier), equipe avec le choix des postes dans la fenetre d'ajout (proprietaire, gerant), invitations, droits par poste (proprietaire), abonnement (gerant), commandes (serveur, chef et caissier).
+
+Temoins negatifs, sur le meme build : le chef qui ouvre la caisse, le caissier et le serveur qui ouvrent la cuisine sont renvoyes vers `/unauthorized`, 10 fois sur 10 chacun (5 largeurs, 2 themes).
+
+Barre du bas a 375, lue dans la page :
+
+| Personne         | Onglets                                            |
+| ---------------- | -------------------------------------------------- |
+| proprietaire     | Accueil, Commandes, Caisse, Cuisine, Analyse       |
+| gerant           | Accueil, Commandes, Caisse, Cuisine, Analyse       |
+| chef             | Accueil, Commandes, Cuisine, Organisation, Analyse |
+| caissier         | Accueil, Commandes, Caisse, Organisation           |
+| serveur          | Accueil, Commandes, Caisse, Service, Organisation  |
+| chef et caissier | Accueil, Commandes, Caisse, Cuisine, Organisation  |
+
+Invitations a 375 sur le build de production : 0 bouton hors de sa carte. Le gerant ne voit aucun bouton sur l'invitation qui porte le paiement et voit "Renvoyer" et "Annuler" sur les deux autres ; le proprietaire les voit sur les trois.
+
+Aucun defaut du lot trouve dans ce passage. Deux observations, sur des ecrans que le lot ne modifie pas et qui se lisent pareil sur `origin/main` (memes classes) :
+
+- Cuisine a 375 : dans la barre de filtres du bas, le dernier filtre ("Retard") est en partie coupe ; la barre defile.
+- Caisse a 768 : dans le panier, le libelle "Note cuisine" est tronque et le total passe sur deux lignes.
+
+44 cas signalent des liens "coupes" : c'est le meme faux positif de ma mesure que plus haut (premier et dernier onglet de la barre du bas), verifie sur les captures.
+
+Captures jointes pour la demande de fusion : 20 fichiers PNG dans `docs/roles-personnel/captures/` (1,2 Mo en tout, 114 Ko au plus), nommes `personne-ecran-largeur-theme.png`.
+
+Ce qui reste non verifie : un appareil reel (telephone ou tablette en main).
 
 ## 8. Balayages de fin de lot
 
@@ -189,4 +235,22 @@ Lance contre la pile `roles-lot1-corr` : il cree le compte et un restaurant, pui
 
 ## 10. Nettoyage
 
-Bases jetables creees puis supprimees sur le serveur du banc : `roles_lot1_c_test`, `roles_lot1_c_mig4`, `roles_lot1_c_temoin` (deux fois), `roles_lot1_c_final`. Pile `roles-lot1-corr` arretee et supprimee. Copie de travail temporaire de `origin/main` retiree par `git worktree remove`. Aucun fichier du depot deplace : le banc lisait les migrations en place.
+Bases jetables creees puis supprimees sur le serveur du banc : `roles_lot1_c_test`, `roles_lot1_c_mig4`, `roles_lot1_c_temoin` (deux fois), `roles_lot1_c_final`. Pile `roles-lot1-corr` arretee et supprimee (conteneurs et volumes : 0 restant). Copie de travail temporaire de `origin/main` retiree par `git worktree remove`. Aucun fichier du depot deplace : le banc lisait les migrations en place.
+
+## 11. Second tour, apres le contre-audit
+
+Reponse point par point : `ecarts-corrections.md` section 3.
+
+| Point                                  | Preuve                                                                                                                                                                                                                              |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| N1 `.gitleaks.toml`                    | `rg create-superadmin` sur le depot : 0 ligne hors de ces documents                                                                                                                                                                 |
+| N2 commentaires perimes                | les 7 endroits cites corriges, plus 13 autres trouves par balayage (anciens roles, anciennes regles, "trois migrations")                                                                                                            |
+| N3 supplement payant sans `menu.price` | 5 tests de composant (`ItemModifierEditor.price-right`) : corbeille absente sur un supplement payant sans le droit, presente avec le droit et sur un supplement gratuit, message precis au refus, ajout payant refuse avant l'appel |
+| N4 un clic retire un droit borne       | tests de `nextOverride` et des deux ecrans : depuis un droit borne par defaut, le premier clic ecrit `false`, jamais `true`. Temoin negatif : la regle remise comme avant, 3 tests echouent                                         |
+| N5 limite acceptee                     | ecrite et motivee, `ecarts-corrections.md` C14                                                                                                                                                                                      |
+| N6 deux controles prealables           | `deroule-production.md` 3.4 et 3.5. La requete du 3.5 jouee sur la pile avec temoins : elle rend le restaurant sans cuisinier et celui dont le droit est retire, pas les deux restaurants dotes                                     |
+| R-H1 build de production               | section 7 bis                                                                                                                                                                                                                       |
+| pgTAP, arbre final                     | 80 fichiers, 2083 assertions sur 2083, base jetable `roles_lot1_d_final` creee puis supprimee, aucune base `roles%` restante                                                                                                        |
+| portes, arbre final                    | section 1                                                                                                                                                                                                                           |
+
+Nettoyage du second tour : serveurs locaux des ports 3189, 3190 et 3191 arretes (0 processus), pile `roles-lot1-corr` arretee et supprimee, piles `bancattabl` (9 conteneurs), `lot4-rapports` (8) et `web` (5) intactes.

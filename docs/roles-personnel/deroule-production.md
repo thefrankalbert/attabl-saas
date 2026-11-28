@@ -52,7 +52,7 @@ SELECT count(*) FROM pg_trigger
 
 ## 3. Controles prealables (lecture seule, AVANT d'appliquer)
 
-Les sept controles E.0 de la conception restent requis. Les audits du 2026-11-28 en ajoutent trois.
+Les sept controles E.0 de la conception restent requis. Les audits et le contre-audit du 2026-11-28 en ajoutent cinq.
 
 ### 3.1 Reglages poses sur l'ancien role administrateur (audit de securite L2)
 
@@ -100,9 +100,48 @@ WHERE a.role = 'owner' AND a.is_active IS FALSE
   AND a.banned_at IS NULL AND a.deleted_at IS NULL AND t.deleted_at IS NULL;
 ```
 
+### 3.4 Aucune migration du lot deja appliquee (contre-audit N6)
+
+Trois corrections des audits ont ete faites DANS les fichiers `20261128100000` et `20261128100200`, parce qu'ils n'etaient appliques nulle part. Si l'un d'eux l'avait ete, la base porterait leur ancienne version et il faudrait les rejouer. A verifier avant l'etape 4 :
+
+```sql
+SELECT version FROM supabase_migrations.schema_migrations WHERE version LIKE '2026112810%' ORDER BY 1;
+-- et, parce que ce suivi n'est pas fiable sur ce projet, par un objet :
+SELECT to_regclass('public.poste_permissions') IS NOT NULL AS mig1_deja_la,
+       to_regprocedure('public.garder_prix_carte()') IS NOT NULL AS mig3_deja_la;
+```
+
+Attendu : aucune ligne, puis `f` et `f`. Sinon : arret. Rejouer d'abord les fichiers concernes (ils sont idempotents), et verifier le corps stocke de `private.sync_postes_admin_users`, `public.accept_invitation_membership`, `public.garder_prix_carte` et `private.garder_proprietaire`.
+
+### 3.5 Restaurants ou personne d'autre que le proprietaire et le gerant ne suit la cuisine (contre-audit N6)
+
+Apres la fusion, seul qui detient `kitchen.track` passe une commande "en preparation" ou "prete". Dans un restaurant sans chef, cuisinier, barman ni equipier, seuls le proprietaire et le gerant le pourront : le serveur et le caissier perdent ces deux boutons. A lancer APRES la migration 2 et AVANT la fusion, pour prevenir les bons proprietaires :
+
+```sql
+SELECT t.id, t.slug, t.name
+FROM tenants t
+WHERE t.deleted_at IS NULL AND t.is_active
+  AND NOT EXISTS (
+    SELECT 1
+    FROM admin_users a
+    LEFT JOIN poste_permissions pp ON pp.tenant_id = a.tenant_id AND pp.poste = ANY (a.postes)
+    WHERE a.tenant_id = t.id AND a.is_active AND a.deleted_at IS NULL
+      AND NOT (a.postes && ARRAY['owner', 'manager'])
+      AND (
+        (a.permission_overrides -> 'kitchen.track') = 'true'::jsonb
+        OR (NOT (coalesce(a.permission_overrides, '{}'::jsonb) ? 'kitchen.track')
+            AND a.postes && ARRAY['chef', 'cook', 'bartender', 'crew', 'production']
+            AND (pp.permissions -> 'kitchen.track') IS DISTINCT FROM 'false'::jsonb)
+      )
+  )
+ORDER BY t.slug;
+```
+
+La requete est volontairement large : elle liste un restaurant des qu'aucun autre membre ne tient le droit par son poste ou par son reglage. Pour chaque restaurant rendu : dire au proprietaire, avant la fusion, que le serveur et le caissier ne passeront plus une commande "en preparation" ni "prete", et qu'il peut donner "Suivre en cuisine ou au bar" au poste ou a la personne de son choix depuis l'ecran des droits. La cinquieme migration (etape 6 bis) ne change rien de plus pour eux : l'application refuse deja ces gestes des la fusion.
+
 ## 4. Le deroule
 
-1. Sauvegarde (procedure habituelle), les sept controles E.0 et les trois controles de la section 3. Resultats archives.
+1. Sauvegarde (procedure habituelle), les sept controles E.0 et les cinq controles de la section 3 (3.2 et 3.5 se lancent apres les premieres migrations, comme ils le disent). Resultats archives.
 2. Repetition sur le banc : instantane, les migrations, suite pgTAP, script de retour arriere rejoue, puis l'ancien code lance contre cette base. Deja joue le 2026-11-28 : voir `preuves-corrections.md`. A rejouer si `origin/main` a bouge entre-temps.
 3. Pause obligatoire : accord ecrit du proprietaire avant d'appliquer en production.
 4. Appliquer les QUATRE premieres migrations (100000, 100100, 100200, 100300), dans cet ordre, avec les verifications par objet.
