@@ -1,4 +1,4 @@
-import type { PermissionCode } from '@/types/permission.types';
+import type { PermissionCode, PermissionLevel, Poste } from '@/types/permission.types';
 
 /**
  * Regroupement des 22 droits pour l'affichage (ecran des droits par poste et
@@ -26,7 +26,10 @@ export const PERMISSION_CATEGORIES: { key: string; permissions: PermissionCode[]
 
 /**
  * Sens du niveau borne (`limited`) de chaque droit qui peut l'etre, en cle
- * i18n sous `permissions.limited`. Affiche en texte a cote du droit.
+ * i18n sous `permissions.limited`. Affiche en texte a cote du droit. Les
+ * textes disent ce qui est VRAI aujourd'hui : le code d'un responsable et la
+ * limite au QR marchand arrivent au lot 3, donc `code` et `merchantQr`
+ * s'affichent "bientot" ; seul `invoices` (factures) ouvre deja quelque chose.
  */
 export const LIMITED_HINT_KEYS: Partial<
   Record<PermissionCode, 'code' | 'merchantQr' | 'invoices'>
@@ -40,3 +43,53 @@ export const LIMITED_HINT_KEYS: Partial<
 
 /** Cle i18n du libelle d'un droit (`permissions.perm.<cle>`). */
 export const permissionLabelKey = (perm: PermissionCode): string => perm.replace('.', '_');
+
+/**
+ * Droits du catalogue que RIEN ne consomme encore (cloture et comptage de
+ * caisse, rapports de la carte, ses propres ventes : lots 2 et 3). Leur
+ * interrupteur est inactif et porte la mention "a venir", pour que le
+ * proprietaire ne croie pas regler quelque chose. Un test interdit qu'un code
+ * de cette liste soit lu ailleurs dans `src` : le jour ou il sert, il en sort.
+ */
+export const COMING_SOON_PERMISSIONS: readonly PermissionCode[] = [
+  'cash.close',
+  'cash.count',
+  'reports.menu',
+  'reports.own',
+];
+
+/**
+ * Droits dont l'effet d'aujourd'hui demande une phrase (`permissions.note.<cle>`).
+ * Annuler et rembourser ne comptent pour l'instant qu'avec les trois autres
+ * droits d'argent, et l'annulation d'une commande non reglee suit "Encaisser"
+ * (decision G.b.2) : sans cette phrase, couper "Annuler" semblait retirer
+ * l'annulation au caissier.
+ */
+export const PERMISSIONS_WITH_NOTE: readonly PermissionCode[] = [
+  'orders.cancel',
+  'orders.discount',
+  'orders.refund',
+];
+
+/** Cle i18n du libelle d'un poste (`users.role<Poste>`) : source unique des noms de postes. */
+export const posteLabelKey = (poste: Poste): string =>
+  `role${poste.charAt(0).toUpperCase()}${poste.slice(1)}`;
+
+/**
+ * Reglage a ecrire quand on bascule l'interrupteur d'un droit. `base` est le
+ * niveau SANS ce reglage (matrice du poste, ou cumul des postes du membre) ;
+ * `current` le reglage en place. Rend `undefined` pour retirer le reglage.
+ *
+ * Une case bornee par defaut (`limited`) s'affiche eteinte : sans cette regle,
+ * l'eteindre "revenait au defaut" et le droit borne ne pouvait jamais etre
+ * retire (le gerant gardait les factures). L'eteindre ecrit donc `false` ;
+ * seul "defaut" (retrait du reglage) ramene au niveau borne.
+ */
+export function nextOverride(
+  base: PermissionLevel | null,
+  current: boolean | undefined,
+): boolean | undefined {
+  const next = !(current ?? base === 'full');
+  if (base === 'limited') return next;
+  return next === (base === 'full') ? undefined : next;
+}

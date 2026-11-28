@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { PermissionsClient } from '../PermissionsClient';
+import { posteLabelKey } from '@/lib/permission-catalogue-ui';
 import { STAFF_POSTES } from '@/types/permission.types';
 
 // Decision du proprietaire: ses reglages de permissions prennent effet a
@@ -28,7 +29,7 @@ afterEach(() => {
 
 async function toggleWaiterTake() {
   render(<PermissionsClient initialOverrides={{}} />);
-  const sw = screen.getByLabelText('perm.orders_take - poste.waiter');
+  const sw = screen.getByLabelText('perm.orders_take - roleWaiter');
   expect(sw).toHaveAttribute('data-state', 'checked');
   fireEvent.click(sw);
   expect(sw).toHaveAttribute('data-state', 'unchecked');
@@ -52,18 +53,88 @@ describe('Editeur de permissions: l ecran suit le serveur', () => {
   it('un droit borne par defaut affiche son texte et reste eteint', () => {
     render(<PermissionsClient initialOverrides={{}} />);
     // Le serveur a orders.pay en limited: la case est eteinte, le texte le dit.
-    const sw = screen.getByLabelText('perm.orders_pay - poste.waiter');
+    const sw = screen.getByLabelText('perm.orders_pay - roleWaiter');
     expect(sw).toHaveAttribute('data-state', 'unchecked');
     expect(screen.getAllByText('limited.merchantQr').length).toBeGreaterThan(0);
+  });
+
+  // Audit de conformite M1: une case bornee par defaut s'affiche eteinte.
+  // L'eteindre "revenait au defaut" et le droit borne ne se retirait jamais (le
+  // gerant gardait les factures). L'eteindre ecrit maintenant `false`.
+  it('droit borne par defaut: allumer ecrit true, eteindre ecrit false, "reset" ramene au niveau borne', async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
+    render(<PermissionsClient initialOverrides={{}} />);
+    const sw = screen.getByLabelText('perm.billing_manage - roleManager');
+    expect(sw).toHaveAttribute('data-state', 'unchecked');
+    const flush = () =>
+      act(async () => {
+        await vi.advanceTimersByTimeAsync(600);
+      });
+    const lastCall = () => {
+      const [, init] = fetchMock.mock.calls.at(-1) as [string, { method: string; body: string }];
+      return { method: init.method, body: JSON.parse(init.body) as Record<string, unknown> };
+    };
+
+    fireEvent.click(sw);
+    await flush();
+    expect(sw).toHaveAttribute('data-state', 'checked');
+    expect(lastCall()).toEqual({
+      method: 'PUT',
+      body: { poste: 'manager', permissions: { 'billing.manage': true } },
+    });
+
+    fireEvent.click(sw);
+    await flush();
+    expect(sw).toHaveAttribute('data-state', 'unchecked');
+    // PAS un DELETE: le reglage `false` retire le droit borne.
+    expect(lastCall()).toEqual({
+      method: 'PUT',
+      body: { poste: 'manager', permissions: { 'billing.manage': false } },
+    });
+    // Le texte "factures seulement" a disparu: le droit est retire, pas borne.
+    expect(screen.queryByText('limited.invoices')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'reset' }));
+    await flush();
+    expect(lastCall().method).toBe('DELETE');
+    expect(screen.getByText('limited.invoices')).toBeInTheDocument();
+  });
+
+  it('temoin, droit entier par defaut: le rallumer revient au defaut (DELETE, aucun reglage garde)', async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
+    const sw = await toggleWaiterTake();
+    fireEvent.click(sw);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(600);
+    });
+    expect(sw).toHaveAttribute('data-state', 'checked');
+    const methods = fetchMock.mock.calls.map((c) => (c[1] as { method: string }).method);
+    expect(methods).toEqual(['PUT', 'DELETE']);
+  });
+
+  // Audits M3 et M4: un droit que rien ne consomme encore ne se regle pas, et
+  // les mentions disent ce qui est vrai aujourd'hui.
+  it('droits a venir: interrupteur inactif et mention ; les autres restent actifs (temoin)', () => {
+    render(<PermissionsClient initialOverrides={{}} />);
+    for (const key of ['cash_close', 'cash_count', 'reports_menu', 'reports_own']) {
+      expect(screen.getByLabelText(`perm.${key} - roleCashier`)).toBeDisabled();
+    }
+    expect(screen.getAllByText('comingSoon')).toHaveLength(4);
+    expect(screen.getByLabelText('perm.orders_take - roleCashier')).toBeEnabled();
+    expect(screen.getByLabelText('perm.orders_cancel - roleCashier')).toBeEnabled();
+    // Annuler, remise, rembourser: une phrase dit leur effet d'aujourd'hui.
+    for (const key of ['orders_cancel', 'orders_discount', 'orders_refund']) {
+      expect(screen.getByText(`note.${key}`)).toBeInTheDocument();
+    }
   });
 
   it('les 10 postes reglables sont affiches, plus le proprietaire verrouille', () => {
     render(<PermissionsClient initialOverrides={{}} />);
     for (const poste of STAFF_POSTES) {
-      expect(screen.getByText(`poste.${poste}`)).toBeInTheDocument();
+      expect(screen.getByText(posteLabelKey(poste))).toBeInTheDocument();
     }
     expect(STAFF_POSTES).toHaveLength(10);
-    expect(screen.getByText('poste.owner')).toBeInTheDocument();
+    expect(screen.getByText('roleOwner')).toBeInTheDocument();
   });
 
   it('enregistrement refuse: l interrupteur revient a l etat en vigueur', async () => {
@@ -97,7 +168,7 @@ describe('Editeur de permissions: l ecran suit le serveur', () => {
       .mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
 
     const take = await toggleWaiterTake();
-    const view = screen.getByLabelText('perm.menu_view - poste.waiter');
+    const view = screen.getByLabelText('perm.menu_view - roleWaiter');
     fireEvent.click(view);
     expect(view).toHaveAttribute('data-state', 'unchecked');
     await act(async () => {
@@ -121,7 +192,7 @@ describe('Editeur de permissions: l ecran suit le serveur', () => {
   it('restaurer les defauts annule une bascule encore en attente', async () => {
     fetchMock.mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
     render(<PermissionsClient initialOverrides={{}} />);
-    const sw = screen.getByLabelText('perm.orders_take - poste.waiter');
+    const sw = screen.getByLabelText('perm.orders_take - roleWaiter');
     fireEvent.click(sw);
     fireEvent.click(screen.getByRole('button', { name: 'reset' }));
     await act(async () => {

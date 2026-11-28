@@ -27,9 +27,10 @@ import {
 } from '@/app/actions/admin';
 import PostesPicker from '@/components/features/users/PostesPicker';
 import { usePermissions } from '@/hooks/usePermissions';
+import { canGrantPostes } from '@/lib/auth/poste-authority';
 import type { PosteOverrides } from '@/lib/permissions';
 import type { AdminUser } from '@/types/admin.types';
-import type { StaffPoste } from '@/types/permission.types';
+import { STAFF_POSTES, type StaffPoste } from '@/types/permission.types';
 
 // --- Types -------------------------------------------------
 
@@ -60,6 +61,12 @@ export default function UsersClient({
   const tc = useTranslations('common');
   const { toast } = useToast();
   const { isOwner, levels } = usePermissions();
+  // Meme regle que le serveur (`canGrantPostes`): on ne propose que les postes
+  // que l'acteur peut donner.
+  const grantablePostes = useMemo(
+    () => STAFF_POSTES.filter((poste) => canGrantPostes(levels, [poste], posteOverrides)),
+    [levels, posteOverrides],
+  );
   const { confirm, Dialog: ConfirmDialog } = useConfirmDialog();
   const useServerPagination = !!serverListPagination;
 
@@ -250,6 +257,8 @@ export default function UsersClient({
           {/* Pending Invitations Section */}
           {data.canManageUsers && (
             <PendingInvitations
+              actor={{ isOwner, levels }}
+              posteOverrides={posteOverrides}
               pendingOnly={data.pendingOnly}
               loadingInvitations={data.loadingInvitations}
               resendingId={data.resendingId}
@@ -271,6 +280,7 @@ export default function UsersClient({
             setInviteEmail={data.setInviteEmail}
             invitePostes={data.invitePostes}
             setInvitePostes={data.setInvitePostes}
+            grantablePostes={grantablePostes}
             inviting={data.inviting}
             onSendInvitation={data.handleSendInvitation}
             onClose={() => data.setIsModalOpen(false)}
@@ -306,9 +316,15 @@ export default function UsersClient({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>{t('postesLabel')}</Label>
+              <Label id="edit-postes-label">{t('postesLabel')}</Label>
               <p className="text-xs text-app-text-secondary">{t('postesHint')}</p>
-              <PostesPicker idPrefix="edit-poste" value={editPostes} onChange={setEditPostes} />
+              <PostesPicker
+                idPrefix="edit-poste"
+                labelledBy="edit-postes-label"
+                value={editPostes}
+                onChange={setEditPostes}
+                grantable={grantablePostes}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>{t('passwordSection')}</Label>

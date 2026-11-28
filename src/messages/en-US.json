@@ -290,7 +290,7 @@
     "cancelOrderKeep": "Keep the order",
     "cancelOrderDone": "Order cancelled",
     "cancelOrderFailed": "Could not cancel",
-    "cancelNeedsMoneyAuthority": "A deposit is in the register. Only a manager, an admin or the owner can cancel this order.",
+    "cancelNeedsMoneyAuthority": "A deposit is in the register. Only the owner or a manager can cancel this order.",
     "statusLabel": "Status",
     "printLabel": "Print",
     "printKitchenTicket": "Kitchen Ticket",
@@ -2470,6 +2470,7 @@
       "venues": "Venues",
       "unlimited": "Unlimited",
       "changePlan": "Change plan",
+      "ownerPaysOnly": "Only the owner pays for the subscription and changes the plan.",
       "manageBilling": "Manage billing",
       "planChanged": "Plan updated. Your billing is prorated.",
       "planChangeError": "Could not change the plan. Try again.",
@@ -3352,12 +3353,6 @@
     "navTheme": "Dark / Light mode",
     "navInvoices": "Invoices",
     "navAuditLogs": "Audit Log",
-    "roleOwner": "General administrator",
-    "roleManager": "Manager",
-    "roleStaff": "Staff",
-    "roleKitchen": "Kitchen",
-    "roleServer": "Server",
-    "roleUnknown": "Unknown",
     "groupMarketing": "Marketing",
     "groupSettings": "Settings",
     "groupAnalyse": "Analytics",
@@ -3600,9 +3595,6 @@
     "roleCrew": "Crew member",
     "roleSales": "Sales",
     "roleProduction": "Production",
-    "roleStaff": "Staff",
-    "roleKitchen": "Kitchen",
-    "roleServer": "Server",
     "noUsers": "No users",
     "confirmDelete": "Are you sure you want to delete this user?",
     "userAdded": "User added",
@@ -3859,7 +3851,6 @@
     "restoreSuccess": "Default rights restored for the {poste} position",
     "accessDenied": "Access denied",
     "noAccessHint": "Your positions do not give access to this page. Ask the owner if you need it.",
-    "restoreDefaults": "Restore defaults",
     "reset": "Reset",
     "modified": "modified",
     "legendAllowed": "allowed",
@@ -3896,22 +3887,9 @@
       "audit_view": "Audit log",
       "billing_manage": "ATTABL subscription"
     },
-    "poste": {
-      "owner": "Owner",
-      "manager": "Manager",
-      "chef": "Chef",
-      "cashier": "Cashier",
-      "bartender": "Bartender",
-      "reception": "Front desk",
-      "waiter": "Waiter",
-      "cook": "Cook",
-      "crew": "Crew member",
-      "sales": "Sales",
-      "production": "Production"
-    },
     "limited": {
-      "code": "with a manager's code",
-      "merchantQr": "merchant QR only",
+      "code": "soon, with a manager's code",
+      "merchantQr": "soon, by merchant QR",
       "invoices": "invoices only"
     },
     "category": {
@@ -3923,7 +3901,13 @@
       "team": "Team",
       "settings": "Settings"
     },
-    "ownerOnlyHint": "Only the restaurant owner sets rights."
+    "ownerOnlyHint": "Only the restaurant owner sets rights.",
+    "comingSoon": "coming soon",
+    "note": {
+      "orders_cancel": "For now, cancelling an unpaid order follows the Take payment right.",
+      "orders_discount": "Manages promo codes. At the till, applying a code follows the Take payment right.",
+      "orders_refund": "For now, refunding also needs Take payment, Cancel an order and Give a discount."
+    }
   },
   "coupons": {
     "title": "Coupons",

@@ -290,7 +290,7 @@
     "cancelOrderKeep": "Garder la commande",
     "cancelOrderDone": "Commande annulée",
     "cancelOrderFailed": "Annulation impossible",
-    "cancelNeedsMoneyAuthority": "Un acompte est au registre. Seul un gérant, un administrateur ou le propriétaire peut annuler cette commande.",
+    "cancelNeedsMoneyAuthority": "Un acompte est au registre. Seul le propriétaire ou un gérant peut annuler cette commande.",
     "statusLabel": "Statut",
     "printLabel": "Impression",
     "printKitchenTicket": "Ticket Cuisine",
@@ -2470,6 +2470,7 @@
       "venues": "Espaces",
       "unlimited": "Illimité",
       "changePlan": "Changer de plan",
+      "ownerPaysOnly": "Seul le propriétaire paie l'abonnement et change de formule.",
       "manageBilling": "Gérer la facturation",
       "planChanged": "Plan mis à jour. Votre facturation est calculée au prorata.",
       "planChangeError": "Impossible de changer le plan. Réessayez.",
@@ -3352,12 +3353,6 @@
     "navTheme": "Mode sombre / clair",
     "navInvoices": "Factures",
     "navAuditLogs": "Journal d'audit",
-    "roleOwner": "Administrateur général",
-    "roleManager": "Gérant",
-    "roleStaff": "Personnel",
-    "roleKitchen": "Cuisine",
-    "roleServer": "Serveur",
-    "roleUnknown": "Inconnu",
     "groupMarketing": "Marketing",
     "groupSettings": "Paramètres",
     "groupAnalyse": "Analyse",
@@ -3600,9 +3595,6 @@
     "roleCrew": "Équipier polyvalent",
     "roleSales": "Vente",
     "roleProduction": "Fabrication",
-    "roleStaff": "Personnel",
-    "roleKitchen": "Cuisine",
-    "roleServer": "Serveur",
     "noUsers": "Aucun utilisateur",
     "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet utilisateur ?",
     "userAdded": "Utilisateur ajouté",
@@ -3859,7 +3851,6 @@
     "restoreSuccess": "Droits par défaut rétablis pour le poste {poste}",
     "accessDenied": "Accès refusé",
     "noAccessHint": "Vos postes ne donnent pas accès à cette page. Demandez au propriétaire si vous en avez besoin.",
-    "restoreDefaults": "Restaurer les défauts",
     "reset": "Réinitialiser",
     "modified": "modifié",
     "legendAllowed": "autorisé",
@@ -3896,22 +3887,9 @@
       "audit_view": "Journal d'audit",
       "billing_manage": "Abonnement ATTABL"
     },
-    "poste": {
-      "owner": "Propriétaire",
-      "manager": "Gérant",
-      "chef": "Chef",
-      "cashier": "Caissier",
-      "bartender": "Barman",
-      "reception": "Réception",
-      "waiter": "Serveur",
-      "cook": "Cuisinier",
-      "crew": "Équipier polyvalent",
-      "sales": "Vente",
-      "production": "Fabrication"
-    },
     "limited": {
-      "code": "avec le code d'un responsable",
-      "merchantQr": "QR marchand seulement",
+      "code": "bientôt, avec un code responsable",
+      "merchantQr": "bientôt, par QR marchand",
       "invoices": "factures seulement"
     },
     "category": {
@@ -3923,7 +3901,13 @@
       "team": "Équipe",
       "settings": "Réglages"
     },
-    "ownerOnlyHint": "Seul le propriétaire du restaurant règle les droits."
+    "ownerOnlyHint": "Seul le propriétaire du restaurant règle les droits.",
+    "comingSoon": "à venir",
+    "note": {
+      "orders_cancel": "Pour l'instant, annuler une commande non réglée suit le droit Encaisser.",
+      "orders_discount": "Gère les codes promo. À la caisse, appliquer un code suit le droit Encaisser.",
+      "orders_refund": "Pour l'instant, rembourser demande aussi Encaisser, Annuler et Faire une remise."
+    }
   },
   "coupons": {
     "title": "Coupons",

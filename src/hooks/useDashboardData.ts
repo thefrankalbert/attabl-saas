@@ -64,7 +64,7 @@ export function useDashboardData({
   const supabase = createClient();
   const queryClient = useQueryClient();
   const { play: playNotification } = useSound();
-  // Meme droit que le masquage serveur de la page (reports.view).
+  // Meme droit que le masquage serveur de la page (reports.money).
   const canViewRevenue = usePermissions().can('reports.money');
 
   // Coalesce bursts of realtime events into a single refetch. During service the

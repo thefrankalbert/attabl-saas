@@ -62,7 +62,6 @@ describe('Parametres: garde settings.edit', () => {
   // ouvre les champs, pas l'editeur de permissions.
   it('gerant (settings.edit par defaut): champs actifs, pas de lien permissions', () => {
     renderWith('manager');
-    expect(screen.getByTestId('settings-fields')).not.toBeDisabled();
     expect(screen.getByLabelText('nom')).not.toBeDisabled();
     expect(screen.getByText('saveChanges')).toBeInTheDocument();
     expect(screen.queryByText('management.permissions')).toBeNull();
@@ -76,7 +75,7 @@ describe('Parametres: garde settings.edit', () => {
   it('gerant a qui on retire settings.edit: acces refuse, aucun champ', () => {
     renderWith('manager', { 'settings.edit': false });
     expect(screen.getByText('accessDenied')).toBeInTheDocument();
-    expect(screen.queryByTestId('settings-fields')).toBeNull();
+    expect(screen.queryByLabelText('nom')).toBeNull();
     expect(screen.queryByText('saveChanges')).toBeNull();
   });
 
@@ -87,7 +86,7 @@ describe('Parametres: garde settings.edit', () => {
 
   it('serveur a qui le proprietaire donne settings.edit: champs actifs, pas de lien permissions', () => {
     renderWith('waiter', { 'settings.edit': true });
-    expect(screen.getByTestId('settings-fields')).not.toBeDisabled();
+    expect(screen.getByLabelText('nom')).not.toBeDisabled();
     expect(screen.queryByText('management.permissions')).toBeNull();
   });
 });

@@ -10,8 +10,11 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
 import { actionUpdateAdminUser } from '@/app/actions/admin';
 import {
+  COMING_SOON_PERMISSIONS,
   LIMITED_HINT_KEYS,
   PERMISSION_CATEGORIES,
+  PERMISSIONS_WITH_NOTE,
+  nextOverride,
   permissionLabelKey,
 } from '@/lib/permission-catalogue-ui';
 import { permissionLevel, type PosteOverrides } from '@/lib/permissions';
@@ -139,18 +142,16 @@ export default function UserPermissionsDialog({
   const handleToggle = useCallback(
     (perm: PermissionCode) => {
       const next = { ...overridesRef.current };
-      const newValue = !(next[perm] !== undefined ? next[perm] : baseline(perm));
-      if (newValue === baseline(perm)) {
-        // Back to the postes baseline: drop the override.
-        delete next[perm];
-      } else {
-        next[perm] = newValue;
-      }
+      // Retour au niveau des postes: le reglage est retire. Un droit borne par
+      // les postes ne se retire pas en "revenant au defaut": on ecrit `false`.
+      const value = nextOverride(baselineLevel(perm), next[perm]);
+      if (value === undefined) delete next[perm];
+      else next[perm] = value;
       overridesRef.current = next;
       setOverrides(next);
       scheduleSave(next);
     },
-    [baseline, scheduleSave],
+    [baselineLevel, scheduleSave],
   );
 
   const resetPerm = useCallback(
@@ -220,10 +221,15 @@ export default function UserPermissionsDialog({
                       : null;
                   return (
                     <div key={perm} className="flex items-center justify-between gap-3 px-4 py-3">
-                      <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
                         <span className="text-sm text-app-text truncate">
                           {permissionLabel(perm)}
                         </span>
+                        {COMING_SOON_PERMISSIONS.includes(perm) && (
+                          <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-[0.625rem] border border-[var(--border)] text-app-text-secondary">
+                            {t('comingSoon')}
+                          </span>
+                        )}
                         {isOverridden && (
                           <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-[0.625rem] border border-[var(--border)] text-[var(--warning)]">
                             {t('modified')}
@@ -233,6 +239,11 @@ export default function UserPermissionsDialog({
                           <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-[0.625rem] border border-[var(--border)] text-app-text-secondary">
                             {limitedHint}
                           </span>
+                        )}
+                        {PERMISSIONS_WITH_NOTE.includes(perm) && (
+                          <p className="basis-full text-xs text-app-text-secondary">
+                            {t(`note.${permissionLabelKey(perm)}`)}
+                          </p>
                         )}
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
@@ -251,6 +262,8 @@ export default function UserPermissionsDialog({
                         <Switch
                           checked={enabled}
                           onCheckedChange={() => handleToggle(perm)}
+                          // Droit pas encore consomme: rien a regler.
+                          disabled={COMING_SOON_PERMISSIONS.includes(perm)}
                           className={cn(enabled ? 'data-[state=checked]:bg-[var(--success)]' : '')}
                           aria-label={permissionLabel(perm)}
                         />

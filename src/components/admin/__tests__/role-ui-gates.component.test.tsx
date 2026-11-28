@@ -4,7 +4,8 @@ import { describe, it, expect, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
 import { PermissionsProvider } from '@/contexts/PermissionsContext';
-import { getEffectiveLevels } from '@/lib/permissions';
+import { getEffectiveLevels, meetsRequirement } from '@/lib/permissions';
+import { orderStatusRequirement } from '@/lib/admin-roles';
 import type { PermissionMap, Poste } from '@/types/permission.types';
 import type { Order } from '@/types/admin.types';
 import { ItemsHeader } from '../items/ItemsHeader';
@@ -102,13 +103,17 @@ describe('Suppression groupee des commandes (autorite d argent)', () => {
 
 describe('Detail de commande: encaisser ou marquer servie', () => {
   const order = { id: 'o1', tenant_id: 't1', status: 'ready' } as Order;
-  const panel = (canPay: boolean) => (
+  // `canSetStatus` suit la vraie regle (`orderStatusRequirement`) pour le poste rendu.
+  const panel = (canPay: boolean, poste: Poste = canPay ? 'cashier' : 'waiter') => (
     <OrderActionsPanel
       order={order}
       loading={false}
       isComp={false}
       canPay={canPay}
       canComp={false}
+      canSetStatus={(status) =>
+        meetsRequirement(getEffectiveLevels({ postes: [poste] }), orderStatusRequirement(status))
+      }
       currency="XAF"
       onUpdate={noop}
       onStatusUpdate={noop}
@@ -127,6 +132,24 @@ describe('Detail de commande: encaisser ou marquer servie', () => {
     withRole('cashier', panel(true));
     expect(screen.getByText('statusButtonCheckout')).toBeInTheDocument();
     expect(screen.queryByText('statusButtonServed')).toBeNull();
+  });
+  // Audit de conformite M2: "en preparation" et "pret" sont des gestes de
+  // cuisine (`kitchen.track`). Ni le serveur ni le caissier n'en voient le
+  // bouton (le serveur les refuserait) ; le cuisinier les voit.
+  it.each(['waiter', 'cashier'] as Poste[])(
+    '%s: pas de bouton "en preparation" ni "pret", mais "en attente"',
+    (poste) => {
+      withRole(poste, panel(poste === 'cashier', poste));
+      expect(screen.queryByText('statusButtonPreparing')).toBeNull();
+      expect(screen.queryByText('statusButtonReady')).toBeNull();
+      expect(screen.getByText('statusButtonPending')).toBeInTheDocument();
+    },
+  );
+  it('temoin, cuisinier: les boutons "en preparation" et "pret" sont la', () => {
+    withRole('cook', panel(false, 'cook'));
+    expect(screen.getByText('statusButtonPreparing')).toBeInTheDocument();
+    expect(screen.getByText('statusButtonReady')).toBeInTheDocument();
+    expect(screen.getByText('statusButtonServed')).toBeInTheDocument();
   });
   // Annuler depuis la fiche exige le meme droit que l'action (orders.pay).
   it('sans orders.pay: pas de bouton "annuler la commande"', () => {

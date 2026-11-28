@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import { posteLabelKey } from '@/lib/permission-catalogue-ui';
+import { toPostes } from '@/lib/permissions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -53,6 +55,7 @@ export function PlatformConsole({
   supportPhone,
 }: PlatformConsoleProps) {
   const t = useTranslations('admin.platform');
+  const tu = useTranslations('users');
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -311,7 +314,13 @@ export function PlatformConsole({
                                       <span className="shrink-0">{userStatusBadge(u)}</span>
                                     </div>
                                     <span className="text-xs text-app-text-muted">
-                                      {u.postes?.length ? u.postes.join(' + ') : u.role}
+                                      {/* Libelles des postes, pas leurs codes. Ligne de plateforme sans
+                                          poste: sa valeur technique `role`. */}
+                                      {u.postes?.length
+                                        ? toPostes(u.postes)
+                                            .map((poste) => tu(posteLabelKey(poste)))
+                                            .join(' + ')
+                                        : u.role}
                                     </span>
                                   </div>
                                   <div className="flex flex-wrap gap-2">

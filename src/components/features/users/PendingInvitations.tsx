@@ -6,10 +6,15 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getPostesConfig } from '@/lib/role-config';
 import { ListRowsSkeleton } from '@/components/admin/skeletons/ListRowsSkeleton';
+import { canManageInvitationRights, type TeamActor } from '@/lib/auth/poste-authority';
+import { getEffectiveLevels, type PosteOverrides } from '@/lib/permissions';
 import type { Invitation } from '@/types/invitation.types';
 import { timeAgo, timeUntil } from '@/hooks/useUsersData';
 
 interface PendingInvitationsProps {
+  /** L'acteur et les reglages du restaurant, pour la regle par ligne. */
+  actor: Pick<TeamActor, 'isOwner' | 'levels'>;
+  posteOverrides: PosteOverrides;
   pendingOnly: Invitation[];
   loadingInvitations: boolean;
   resendingId: string | null;
@@ -21,6 +26,8 @@ interface PendingInvitationsProps {
 // --- Component ---------------------------------------------
 
 export default function PendingInvitations({
+  actor,
+  posteOverrides,
   pendingOnly,
   loadingInvitations,
   resendingId,
@@ -48,6 +55,18 @@ export default function PendingInvitations({
         <div className="grid gap-3">
           {pendingOnly.map((invitation) => {
             const badges = getPostesConfig(invitation.postes, t);
+            // Meme regle que les deux routes (`canManageInvitation`): pas de
+            // bouton qui finirait en refus.
+            const canManage = canManageInvitationRights(
+              actor,
+              getEffectiveLevels(
+                {
+                  postes: invitation.postes,
+                  permission_overrides: invitation.permission_overrides,
+                },
+                posteOverrides,
+              ),
+            );
             return (
               <div
                 key={invitation.id}
@@ -80,36 +99,38 @@ export default function PendingInvitations({
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 gap-1.5 text-xs"
-                      onClick={() => onResend(invitation.id)}
-                      disabled={resendingId === invitation.id}
-                    >
-                      {resendingId === invitation.id ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <RefreshCw className="w-3.5 h-3.5" />
-                      )}
-                      {t('resend')}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 gap-1.5 text-xs text-status-error hover:text-status-error hover:bg-status-error-bg"
-                      onClick={() => onCancel(invitation.id)}
-                      disabled={cancellingId === invitation.id}
-                    >
-                      {cancellingId === invitation.id ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <X className="w-3.5 h-3.5" />
-                      )}
-                      {t('cancel')}
-                    </Button>
-                  </div>
+                  {canManage && (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 gap-1.5 text-xs"
+                        onClick={() => onResend(invitation.id)}
+                        disabled={resendingId === invitation.id}
+                      >
+                        {resendingId === invitation.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <RefreshCw className="w-3.5 h-3.5" />
+                        )}
+                        {t('resend')}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 gap-1.5 text-xs text-status-error hover:text-status-error hover:bg-status-error-bg"
+                        onClick={() => onCancel(invitation.id)}
+                        disabled={cancellingId === invitation.id}
+                      >
+                        {cancellingId === invitation.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <X className="w-3.5 h-3.5" />
+                        )}
+                        {t('cancel')}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             );

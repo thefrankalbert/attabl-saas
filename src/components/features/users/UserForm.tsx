@@ -15,6 +15,8 @@ interface UserFormProps {
   setInviteEmail: (email: string) => void;
   invitePostes: StaffPoste[];
   setInvitePostes: (postes: StaffPoste[]) => void;
+  /** Postes que l'acteur peut donner (voir PostesPicker). */
+  grantablePostes: readonly StaffPoste[];
   inviting: boolean;
   onSendInvitation: () => Promise<void>;
 
@@ -28,6 +30,7 @@ export default function UserForm({
   setInviteEmail,
   invitePostes,
   setInvitePostes,
+  grantablePostes,
   inviting,
   onSendInvitation,
   onClose,
@@ -56,9 +59,15 @@ export default function UserForm({
         </div>
 
         <div className="space-y-2">
-          <Label>{t('postesLabel')}</Label>
+          <Label id="invite-postes-label">{t('postesLabel')}</Label>
           <p className="text-xs text-app-text-secondary">{t('postesHint')}</p>
-          <PostesPicker idPrefix="invite-poste" value={invitePostes} onChange={setInvitePostes} />
+          <PostesPicker
+            idPrefix="invite-poste"
+            labelledBy="invite-postes-label"
+            value={invitePostes}
+            onChange={setInvitePostes}
+            grantable={grantablePostes}
+          />
         </div>
 
         <div className="pt-4 flex justify-end gap-2">

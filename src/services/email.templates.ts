@@ -4,6 +4,9 @@
  * Pure builders that turn typed email data into { subject, html, text }.
  */
 
+import frMessages from '@/messages/fr-FR.json';
+import { posteLabelKey } from '@/lib/permission-catalogue-ui';
+import { POSTE_CODES, type Poste } from '@/types/permission.types';
 import {
   escapeHtml,
   FOOTER,
@@ -239,23 +242,22 @@ export function buildSignupFailedEmail(data: SignupFailedEmailData): EmailConten
   return { subject: "Votre inscription n'a pas abouti", html, text };
 }
 
-/** Libelles des 10 postes invitables (cahier des charges). */
-const POSTE_LABELS_FR: Record<string, string> = {
-  manager: 'Gerant',
-  chef: 'Chef',
-  cashier: 'Caissier',
-  bartender: 'Barman',
-  reception: 'Reception',
-  waiter: 'Serveur',
-  cook: 'Cuisinier',
-  crew: 'Equipier polyvalent',
-  sales: 'Vente',
-  production: 'Fabrication',
-};
+/**
+ * Libelle francais d'un poste : lu dans `users.role<Poste>` des messages, la
+ * source unique des noms de postes (l'ecran Equipe et l'ecran des droits
+ * lisent les memes cles). Les e-mails partent en francais.
+ */
+const USERS_FR: Record<string, unknown> = frMessages.users;
+function posteLabelFr(poste: string): string {
+  const label = (POSTE_CODES as readonly string[]).includes(poste)
+    ? USERS_FR[posteLabelKey(poste as Poste)]
+    : undefined;
+  return typeof label === 'string' ? label : poste;
+}
 
 export function buildTeamInvitationEmail(data: TeamInvitationEmailData): EmailContent {
   // Tous les postes de l'invitation (cumul), dans l'ordre recu.
-  const posteLabel = data.postes.map((poste) => POSTE_LABELS_FR[poste] ?? poste).join(', ');
+  const posteLabel = data.postes.map(posteLabelFr).join(', ');
   const safeName = escapeHtml(data.restaurantName);
   const safePostes = escapeHtml(posteLabel);
 

@@ -44,7 +44,7 @@ export function AdminBottomNav({ basePath, establishmentType }: AdminBottomNavPr
   const resolveLabel = (key: string) =>
     (segmentLabelOverrides[key] ?? t(key)).replace(/\s*\([^)]*\)$/, '');
 
-  // Les 5 onglets du bas de ce membre (premier poste, voir bottomNavItemsFor)
+  // Onglets candidats de ce membre (union de ses postes, voir bottomNavItemsFor)
   const itemIds = bottomNavItemsFor(postes);
   const { groupIds: hiddenGroupIds } = getHiddenNav(establishmentType);
 
@@ -64,7 +64,10 @@ export function AdminBottomNav({ basePath, establishmentType }: AdminBottomNavPr
       g.directPath !== undefined
         ? canOpenAdminSubPath(g.directPath, permissions)
         : g.items.length > 0,
-    );
+    )
+    // 5 onglets au plus, comptes APRES le filtre des droits: un onglet refuse
+    // ne prend pas la place d'un onglet utile.
+    .slice(0, 5);
 
   return (
     <nav

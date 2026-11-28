@@ -407,7 +407,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
     // Fallback with empty data (already initialized above)
   }
 
-  // RBAC: revenue/financial widgets are restricted to roles with `reports.view`
+  // RBAC: revenue/financial widgets are restricted to roles with `reports.money`
   // (owner/admin/manager). The dashboard stays reachable for every role, but
   // cashier/chef/waiter must not see revenue, so blank the financial fields
   // server-side (never ship the data in props/HTML).

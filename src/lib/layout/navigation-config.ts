@@ -214,10 +214,10 @@ export const NAV_GROUPS: NavGroupConfig[] = [
 ];
 
 /**
- * Bottom nav items for mobile admin (5 items max).
- * Maps role to the most relevant nav items. Ce n'est qu'un ORDRE de preference:
- * AdminBottomNav retire ensuite chaque entree dont la route est refusee au
- * membre (permissions effectives).
+ * Bottom nav items for mobile admin (5 items max), par poste. Ce ne sont que
+ * des CANDIDATS: AdminBottomNav retire ensuite chaque entree dont la route est
+ * refusee au membre (permissions effectives). Chaque liste suit
+ * `BOTTOM_NAV_ORDER`.
  */
 const BOTTOM_NAV_ITEMS: Record<string, string[]> = {
   owner: ['dashboard', 'orders', 'pos', 'kitchen', 'analyse'],
@@ -233,12 +233,26 @@ const BOTTOM_NAV_ITEMS: Record<string, string[]> = {
   production: ['dashboard', 'orders', 'kitchen', 'organization', 'analyse'],
 };
 
+/** Ordre des onglets du bas: le service d'abord, l'analyse en dernier. */
+const BOTTOM_NAV_ORDER = [
+  'dashboard',
+  'orders',
+  'pos',
+  'kitchen',
+  'service',
+  'organization',
+  'analyse',
+];
+
 /**
- * Les 5 onglets du bas d'un membre: ceux de son PREMIER poste dans l'ordre
- * canonique (les postes sont ranges ainsi en base). En cas de cumul, les
- * onglets que ses droits n'ouvrent pas sont retires par l'appelant. Sans poste,
- * la liste la plus large: ses droits (aucun) filtrent ensuite.
+ * Onglets du bas CANDIDATS d'un membre: l'union de ceux de tous ses postes
+ * (chef + caissier garde la caisse, caissier + serveur garde le service), dans
+ * l'ordre `BOTTOM_NAV_ORDER`. L'appelant retire ceux que ses droits n'ouvrent
+ * pas, PUIS garde les 5 premiers. Sans poste, la liste la plus large: ses
+ * droits (aucun) filtrent ensuite.
  */
 export function bottomNavItemsFor(postes: readonly string[]): string[] {
-  return BOTTOM_NAV_ITEMS[postes[0] ?? ''] ?? BOTTOM_NAV_ITEMS.owner;
+  const wanted = new Set(postes.flatMap((poste) => BOTTOM_NAV_ITEMS[poste] ?? []));
+  if (wanted.size === 0) return BOTTOM_NAV_ITEMS.owner;
+  return BOTTOM_NAV_ORDER.filter((id) => wanted.has(id));
 }

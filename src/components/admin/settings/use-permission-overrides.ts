@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useToast } from '@/components/ui/use-toast';
 import { logger } from '@/lib/logger';
+import { nextOverride, posteLabelKey } from '@/lib/permission-catalogue-ui';
 import type { PosteOverrides } from '@/lib/permissions';
 import {
   POSTE_MATRIX,
@@ -35,8 +36,9 @@ export interface PermissionOverridesState {
 export function usePermissionOverrides(initialOverrides: PosteOverrides): PermissionOverridesState {
   const { toast } = useToast();
   const t = useTranslations('permissions');
+  const tu = useTranslations('users');
 
-  const posteLabel = useCallback((poste: StaffPoste): string => t(`poste.${poste}`), [t]);
+  const posteLabel = useCallback((poste: StaffPoste): string => tu(posteLabelKey(poste)), [tu]);
 
   // --- State ----------------------------------------
   const [saving, setSaving] = useState(false);
@@ -154,20 +156,14 @@ export function usePermissionOverrides(initialOverrides: PosteOverrides): Permis
 
   const handleToggle = useCallback(
     (poste: StaffPoste, perm: PermissionCode) => {
-      const currentValue = getEffectiveValue(poste, perm);
-      const newValue = !currentValue;
-      const defaultValue = posteDefault(poste, perm);
-
       setPosteOverrides((prev) => {
         const currentOverrides = { ...(prev[poste] || {}) };
 
-        if (newValue === defaultValue) {
-          // Matches default: remove override
-          delete currentOverrides[perm];
-        } else {
-          // Differs from default: store override
-          currentOverrides[perm] = newValue;
-        }
+        // Retour au defaut: le reglage est retire. Une case bornee par defaut
+        // ne revient pas au defaut en s'eteignant: elle ecrit `false`.
+        const value = nextOverride(POSTE_MATRIX[poste][perm] ?? null, currentOverrides[perm]);
+        if (value === undefined) delete currentOverrides[perm];
+        else currentOverrides[perm] = value;
 
         const next = { ...prev, [poste]: currentOverrides };
 
@@ -183,7 +179,7 @@ export function usePermissionOverrides(initialOverrides: PosteOverrides): Permis
         return next;
       });
     },
-    [getEffectiveValue, saveOverrides, nextEdit],
+    [saveOverrides, nextEdit],
   );
 
   // --- Restore Defaults -----------------------------

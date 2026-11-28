@@ -147,3 +147,88 @@ describe('UserPermissionsDialog - base affichee', () => {
     expect(screen.getAllByText(messages.permissions.limited.code)).toHaveLength(2);
   });
 });
+
+/**
+ * Audit de conformite M1: la decision 2 du cahier ("le droit est retirable
+ * personne par personne") etait inapplicable pour un droit BORNE: la case est
+ * eteinte, et l'eteindre "revenait au niveau des postes". Le gerant gardait
+ * les factures de l'abonnement.
+ */
+describe('UserPermissionsDialog - retirer un droit borne', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    toast.mockReset();
+    actionUpdateAdminUser.mockReset();
+    actionUpdateAdminUser.mockResolvedValue({ success: true });
+  });
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+  });
+  const flush = () =>
+    act(async () => {
+      await vi.advanceTimersByTimeAsync(600);
+    });
+  const lastSaved = () => actionUpdateAdminUser.mock.calls.at(-1)?.[2];
+
+  it('gerant, abonnement (factures seulement): allumer ecrit true, eteindre ecrit FALSE', async () => {
+    renderDialog(userWith(['manager']));
+    const sw = getSwitch(perm.billing_manage);
+    expect(sw).toHaveAttribute('data-state', 'unchecked');
+
+    fireEvent.click(sw);
+    await flush();
+    expect(lastSaved()).toEqual({ permission_overrides: { 'billing.manage': true } });
+
+    fireEvent.click(sw);
+    await flush();
+    // Avant: `permission_overrides: null`, donc retour au niveau borne.
+    expect(lastSaved()).toEqual({ permission_overrides: { 'billing.manage': false } });
+    expect(screen.queryByText(messages.permissions.limited.invoices)).toBeNull();
+  });
+
+  it('"defaut des postes" ramene au niveau borne (reglage retire)', async () => {
+    renderDialog(userWith(['manager'], { 'billing.manage': false }));
+    expect(screen.queryByText(messages.permissions.limited.invoices)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: messages.permissions.useRoleDefault }));
+    await flush();
+    expect(lastSaved()).toEqual({ permission_overrides: null });
+    expect(screen.getByText(messages.permissions.limited.invoices)).toBeInTheDocument();
+  });
+
+  it('temoin, droit entier par les postes: le rallumer retire le reglage', async () => {
+    renderDialog(userWith(['cashier'], { 'orders.take': false }));
+    fireEvent.click(getSwitch(perm.orders_take));
+    await flush();
+    expect(lastSaved()).toEqual({ permission_overrides: null });
+  });
+});
+
+// Audits M3 et M4: droits que rien ne consomme encore, et mentions vraies.
+describe('UserPermissionsDialog - droits a venir et mentions', () => {
+  afterEach(cleanup);
+
+  it('les 4 droits a venir ont un interrupteur inactif ; les autres restent actifs (temoin)', () => {
+    renderDialog(userWith(['cashier']));
+    for (const key of ['cash_close', 'cash_count', 'reports_menu', 'reports_own'] as const) {
+      expect(getSwitch(perm[key])).toBeDisabled();
+    }
+    expect(screen.getAllByText(messages.permissions.comingSoon)).toHaveLength(4);
+    expect(getSwitch(perm.orders_take)).toBeEnabled();
+    expect(getSwitch(perm.orders_cancel)).toBeEnabled();
+  });
+
+  it('annuler, remise, rembourser: la phrase dit leur effet d aujourd hui', () => {
+    renderDialog(userWith(['cashier']));
+    expect(screen.getByText(messages.permissions.note.orders_cancel)).toBeInTheDocument();
+    expect(screen.getByText(messages.permissions.note.orders_discount)).toBeInTheDocument();
+    expect(screen.getByText(messages.permissions.note.orders_refund)).toBeInTheDocument();
+  });
+
+  it('les mentions des droits bornes ne promettent plus un mecanisme absent', () => {
+    // Le code d'un responsable et la limite au QR marchand arrivent au lot 3.
+    expect(messages.permissions.limited.code).toMatch(/^bientôt/);
+    expect(messages.permissions.limited.merchantQr).toMatch(/^bientôt/);
+    expect(messages.permissions.limited.code).not.toMatch(/^avec le code/);
+  });
+});

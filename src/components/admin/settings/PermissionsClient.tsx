@@ -16,12 +16,20 @@ import {
 } from '@/components/ui/table';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import {
+  COMING_SOON_PERMISSIONS,
   LIMITED_HINT_KEYS,
   PERMISSION_CATEGORIES,
+  PERMISSIONS_WITH_NOTE,
   permissionLabelKey,
+  posteLabelKey,
 } from '@/lib/permission-catalogue-ui';
 import type { PosteOverrides } from '@/lib/permissions';
-import { POSTE_MATRIX, STAFF_POSTES, type PermissionCode } from '@/types/permission.types';
+import {
+  POSTE_MATRIX,
+  STAFF_POSTES,
+  type PermissionCode,
+  type Poste,
+} from '@/types/permission.types';
 import { posteDefault, usePermissionOverrides } from './use-permission-overrides';
 
 // --- Props ---------------------------------------------
@@ -34,6 +42,7 @@ interface PermissionsClientProps {
 
 export function PermissionsClient({ initialOverrides }: PermissionsClientProps) {
   const t = useTranslations('permissions');
+  const tu = useTranslations('users');
   const {
     saving,
     posteOverrides,
@@ -52,12 +61,7 @@ export function PermissionsClient({ initialOverrides }: PermissionsClientProps) 
     [t],
   );
 
-  const posteLabel = useCallback(
-    (poste: string): string => {
-      return t(`poste.${poste}`);
-    },
-    [t],
-  );
+  const posteLabel = useCallback((poste: Poste): string => tu(posteLabelKey(poste)), [tu]);
 
   const categoryLabel = useCallback(
     (categoryKey: string): string => {
@@ -170,6 +174,16 @@ export function PermissionsClient({ initialOverrides }: PermissionsClientProps) 
                         {/* Permission label (no code column) */}
                         <TableCell className="text-sm text-app-text px-5 py-3 sticky left-0 bg-inherit z-10">
                           <span className="font-medium">{permissionLabel(perm)}</span>
+                          {COMING_SOON_PERMISSIONS.includes(perm) && (
+                            <span className="ml-2 text-[10px] font-medium px-1.5 py-0.5 rounded-[0.625rem] border border-[var(--border)] text-app-text-secondary">
+                              {t('comingSoon')}
+                            </span>
+                          )}
+                          {PERMISSIONS_WITH_NOTE.includes(perm) && (
+                            <p className="mt-1 text-xs font-normal text-app-text-secondary whitespace-normal">
+                              {t(`note.${permissionLabelKey(perm)}`)}
+                            </p>
+                          )}
                         </TableCell>
 
                         {/* Owner cell (always on, locked) */}
@@ -190,8 +204,9 @@ export function PermissionsClient({ initialOverrides }: PermissionsClientProps) 
                           // Droit borne par defaut ("avec code", "QR marchand",
                           // "factures"): dit en texte tant que rien ne le regle.
                           const hintKey = LIMITED_HINT_KEYS[perm];
+                          const limitedByDefault = POSTE_MATRIX[poste][perm] === 'limited';
                           const limitedHint =
-                            !isOverridden && hintKey && POSTE_MATRIX[poste][perm] === 'limited'
+                            !isOverridden && hintKey && limitedByDefault
                               ? t(`limited.${hintKey}`)
                               : null;
 
@@ -201,6 +216,8 @@ export function PermissionsClient({ initialOverrides }: PermissionsClientProps) 
                                 <Switch
                                   checked={isEnabled}
                                   onCheckedChange={() => handleToggle(poste, perm)}
+                                  // Droit pas encore consomme: rien a regler.
+                                  disabled={COMING_SOON_PERMISSIONS.includes(perm)}
                                   className={cn(
                                     isEnabled ? 'data-[state=checked]:bg-[var(--success)]' : '',
                                   )}
@@ -210,7 +227,9 @@ export function PermissionsClient({ initialOverrides }: PermissionsClientProps) 
                                   <span
                                     className={cn(
                                       'text-[10px] font-medium px-1.5 py-0.5 rounded-[0.625rem] border border-[var(--border)]',
-                                      isEnabled !== defaultVal
+                                      // Un reglage sur une case bornee change
+                                      // toujours le droit (entier, ou retire).
+                                      isEnabled !== defaultVal || limitedByDefault
                                         ? 'text-[var(--warning)]'
                                         : 'text-app-text-muted',
                                     )}
