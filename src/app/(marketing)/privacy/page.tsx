@@ -12,6 +12,8 @@ const PROCESSOR_IDS = [
   'upstash',
   'cloudflare',
   'stripe',
+  'google',
+  'github',
   'push',
   'anthropic',
   'exchangerate',
@@ -84,6 +86,7 @@ export default async function PrivacyPage() {
     t('retentionAudit', { months: daysToMonths(RETENTION.auditLogDays) }),
     t('retentionClosed', { days: RETENTION.closedTenantAnonymizeDays }),
     t('retentionAccounting'),
+    t('retentionBackups', { days: RETENTION.backupDays }),
     t('retentionContact', { months: daysToMonths(RETENTION.contactMailDays) }),
   ];
 
@@ -131,7 +134,7 @@ export default async function PrivacyPage() {
                   {t(`processors.${id}.name`)}
                 </p>
                 <p className="mt-1 text-zinc-600 dark:text-zinc-400">
-                  {t(`processors.${id}.role`)}
+                  {t(`processors.${id}.role`, { days: RETENTION.backupDays })}
                 </p>
                 <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                   {t(`processors.${id}.country`)}

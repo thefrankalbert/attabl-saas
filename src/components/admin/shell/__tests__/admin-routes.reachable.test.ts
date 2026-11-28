@@ -3,7 +3,8 @@ import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { MAIN, CATALOGUE, MARKETING, GESTION, ANALYSE } from '../shell-nav';
 import { ANALYSE_TABS } from '../../AnalyseTabs';
-import { DEFAULT_PERMISSIONS } from '@/types/permission.types';
+import type { Poste } from '@/types/permission.types';
+import { getEffectiveLevels, meetsRequirement } from '@/lib/permissions';
 import { permissionForAdminSubPath } from '@/lib/auth/admin-route-permissions';
 
 // Audit d'equipe du 2026-11-27 (DASH-16, DASH-18) et son contre-audit: chaque
@@ -61,16 +62,18 @@ describe('toutes les pages admin ont un chemin dans l interface', () => {
   });
 });
 
-describe('liens visibles selon le role (permissions par defaut)', () => {
-  const visibleFor = (role: string) =>
-    sidebar
+describe('liens visibles selon le poste (droits par defaut)', () => {
+  const visibleFor = (poste: Poste) => {
+    const levels = getEffectiveLevels({ postes: [poste] });
+    return sidebar
       .filter((i) => {
         const required = permissionForAdminSubPath(i.path);
-        return required == null || DEFAULT_PERMISSIONS[role]?.[required] === true;
+        return required == null || meetsRequirement(levels, required);
       })
       .map((i) => i.path);
+  };
 
-  it('le chef (sans reports.view) atteint les pertes par leur propre lien', () => {
+  it('le chef (sans reports.money) atteint les pertes par leur propre lien', () => {
     const chef = visibleFor('chef');
     expect(chef).not.toContain('/reports');
     expect(chef).toContain('/stock-losses');

@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// B1 (revue ligne par ligne, lot B2b-2): la page des factures exige `settings.view`,
-// la route ne controlait que le role. Un administrateur a qui le proprietaire a
-// retire ce droit lisait encore les factures Stripe par un appel direct.
+// B1 (revue ligne par ligne, lot B2b-2): la page des factures exige BILLING_READ
+// (billing.manage, niveau borne compris), la route ne controlait que le role.
+// Modele des postes : le gerant VOIT les factures (billing.manage limite), le
+// chef non. La route passe par le VRAI resolveLiveMember sur un client simule.
 
 vi.mock('@/lib/rate-limit', () => ({
   checkoutLimiter: { check: vi.fn() },
@@ -17,7 +18,6 @@ vi.mock('@/lib/logger', () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: 
 vi.mock('next/headers', () => ({ headers: vi.fn() }));
 vi.mock('@/lib/cache', () => ({ getTenant: vi.fn() }));
 vi.mock('@/lib/billing/tenant-billing-ids', () => ({ getTenantBillingIds: vi.fn() }));
-vi.mock('@/lib/auth/resolve-admin-permission', () => ({ resolveAdminPermission: vi.fn() }));
 
 import { GET } from '../invoices/route';
 import { checkoutLimiter } from '@/lib/rate-limit';
@@ -26,18 +26,39 @@ import { stripe } from '@/lib/stripe/server';
 import { headers } from 'next/headers';
 import { getTenant } from '@/lib/cache';
 import { getTenantBillingIds } from '@/lib/billing/tenant-billing-ids';
-import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
 
-function supabaseWithMember(role: string) {
-  const maybeSingle = vi.fn().mockResolvedValue({ data: { role }, error: null });
-  const chain = { eq: vi.fn(), maybeSingle };
-  chain.eq.mockReturnValue(chain);
+function supabaseWithMember(
+  postes: string[] | null,
+  permission_overrides: Record<string, boolean> | null = null,
+) {
+  const admin = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    is: vi.fn().mockReturnThis(),
+    maybeSingle: vi.fn().mockResolvedValue({
+      data: postes
+        ? { id: 'admin-1', postes, permission_overrides, is_super_admin: false, role: 'staff' }
+        : null,
+      error: null,
+    }),
+  };
+  const poste = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    in: vi.fn().mockResolvedValue({ data: [], error: null }),
+  };
   return {
     auth: {
       getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null }),
     },
-    from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue(chain) }),
+    from: vi.fn((table: string) => (table === 'poste_permissions' ? poste : admin)),
   };
+}
+
+function as(postes: string[] | null, overrides: Record<string, boolean> | null = null) {
+  vi.mocked(createClient).mockResolvedValue(
+    supabaseWithMember(postes, overrides) as unknown as Awaited<ReturnType<typeof createClient>>,
+  );
 }
 
 describe('GET /api/invoices', () => {
@@ -63,29 +84,21 @@ describe('GET /api/invoices', () => {
     >);
   });
 
-  it('B1: refuse un administrateur prive de settings.view (403, Stripe jamais appele)', async () => {
-    vi.mocked(createClient).mockResolvedValue(
-      supabaseWithMember('admin') as unknown as Awaited<ReturnType<typeof createClient>>,
-    );
-    vi.mocked(resolveAdminPermission).mockResolvedValue({ allowed: false, role: 'admin' });
+  it.each([
+    ['chef', ['chef']],
+    ['serveur', ['waiter']],
+    ['caissier', ['cashier']],
+  ])('B1: refuse le poste %s (403, Stripe jamais appele)', async (_label, postes) => {
+    as(postes);
 
     const res = await GET(new Request('http://localhost/api/invoices'));
 
     expect(res.status).toBe(403);
     expect(stripe.invoices.list).not.toHaveBeenCalled();
-    expect(resolveAdminPermission).toHaveBeenCalledWith(
-      expect.anything(),
-      'user-1',
-      'tenant-1',
-      'settings.view',
-    );
   });
 
-  it('temoin: un administrateur qui a settings.view lit les factures', async () => {
-    vi.mocked(createClient).mockResolvedValue(
-      supabaseWithMember('admin') as unknown as Awaited<ReturnType<typeof createClient>>,
-    );
-    vi.mocked(resolveAdminPermission).mockResolvedValue({ allowed: true, role: 'admin' });
+  it('temoin: un gerant (billing.manage limite) lit les factures', async () => {
+    as(['manager']);
 
     const res = await GET(new Request('http://localhost/api/invoices'));
 
@@ -93,15 +106,38 @@ describe('GET /api/invoices', () => {
     expect(stripe.invoices.list).toHaveBeenCalledTimes(1);
   });
 
-  it('temoin: un serveur reste refuse par le role, meme avec le droit', async () => {
-    vi.mocked(createClient).mockResolvedValue(
-      supabaseWithMember('waiter') as unknown as Awaited<ReturnType<typeof createClient>>,
-    );
-    vi.mocked(resolveAdminPermission).mockResolvedValue({ allowed: true, role: 'waiter' });
+  it('temoin: le proprietaire lit les factures', async () => {
+    as(['owner']);
+
+    const res = await GET(new Request('http://localhost/api/invoices'));
+
+    expect(res.status).toBe(200);
+    expect(stripe.invoices.list).toHaveBeenCalledTimes(1);
+  });
+
+  it('temoin: un gerant avec permission_overrides billing.manage lit les factures', async () => {
+    as(['manager'], { 'billing.manage': true });
+
+    const res = await GET(new Request('http://localhost/api/invoices'));
+
+    expect(res.status).toBe(200);
+  });
+
+  it('un gerant a qui le reglage retire billing.manage ne lit plus les factures', async () => {
+    as(['manager'], { 'billing.manage': false });
 
     const res = await GET(new Request('http://localhost/api/invoices'));
 
     expect(res.status).toBe(403);
+    expect(stripe.invoices.list).not.toHaveBeenCalled();
+  });
+
+  it('refuse 404 quand aucune ligne de membre vivante (membre retire)', async () => {
+    as(null);
+
+    const res = await GET(new Request('http://localhost/api/invoices'));
+
+    expect(res.status).toBe(404);
     expect(stripe.invoices.list).not.toHaveBeenCalled();
   });
 });

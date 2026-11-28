@@ -89,6 +89,13 @@ export function createFakeSupabase(seed: Record<string, Row[]>, options: FakeSup
       this.filters.push((r) => values.includes(valueOf(r, col)));
       return this;
     }
+    contains(col: string, values: unknown[]) {
+      this.filters.push((r) => {
+        const v = valueOf(r, col);
+        return Array.isArray(v) && values.every((x) => v.includes(x));
+      });
+      return this;
+    }
     lt(col: string, value: string) {
       this.filters.push((r) => valueOf(r, col) != null && String(valueOf(r, col)) < value);
       return this;

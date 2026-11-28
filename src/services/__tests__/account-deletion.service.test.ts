@@ -29,12 +29,14 @@ function tenant(id: string, slug: string, extra: Row = {}): Row {
   };
 }
 
-function member(id: string, userId: string, tenantId: string, role: string, extra: Row = {}): Row {
+function member(id: string, userId: string, tenantId: string, poste: string, extra: Row = {}): Row {
   return {
     id,
     user_id: userId,
     tenant_id: tenantId,
-    role,
+    postes: [poste],
+    // Colonne de transition: ne sert plus qu'a reconnaitre une ligne de plateforme.
+    role: null,
     email: `${userId}@example.com`,
     full_name: `Nom ${userId}`,
     phone: '+22670000000',
@@ -345,7 +347,7 @@ describe('createAccountDeletionService.deleteStaffAccount', () => {
     // (meme predicat que closed_tenant_auth_users).
     seed.tenants[1] = { ...seed.tenants[1], deleted_at: '2026-11-10T00:00:00.000Z' };
     seed.admin_users.push(
-      member('m-7', STAFF, 't-b', 'admin', {
+      member('m-7', STAFF, 't-b', 'manager', {
         is_super_admin: true,
         deleted_at: '2026-11-11T00:00:00.000Z',
       }),

@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { Order } from '@/types/admin.types';
+import { orderStatusRequirement } from '@/lib/admin-roles';
+import { usePermissions } from '@/hooks/usePermissions';
 import {
   HEAD_CLS,
   NEXT_STATUS,
@@ -54,6 +56,7 @@ export function OrdersTable({
   onStatusChange,
 }: OrdersTableProps) {
   const t = useTranslations('admin');
+  const { can } = usePermissions();
   const to = useTranslations('orders');
   const tc = useTranslations('common');
 
@@ -88,7 +91,7 @@ export function OrdersTable({
     const list = dateScoped.filter((o) => TAB_FILTER[tab](o.status));
     if (!sortKey) return list;
     const dir = sortDir === 'asc' ? 1 : -1;
-    return [...list].sort((a, b) => {
+    return list.toSorted((a, b) => {
       if (sortKey === 'id') {
         return (a.order_number || a.id).localeCompare(b.order_number || b.id) * dir;
       }
@@ -182,10 +185,16 @@ export function OrdersTable({
   };
 
   const selectedOrders = () => filtered.filter((o) => selected.has(o.id));
+  // Statut suivant que CE membre a le droit de poser (meme regle que le
+  // serveur): "en preparation" et "pret" sont des gestes de cuisine.
+  const nextAllowed = (o: Order) => {
+    const next = NEXT_STATUS[o.status];
+    return next && can(orderStatusRequirement(next)) ? next : undefined;
+  };
   const bulkAdvance = () => {
     if (!onStatusChange) return;
     for (const o of selectedOrders()) {
-      const next = NEXT_STATUS[o.status];
+      const next = nextAllowed(o);
       if (next) onStatusChange(o.id, next);
     }
   };
@@ -224,6 +233,7 @@ export function OrdersTable({
           <OrdersTableSelectionBar
             count={selected.size}
             canChangeStatus={!!onStatusChange}
+            canAdvance={selectedOrders().some((o) => nextAllowed(o) !== undefined)}
             onBulkAdvance={bulkAdvance}
             onBulkCancel={bulkCancel}
             onExport={exportCsv}

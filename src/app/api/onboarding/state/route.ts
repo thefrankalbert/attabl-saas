@@ -7,7 +7,6 @@ import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { jsonWithCache } from '@/lib/cache-headers';
 import { onboardingStateLimiter, getClientIp } from '@/lib/rate-limit';
 import { readOnboardingSiteParam } from '@/lib/validations/onboarding.schema';
-import { isRoleAllowed, ONBOARDING_COMPLETE_ROLES } from '@/lib/admin-roles';
 
 export async function GET(request: Request) {
   try {
@@ -40,7 +39,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: session.error }, { status: session.status });
     }
 
-    if (!isRoleAllowed(session.adminUser.role, ONBOARDING_COMPLETE_ROLES)) {
+    if (!session.adminUser.isOwner) {
       return NextResponse.json({ error: 'Permissions insuffisantes' }, { status: 403 });
     }
 

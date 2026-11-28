@@ -138,13 +138,8 @@ describe('actionRecordLoss', () => {
     const { actionRecordLoss } = await import('@/app/actions/inventory');
     await actionRecordLoss(TENANT_ID, validInput);
 
-    expect(mockGetAuthUserForTenant).toHaveBeenCalledWith(
-      TENANT_ID,
-      // Plus de liste de roles avant la permission: le reglage du
-      // proprietaire (inventory.edit) decide seul (X9).
-      ['owner', 'admin', 'manager', 'cashier', 'chef', 'waiter'],
-      'inventory.edit',
-    );
+    // Pas de liste de roles avant la permission: le droit decide seul (X9).
+    expect(mockGetAuthUserForTenant).toHaveBeenCalledWith(TENANT_ID, 'inventory.edit');
   });
 });
 
@@ -204,13 +199,8 @@ describe('actionReceiveStock (WRITE gated at inventory.edit)', () => {
         inPurchaseUnit: true,
       }),
     );
-    expect(mockGetAuthUserForTenant).toHaveBeenCalledWith(
-      TENANT_ID,
-      // Plus de liste de roles avant la permission: le reglage du
-      // proprietaire (inventory.edit) decide seul (X9).
-      ['owner', 'admin', 'manager', 'cashier', 'chef', 'waiter'],
-      'inventory.edit',
-    );
+    // Pas de liste de roles avant la permission: le droit decide seul (X9).
+    expect(mockGetAuthUserForTenant).toHaveBeenCalledWith(TENANT_ID, 'inventory.edit');
   });
 
   it('accepts and forwards supplier_id + notes (validated payload)', async () => {
@@ -394,18 +384,13 @@ describe('actionGetLossesByReason (READ gated at inventory.view)', () => {
     mockGetLossesByReason.mockResolvedValue([]);
   });
 
-  it('gates on inventory.view with a view-inclusive role list (chef can read)', async () => {
+  it('gates on inventory.view (the READ code)', async () => {
     const { actionGetLossesByReason } = await import('@/app/actions/inventory');
     const result = await actionGetLossesByReason(TENANT_ID);
 
     expect(result).toEqual({ success: true, data: [] });
-    // The coarse role list must include view-only roles (chef, cashier, waiter)
-    // and the fine permission must be the READ code, mirroring the page.
-    expect(mockGetAuthUserForTenant).toHaveBeenCalledWith(
-      TENANT_ID,
-      ['owner', 'admin', 'manager', 'cashier', 'chef', 'waiter'],
-      'inventory.view',
-    );
+    // Le droit exige est le code de LECTURE, comme la page.
+    expect(mockGetAuthUserForTenant).toHaveBeenCalledWith(TENANT_ID, 'inventory.view');
   });
 
   it('returns the report rows on success', async () => {

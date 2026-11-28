@@ -8,7 +8,7 @@ import { kitchenMayFinishForTenant } from '@/lib/billing/lapsed-trial';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import { getTranslations } from 'next-intl/server';
 import AdminSrTitle from '@/components/admin/AdminSrTitle';
-import { requireAdminMember } from '@/lib/auth/require-admin-permission';
+import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 import { adminPageMetadata } from '@/lib/admin-page-metadata';
 
 export async function generateMetadata() {
@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function KitchenPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
-  await requireAdminMember(site);
+  await requireAdminPermission(site, 'kitchen.track');
   const tTitle = await getTranslations('sidebar');
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;

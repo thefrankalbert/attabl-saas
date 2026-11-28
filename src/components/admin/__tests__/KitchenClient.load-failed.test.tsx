@@ -13,7 +13,6 @@ vi.mock('@/hooks/useKitchenData', () => ({ useKitchenData: () => kitchenState })
 vi.mock('next-intl', () => ({
   useTranslations: (ns: string) => (k: string) => `${ns}.${k}`,
 }));
-vi.mock('@/hooks/usePermissions', () => ({ usePermissions: () => ({ role: 'chef' }) }));
 vi.mock('@/hooks/useContextualShortcuts', () => ({ useContextualShortcuts: () => undefined }));
 vi.mock('@/components/features/kitchen/KitchenFilters', () => ({ default: () => null }));
 vi.mock('@/components/features/kitchen/FooterSummaryBar', () => ({ default: () => null }));
@@ -24,6 +23,16 @@ vi.mock('@/components/features/kitchen/KitchenBoard', () => ({
 }));
 
 import KitchenClient from '../KitchenClient';
+import { PermissionsProvider } from '@/contexts/PermissionsContext';
+import { getEffectiveLevels } from '@/lib/permissions';
+
+function renderKitchen() {
+  return render(
+    <PermissionsProvider postes={['chef']} levels={getEffectiveLevels({ postes: ['chef'] })}>
+      <KitchenClient tenantId="t1" />
+    </PermissionsProvider>,
+  );
+}
 
 function state(over: Record<string, unknown>) {
   kitchenState = {
@@ -55,7 +64,7 @@ afterEach(() => cleanup());
 describe('ecran cuisine: chargement des commandes impossible', () => {
   it('jamais charge: etat d erreur distinct, jamais "Aucune commande active"', () => {
     state({ stale: true, hasLoaded: false });
-    render(<KitchenClient tenantId="t1" />);
+    renderKitchen();
     expect(screen.getByRole('alert')).toHaveTextContent('kitchen.loadFailedTitle');
     expect(screen.queryByText('kitchen.emptyActive')).not.toBeInTheDocument();
   });
@@ -63,7 +72,7 @@ describe('ecran cuisine: chargement des commandes impossible', () => {
   it('deja charge puis desynchronise: garde les dernieres commandes connues et le bandeau', () => {
     const order = { id: 'o1', status: 'pending', created_at: '2026-11-24T05:00:00Z' };
     state({ stale: true, hasLoaded: true, allOrders: [order] });
-    render(<KitchenClient tenantId="t1" />);
+    renderKitchen();
     expect(screen.getByText('1 commandes')).toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('kitchen.staleScreen');
     expect(screen.queryByText('kitchen.loadFailedTitle')).not.toBeInTheDocument();
@@ -73,7 +82,7 @@ describe('ecran cuisine: chargement des commandes impossible', () => {
     let finish: () => void = () => {};
     const loadOrders = vi.fn(() => new Promise<void>((resolve) => (finish = resolve)));
     state({ stale: true, hasLoaded: false, loadOrders });
-    render(<KitchenClient tenantId="t1" />);
+    renderKitchen();
     const retry = screen.getByRole('button', { name: 'common.retry' });
     expect(retry).toBeEnabled();
     fireEvent.click(retry);
@@ -86,7 +95,7 @@ describe('ecran cuisine: chargement des commandes impossible', () => {
 
   it('temoin: synchronise et vide: "Aucune commande active"', () => {
     state({});
-    render(<KitchenClient tenantId="t1" />);
+    renderKitchen();
     expect(screen.getByText('kitchen.emptyActive')).toBeInTheDocument();
   });
 });

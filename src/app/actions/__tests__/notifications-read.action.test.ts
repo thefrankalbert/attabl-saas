@@ -19,7 +19,7 @@ vi.mock('@/lib/logger', () => ({
 
 const TENANT_ID = '22222222-2222-4222-a222-222222222222';
 const NOTIF_ID = '55555555-5555-4555-a555-555555555555';
-const member = { role: 'waiter' };
+const member = { poste: 'waiter' };
 const mockUpdate = vi.fn();
 const mockUpsert = vi.fn();
 
@@ -29,8 +29,18 @@ vi.mock('@/lib/supabase/server', () => ({
     from: (table: string) => {
       const c: Record<string, unknown> = {};
       for (const m of ['select', 'eq', 'in', 'is']) c[m] = vi.fn(() => c);
-      c.single = vi.fn(async () => ({
-        data: { id: 'admin-1', tenant_id: TENANT_ID, role: member.role, custom_permissions: null },
+      // Reglages du restaurant par poste: aucun, la matrice par defaut decide.
+      if (table === 'poste_permissions') {
+        c.then = (ok: (v: { data: never[]; error: null }) => unknown) =>
+          ok({ data: [], error: null });
+      }
+      c.maybeSingle = vi.fn(async () => ({
+        data: {
+          id: 'admin-1',
+          tenant_id: TENANT_ID,
+          postes: [member.poste],
+          permission_overrides: null,
+        },
         error: null,
       }));
       c.upsert = vi.fn(async (rows: unknown, opts: unknown) => {
@@ -53,8 +63,8 @@ vi.mock('@/lib/supabase/server', () => ({
 beforeEach(() => vi.clearAllMocks());
 
 describe('notifications: tout membre vide sa cloche, pour lui seul', () => {
-  it.each(['waiter', 'chef', 'cashier'])('%s marque une notification lue', async (role) => {
-    member.role = role;
+  it.each(['waiter', 'chef', 'cashier'])('%s marque une notification lue', async (poste) => {
+    member.poste = poste;
     const { actionMarkNotificationRead } = await import('@/app/actions/notifications');
     const res = await actionMarkNotificationRead(TENANT_ID, NOTIF_ID);
     expect(res.success).toBe(true);
@@ -66,7 +76,7 @@ describe('notifications: tout membre vide sa cloche, pour lui seul', () => {
   });
 
   it('serveur: "tout marquer comme lu" ne touche PAS au drapeau partage', async () => {
-    member.role = 'waiter';
+    member.poste = 'waiter';
     const { actionMarkAllNotificationsRead } = await import('@/app/actions/notifications');
     const res = await actionMarkAllNotificationsRead(TENANT_ID, [NOTIF_ID]);
     expect(res.success).toBe(true);

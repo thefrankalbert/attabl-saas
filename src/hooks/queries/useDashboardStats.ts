@@ -64,7 +64,7 @@ async function safeQuery<T>(
 export function useDashboardStats(
   tenantId: string,
   /**
-   * `reports.view` effectif. Sans lui, le serveur masque deja le chiffre
+   * `reports.money` effectif. Sans lui, le serveur masque deja le chiffre
    * d'affaires de la page; ce rafraichissement client le recalculait 30 s plus
    * tard (le chef voyait la recette du jour). Sans ce droit, les montants ne
    * sont ni demandes ni calcules: seuls les comptes de commandes restent.
@@ -159,7 +159,7 @@ export function useDashboardStats(
       ]);
 
       // Money received (payments ledger, owner decision C-041 - see
-      // src/lib/orders/revenue.ts). Not even requested without `reports.view`.
+      // src/lib/orders/revenue.ts). Not even requested without `reports.money`.
       type LedgerEntry = LedgerRow & { order_id?: string | null; created_at?: string };
       const recentPaymentsRes = !canViewRevenue
         ? { data: null, count: null }
@@ -187,7 +187,7 @@ export function useDashboardStats(
         ordersToday: ordersData.length,
         // Revenue = money received today (payments ledger, shared with the SSR
         // dashboard and the reporting RPCs via src/lib/orders/revenue.ts).
-        // Sans `reports.view`, le registre n'est pas lu: on l'ecrit aussi ici
+        // Sans `reports.money`, le registre n'est pas lu: on l'ecrit aussi ici
         // pour ne jamais dependre de ce detail de requete.
         revenueToday: canViewRevenue ? sumLedgerNet(todayPayments) : 0,
         avgTicketToday: canViewRevenue ? averageLedgerTicket(todayPayments) : 0,

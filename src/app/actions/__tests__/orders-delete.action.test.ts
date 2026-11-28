@@ -16,9 +16,11 @@ vi.mock('@/lib/billing/assert-tenant-serving', async () => {
 });
 
 // Supprimer une note impayee revient a l'annuler: un geste d'argent. La base
-// exige `orders.pay` pour supprimer une commande et ses articles; l'action doit
-// refuser AVANT, sinon un admin a qui le proprietaire a retire l'argent
-// recevait un succes alors que la RLS n'avait rien supprime.
+// exige l'autorite d'argent (MONEY_PERMISSIONS, les quatre droits ensemble)
+// pour supprimer une commande et ses articles; l'action doit refuser AVANT,
+// sinon un membre refuse par la base recevait un succes alors que la RLS
+// n'avait rien supprime. La vraie resolution des droits tourne ici : seul le
+// client Supabase est simule (ligne de membre et reglages des postes).
 
 vi.mock('next/server', () => ({ after: vi.fn() }));
 vi.mock('@/lib/logger', () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
@@ -35,10 +37,14 @@ vi.mock('@/services/order-annotation.service', () => ({ createOrderAnnotationSer
 const { auditLog } = vi.hoisted(() => ({ auditLog: vi.fn() }));
 vi.mock('@/services/audit.service', () => ({ createAuditService: () => ({ log: auditLog }) }));
 
-const { mockResolve, mockDelete, ledger } = vi.hoisted(() => ({
-  mockResolve: vi.fn(),
+const { mockDelete, ledger } = vi.hoisted(() => ({
   mockDelete: vi.fn(),
   ledger: {
+    // Ligne `admin_users` de l'appelant (postes + reglage par personne).
+    member: { postes: ['manager'], permission_overrides: null } as {
+      postes: string[];
+      permission_overrides: Record<string, boolean> | null;
+    },
     rows: [] as Array<{ order_id: string }>,
     status: 'pending',
     // Nombre de commandes que la base supprime vraiment (`count`).
@@ -48,7 +54,6 @@ const { mockResolve, mockDelete, ledger } = vi.hoisted(() => ({
     ordersReads: 0,
   },
 }));
-vi.mock('@/lib/auth/resolve-admin-permission', () => ({ resolveAdminPermission: mockResolve }));
 
 const TENANT_ID = '22222222-2222-4222-a222-222222222222';
 const ORDER_ID = '33333333-3333-4333-a333-333333333333';
@@ -64,13 +69,26 @@ vi.mock('@/lib/supabase/server', () => ({
           ? [{ id: ORDER_ID, tenant_id: TENANT_ID, payment_status: ledger.status }]
           : table === 'payments'
             ? ledger.rows
-            : [{ tenant_id: TENANT_ID, role: 'admin' }];
+            : [];
       c.then = (ok: (v: { data: unknown; error: unknown }) => unknown) => {
         if (table === 'orders' && ++ledger.ordersReads > 1 && ledger.rereadFails) {
           return ok({ data: null, error: { message: 'timeout' } });
         }
         return ok({ data: rows, error: null });
       };
+      c.maybeSingle = vi.fn(async () => ({
+        data:
+          table === 'admin_users'
+            ? {
+                id: 'admin-1',
+                postes: ledger.member.postes,
+                permission_overrides: ledger.member.permission_overrides,
+                is_super_admin: false,
+                role: null,
+              }
+            : null,
+        error: null,
+      }));
       c.delete = vi.fn((opts?: unknown) => {
         mockDelete(table, opts);
         return { in: async () => ({ error: null, count: ledger.deletedCount }) };
@@ -83,9 +101,10 @@ vi.mock('@/lib/supabase/server', () => ({
 import { actionDeleteOrders } from '@/app/actions/orders';
 import { TenantLockedError } from '@/lib/billing/assert-tenant-serving';
 
-describe('actionDeleteOrders: supprimer exige orders.pay', () => {
+describe('actionDeleteOrders: supprimer exige l autorite d argent', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    ledger.member = { postes: ['manager'], permission_overrides: null };
     ledger.rows = [];
     ledger.status = 'pending';
     ledger.deletedCount = 1;
@@ -93,16 +112,7 @@ describe('actionDeleteOrders: supprimer exige orders.pay', () => {
     ledger.ordersReads = 0;
   });
 
-  it('admin sans orders.pay: refuse, rien n est supprime', async () => {
-    mockResolve.mockResolvedValue({ allowed: false, role: 'admin' });
-    const res = await actionDeleteOrders([ORDER_ID]);
-    expect(res.error).toBeDefined();
-    expect(mockResolve).toHaveBeenCalledWith(expect.anything(), 'u-1', TENANT_ID, 'orders.pay');
-    expect(mockDelete).not.toHaveBeenCalled();
-  });
-
-  it('admin avec orders.pay: supprime la commande (articles en cascade), compte exige', async () => {
-    mockResolve.mockResolvedValue({ allowed: true, role: 'admin' });
+  it('gerant (poste manager): supprime la commande (articles en cascade), compte exige', async () => {
     const res = await actionDeleteOrders([ORDER_ID]);
     expect(res.success).toBe(true);
     expect(res.deletedCount).toBe(1);
@@ -112,11 +122,52 @@ describe('actionDeleteOrders: supprimer exige orders.pay', () => {
     expect(mockDelete).not.toHaveBeenCalledWith('order_items', expect.anything());
   });
 
+  it('caissier par defaut: refuse, rien n est supprime (temoin: le gerant passe)', async () => {
+    ledger.member = { postes: ['cashier'], permission_overrides: null };
+    const res = await actionDeleteOrders([ORDER_ID]);
+    expect(res.error).toMatch(/autorite d'argent/);
+    expect(res.success).toBeUndefined();
+    expect(mockDelete).not.toHaveBeenCalled();
+  });
+
+  // Caissier : orders.pay en entier, les trois autres limited. Un seul des
+  // trois droits manquants ne suffit pas, il faut les quatre ensemble.
+  it.each(['orders.refund', 'orders.cancel', 'orders.discount'])(
+    'caissier avec %s seul en plus: refuse, rien n est supprime',
+    async (code) => {
+      ledger.member = { postes: ['cashier'], permission_overrides: { [code]: true } };
+      const res = await actionDeleteOrders([ORDER_ID]);
+      expect(res.error).toMatch(/autorite d'argent/);
+      expect(mockDelete).not.toHaveBeenCalled();
+    },
+  );
+
+  it('caissier avec les quatre droits: supprime (meme requete que les cas refuses)', async () => {
+    ledger.member = {
+      postes: ['cashier'],
+      permission_overrides: {
+        'orders.pay': true,
+        'orders.refund': true,
+        'orders.cancel': true,
+        'orders.discount': true,
+      },
+    };
+    const res = await actionDeleteOrders([ORDER_ID]);
+    expect(res.success).toBe(true);
+    expect(mockDelete).toHaveBeenCalledWith('orders', { count: 'exact' });
+  });
+
+  it('gerant a qui le proprietaire retire orders.refund: refuse', async () => {
+    ledger.member = { postes: ['manager'], permission_overrides: { 'orders.refund': false } };
+    const res = await actionDeleteOrders([ORDER_ID]);
+    expect(res.error).toMatch(/autorite d'argent/);
+    expect(mockDelete).not.toHaveBeenCalled();
+  });
+
   // Second contre-audit: un paiement arrive entre la verification du registre
   // et la suppression. La politique DELETE refuse la commande sans erreur
   // (0 ligne): l'action doit le dire au lieu d'annoncer "supprimee".
   it('la base refuse la suppression (0 ligne): erreur honnete, pas de succes', async () => {
-    mockResolve.mockResolvedValue({ allowed: true, role: 'owner' });
     ledger.deletedCount = 0;
     const res = await actionDeleteOrders([ORDER_ID]);
     expect(res.success).toBeUndefined();
@@ -125,7 +176,6 @@ describe('actionDeleteOrders: supprimer exige orders.pay', () => {
   });
 
   it('restaurant coupe: refuse avec le message de coupure, rien n est supprime', async () => {
-    mockResolve.mockResolvedValue({ allowed: true, role: 'admin' });
     mockAssertServing.mockRejectedValueOnce(new TenantLockedError());
     const res = await actionDeleteOrders([ORDER_ID]);
     expect(res.error).toBe('Ce restaurant est temporairement indisponible');
@@ -135,7 +185,6 @@ describe('actionDeleteOrders: supprimer exige orders.pay', () => {
   });
 
   it('commande partial avec un acompte au registre: refusee, rien n est supprime', async () => {
-    mockResolve.mockResolvedValue({ allowed: true, role: 'owner' });
     ledger.status = 'partial';
     ledger.rows = [{ order_id: ORDER_ID }];
     const res = await actionDeleteOrders([ORDER_ID]);
@@ -149,7 +198,6 @@ describe('actionDeleteOrders: supprimer exige orders.pay', () => {
   // Troisieme contre-audit: si la relecture apres une suppression incomplete
   // echoue, rien d'incertain n'est journalise et l'action ne repond pas succes.
   it('suppression incomplete et relecture en echec: erreur, aucun journal', async () => {
-    mockResolve.mockResolvedValue({ allowed: true, role: 'owner' });
     ledger.deletedCount = 0;
     ledger.rereadFails = true;
     const res = await actionDeleteOrders([ORDER_ID]);

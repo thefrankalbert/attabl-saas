@@ -30,8 +30,7 @@ paths = [
   '''(^|/)messages/''',
   '''(^|/)(locales|i18n|lang)/''',
   # demo/QA/local seed + journey scripts carry intentional demo creds (Demo2024!,
-  # local test webhook secrets), never real secrets. Does NOT allowlist
-  # scripts/create-superadmin.ts - that file stays scanned.
+  # local test webhook secrets), never real secrets.
   '''(^|/)scripts/seed-.*\.(ts|js)$''',
   '''(^|/)scripts/run-journeys.*\.sh$''',
   # agent definition docs (examples only)

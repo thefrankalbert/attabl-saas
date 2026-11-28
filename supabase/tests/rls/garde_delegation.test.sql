@@ -59,7 +59,8 @@ values
 -- Surcharges de ROLE pour ce tenant, telles que /api/permissions les ecrit.
 -- NOTE: la surcharge porte sur le ROLE, donc elle s applique aux DEUX chefs.
 -- C est pourquoi le temoin de non-elargissement utilise une permission
--- DIFFERENTE (menu.edit), que personne n a deleguee au chef.
+-- DIFFERENTE (orders.pay), que personne n a deleguee au chef. Depuis le lot 1
+-- des roles le chef detient menu.edit par defaut: ce n est plus un temoin.
 insert into public.role_permissions (tenant_id, role, permissions)
 values
   ('d5555555-5555-5555-5555-555555555555', 'chef', '{"inventory.edit": true}'::jsonb),
@@ -87,8 +88,8 @@ select ok(
 -- ===========================================================================
 set local request.jwt.claims = '{"sub":"d2222222-2222-2222-2222-222222222222"}';
 select ok(
-  not public.has_tenant_write_permission('d5555555-5555-5555-5555-555555555555', 'menu.edit'),
-  'non-elargissement: un chef sans delegation menu.edit reste REFUSE'
+  not public.has_tenant_write_permission('d5555555-5555-5555-5555-555555555555', 'orders.pay'),
+  'non-elargissement: un chef sans delegation orders.pay reste REFUSE'
 );
 
 select ok(

@@ -23,7 +23,7 @@ export function createAssignmentService(supabase: SupabaseClient): AssignmentSer
     ): Promise<TableAssignment> {
       const { data: server, error: serverErr } = await supabase
         .from('admin_users')
-        .select('id, role')
+        .select('id')
         .eq('id', serverId)
         .eq('tenant_id', tenantId)
         .single();
@@ -33,7 +33,7 @@ export function createAssignmentService(supabase: SupabaseClient): AssignmentSer
       }
 
       // Verify the table belongs to this tenant too: without this an
-      // owner/admin/manager could pass another tenant's table_id and create an
+      // member allowed to assign could pass another tenant's table_id and create an
       // assignment row referencing a foreign table (cross-tenant write).
       const { data: table, error: tableErr } = await supabase
         .from('tables')
@@ -54,7 +54,7 @@ export function createAssignmentService(supabase: SupabaseClient): AssignmentSer
           server_id: serverId,
         })
         .select(
-          '*, server:admin_users(id, full_name, role), table:tables(id, display_name, table_number)',
+          '*, server:admin_users(id, full_name, postes), table:tables(id, display_name, table_number)',
         )
         .single();
 

@@ -6,7 +6,8 @@ import { useTranslations } from 'next-intl';
 import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getHiddenNav } from '@/lib/segment-features';
-import { canOpenAdminSubPath, permissionForAdminSubPath } from '@/lib/auth/admin-route-permissions';
+import { canOpenAdminSubPath } from '@/lib/auth/admin-route-permissions';
+import type { PermissionLevels } from '@/lib/permissions';
 import { getSegmentFamily } from '@/lib/segment-terms';
 import { UpdateAvailableBanner } from '@/components/admin/UpdateAvailableBanner';
 import type { SettingsTab } from './SettingsDialog';
@@ -47,7 +48,7 @@ interface ShellSidebarProps {
    * requires a permission the member lacks are hidden. Absent = show everything
    * (fail-open on the UI only; the middleware + actions still enforce access).
    */
-  navPermissions?: Record<string, boolean>;
+  navPermissions?: PermissionLevels;
   /** Server-baked deploy sha, forwarded to the update-available row in the footer. */
   appVersion?: string;
 }
@@ -88,8 +89,7 @@ export function ShellSidebar({
   // Fail-open when navPermissions is absent so a data gap never blanks the nav.
   const lacksPermission = (item: ShellNavItem) => {
     if (!navPermissions) return false;
-    const required = permissionForAdminSubPath(item.path);
-    return required != null && navPermissions[required] === false;
+    return !canOpenAdminSubPath(item.path, navPermissions);
   };
 
   const isHidden = (item: ShellNavItem) =>
@@ -136,7 +136,7 @@ export function ShellSidebar({
         // Every admin route is force-dynamic and runs an auth + permission
         // resolution server-side. Default prefetch eagerly renders all ~15
         // sidebar targets in the background (a burst of getUser + admin_users +
-        // role_permissions round-trips) which saturates slow connections and
+        // poste_permissions round-trips) which saturates slow connections and
         // can time out the page the user actually clicked. Load on click.
         prefetch={false}
         title={collapsed ? text : undefined}

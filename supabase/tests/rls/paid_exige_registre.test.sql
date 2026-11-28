@@ -255,9 +255,9 @@ select is((select payment_status from public.orders where id = 'dc000000-0000-40
 -- ---------------------------------------------------------------------------
 set local request.jwt.claims = '{"sub":"d3333333-3333-4333-8333-333333333333","role":"authenticated"}';
 select lives_ok(
-  $$select public.test_b150_valider($q$update public.orders set status = 'preparing'
+  $$select public.test_b150_valider($q$update public.orders set status = 'delivered'
       where id = 'dc000000-0000-4000-8000-000000000010' and tenant_id = 'da000000-0000-4000-8000-00000000000a'$q$)$$,
-  'serveur: faire avancer en cuisine');
+  'serveur: faire avancer une commande (la servir ; les statuts de cuisine exigent kitchen.track)');
 set local request.jwt.claims = '{"sub":"d1111111-1111-4111-8111-111111111111","role":"authenticated"}';
 select lives_ok(
   $$select public.test_b150_valider($q$select public.reassign_order_table('dc000000-0000-4000-8000-000000000010',

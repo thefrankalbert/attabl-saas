@@ -1,0 +1,33 @@
+# Veille de la sauvegarde nocturne (audit P9).
+#
+# Le planificateur de GitHub ne garantit pas l'heure: le 2026-11-24, la
+# sauvegarde de 01:30 UTC a tourne a 11:23. Un passage qui n'a pas lieu du tout
+# ne produit aucun echec, donc aucune alerte. Cette veille verifie chaque jour
+# qu'une sauvegarde REUSSIE date de moins de 30 heures, et sinon ouvre l'issue
+# d'alerte (scripts/sauvegarde/signaler.sh).
+
+name: Veille de la sauvegarde
+
+on:
+  schedule:
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  veille:
+    name: Sauvegarde reussie depuis moins de 30 h
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Verifier la derniere sauvegarde reussie
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/sauvegarde/veiller.sh

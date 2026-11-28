@@ -10,7 +10,7 @@ import type { Order } from '@/types/admin.types';
 import type { OrderStatus } from '@/lib/design-tokens';
 import type { GetOrderStatusConfig } from './use-order-status-config';
 import { usePermissions } from '@/hooks/usePermissions';
-import { isRoleAllowed } from '@/lib/admin-roles';
+import { MONEY_PERMISSIONS, ORDERS_ADVANCE } from '@/lib/admin-roles';
 
 interface OrdersBulkActionBarProps {
   selectedIds: Set<string>;
@@ -33,12 +33,11 @@ export default function OrdersBulkActionBar({
   const t = useTranslations('orders');
   const tc = useTranslations('common');
   const { toast } = useToast();
-  // Memes regles que le serveur: avancer = `orders.manage`; supprimer =
-  // owner ou admin ET `orders.pay` (actionDeleteOrders, RLS DELETE). Un gerant
-  // voyait la corbeille et se faisait refuser apres confirmation.
-  const { role, can } = usePermissions();
-  const canAdvance = can('orders.manage');
-  const canDelete = isRoleAllowed(role, ['owner', 'admin']) && can('orders.pay');
+  // Memes regles que le serveur ET la base: avancer = prendre ou suivre une
+  // commande; supprimer = l'autorite d'argent (actionDeleteOrders, RLS DELETE).
+  const { can } = usePermissions();
+  const canAdvance = can(ORDERS_ADVANCE);
+  const canDelete = can(MONEY_PERMISSIONS);
 
   return (
     <div

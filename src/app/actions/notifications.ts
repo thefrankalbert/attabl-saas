@@ -1,9 +1,8 @@
 'use server';
 
 import { z } from 'zod';
-import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
+import { getAuthenticatedUserForTenant, AuthError, MEMBER_ONLY } from '@/lib/auth/get-session';
 import { logger } from '@/lib/logger';
-import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 
 type ActionResponse = {
   success?: boolean;
@@ -32,8 +31,10 @@ async function markReadForMe(
   notificationIds: string[],
 ): Promise<ActionResponse> {
   try {
-    // Tout membre recoit la cloche: tout membre peut la vider, pour lui seul.
-    const { supabase, user } = await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES);
+    // Tout membre recoit la cloche: tout membre peut la vider, pour lui seul
+    // (la ligne ecrite porte SON user id, et la RLS n'accepte qu'une
+    // notification visible par lui). D'ou l'exigence nommee "membre", sans droit.
+    const { supabase, user } = await getAuthenticatedUserForTenant(tenantId, MEMBER_ONLY);
 
     const { error } = await supabase.from('notification_reads').upsert(
       notificationIds.map((id) => ({

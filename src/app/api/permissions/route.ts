@@ -8,36 +8,37 @@ import { logger } from '@/lib/logger';
 import { permissionLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { z } from 'zod';
-import { PERMISSION_CODES } from '@/types/permission.types';
+import { PERMISSION_CODES, STAFF_POSTES } from '@/types/permission.types';
 import { tenantLockResponse } from '@/lib/billing/tenant-lock-response';
 
-const VALID_ROLES = ['admin', 'manager', 'cashier', 'chef', 'waiter'] as const;
-
-// Whitelist the permission keys to the PERMISSION_CODES enum. Previously the
-// schema accepted z.record(z.string(), z.boolean()), which let a compromised
-// owner account inject arbitrary keys into role_permissions.permissions that a
-// lax front-end check might honor as "granted".
+// Reglage d'un POSTE par le proprietaire (`poste_permissions`). `owner` n'est
+// pas reglable: il a toujours tous les droits. Cles limitees aux 22 codes du
+// catalogue (le CHECK `private.droits_valides` de la base refuse aussi une cle
+// libre).
 // partialRecord, not record: with enum keys zod 4 makes z.record exhaustive,
-// while the role editor sends only the overrides that differ from the default.
+// while the editor sends only the overrides that differ from the default.
 const permissionsMapSchema = z
   .partialRecord(z.enum(PERMISSION_CODES), z.boolean())
   .refine((val) => Object.keys(val).length > 0, {
     message: 'At least one permission must be provided',
   });
 
+const posteSchema = z.enum(STAFF_POSTES, { error: 'Poste invalide' });
+
 const updatePermissionsSchema = z.object({
-  role: z.enum(VALID_ROLES, { error: 'Rôle invalide' }),
+  poste: posteSchema,
   permissions: permissionsMapSchema,
 });
 
 const deletePermissionsSchema = z.object({
-  role: z.enum(VALID_ROLES, { error: 'Rôle invalide' }),
+  poste: posteSchema,
 });
 
 // Resolves the tenant from the sub-domain context (x-tenant-slug, injected by
-// the proxy) and confirms the caller is its active owner. Scoping by tenant
+// the proxy) and confirms the caller is its LIVE owner. Scoping by tenant
 // (instead of picking an arbitrary owner row) means a user who owns several
-// restaurants only edits the permissions of the one they are viewing.
+// restaurants only edits the permissions of the one they are viewing. La base
+// applique la meme regle (`is_tenant_owner` dans les politiques).
 async function verifyOwner(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
@@ -45,11 +46,12 @@ async function verifyOwner(
 ) {
   const { data: adminUser } = await supabase
     .from('admin_users')
-    .select('id, tenant_id, role')
+    .select('id, tenant_id')
     .eq('user_id', userId)
     .eq('tenant_id', tenantId)
     .eq('is_active', true)
-    .eq('role', 'owner')
+    .is('deleted_at', null)
+    .contains('postes', ['owner'])
     .maybeSingle();
 
   return adminUser;
@@ -115,17 +117,17 @@ export async function PUT(request: Request) {
     const locked = await tenantLockResponse(adminUser.tenant_id);
     if (locked) return locked;
 
-    const { error } = await supabase.from('role_permissions').upsert(
+    const { error } = await supabase.from('poste_permissions').upsert(
       {
         tenant_id: adminUser.tenant_id,
-        role: parsed.data.role,
+        poste: parsed.data.poste,
         permissions: parsed.data.permissions,
         updated_at: new Date().toISOString(),
-        // FK role_permissions_updated_by_fkey references admin_users(id), NOT
+        // FK poste_permissions.updated_by references admin_users(id), NOT
         // auth.users. user.id is the auth user id; use the membership-row PK.
         updated_by: adminUser.id,
       },
-      { onConflict: 'tenant_id,role' },
+      { onConflict: 'tenant_id,poste' },
     );
 
     if (error) {
@@ -189,10 +191,10 @@ export async function DELETE(request: Request) {
     }
 
     const { error } = await supabase
-      .from('role_permissions')
+      .from('poste_permissions')
       .delete()
       .eq('tenant_id', adminUser.tenant_id)
-      .eq('role', parsed.data.role);
+      .eq('poste', parsed.data.poste);
 
     if (error) {
       logger.error('Permission delete error', error);

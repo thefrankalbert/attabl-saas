@@ -3,7 +3,6 @@
 import { z } from 'zod';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
 import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-tenant-serving';
-import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 import { createAnnouncementService } from '@/services/announcement.service';
 import { ServiceError } from '@/services/errors';
 import { createClient } from '@/lib/supabase/server';
@@ -27,7 +26,7 @@ const announcementPayloadSchema = z.object({
 
 async function checkPermissions(tenantId: string): Promise<{ error: string | null }> {
   try {
-    await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
+    await getAuthenticatedUserForTenant(tenantId, 'settings.edit');
     // Coupure du restaurant: toute action de ce fichier est une ecriture.
     await assertTenantServing(tenantId);
     return { error: null };

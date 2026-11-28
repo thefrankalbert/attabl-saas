@@ -379,7 +379,7 @@ select ok(
   'colonnes anchor_day et last_checked_at presentes');
 
 -- ===========================================================================
--- 8. Lecture: proprietaires et admins du restaurant seulement (L4)
+-- 8. Lecture: qui a billing.manage, meme limite (proprietaire, gerant) (L4)
 -- ===========================================================================
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 select ('ffee0000-0000-0000-0000-00000000000' || g)::uuid, '00000000-0000-0000-0000-000000000000',
@@ -387,9 +387,9 @@ select ('ffee0000-0000-0000-0000-00000000000' || g)::uuid, '00000000-0000-0000-0
   from generate_series(1, 5) g;
 insert into public.admin_users (user_id, tenant_id, email, role, is_active) values
   ('ffee0000-0000-0000-0000-000000000001', pg_temp.tid(1), 'flw1@exemple.test', 'owner', true),
-  ('ffee0000-0000-0000-0000-000000000002', pg_temp.tid(1), 'flw2@exemple.test', 'admin', true),
+  ('ffee0000-0000-0000-0000-000000000002', pg_temp.tid(1), 'flw2@exemple.test', 'manager', true),
   ('ffee0000-0000-0000-0000-000000000003', pg_temp.tid(1), 'flw3@exemple.test', 'waiter', true),
-  ('ffee0000-0000-0000-0000-000000000004', pg_temp.tid(1), 'flw4@exemple.test', 'owner', false),
+  ('ffee0000-0000-0000-0000-000000000004', pg_temp.tid(1), 'flw4@exemple.test', 'manager', false),
   ('ffee0000-0000-0000-0000-000000000005', pg_temp.tid(2), 'flw5@exemple.test', 'owner', true);
 
 set local role authenticated;
@@ -403,11 +403,11 @@ select throws_ok($$select public.apply_flutterwave_payment('eeee0000-0000-0000-0
   '42501', NULL, 'un proprietaire ne peut pas appeler apply_flutterwave_payment (pas de prolongation gratuite)');
 
 set local "request.jwt.claims" = '{"sub":"ffee0000-0000-0000-0000-000000000002","role":"authenticated"}';
-select is((select count(*)::int from public.flutterwave_payments), 1, 'un admin voit les paiements de son restaurant');
+select is((select count(*)::int from public.flutterwave_payments), 1, 'un gerant voit les paiements de son restaurant (factures: billing.manage limite)');
 set local "request.jwt.claims" = '{"sub":"ffee0000-0000-0000-0000-000000000003","role":"authenticated"}';
 select is((select count(*)::int from public.flutterwave_payments), 0, 'un serveur (waiter) ne voit AUCUN paiement');
 set local "request.jwt.claims" = '{"sub":"ffee0000-0000-0000-0000-000000000004","role":"authenticated"}';
-select is((select count(*)::int from public.flutterwave_payments), 0, 'un proprietaire DESACTIVE ne voit rien');
+select is((select count(*)::int from public.flutterwave_payments), 0, 'un gerant DESACTIVE ne voit rien');
 reset role;
 set local role anon;
 select throws_ok($$select count(*) from public.flutterwave_payments$$, '42501', NULL, 'anon ne peut pas lire la table');

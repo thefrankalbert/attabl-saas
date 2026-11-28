@@ -56,8 +56,9 @@ export async function POST(request: Request) {
       .from('admin_users')
       .select('tenant_id')
       .eq('user_id', user.id)
-      .eq('role', 'owner')
+      .contains('postes', ['owner'])
       .eq('is_active', true)
+      .is('deleted_at', null)
       .limit(1)
       .maybeSingle();
 

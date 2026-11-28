@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import InvoiceHistoryClient from '@/components/admin/InvoiceHistoryClient';
 import TenantNotFound from '@/components/admin/TenantNotFound';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
+import { BILLING_READ } from '@/lib/admin-roles';
 import { getTenantBillingIds } from '@/lib/billing/tenant-billing-ids';
 import { adminPageMetadata } from '@/lib/admin-page-metadata';
 
@@ -14,8 +15,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function InvoicesPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
-  // Billing/Stripe surface - keep consistent with subscription (owner/admin only).
-  const { tenantId } = await requireAdminPermission(site, 'settings.view');
+  // Billing/Stripe surface - keep consistent with subscription (`billing.manage`, bounded level included: owner and manager).
+  const { tenantId } = await requireAdminPermission(site, BILLING_READ);
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 

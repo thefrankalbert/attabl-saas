@@ -1,72 +1,46 @@
 // @vitest-environment happy-dom
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
 import RoleGuard from '../RoleGuard';
+import { PermissionsProvider } from '@/contexts/PermissionsContext';
+import { getEffectiveLevels } from '@/lib/permissions';
+import type { Poste } from '@/types/permission.types';
 
 // --- Mocks ----------------------------------------------
-
-const mockPermissions = {
-  role: 'admin' as const,
-  can: vi.fn(() => true),
-  permissions: {},
-};
-
-vi.mock('@/hooks/usePermissions', () => ({
-  usePermissions: () => mockPermissions,
-}));
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
 
+// Les niveaux viennent de la vraie resolution (getEffectiveLevels), jamais
+// d'une carte ecrite a la main.
+function renderAs(poste: Poste, ui: React.ReactNode) {
+  return render(
+    <PermissionsProvider postes={[poste]} levels={getEffectiveLevels({ postes: [poste] })}>
+      {ui}
+    </PermissionsProvider>,
+  );
+}
+
 // --- Tests ----------------------------------------------
 
 describe('RoleGuard', () => {
-  beforeEach(() => {
-    mockPermissions.role = 'admin';
-    mockPermissions.can = vi.fn(() => true);
-  });
-
-  it('renders children when user has required role', () => {
-    render(
-      <RoleGuard roles={['admin', 'owner']}>
-        <div data-testid="protected">Protected content</div>
-      </RoleGuard>,
-    );
-
-    expect(screen.getByTestId('protected')).toBeInTheDocument();
-  });
-
   it('renders children when user has required permission', () => {
-    render(
+    renderAs(
+      'chef',
       <RoleGuard permission="menu.edit">
         <div data-testid="protected">Protected content</div>
       </RoleGuard>,
     );
 
     expect(screen.getByTestId('protected')).toBeInTheDocument();
-    expect(mockPermissions.can).toHaveBeenCalledWith('menu.edit');
   });
 
-  it('shows AccessDenied when role is not in whitelist', () => {
-    mockPermissions.role = 'waiter' as 'admin';
-
-    render(
-      <RoleGuard roles={['admin', 'owner']}>
-        <div data-testid="protected">Protected content</div>
-      </RoleGuard>,
-    );
-
-    expect(screen.queryByTestId('protected')).not.toBeInTheDocument();
-    expect(screen.getByText('accessDenied')).toBeInTheDocument();
-  });
-
-  it('shows AccessDenied when permission check fails', () => {
-    mockPermissions.can = vi.fn(() => false);
-
-    render(
-      <RoleGuard permission="team.view">
+  it('shows AccessDenied when permission check fails (temoin: meme garde, autre poste)', () => {
+    renderAs(
+      'waiter',
+      <RoleGuard permission="menu.edit">
         <div data-testid="protected">Protected content</div>
       </RoleGuard>,
     );
@@ -79,11 +53,55 @@ describe('RoleGuard', () => {
     expect(screen.queryByText('ownerOnly')).not.toBeInTheDocument();
   });
 
-  it('renders custom fallback when access denied', () => {
-    mockPermissions.role = 'waiter' as 'admin';
+  it('un droit borne (limited) ne passe pas la garde: seul full ouvre', () => {
+    renderAs(
+      'waiter',
+      <RoleGuard permission="orders.pay">
+        <div data-testid="protected">Protected content</div>
+      </RoleGuard>,
+    );
 
-    render(
-      <RoleGuard roles={['owner']} fallback={<div data-testid="custom-fallback">No access</div>}>
+    expect(screen.queryByTestId('protected')).not.toBeInTheDocument();
+  });
+
+  it('une exigence en tableau demande TOUS les droits', () => {
+    renderAs(
+      'cashier',
+      <RoleGuard permission={['orders.pay', 'orders.refund']}>
+        <div data-testid="protected">Protected content</div>
+      </RoleGuard>,
+    );
+
+    expect(screen.queryByTestId('protected')).not.toBeInTheDocument();
+  });
+
+  it('ownerOnly: le proprietaire passe', () => {
+    renderAs(
+      'owner',
+      <RoleGuard ownerOnly>
+        <div data-testid="protected">Protected content</div>
+      </RoleGuard>,
+    );
+
+    expect(screen.getByTestId('protected')).toBeInTheDocument();
+  });
+
+  it('ownerOnly: le gerant, qui a pourtant tous les droits, ne passe pas', () => {
+    renderAs(
+      'manager',
+      <RoleGuard ownerOnly>
+        <div data-testid="protected">Protected content</div>
+      </RoleGuard>,
+    );
+
+    expect(screen.queryByTestId('protected')).not.toBeInTheDocument();
+    expect(screen.getByText('accessDenied')).toBeInTheDocument();
+  });
+
+  it('renders custom fallback when access denied', () => {
+    renderAs(
+      'manager',
+      <RoleGuard ownerOnly fallback={<div data-testid="custom-fallback">No access</div>}>
         <div data-testid="protected">Protected content</div>
       </RoleGuard>,
     );
@@ -92,8 +110,9 @@ describe('RoleGuard', () => {
     expect(screen.getByTestId('custom-fallback')).toBeInTheDocument();
   });
 
-  it('renders children when no permission or roles specified', () => {
-    render(
+  it('renders children when no permission or ownerOnly specified', () => {
+    renderAs(
+      'waiter',
       <RoleGuard>
         <div data-testid="protected">Open content</div>
       </RoleGuard>,

@@ -351,7 +351,7 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
         }
         if (code === '42501' && hint === CANCEL_HINT_NEEDS_MONEY_AUTHORITY) {
           throw new ServiceError(
-            "Cette commande a un acompte au registre : l'annuler revient a un gerant, un administrateur ou le proprietaire",
+            "Cette commande a un acompte au registre : l'annuler revient au proprietaire ou a un gerant",
             'CONFLICT',
             { reason: CANCEL_NEEDS_MONEY_AUTHORITY },
           );
@@ -369,7 +369,7 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
       const row = (cancelled ?? [])[0] as { id: string } | undefined;
       if (!row) {
         // Nothing touched: say why. Already cancelled is the idempotent no-op,
-        // paid needs a refund, and a row the policy hides (no orders.manage)
+        // paid needs a refund, and a row the policy hides (no orders.take nor kitchen.track)
         // is a refusal - RLS raises no error, it only hides.
         const { data: order, error: fetchError } = await supabase
           .from('orders')

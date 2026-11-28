@@ -24,6 +24,7 @@ function renderPanel(overrides: Overrides, isComp = false) {
         isComp={isComp}
         canPay
         canComp={false}
+        canSetStatus={() => true}
         currency="XAF"
         onUpdate={() => {}}
         onStatusUpdate={() => {}}

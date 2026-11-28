@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/logger';
+import { toPostes } from '@/lib/permissions';
 import { ServiceError } from './errors';
 import { createAssignmentService } from './assignment.service';
 
@@ -71,7 +72,9 @@ interface TenantRow {
 interface MembershipRow {
   id: string;
   tenant_id: string;
+  /** Transition: ne sert qu'a reconnaitre la ligne de plateforme. */
   role: string;
+  postes: unknown;
   is_active: boolean;
   is_super_admin: boolean | null;
   deleted_at: string | null;
@@ -127,7 +130,7 @@ export function createAccountDeletionService({ admin, stripe }: AccountDeletionD
     const { data, error } = await admin
       .from('admin_users')
       .select(
-        'id, tenant_id, role, is_active, is_super_admin, deleted_at, deleted_by, tenants!inner(deleted_at)',
+        'id, tenant_id, role, postes, is_active, is_super_admin, deleted_at, deleted_by, tenants!inner(deleted_at)',
       )
       .eq('user_id', userId);
     if (error) throw new ServiceError('Lecture du compte impossible', 'INTERNAL', error);
@@ -206,17 +209,17 @@ export function createAccountDeletionService({ admin, stripe }: AccountDeletionD
       const tenant = await lireRestaurant(input.tenantSlug);
       const { data: membre, error } = await admin
         .from('admin_users')
-        .select('id, role')
+        .select('id, postes')
         .eq('user_id', input.userId)
         .eq('tenant_id', tenant.id)
         .eq('is_active', true)
         .is('deleted_at', null)
-        .maybeSingle<{ id: string; role: string }>();
+        .maybeSingle<{ id: string; postes: unknown }>();
       if (error) throw new ServiceError('Lecture du compte impossible', 'INTERNAL', error);
       if (!membre) {
         throw new ServiceError('Acces non autorise pour ce restaurant', 'UNAUTHORIZED');
       }
-      if (membre.role !== 'owner') {
+      if (!toPostes(membre.postes).includes('owner')) {
         throw new ServiceError('Seul un proprietaire peut fermer le restaurant', 'UNAUTHORIZED');
       }
       if (tenant.deleted_at) return { alreadyClosed: true };
@@ -274,7 +277,8 @@ export function createAccountDeletionService({ admin, stripe }: AccountDeletionD
         throw new ServiceError('Un compte plateforme ne se supprime pas ici', 'UNAUTHORIZED');
       }
       const proprietaireActif = lignes.some(
-        (l) => l.role === 'owner' && !l.deleted_at && l.tenants.deleted_at === null,
+        (l) =>
+          toPostes(l.postes).includes('owner') && !l.deleted_at && l.tenants.deleted_at === null,
       );
       if (proprietaireActif) {
         throw new ServiceError(

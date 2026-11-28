@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { PermissionsProvider } from '@/contexts/PermissionsContext';
-import { DEFAULT_PERMISSIONS, type PermissionCode } from '@/types/permission.types';
+import { getEffectiveLevels } from '@/lib/permissions';
 import POSClient from '../POSClient';
 
 // Test en direct 2026-11-15: une livraison sans adresse n'etait refusee qu'APRES
@@ -72,10 +72,7 @@ function renderPOS(overrides: Record<string, unknown>) {
     ...overrides,
   };
   render(
-    <PermissionsProvider
-      role="cashier"
-      permissions={DEFAULT_PERMISSIONS.cashier as Record<PermissionCode, boolean>}
-    >
+    <PermissionsProvider postes={['cashier']} levels={getEffectiveLevels({ postes: ['cashier'] })}>
       <POSClient tenantId="t1" />
     </PermissionsProvider>,
   );

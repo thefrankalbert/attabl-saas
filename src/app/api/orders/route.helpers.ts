@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/logger';
 import { formatCurrency } from '@/lib/utils/currency';
 import { getTranslations } from 'next-intl/server';
-import { determineOrderEventKey, sendOrderEmailForKey } from '@/services/trigger-emails.service';
+import { claimAndSendOrderEmail, determineOrderEventKey } from '@/services/trigger-emails.service';
 import { createPushService } from '@/services/push.service';
 
 // Fallback translations for API routes where locale may not be resolved
@@ -154,7 +154,9 @@ export function scheduleTriggerEmails(
           .from('admin_users')
           .select('email')
           .eq('tenant_id', tenantId)
-          .eq('role', 'owner')
+          // Un seul proprietaire vivant par restaurant (index unique en base).
+          .contains('postes', ['owner'])
+          .is('deleted_at', null)
           .maybeSingle(),
         adminSupabase.from('tenants').select('name, activation_events').eq('id', tenantId).single(),
       ]);
@@ -170,15 +172,13 @@ export function scheduleTriggerEmails(
 
       const eventKey = determineOrderEventKey({ ordersCount, activationEvents });
       if (eventKey) {
-        // Atomically claim the event slot server-side - merges into the live row
-        // (no stale snapshot), so a concurrent writer's key is never clobbered.
-        const { data: claimed } = await adminSupabase.rpc('claim_activation_event', {
-          p_tenant_id: tenantId,
-          p_event_key: eventKey,
+        // Desabonnement verifie, PUIS creneau reserve atomiquement, PUIS envoi.
+        await claimAndSendOrderEmail(adminSupabase, eventKey, {
+          tenantId,
+          adminEmail,
+          restaurantName,
+          dashboardUrl,
         });
-        if (claimed) {
-          await sendOrderEmailForKey(eventKey, { adminEmail, restaurantName, dashboardUrl });
-        }
       }
     } catch (triggerErr) {
       logger.warn('Order trigger email check failed (non-blocking)', { err: triggerErr });

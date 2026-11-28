@@ -6,7 +6,6 @@ import { createInventoryService } from '@/services/inventory.service';
 import { ServiceError } from '@/services/errors';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
 import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-tenant-serving';
-import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 import { isFeatureEntitled, type GatedFeature } from '@/lib/plans/assert-feature';
 import type {
   Ingredient,
@@ -28,10 +27,10 @@ import { MAX_STOCK_QUANTITY, MAX_UNIT_COST } from '@/lib/inventory/quantity-form
 const INVENTORY_PLAN_ERROR = 'Le module Inventaire est reserve au plan Pro.';
 const RECIPES_PLAN_ERROR = 'Les fiches techniques sont reservees au plan Pro.';
 
-// Reads AND writes are gated purely on the permission (inventory.view /
-// inventory.edit), not on a coarse role list: ALL_ADMIN_ROLES makes the role
-// gate a no-op, so an owner override (e.g. inventory.edit granted to the chef in
-// /settings/permissions) is honored here exactly as by the import routes.
+// Reads AND writes are gated purely on the right (inventory.view /
+// inventory.edit), never on a list of postes: an owner setting (e.g.
+// inventory.edit removed from the chef in /settings/permissions) is honored
+// here exactly as by the import routes.
 
 // Messages en francais clair: ils s'affichent tels quels a l'ecran, et disent quel
 // champ corriger. Sans eux, zod renvoyait ses messages anglais par defaut (ou un
@@ -187,11 +186,7 @@ async function checkInventoryPermissions(
   planError: string = INVENTORY_PLAN_ERROR,
 ): Promise<{ error: null; supabase: SupabaseClient } | { error: string; supabase: null }> {
   try {
-    const { supabase } = await getAuthenticatedUserForTenant(
-      tenantId,
-      ALL_ADMIN_ROLES,
-      'inventory.edit',
-    );
+    const { supabase } = await getAuthenticatedUserForTenant(tenantId, 'inventory.edit');
     // Coupure du restaurant: ce garde ne sert que des ecritures (la lecture du
     // rapport des pertes passe par checkInventoryViewPermissions, sans coupure).
     await assertTenantServing(tenantId);
@@ -221,11 +216,7 @@ async function checkInventoryViewPermissions(
   tenantId: string,
 ): Promise<{ error: null; supabase: SupabaseClient } | { error: string; supabase: null }> {
   try {
-    const { supabase } = await getAuthenticatedUserForTenant(
-      tenantId,
-      ALL_ADMIN_ROLES,
-      'inventory.view',
-    );
+    const { supabase } = await getAuthenticatedUserForTenant(tenantId, 'inventory.view');
     if (!(await isFeatureEntitled(supabase, tenantId, 'canAccessInventory'))) {
       return { error: INVENTORY_PLAN_ERROR, supabase: null };
     }

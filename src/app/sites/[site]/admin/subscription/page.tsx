@@ -4,6 +4,8 @@ import { headers } from 'next/headers';
 import { SubscriptionManager } from '@/components/tenant/SubscriptionManager';
 import TenantNotFound from '@/components/admin/TenantNotFound';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
+import { BILLING_READ } from '@/lib/admin-roles';
+import { meetsRequirement } from '@/lib/permissions';
 import { getTenantBillingIds } from '@/lib/billing/tenant-billing-ids';
 import { getTranslations } from 'next-intl/server';
 import { isFlutterwaveConfigured, isFlutterwaveCurrency } from '@/lib/billing/flutterwave/config';
@@ -27,7 +29,7 @@ export default async function SubscriptionPage({
   const { site } = await params;
   const { fw, status: fwStatus, transaction_id: fwTransactionId } = await searchParams;
   const tTitle = await getTranslations('sidebar');
-  const { tenantId } = await requireAdminPermission(site, 'settings.view');
+  const { tenantId, levels } = await requireAdminPermission(site, BILLING_READ);
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
@@ -83,6 +85,7 @@ export default async function SubscriptionPage({
       <SubscriptionManager
         tenant={tenantWithEmail}
         siteSlug={tenantSlug}
+        canPay={meetsRequirement(levels, 'billing.manage')}
         mobileMoney={mobileMoney}
       />
     </div>

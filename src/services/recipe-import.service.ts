@@ -115,7 +115,7 @@ export function createRecipeImportService(supabase: SupabaseClient): RecipeImpor
 
       // Same pick as import_recipes_tx: active first, then the oldest.
       const ingredientByLowerName = new Map<string, StoredIngredient>();
-      const sortedIngredients = [...((ingRes.data as StoredIngredient[]) ?? [])].sort(
+      const sortedIngredients = ((ingRes.data as StoredIngredient[]) ?? []).toSorted(
         (a, b) =>
           Number(Boolean(b.is_active)) - Number(Boolean(a.is_active)) ||
           String(a.created_at ?? '').localeCompare(String(b.created_at ?? '')),

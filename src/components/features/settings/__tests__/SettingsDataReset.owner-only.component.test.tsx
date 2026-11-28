@@ -4,8 +4,8 @@ import { describe, it, expect, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
 import { PermissionsProvider } from '@/contexts/PermissionsContext';
-import { DEFAULT_PERMISSIONS, type PermissionCode } from '@/types/permission.types';
-import type { AdminRole } from '@/types/admin.types';
+import { getEffectiveLevels } from '@/lib/permissions';
+import type { Poste } from '@/types/permission.types';
 import SettingsDataReset from '../SettingsDataReset';
 
 // La zone dangereuse efface les commandes payees et l'historique des
@@ -13,10 +13,9 @@ import SettingsDataReset from '../SettingsDataReset';
 
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 
-function renderAs(role: AdminRole) {
-  const permissions = DEFAULT_PERMISSIONS[role] as Record<PermissionCode, boolean>;
+function renderAs(poste: Poste) {
   render(
-    <PermissionsProvider role={role} permissions={permissions}>
+    <PermissionsProvider postes={[poste]} levels={getEffectiveLevels({ postes: [poste] })}>
       <SettingsDataReset tenantSlug="demo" />
     </PermissionsProvider>,
   );
@@ -29,8 +28,8 @@ describe('Zone dangereuse: proprietaire seulement', () => {
     expect(screen.getAllByRole('button', { name: 'resetAction' })).toHaveLength(3);
   });
 
-  it('un admin ne la voit pas', () => {
-    renderAs('admin');
+  it('un gerant (tous les droits sauf la facturation) ne la voit pas', () => {
+    renderAs('manager');
     expect(screen.queryByText('reset_all_title')).toBeNull();
     expect(screen.queryByRole('button', { name: 'resetAction' })).toBeNull();
   });

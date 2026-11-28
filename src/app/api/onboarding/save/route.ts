@@ -8,7 +8,6 @@ import { verifyOrigin } from '@/lib/csrf';
 import { createOnboardingService } from '@/services/onboarding.service';
 import { getStorageCleanup } from '@/services/storage-cleanup.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
-import { isRoleAllowed, ONBOARDING_COMPLETE_ROLES } from '@/lib/admin-roles';
 
 export async function POST(request: Request) {
   try {
@@ -58,9 +57,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: session.error }, { status: session.status });
     }
 
-    // Same roles as the completion: the save writes the tenant's name, address
+    // Same rule as the completion: the save writes the tenant's name, address
     // and colors, which only the owner may set up here.
-    if (!isRoleAllowed(session.adminUser.role, ONBOARDING_COMPLETE_ROLES)) {
+    if (!session.adminUser.isOwner) {
       return NextResponse.json({ error: 'Permissions insuffisantes' }, { status: 403 });
     }
 

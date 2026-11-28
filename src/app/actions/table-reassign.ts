@@ -9,8 +9,8 @@ import { assertTenantServing } from '@/lib/billing/assert-tenant-serving';
  * Reassign a dine-in order to a different table.
  *
  * SECURITY: tenantId is derived from the authenticated session (never from the
- * client) and gated on `orders.manage` - the same permission the order-status /
- * comp actions use - so a member cannot move another tenant's order (IDOR
+ * client) and gated on `orders.take` (a floor gesture, like freeing a table) -
+ * so a member cannot move another tenant's order (IDOR
  * prevention). The atomic table_sessions bookkeeping lives in the
  * reassign_order_table RPC (migration 20260711140000).
  */
@@ -49,7 +49,7 @@ export async function actionReassignOrderTable(
   }
 
   try {
-    const { tenantId, supabase } = await getAuthenticatedUserWithTenant('orders.manage');
+    const { tenantId, supabase } = await getAuthenticatedUserWithTenant('orders.take');
     // Coupure du restaurant: deplacer une commande est une ecriture de service.
     await assertTenantServing(tenantId);
 

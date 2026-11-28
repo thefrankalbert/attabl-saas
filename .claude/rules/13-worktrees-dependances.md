@@ -32,6 +32,12 @@ pnpm now wants to use the virtual store at ".../node_modules/.pnpm"
    son magasin chez lui.
 2. **`scripts/verifier-worktrees.sh`** : detecte la derive, liste les dossiers
    fantomes, et dresse l'inventaire de ce qui est sur a supprimer.
+   Il couvre les **deux** emplacements : `.worktrees/` (cree a la main) et
+   `.claude/worktrees/` (cree par l'application a chaque session). Il ne
+   regardait que le premier jusqu'au 2026-11-28 : 31 worktrees du second
+   echappaient a tout controle, dont un dossier fantome portant 6 fichiers non
+   commites. Un nouvel emplacement s'ajoute dans `EMPLACEMENTS`, en tete du
+   script, et les trois sections le prennent en compte.
 3. **Garde `pre-commit` (Gate 0c)** : lance le script en `--quiet`. Muet quand
    tout va bien ; bloque UNIQUEMENT sur un magasin hors projet.
 

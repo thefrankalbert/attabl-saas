@@ -17,6 +17,7 @@ import {
   MENU_PRICE_REJECTION_LABEL,
   readMenuPrice,
 } from '@/lib/utils/parse-price-text';
+import { MENU_WITH_PRICE } from '@/lib/admin-roles';
 
 // Bornes alignees sur l'extraction (pdf-import.service.ts) et le formulaire de
 // plat (audit B6): ce chemin recoit la liste renvoyee par le navigateur, qui
@@ -73,7 +74,7 @@ export async function POST(request: Request) {
     }
 
     // 2. Authenticate user and derive tenant from session (not from header)
-    const { tenantId, supabase } = await getAuthenticatedUserWithTenant('menu.edit');
+    const { tenantId, supabase } = await getAuthenticatedUserWithTenant(MENU_WITH_PRICE);
     // Coupure du restaurant: un import est une ecriture (403 + message via AuthError).
     await assertTenantServing(tenantId);
 

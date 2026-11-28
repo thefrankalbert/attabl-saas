@@ -4,7 +4,7 @@ import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
 
 // X18: le mur "fonction Pro" (12 pages) envoyait tout le monde vers
-// /subscription, que le personnel ne peut pas ouvrir (settings.view). Le
+// /subscription, que le personnel ne peut pas ouvrir (billing.manage au moins limite). Le
 // bouton ne s'affiche plus qu'a qui peut choisir un plan; les autres lisent
 // qui peut activer la fonction.
 
@@ -21,6 +21,7 @@ vi.mock('@/lib/auth/require-admin-permission', () => ({
 }));
 
 import { FeatureUpgradeWall } from '../FeatureUpgradeWall';
+import { BILLING_READ } from '@/lib/admin-roles';
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -33,12 +34,12 @@ async function renderWall() {
   );
 }
 
-describe('FeatureUpgradeWall - bouton selon settings.view', () => {
+describe('FeatureUpgradeWall - bouton selon BILLING_READ', () => {
   it('proprietaire: le bouton de passage au Pro', async () => {
     mockGetPermission.mockResolvedValue(true);
     await renderWall();
     expect(screen.getByText('upgradeCta')).toBeInTheDocument();
-    expect(mockGetPermission).toHaveBeenCalledWith('resto', 'settings.view');
+    expect(mockGetPermission).toHaveBeenCalledWith('resto', BILLING_READ);
   });
 
   it('personnel: pas de bouton, le nom de qui peut activer', async () => {

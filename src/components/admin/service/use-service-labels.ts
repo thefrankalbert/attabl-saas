@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import { getRoleConfig } from '@/lib/role-config';
+import { getPostesConfig } from '@/lib/role-config';
 
 // Builds the memoized label bundles handed down to the Service dashboard
 // sub-components (floor plan, metrics bar, right panel, table detail).
@@ -78,8 +78,11 @@ export function useServiceLabels() {
       tableShort: t('tableShort'),
       itemsCount: (count: number) => t('itemsCount', { count }),
       minutesAgoShort: (min: number) => t('minutesAgoShort', { min }),
-      // Translated role name; the raw enum ('waiter', 'owner') was shown before.
-      roleName: (role: string) => getRoleConfig(role, tu).label,
+      // Libelles traduits de TOUS les postes du serveur (cumul).
+      postesName: (postes: readonly string[] | undefined) =>
+        getPostesConfig(postes, tu)
+          .map((poste) => poste.label)
+          .join(', '),
       availableStatus: t('availableStatus'),
       tablesPlural: (n: number) => t('tablesPlural', { count: n }),
     }),
@@ -117,8 +120,12 @@ export function useServiceLabels() {
       reassignMoving: t('reassignMoving'),
       reassignSuccess: t('reassignSuccess'),
       reassignError: t('reassignError'),
+      postesName: (postes: readonly string[] | undefined) =>
+        getPostesConfig(postes, tu)
+          .map((poste) => poste.label)
+          .join(', '),
     }),
-    [t, tc],
+    [t, tc, tu],
   );
 
   return { floorLabels, metricsLabels, panelLabels, detailLabels };

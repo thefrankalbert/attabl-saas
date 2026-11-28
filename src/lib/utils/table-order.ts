@@ -4,7 +4,7 @@
  * right after "Salle 1" on the Tables settings page.
  */
 export function sortByTableNumber<T extends { table_number: string }>(tables: T[]): T[] {
-  return [...tables].sort((a, b) =>
+  return tables.toSorted((a, b) =>
     a.table_number.localeCompare(b.table_number, undefined, { numeric: true }),
   );
 }

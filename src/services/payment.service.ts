@@ -217,7 +217,7 @@ export function createPaymentService(supabase: SupabaseClient) {
 
     /**
      * Comp / offer an order: close it for FREE (no tender). This is a MANAGER
-     * privilege (fraud surface) - the action layer gates it to owner/admin/manager.
+     * privilege (fraud surface) - the action layer gates it to the money authority (the four money rights).
      *
      * Comp is COLUMNS-ONLY on orders (payment_status='comp', is_comp, comp_reason,
      * comped_by, comped_at, comp_amount). It is NEVER written to the payments

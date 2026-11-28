@@ -17,6 +17,7 @@ import { checkDineInTable } from '@/services/order/dine-in-table';
 import { canAccessFeature, getPlanLimits } from '@/lib/plans/features';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
+import { SERVICE_POSTES } from '@/lib/admin-roles';
 import { TENANT_LOCK_COLUMNS, tenantLockReason } from '@/lib/billing/tenant-lock';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 
@@ -49,8 +50,13 @@ export async function POST(request: Request) {
     if (originErr) return originErr;
 
     // 1. Authenticate user + derive tenant from session (IDOR prevention).
-    // 'pos.use' gates by fine-grained permission (role defaults + per-user overrides).
-    const { tenantId: tenant_id, user } = await getAuthenticatedUserWithTenant('pos.use');
+    // `orders.take` (prendre une commande) decide: postes cumules, reglages du
+    // restaurant, reglage par personne.
+    const {
+      tenantId: tenant_id,
+      user,
+      postes,
+    } = await getAuthenticatedUserWithTenant('orders.take');
 
     // 2. Rate limiting, keyed by the authenticated cashier, not the IP. This
     // route is staff-only (auth above), and keying by IP made restaurants behind
@@ -100,7 +106,7 @@ export async function POST(request: Request) {
 
     const { data: adminUser } = await adminSupabase
       .from('admin_users')
-      .select('id, tenant_id, role')
+      .select('id, tenant_id')
       .eq('user_id', user.id)
       .eq('tenant_id', tenant_id)
       .eq('is_active', true)
@@ -110,12 +116,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
     }
 
-    // ENCAISSER A LA CAISSE = `orders.pay`, pas seulement `pos.use`.
+    // ENCAISSER A LA CAISSE = `orders.pay`, pas seulement `orders.take`.
     //
     // Decision du proprietaire (2026-11-09): le serveur prend les commandes a
     // la caisse mais ne touche pas a l'argent. Cette route cree la commande ET,
     // si un moyen de paiement est fourni, la passe a `paid` et inscrit le tender
-    // dans `payments` (applyPosPayment). Avec `pos.use` seul, donner la
+    // dans `payments` (applyPosPayment). Avec `orders.take` seul, donner la
     // caisse au serveur lui donnait aussi l'encaissement et les pourboires.
     // Un moyen de paiement ou un pourboire exige donc `orders.pay`; sans lui,
     // la commande part en cuisine impayee et le caissier l'encaisse ensuite.
@@ -505,13 +511,17 @@ export async function POST(request: Request) {
       });
     }
 
-    // 10c. Owner decision 2026-11-14: the waiter who sends a dine-in ticket to the
+    // 10c. Owner decision 2026-11-14: a service poste (waiter, bartender, crew; cumul compris) that sends a dine-in ticket to the
     // kitchen becomes that table's server (unless it already has one), so the
     // Service floor shows who to call when it is ready. Best-effort: an
     // assignment problem must never fail an order that is already created.
     // Server assignment is a Pro feature (canAccessService): on Starter there is
     // no Service floor to show it on, and the database refuses the row.
-    if (service_type === 'dine_in' && adminUser.role === 'waiter' && planLimits.canAccessService) {
+    if (
+      service_type === 'dine_in' &&
+      postes.some((poste) => (SERVICE_POSTES as readonly string[]).includes(poste)) &&
+      planLimits.canAccessService
+    ) {
       try {
         const { data: placed } = await adminSupabase
           .from('orders')

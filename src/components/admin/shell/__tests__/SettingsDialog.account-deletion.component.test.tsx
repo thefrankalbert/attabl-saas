@@ -4,8 +4,8 @@ import { describe, it, expect, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
 import { PermissionsProvider } from '@/contexts/PermissionsContext';
-import { DEFAULT_PERMISSIONS, type PermissionCode } from '@/types/permission.types';
-import type { AdminRole } from '@/types/admin.types';
+import { getEffectiveLevels } from '@/lib/permissions';
+import type { Poste } from '@/types/permission.types';
 import { SettingsDialog } from '../SettingsDialog';
 
 // Un restaurant gele est renvoye sur /subscription par le proxy: toute autre
@@ -23,10 +23,9 @@ vi.mock('@/app/actions/account-deletion', () => ({
   actionDeleteStaffAccount: vi.fn(),
 }));
 
-function renderAs(role: AdminRole) {
-  const permissions = DEFAULT_PERMISSIONS[role] as Record<PermissionCode, boolean>;
+function renderAs(poste: Poste) {
   render(
-    <PermissionsProvider role={role} permissions={permissions}>
+    <PermissionsProvider postes={[poste]} levels={getEffectiveLevels({ postes: [poste] })}>
       <SettingsDialog
         open
         onOpenChange={() => undefined}
@@ -48,6 +47,12 @@ describe('SettingsDialog: suppression du compte dans "Mon compte"', () => {
     expect(screen.queryByText('staff_title')).toBeNull();
   });
 
+  it('le gerant n est pas proprietaire: il supprime son compte, il ne ferme pas le restaurant', () => {
+    renderAs('manager');
+    expect(screen.getByText('staff_title')).toBeInTheDocument();
+    expect(screen.queryByText('owner_title')).toBeNull();
+  });
+
   it('le personnel y supprime son compte', () => {
     renderAs('waiter');
     expect(screen.getByText('staff_title')).toBeInTheDocument();
@@ -60,10 +65,7 @@ describe('SettingsDialog: suppression du compte dans "Mon compte"', () => {
 describe('SettingsDialog: libelle du plan', () => {
   it('affiche STARTER, jamais GRATUIT, quand aucun plan n est enregistre', () => {
     render(
-      <PermissionsProvider
-        role="owner"
-        permissions={DEFAULT_PERMISSIONS.owner as Record<PermissionCode, boolean>}
-      >
+      <PermissionsProvider postes={['owner']} levels={getEffectiveLevels({ postes: ['owner'] })}>
         <SettingsDialog
           open
           onOpenChange={() => undefined}

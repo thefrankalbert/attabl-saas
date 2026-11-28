@@ -69,7 +69,7 @@ vi.mock('@/services/plan-enforcement.service', () => ({
     canAddStaff,
     canAddAdmin: vi.fn(),
   }),
-  STAFF_ROLES: ['manager', 'cashier', 'chef', 'waiter'],
+  isAdminSeat: (postes: string[]) => postes.includes('owner'),
 }));
 
 vi.mock('@/lib/logger', () => ({
@@ -96,7 +96,7 @@ describe('POST /api/invitations/accept - session du titulaire', () => {
       id: 'inv-1',
       tenant_id: 'tenant-1',
       email: 'equipier@resto.test',
-      role: 'manager',
+      postes: ['manager'],
     });
     acceptInvitation.mockResolvedValue({ tenantSlug: 'mon-resto' });
     signInWithPassword.mockResolvedValue({ data: { user: { id: 'auth-new' } }, error: null });

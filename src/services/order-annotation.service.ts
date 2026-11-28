@@ -201,6 +201,16 @@ export function createOrderAnnotationService(supabase: SupabaseClient) {
         .eq('tenant_id', tenantId);
 
       if (error) {
+        // Garde en base (trg_house_accounts_settle_guard): une commande de
+        // l'ardoise doit encore de l'argent, par exemple attachee entre
+        // l'encaissement et ce solde. Refus metier, pas panne.
+        if (error.code === '23514') {
+          throw new ServiceError(
+            'Une commande de cette ardoise reste a encaisser',
+            'CONFLICT',
+            error,
+          );
+        }
         throw new ServiceError('Erreur lors du solde de l ardoise', 'INTERNAL', error);
       }
     },

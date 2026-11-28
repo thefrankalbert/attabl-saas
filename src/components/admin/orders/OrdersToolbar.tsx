@@ -40,7 +40,7 @@ export default function OrdersToolbar({
   const params = useParams<{ site: string }>();
   const houseAccountsHref = `/sites/${params?.site ?? ''}/admin/orders/house-accounts`;
   // Les ardoises sont de l'argent: lien cache a qui n'encaisse pas.
-  const { permissions } = usePermissions();
+  const { levels: permissions } = usePermissions();
   const showHouseAccounts = canOpenAdminSubPath('/orders/house-accounts', permissions);
 
   const [showSoundPicker, setShowSoundPicker] = useState(false);

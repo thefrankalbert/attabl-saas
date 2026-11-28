@@ -76,7 +76,7 @@ export async function buildRecipeWorkbook(data: RecipeTemplateData): Promise<Buf
   const catName = (id: string | null): string => (id && catById.get(id)?.name) || NO_CATEGORY;
   const collator = new Intl.Collator('fr', { sensitivity: 'base' });
 
-  const items = [...data.menuItems].sort(
+  const items = data.menuItems.toSorted(
     (a, b) =>
       catOrder(a.category_id) - catOrder(b.category_id) ||
       collator.compare(catName(a.category_id), catName(b.category_id)) ||
@@ -85,7 +85,7 @@ export async function buildRecipeWorkbook(data: RecipeTemplateData): Promise<Buf
 
   const rows: Array<Array<string | number>> = [];
   for (const item of items) {
-    const lines = [...(linesByItem.get(item.id) ?? [])].sort((a, b) =>
+    const lines = (linesByItem.get(item.id) ?? []).toSorted((a, b) =>
       collator.compare(a.ingredient?.name ?? '', b.ingredient?.name ?? ''),
     );
     if (lines.length === 0) {
@@ -115,7 +115,7 @@ export async function buildRecipeWorkbook(data: RecipeTemplateData): Promise<Buf
       {
         column: 2,
         title: 'Ingrédients',
-        values: [...data.ingredientNames].sort(collator.compare),
+        values: data.ingredientNames.toSorted(collator.compare),
         strict: false,
       },
       { column: 3, title: 'Unités', values: RECIPE_UNITS, strict: true },

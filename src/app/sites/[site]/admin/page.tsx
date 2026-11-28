@@ -58,7 +58,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
   let activeTablesTotal = 0;
   let activeTablesUsed = 0;
 
-  const canSeeRevenue = await getAdminPermission(site, 'reports.view');
+  const canSeeRevenue = await getAdminPermission(site, 'reports.money');
 
   try {
     // Journee de caisse = journee DU RESTAURANT (audit R-02), pas minuit du
@@ -261,8 +261,8 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
     // Fallback with empty data (already initialized above)
   }
 
-  // RBAC: revenue/financial widgets are restricted to roles with `reports.view`
-  // (owner/admin/manager). The dashboard stays reachable for every role, but
+  // RBAC: revenue/financial widgets are restricted to roles with `reports.money`
+  // (owner and manager by default). The dashboard stays reachable for every role, but
   // cashier/chef/waiter must not see revenue, so blank the financial fields
   // server-side (never ship the data in props/HTML). `canSeeRevenue` est lu
   // AVANT les requetes: le graphique de 90 jours n'est meme pas charge sans.

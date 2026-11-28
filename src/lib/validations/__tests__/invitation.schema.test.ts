@@ -4,52 +4,80 @@ import {
   acceptInvitationSchema,
   validateInvitationSchema,
 } from '../invitation.schema';
+import { STAFF_POSTES } from '@/types/permission.types';
 
 const VALID_TOKEN = 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2';
 
 describe('createInvitationSchema', () => {
+  const base = { email: 'team@restaurant.com' };
+
   it('accepts valid invitation input', () => {
-    const result = createInvitationSchema.safeParse({
-      email: 'team@restaurant.com',
-      role: 'waiter',
-    });
+    const result = createInvitationSchema.safeParse({ ...base, postes: ['waiter'] });
     expect(result.success).toBe(true);
   });
 
   it('rejects invalid email', () => {
     const result = createInvitationSchema.safeParse({
       email: 'not-an-email',
-      role: 'waiter',
+      postes: ['waiter'],
     });
     expect(result.success).toBe(false);
   });
 
-  it('rejects owner role', () => {
-    const result = createInvitationSchema.safeParse({
-      email: 'owner@test.com',
-      role: 'owner',
-    });
-    expect(result.success).toBe(false);
+  it('rejects the owner poste, alone or cumulated', () => {
+    expect(createInvitationSchema.safeParse({ ...base, postes: ['owner'] }).success).toBe(false);
+    expect(
+      createInvitationSchema.safeParse({ ...base, postes: ['manager', 'owner'] }).success,
+    ).toBe(false);
+    // temoin: sans owner, la meme requete passe
+    expect(createInvitationSchema.safeParse({ ...base, postes: ['manager'] }).success).toBe(true);
   });
 
-  it('accepts all invitable roles', () => {
-    const roles = ['admin', 'manager', 'cashier', 'chef', 'waiter'];
-    for (const role of roles) {
-      const result = createInvitationSchema.safeParse({
-        email: 'test@test.com',
-        role,
-      });
-      expect(result.success).toBe(true);
+  it('accepts each of the 10 invitable postes', () => {
+    expect(STAFF_POSTES).toHaveLength(10);
+    for (const poste of STAFF_POSTES) {
+      expect(createInvitationSchema.safeParse({ ...base, postes: [poste] }).success).toBe(true);
     }
   });
 
-  it('accepts optional custom_permissions', () => {
+  it('accepts a cumulation of postes', () => {
+    expect(
+      createInvitationSchema.safeParse({ ...base, postes: ['manager', 'cashier'] }).success,
+    ).toBe(true);
+  });
+
+  it('rejects an empty postes list and a missing one', () => {
+    expect(createInvitationSchema.safeParse({ ...base, postes: [] }).success).toBe(false);
+    expect(createInvitationSchema.safeParse(base).success).toBe(false);
+  });
+
+  it('rejects an unknown poste and the retired admin role', () => {
+    expect(createInvitationSchema.safeParse({ ...base, postes: ['admin'] }).success).toBe(false);
+    expect(createInvitationSchema.safeParse({ ...base, postes: ['plongeur'] }).success).toBe(false);
+  });
+
+  it('rejects a duplicate poste', () => {
+    expect(createInvitationSchema.safeParse({ ...base, postes: ['chef', 'chef'] }).success).toBe(
+      false,
+    );
+  });
+
+  it('accepts optional permission_overrides with known codes', () => {
     const result = createInvitationSchema.safeParse({
-      email: 'test@test.com',
-      role: 'waiter',
-      custom_permissions: { 'orders.manage': true },
+      ...base,
+      postes: ['waiter'],
+      permission_overrides: { 'orders.pay': true },
     });
     expect(result.success).toBe(true);
+  });
+
+  it('rejects permission_overrides with an unknown permission code', () => {
+    const result = createInvitationSchema.safeParse({
+      ...base,
+      postes: ['waiter'],
+      permission_overrides: { 'orders.delete_everything': true },
+    });
+    expect(result.success).toBe(false);
   });
 });
 
@@ -117,7 +145,7 @@ describe('createInvitationSchema - normalisation de la casse', () => {
   it('minuscule et detrime l adresse', () => {
     const result = createInvitationSchema.safeParse({
       email: '  Equipier@Resto-A.TEST  ',
-      role: 'waiter',
+      postes: ['waiter'],
     });
     expect(result.success).toBe(true);
     expect(result.success && result.data.email).toBe('equipier@resto-a.test');

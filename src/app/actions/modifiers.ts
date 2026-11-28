@@ -2,8 +2,9 @@
 
 import { z } from 'zod';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
+import { MENU_WITH_PRICE } from '@/lib/admin-roles';
+import type { PermissionRequirement } from '@/lib/permissions';
 import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-tenant-serving';
-import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 import { createModifierService } from '@/services/modifier.service';
 import { ServiceError } from '@/services/errors';
 import { createClient } from '@/lib/supabase/server';
@@ -14,6 +15,11 @@ type ActionResponse<T = undefined> = {
   success?: boolean;
   data?: T;
   error?: string;
+  /**
+   * `forbidden` : le droit manque (et non une panne). L'ecran affiche alors la
+   * raison precise, pas une erreur generique.
+   */
+  code?: 'forbidden';
 };
 
 const tenantIdSchema = z.string().uuid();
@@ -29,9 +35,12 @@ const createModifierPayloadSchema = z.object({
   display_order: z.number().int().min(0),
 });
 
-async function checkPermissions(tenantId: string): Promise<{ error: string | null }> {
+async function checkPermissions(
+  tenantId: string,
+  requirement: PermissionRequirement = 'menu.edit',
+): Promise<{ error: string | null; code?: 'forbidden' }> {
   try {
-    await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
+    await getAuthenticatedUserForTenant(tenantId, requirement);
     // Coupure du restaurant: toute action de ce fichier est une ecriture.
     await assertTenantServing(tenantId);
     return { error: null };
@@ -42,9 +51,11 @@ async function checkPermissions(tenantId: string): Promise<{ error: string | nul
       return { error: err.message };
     }
     if (err instanceof AuthError) {
-      return { error: err.status === 401 ? 'Non authentifie' : 'Permissions insuffisantes' };
+      return err.status === 401
+        ? { error: 'Non authentifie' }
+        : { error: 'Permissions insuffisantes', code: 'forbidden' };
     }
-    return { error: 'Permissions insuffisantes' };
+    return { error: 'Permissions insuffisantes', code: 'forbidden' };
   }
 }
 
@@ -66,8 +77,13 @@ export async function actionCreateModifier(
 
   if (parsedPayload.data.tenant_id !== tenantId) return { error: 'Tenant mismatch' };
 
-  const { error: permError } = await checkPermissions(tenantId);
-  if (permError) return { error: permError };
+  // Un supplement payant fixe un prix: `menu.price` en plus, comme le
+  // declencheur `garder_prix_carte` sur `item_modifiers`.
+  const { error: permError, code: permCode } = await checkPermissions(
+    tenantId,
+    parsedPayload.data.price > 0 ? MENU_WITH_PRICE : 'menu.edit',
+  );
+  if (permError) return { error: permError, code: permCode };
 
   try {
     const supabase = await createClient();
@@ -93,11 +109,26 @@ export async function actionDeleteModifier(
   const parsedId = modifierIdSchema.safeParse(modifierId);
   if (!parsedTenant.success || !parsedId.success) return { error: 'Invalid input' };
 
-  const { error: permError } = await checkPermissions(tenantId);
-  if (permError) return { error: permError };
+  const { error: permError, code: permCode } = await checkPermissions(tenantId);
+  if (permError) return { error: permError, code: permCode };
 
   try {
     const supabase = await createClient();
+    // Supprimer un supplement PAYANT puis le recreer gratuit faisait passer son
+    // prix a 0 sans `menu.price` (audit de securite M1). Meme regle que le
+    // declencheur `garder_prix_carte` : un supplement payant ne se supprime
+    // qu'avec `menu.price`. Lecture en panne : refus.
+    const { data: existing, error: readError } = await supabase
+      .from('item_modifiers')
+      .select('price, prices')
+      .eq('id', modifierId)
+      .eq('tenant_id', tenantId)
+      .maybeSingle();
+    if (readError) return { error: 'Server error' };
+    if (existing && (Number(existing.price ?? 0) > 0 || existing.prices != null)) {
+      const { error: priceError, code } = await checkPermissions(tenantId, MENU_WITH_PRICE);
+      if (priceError) return { error: priceError, code };
+    }
     const modifierService = createModifierService(supabase);
     await modifierService.deleteModifier(modifierId, tenantId);
     revalidateTag(CACHE_TAG_MENUS, 'max');
@@ -121,8 +152,8 @@ export async function actionToggleModifierAvailable(
   const parsedId = modifierIdSchema.safeParse(modifierId);
   if (!parsedTenant.success || !parsedId.success) return { error: 'Invalid input' };
 
-  const { error: permError } = await checkPermissions(tenantId);
-  if (permError) return { error: permError };
+  const { error: permError, code: permCode } = await checkPermissions(tenantId);
+  if (permError) return { error: permError, code: permCode };
 
   try {
     const supabase = await createClient();

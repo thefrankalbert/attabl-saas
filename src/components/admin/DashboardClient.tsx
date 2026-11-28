@@ -59,7 +59,7 @@ export default function DashboardClient(props: DashboardClientProps) {
     range,
   });
   const { can } = usePermissions();
-  const showFin = can('reports.view');
+  const showFin = can('reports.money');
 
   // null on the server and during hydration, then the real minute (see hook).
   const nowMs = useMinuteClock();
@@ -233,7 +233,7 @@ export default function DashboardClient(props: DashboardClientProps) {
       </div>
 
       {/* Revenue chart - tablet: last; desktop: bottom-right. Money: hidden like
-          the revenue KPI (reports.view), it showed an empty card to waiters. */}
+          the revenue KPI (reports.money), it showed an empty card to waiters. */}
       {showFin && (
         <div className="order-3 min-w-0 px-3 sm:px-5 xl:col-start-2 xl:row-start-2 xl:self-start">
           <RevenueChart

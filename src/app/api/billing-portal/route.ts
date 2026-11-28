@@ -10,6 +10,7 @@ import { billingPortalLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { withStripeBreaker } from '@/lib/stripe/circuit-breaker';
 import { getTenantBillingIds } from '@/lib/billing/tenant-billing-ids';
+import { resolveLiveMember } from '@/lib/auth/resolve-admin-permission';
 
 export async function POST(request: Request) {
   try {
@@ -54,34 +55,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Tenant introuvable' }, { status: 404 });
     }
 
-    const { data: adminUser } = await supabase
-      .from('admin_users')
-      .select('role, tenants(slug)')
-      .eq('user_id', user.id)
-      .eq('tenant_id', tenantCtx.id)
-      // Un membre desactive garde sa session: sans ce filtre il ouvrait encore
-      // le portail Stripe (resiliation, carte, factures).
-      .eq('is_active', true)
-      .maybeSingle();
-
-    // RBAC: managing billing is owner/admin only.
-    if (!adminUser || !['owner', 'admin'].includes(adminUser.role)) {
+    // Un membre desactive garde sa session: `resolveLiveMember` l'ecarte, il
+    // n'ouvre plus le portail Stripe (resiliation, carte, factures). Gerer la
+    // facturation engage une depense: `billing.manage` EN ENTIER.
+    const member = await resolveLiveMember(supabase, user.id, tenantCtx.id);
+    if (member?.levels['billing.manage'] !== 'full') {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
     }
 
-    // Supabase join type gap
-    const tenant = adminUser?.tenants as unknown as { slug: string } | null;
-
-    // Membership + role verified above with the session client: the Stripe id
+    // Membership + droit verified above with the session client: the Stripe id
     // is now read with the service role (column not readable by `authenticated`).
     const billing = await getTenantBillingIds(tenantCtx.id);
     const customerId = billing?.stripe_customer_id;
 
-    if (!tenant || !customerId) {
+    if (!customerId) {
       return NextResponse.json({ error: 'Pas de compte Stripe lié' }, { status: 400 });
     }
 
-    const returnUrl = `${process.env.NEXT_PUBLIC_APP_URL}/sites/${tenant.slug}/admin/subscription`;
+    const returnUrl = `${process.env.NEXT_PUBLIC_APP_URL}/sites/${tenantSlug}/admin/subscription`;
 
     const session = await withStripeBreaker(() =>
       stripe.billingPortal.sessions.create({

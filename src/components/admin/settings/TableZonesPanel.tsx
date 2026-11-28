@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import type { Zone } from './tables.types';
+import { isEnterToSubmit } from '@/lib/utils/enter-key';
 
 interface TableZonesPanelProps {
   zones: Zone[];
@@ -77,7 +78,7 @@ export function TableZonesPanel({
                     onChange={(e) => onEditingZoneNameChange(e.target.value)}
                     className="h-7 text-base md:text-sm rounded-lg focus:ring-accent"
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') onSaveZoneName(zone.id);
+                      if (isEnterToSubmit(e)) onSaveZoneName(zone.id);
                       if (e.key === 'Escape') onCancelEditZone();
                     }}
                     autoFocus

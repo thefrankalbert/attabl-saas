@@ -28,6 +28,7 @@ export default function OrderDetails({
     setShowPayment,
     canPay,
     canComp,
+    canSetStatus,
     isComp,
     fmt,
     fmtMajor,
@@ -80,6 +81,7 @@ export default function OrderDetails({
           isComp={isComp}
           canPay={canPay}
           canComp={canComp}
+          canSetStatus={canSetStatus}
           currency={currency}
           onUpdate={onUpdate}
           onStatusUpdate={handleStatusUpdate}

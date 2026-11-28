@@ -4,8 +4,8 @@ import { describe, it, expect, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
 import { PermissionsProvider } from '@/contexts/PermissionsContext';
-import { DEFAULT_PERMISSIONS, type PermissionCode } from '@/types/permission.types';
-import type { AdminRole } from '@/types/admin.types';
+import { getEffectiveLevels } from '@/lib/permissions';
+import type { Poste } from '@/types/permission.types';
 import POSClient from '../POSClient';
 
 // Decision du proprietaire (2026-11-09): le serveur prend les commandes a la
@@ -58,10 +58,9 @@ vi.mock('@/components/features/pos/POSCart', () => ({
   ),
 }));
 
-function renderAs(role: AdminRole) {
-  const permissions = DEFAULT_PERMISSIONS[role] as Record<PermissionCode, boolean>;
+function renderAs(poste: Poste) {
   render(
-    <PermissionsProvider role={role} permissions={permissions}>
+    <PermissionsProvider postes={[poste]} levels={getEffectiveLevels({ postes: [poste] })}>
       <POSClient tenantId="t1" />
     </PermissionsProvider>,
   );

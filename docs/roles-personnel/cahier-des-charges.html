@@ -1,0 +1,344 @@
+<title>Rôles du personnel ATTABL</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Mise en page: document de travail en une colonne de lecture, tableaux larges dans leur propre defilement. */
+:root {
+  --bg: #f7f8f6;
+  --surface: #ffffff;
+  --fg: #1b211e;
+  --muted: #5b655f;
+  --line: #dde2de;
+  --accent: #1f6f5c;
+  --accent-soft: #e3f0ec;
+  --yes-bg: #e3f0ec; --yes-fg: #17543f;
+  --code-bg: #fbf0d9; --code-fg: #7a4a07;
+  --no-bg: #eef0ee; --no-fg: #6b746f;
+  --decide-bg: #f3e6f4; --decide-fg: #6d2d72;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121614; --surface: #1a1f1c; --fg: #e6ebe8; --muted: #a3ada7; --line: #2d3531;
+    --accent: #6cc3a9; --accent-soft: #1e3029;
+    --yes-bg: #1e3029; --yes-fg: #8fd7bf;
+    --code-bg: #3a2c12; --code-fg: #f0c477;
+    --no-bg: #232926; --no-fg: #98a39d;
+    --decide-bg: #34213a; --decide-fg: #e0aee5;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121614; --surface: #1a1f1c; --fg: #e6ebe8; --muted: #a3ada7; --line: #2d3531;
+  --accent: #6cc3a9; --accent-soft: #1e3029;
+  --yes-bg: #1e3029; --yes-fg: #8fd7bf;
+  --code-bg: #3a2c12; --code-fg: #f0c477;
+  --no-bg: #232926; --no-fg: #98a39d;
+  --decide-bg: #34213a; --decide-fg: #e0aee5;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 80px;
+}
+main { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 44px; }
+.prose { max-width: 68ch; }
+header { display: flex; flex-direction: column; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 28px; }
+.eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+h1 { font-family: var(--font-display); font-size: clamp(30px, 5vw, 44px); line-height: 1.1; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-size: 24px; margin: 0 0 14px; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-size: 18px; margin: 22px 0 8px; }
+p { margin: 0 0 12px; }
+ul, ol { margin: 0 0 12px; padding-left: 22px; }
+li { margin-bottom: 6px; }
+a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.meta { color: var(--muted); font-size: 14px; }
+.decision {
+  background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--accent);
+  border-radius: 8px; padding: 18px 20px;
+}
+.decision strong { display: block; margin-bottom: 6px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; min-width: 0; }
+.box h3 { margin-top: 0; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+thead th { font-weight: 600; background: var(--accent-soft); position: sticky; top: 0; }
+tbody tr:last-child td { border-bottom: 0; }
+td.c, th.c { text-align: center; white-space: nowrap; }
+.group td { background: var(--bg); font-weight: 600; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.p { display: inline-block; border-radius: 999px; padding: 1px 9px; font-size: 12px; font-weight: 600; }
+.yes { background: var(--yes-bg); color: var(--yes-fg); }
+.code { background: var(--code-bg); color: var(--code-fg); }
+.no { background: var(--no-bg); color: var(--no-fg); }
+.decide { background: var(--decide-bg); color: var(--decide-fg); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+.src { font-size: 12px; color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.9em; background: var(--no-bg); padding: 1px 5px; border-radius: 4px; }
+.sources li { font-size: 14px; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+
+<main>
+  <header>
+    <div class="eyebrow">Cahier des charges</div>
+    <h1>Rôles du personnel ATTABL</h1>
+    <p class="meta">Version 1 du 28 novembre 2026. Fondée sur les fiches métiers officielles, la documentation de 9 logiciels de caisse et des études de terrain en Afrique de l'Ouest. Les sources sont citées à chaque règle et listées en fin de document.</p>
+  </header>
+
+  <section class="prose">
+    <div class="decision">
+      <strong>Validé par le propriétaire le 28 novembre 2026</strong>
+      Le modèle est validé et les 4 points de la section 9 sont tranchés. La réalisation commence par le lot 1.
+    </div>
+  </section>
+
+  <section class="prose">
+    <h2>1. Le problème aujourd'hui</h2>
+    <p>ATTABL a 6 rôles fixes (propriétaire, administrateur, gérant, caissier, chef, serveur) et 13 droits. Ils ne suivent pas les métiers :</p>
+    <ul>
+      <li><strong>« Administrateur » double le propriétaire.</strong> Il ne correspond à aucun poste en restauration. En production, un seul compte l'utilise, et c'est un compte de test.</li>
+      <li><strong>Le chef ne voit aucun chiffre</strong> et ne peut pas saisir de stock, alors que sa fiche métier lui confie la carte, les prix, le coût matière et le budget de la cuisine.</li>
+      <li><strong>Le gérant</strong> ne voit ni le journal des actions de son équipe, ni les factures, et ne peut pas recruter.</li>
+      <li><strong>Le serveur ne peut pas encaisser</strong>, alors que c'est une activité de base de son métier.</li>
+      <li><strong>Une personne ne peut avoir qu'un rôle.</strong> Dans un maquis, la même personne prend les commandes, encaisse et met à jour la carte : aucun rôle ne lui convient.</li>
+      <li><strong>Les rôles sont les mêmes pour tous les établissements</strong>, du vendeur seul au lounge de 15 personnes.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>2. Ce que disent les sources</h2>
+    <div class="grid2">
+      <div class="box">
+        <h3>La taille change tout</h3>
+        <p>Restauration de rue à Dakar : 2 personnes en moyenne, et dans 54 % des cas une seule personne fait tout <span class="src">[1]</span>.</p>
+        <p>Maquis : 2 à 10 personnes ; dans les petits, le propriétaire est le gérant et tient la caisse <span class="src">[2] [3]</span>.</p>
+        <p>Lounge haut de gamme : caissier, barman, hôtesse sur des postes séparés <span class="src">[4]</span>.</p>
+      </div>
+      <div class="box">
+        <h3>Le chef pilote sa carte</h3>
+        <p>Fiche officielle : « élaborer les menus, les cartes et définir les tarifs des plats », « suivre le budget de la cuisine (chiffre d'affaires, ratio, marge) », passer les commandes fournisseurs <span class="src">[5]</span>.</p>
+        <p>Le directeur « supervise » les cartes et les tarifs <span class="src">[6]</span>.</p>
+      </div>
+      <div class="box">
+        <h3>Les logiciels cumulent les postes</h3>
+        <p>Une personne peut avoir plusieurs postes ; ses droits s'additionnent <span class="src">[9] [11]</span>.</p>
+        <p>Un responsable valide par son code une annulation ou une remise <span class="src">[10] [12]</span>.</p>
+        <p>Rapports de carte et rapports d'argent sont séparés <span class="src">[10]</span>.</p>
+      </div>
+      <div class="box">
+        <h3>Le propriétaire est à part</h3>
+        <p>Seul le titulaire du compte touche à la banque et répond du compte <span class="src">[13] [14]</span>. L'abonnement, lui, peut être délégué <span class="src">[14] [15]</span>.</p>
+        <p>Le serveur encaisse : activité de base de son métier <span class="src">[7]</span>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="prose">
+    <h2>3. Les principes du nouveau modèle</h2>
+    <ol>
+      <li><strong>Des postes de départ, pas des rôles figés.</strong> Chaque poste est un modèle de droits que le propriétaire peut ajuster. Modèle dominant chez Toast, Lightspeed et Loyverse <span class="src">[9] [11] [14]</span>.</li>
+      <li><strong>Plusieurs postes par personne.</strong> Les droits s'additionnent. C'est la réponse au cas « une personne fait tout » <span class="src">[9] [11]</span>.</li>
+      <li><strong>Un réglage par personne</strong>, en plus du poste, pour ajouter ou retirer un droit à quelqu'un sans toucher à tout le poste <span class="src">[9]</span>. Ce réglage existe déjà dans ATTABL et sera conservé.</li>
+      <li><strong>La validation par le code d'un responsable</strong> pour les actions sensibles rares : annuler une commande, faire une remise, rembourser. L'employé n'a pas le droit en permanence, le responsable autorise au cas par cas, et le journal garde les deux noms <span class="src">[10] [12]</span>.</li>
+      <li><strong>Le propriétaire est unique et ne peut pas être retiré.</strong> Lui seul gère la banque, les droits du personnel et la suppression du restaurant <span class="src">[13] [14]</span>.</li>
+      <li><strong>On ne donne pas un droit qu'on n'a pas.</strong> Un gérant qui recrute ne peut pas créer quelqu'un de plus puissant que lui <span class="src">[9]</span>.</li>
+      <li><strong>Un compte par personne, jamais de compte partagé.</strong> Un code partagé ne permet plus de savoir qui a fait quoi <span class="src">[13]</span>.</li>
+      <li><strong>Le réglage de départ dépend du type et de la taille</strong> de l'établissement, choisis à l'onboarding, comme le fait Square avec ses modes d'activité <span class="src">[16]</span>.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>4. Les droits</h2>
+    <p class="prose">Les 13 droits actuels sont redécoupés en 22, pour séparer ce que les métiers séparent : la carte et ses prix, les rapports de carte et les rapports d'argent, l'encaissement et l'annulation.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Domaine</th><th>Droit</th><th>Ce qu'il permet</th><th>Source</th></tr></thead>
+        <tbody>
+          <tr><td rowspan="3">Carte</td><td>Voir la carte</td><td>Consulter plats, catégories, disponibilités</td><td class="src">tous</td></tr>
+          <tr><td>Modifier la carte</td><td>Créer, modifier, retirer des plats, marquer une rupture</td><td class="src">[5] [10]</td></tr>
+          <tr><td>Modifier les prix</td><td>Changer un prix de vente</td><td class="src">[5] [6] [10] [12]</td></tr>
+          <tr><td rowspan="5">Commandes</td><td>Prendre une commande</td><td>Saisir une commande en salle, au comptoir ou à la réception</td><td class="src">[7]</td></tr>
+          <tr><td>Suivre en cuisine ou au bar</td><td>Voir et faire avancer les commandes sur l'écran de production</td><td class="src">[10]</td></tr>
+          <tr><td>Annuler</td><td>Annuler une commande ou une ligne</td><td class="src">[10] [12] [17]</td></tr>
+          <tr><td>Faire une remise</td><td>Appliquer une remise ou un code promo</td><td class="src">[10] [17]</td></tr>
+          <tr><td>Rembourser</td><td>Rembourser un paiement</td><td class="src">[10] [17]</td></tr>
+          <tr><td rowspan="3">Caisse</td><td>Encaisser</td><td>Espèces, carte, mobile money sur le QR du restaurant</td><td class="src">[7] [8]</td></tr>
+          <tr><td>Clôturer la caisse</td><td>Fermer la journée, voir les écarts</td><td class="src">[6] [10]</td></tr>
+          <tr><td>Compter sa caisse à l'aveugle</td><td>Déclarer le fond compté sans voir le montant attendu</td><td class="src">[8] [10]</td></tr>
+          <tr><td rowspan="3">Rapports</td><td>Rapports de la carte</td><td>Ventes par plat, plats qui sortent ou non, coût matière, marges</td><td class="src">[5] [10] [18]</td></tr>
+          <tr><td>Rapports d'argent</td><td>Chiffre d'affaires, encaissements, caisse, comparaisons</td><td class="src">[6] [10]</td></tr>
+          <tr><td>Ses propres ventes</td><td>Ses commandes et encaissements à soi</td><td class="src">[10] [11]</td></tr>
+          <tr><td rowspan="3">Stock</td><td>Voir le stock</td><td>Niveaux, historique, fiches techniques</td><td class="src">[5]</td></tr>
+          <tr><td>Saisir le stock</td><td>Réceptions, inventaires, pertes</td><td class="src">[5] [18]</td></tr>
+          <tr><td>Fournisseurs et commandes d'achat</td><td>Gérer fournisseurs et commandes</td><td class="src">[5] [6]</td></tr>
+          <tr><td rowspan="2">Équipe</td><td>Voir l'équipe</td><td>Liste du personnel et postes</td><td class="src">[6]</td></tr>
+          <tr><td>Recruter et retirer</td><td>Inviter, changer de poste, retirer (jamais le propriétaire)</td><td class="src">[6] [9]</td></tr>
+          <tr><td rowspan="2">Gestion</td><td>Réglages du restaurant</td><td>Tables, TVA, imprimantes, horaires, espaces</td><td class="src">[6] [10]</td></tr>
+          <tr><td>Journal d'audit</td><td>Qui a fait quoi, avec les validations</td><td class="src">[6] [18]</td></tr>
+          <tr><td>Compte</td><td>Abonnement ATTABL</td><td>Voir les factures ATTABL, changer de formule, payer</td><td class="src">[14] [15]</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="prose meta" style="margin-top:12px">Réservés au propriétaire, jamais délégables : les droits du personnel, le compte de paiement et la suppression du restaurant <span class="src">[13] [14]</span>.</p>
+  </section>
+
+  <section>
+    <h2>5. Les postes de départ</h2>
+    <p class="prose">Chaque poste est un point de départ modifiable. Une personne peut en cumuler plusieurs.</p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Droit</th><th class="c">Propriétaire</th><th class="c">Gérant</th><th class="c">Chef</th><th class="c">Cuisinier</th><th class="c">Caissier</th><th class="c">Serveur</th><th class="c">Barman</th><th class="c">Réception</th></tr>
+        </thead>
+        <tbody>
+          <tr class="group"><td colspan="9">Carte</td></tr>
+          <tr><td>Voir la carte</td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td></tr>
+          <tr><td>Modifier la carte</td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td></tr>
+          <tr><td>Modifier les prix</td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td></tr>
+          <tr class="group"><td colspan="9">Commandes et caisse</td></tr>
+          <tr><td>Prendre une commande</td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td></tr>
+          <tr><td>Suivre en cuisine ou au bar</td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p no">Non</span></td></tr>
+          <tr><td>Encaisser</td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">QR marchand</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td></tr>
+          <tr><td>Annuler</td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p code">Code</span></td><td class="c"><span class="p code">Code</span></td><td class="c"><span class="p code">Code</span></td><td class="c"><span class="p code">Code</span></td></tr>
+          <tr><td>Faire une remise</td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p code">Code</span></td><td class="c"><span class="p code">Code</span></td><td class="c"><span class="p code">Code</span></td><td class="c"><span class="p code">Code</span></td></tr>
+          <tr><td>Rembourser</td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p code">Code</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p code">Code</span></td><td class="c"><span class="p code">Code</span></td></tr>
+          <tr><td>Clôturer la caisse</td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td></tr>
+          <tr><td>Compter sa caisse à l'aveugle</td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td></tr>
+          <tr class="group"><td colspan="9">Rapports</td></tr>
+          <tr><td>Rapports de la carte</td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td></tr>
+          <tr><td>Rapports d'argent</td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td></tr>
+          <tr><td>Ses propres ventes</td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td></tr>
+          <tr class="group"><td colspan="9">Stock</td></tr>
+          <tr><td>Voir le stock</td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p no">Non</span></td></tr>
+          <tr><td>Saisir le stock</td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td></tr>
+          <tr><td>Fournisseurs et achats</td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td></tr>
+          <tr class="group"><td colspan="9">Équipe et gestion</td></tr>
+          <tr><td>Voir l'équipe</td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td></tr>
+          <tr><td>Recruter et retirer</td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td></tr>
+          <tr><td>Réglages du restaurant</td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td></tr>
+          <tr><td>Journal d'audit</td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td></tr>
+          <tr><td>Abonnement ATTABL</td><td class="c"><span class="p yes">Oui</span></td><td class="c"><span class="p code">Factures</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td><td class="c"><span class="p no">Non</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <span><span class="p yes">Oui</span> droit permanent</span>
+      <span><span class="p code">Code</span> avec le code d'un responsable, au cas par cas</span>
+      <span><span class="p no">Non</span> pas de droit (le propriétaire peut l'ajouter à une personne)</span>
+      <span><span class="p yes">QR marchand</span> encaissement uniquement sur le QR ou le compte marchand du restaurant</span>
+      <span><span class="p code">Factures</span> voit les factures ; le propriétaire peut lui confier le paiement</span>
+    </div>
+    <h3 class="prose">Postes propres à certains établissements</h3>
+    <ul class="prose">
+      <li><strong>Équipier polyvalent</strong> (fast-food) : caissier, serveur et cuisinier réunis <span class="src">[19]</span>.</li>
+      <li><strong>Vente</strong> et <strong>Fabrication</strong> (boulangerie) : vente = caissier ; fabrication = cuisinier <span class="src">[20]</span>.</li>
+      <li>Le <strong>chef</strong> garde ses droits sur la carte et les prix, mais le propriétaire peut les lui retirer s'il préfère valider lui-même les tarifs : la fiche du directeur dit qu'il « supervise » les tarifs <span class="src">[6]</span>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>6. Le réglage à l'onboarding</h2>
+    <p class="prose">L'onboarding pose deux questions courtes : « Quel genre d'établissement ? » et « Combien de personnes y travaillent, vous compris ? ». ATTABL crée alors les postes de départ. Le propriétaire peut tout changer ensuite.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Établissement</th><th>Effectif observé</th><th>Postes créés au départ</th><th>Source</th></tr></thead>
+        <tbody>
+          <tr><td>Vente de rue, food truck, très petit</td><td class="num">1 à 2</td><td>Propriétaire seul, avec tous les droits</td><td class="src">[1]</td></tr>
+          <tr><td>Maquis, petit restaurant</td><td class="num">3 à 7</td><td>Propriétaire (caisse, stock, achats), Serveur, Cuisinier</td><td class="src">[2] [3]</td></tr>
+          <tr><td>Restaurant structuré, lounge, bar</td><td class="num">8 et plus</td><td>Propriétaire, Gérant, Caissier, Serveur, Barman, Chef, Cuisinier</td><td class="src">[4] [21]</td></tr>
+          <tr><td>Fast-food</td><td>variable</td><td>Propriétaire, Gérant, Équipier polyvalent</td><td class="src">[19]</td></tr>
+          <tr><td>Boulangerie, pâtisserie</td><td>variable</td><td>Propriétaire, Vente, Fabrication</td><td class="src">[20]</td></tr>
+          <tr><td>Hôtel avec restaurant</td><td class="num">5 à 20 et plus</td><td>Propriétaire, Gérant, Réception, puis les postes du restaurant</td><td class="src">[22]</td></tr>
+          <tr><td>Cuisine sans salle (livraison)</td><td>variable</td><td>Propriétaire, Gérant, Chef, Cuisinier (pas de serveur)</td><td class="src">[23]</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="prose meta" style="margin-top:12px">Limite connue : aucune statistique officielle ne donne l'effectif moyen par type d'établissement en Afrique de l'Ouest ou centrale. Les tranches ci-dessus viennent d'études de terrain et d'offres d'emploi ; elles seront à ajuster avec les premiers clients.</p>
+  </section>
+
+  <section class="prose">
+    <h2>7. Les règles de sécurité</h2>
+    <ul>
+      <li><strong>Mobile money</strong> : l'encaissement passe uniquement par le QR ou le compte marchand du restaurant, jamais par le numéro personnel d'un employé <span class="src">[24]</span>. Cela rejoint l'intégration Ligdicash prévue pour les commandes.</li>
+      <li><strong>Validation par code</strong> : le responsable saisit son propre code sur l'appareil de l'employé ; le journal enregistre l'employé et le responsable.</li>
+      <li><strong>Comptage à l'aveugle</strong> : le caissier déclare ce qu'il a compté sans voir ce qui est attendu ; l'écart apparaît au gérant <span class="src">[8] [10]</span>.</li>
+      <li><strong>Aucun retrait du propriétaire</strong>, aucun transfert sans lui, et personne ne donne un droit qu'il n'a pas.</li>
+      <li><strong>Double authentification</strong> déjà exigée pour le super administrateur ; proposée au propriétaire et au gérant.</li>
+    </ul>
+  </section>
+
+  <section class="prose">
+    <h2>8. Le passage depuis l'existant</h2>
+    <ul>
+      <li><strong>Administrateur</strong> : supprimé. Le compte de test qui l'utilise devient Gérant.</li>
+      <li><strong>Gérant, caissier, chef, serveur</strong> : conservés, avec les nouveaux droits de départ de la section 5.</li>
+      <li><strong>Réglages par personne déjà faits</strong> : conservés. Aucun réglage par rôle n'est enregistré en production aujourd'hui.</li>
+      <li><strong>Nouveaux postes</strong> : Cuisinier, Barman, Réception, Équipier polyvalent, Vente, Fabrication.</li>
+      <li><strong>Base de données</strong> : migration additive d'abord (nouveaux droits et postes), puis retrait de l'administrateur une fois le code déployé. Sauvegarde avant chaque étape.</li>
+    </ul>
+  </section>
+
+  <section class="prose">
+    <h2>9. Les décisions du propriétaire (28 novembre 2026)</h2>
+    <ol>
+      <li><strong>Le chef ne voit pas le chiffre d'affaires global par défaut.</strong> Le propriétaire peut le lui activer. Sa fiche métier parle du budget de la cuisine <span class="src">[5]</span> ; le partage des chiffres divise le métier <span class="src">[25] [26]</span>.</li>
+      <li><strong>Le serveur encaisse par défaut, uniquement sur le QR ou le compte marchand du restaurant.</strong> Le droit est retirable personne par personne <span class="src">[7] [24]</span>.</li>
+      <li><strong>Le gérant voit les factures de l'abonnement.</strong> Le propriétaire choisit s'il lui confie aussi le paiement <span class="src">[14] [15]</span>.</li>
+      <li><strong>Les noms des postes</strong> sont ceux de ce document : Propriétaire, Gérant, Chef, Cuisinier, Caissier, Serveur, Barman, Réception, Équipier polyvalent, Vente, Fabrication.</li>
+    </ol>
+  </section>
+
+  <section class="prose">
+    <h2>10. Réalisation et critères d'acceptation</h2>
+    <p>Réalisation en 4 lots, chacun avec contre-audit indépendant, 5 contrôles qualité et vérification à l'écran de chaque poste :</p>
+    <ol>
+      <li><strong>Droits et postes</strong> : nouveau catalogue de droits, postes de départ, cumul de postes, migration additive.</li>
+      <li><strong>Rapports</strong> : séparation « rapports de la carte » et « rapports d'argent », vue « ses propres ventes ».</li>
+      <li><strong>Validation par code</strong> : écran de saisie du code responsable pour annuler, remiser, rembourser ; trace dans le journal ; comptage de caisse à l'aveugle.</li>
+      <li><strong>Onboarding et équipe</strong> : les deux questions, la création des postes de départ, l'écran Équipe (cumul et réglages par personne), puis retrait de l'administrateur.</li>
+    </ol>
+    <p>Critères : pour chaque poste, un test qui vérifie chaque droit (permis et refusé), les mêmes règles dans l'application et dans la base, et une capture de l'interface de chaque poste sur téléphone et ordinateur.</p>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <ol class="sources">
+      <li>[1] DPS Sénégal, Enquête 1-2-3, Dakar : <a href="https://www.ansd.sn/sites/default/files/2022-11/Enquete123_phase2.pdf">ansd.sn</a></li>
+      <li>[2] N'Kayo, Kouassi, Assandé, restaurants traditionnels de Yopougon : <a href="https://www.revues-ufhb-ci.org/fichiers/FICHIR_ARTICLE_3436.pdf">revues-ufhb-ci.org</a></li>
+      <li>[3] Banaon, maquis de Saaba, Revue ISG 2026 : <a href="https://revue-isg.com/index.php/home/article/download/2499/1916/8619">revue-isg.com</a></li>
+      <li>[4] Offre de recrutement, lounge VIP à Douala : <a href="https://www.cameroondesks.com/2024/11/recrutement-massif-du-personnel-dans-un-Restaurant-lounge-vipde-la-place.html">cameroondesks.com</a></li>
+      <li>[5] ROME G1601, chef de cuisine : <a href="https://rome.adem.etat.lu/pdf/modified/G1601_ADEM.pdf">rome.adem.etat.lu</a></li>
+      <li>[6] ROME G1402, gérant et directeur de restaurant : <a href="https://rome.adem.etat.lu/pdf/modified/G1402_ADEM.pdf">rome.adem.etat.lu</a></li>
+      <li>[7] ROME G1803, serveur : <a href="https://rome.adem.etat.lu/pdf/modified/G1803_ADEM.pdf">rome.adem.etat.lu</a></li>
+      <li>[8] ROME D1505, caissier : <a href="https://rome.adem.etat.lu/pdf/modified/D1505_ADEM.pdf">rome.adem.etat.lu</a></li>
+      <li>[9] Toast, postes et droits : <a href="https://support.toasttab.com/en/article/Creating-and-Editing-Job-Roles">support.toasttab.com</a></li>
+      <li>[10] Toast, référence des droits : <a href="https://doc.toasttab.com/doc/platformguide/adminPermissions.html">doc.toasttab.com</a></li>
+      <li>[11] Lightspeed Restaurant, groupes d'utilisateurs : <a href="https://resto-support.lightspeedhq.com/hc/articles/226306007">lightspeedhq.com</a></li>
+      <li>[12] Lightspeed Restaurant, rôles et validation par code : <a href="https://resto-support.lightspeedhq.com/hc/en-us/articles/115002299368">lightspeedhq.com</a></li>
+      <li>[13] Square, droits de l'équipe : <a href="https://squareup.com/help/us/en/article/5822-employee-permissions">squareup.com</a></li>
+      <li>[14] Loyverse, droits d'accès : <a href="https://help.loyverse.com/help/how-manage-access-rights-employees">help.loyverse.com</a></li>
+      <li>[15] Lightspeed K-Series, utilisateurs du back-office : <a href="https://k-series-support.lightspeedhq.com/hc/en-us/articles/1260804647149-Managing-Back-Office-users">lightspeedhq.com</a></li>
+      <li>[16] Square, modes selon l'activité : <a href="https://squareup.com/help/au/en/article/8458-use-modes-with-square-point-of-sale">squareup.com</a></li>
+      <li>[17] Lavu, droits par poste : <a href="https://lavu.com/how-to-set-up-restaurant-pos-employee-permissions/">lavu.com</a></li>
+      <li>[18] xtraCHEF (Toast), rôles : <a href="https://support.toasttab.com/en/article/xtraCHEF-User-Roles">support.toasttab.com</a></li>
+      <li>[19] Onisep, employé polyvalent de restauration rapide : <a href="https://www.onisep.fr/ressources/univers-metier/metiers/employe-polyvalent-employee-polyvalente-de-restauration-rapide">onisep.fr</a></li>
+      <li>[20] Assemblée nationale, boulangerie (vente et fabrication) : <a href="https://www.assemblee-nationale.fr/dyn/14/questions/QANR5L14QE4467.pdf">assemblee-nationale.fr</a></li>
+      <li>[21] Offre gérante de restaurant, Abidjan : <a href="https://www.goafricaonline.com/ci/emploi/job-13936-gerante-de-restaurant">goafricaonline.com</a></li>
+      <li>[22] N'Goran, hôtels de Korhogo : <a href="https://ofe.umontreal.ca/fileadmin/ofe/documents/Conferences/3eCIFE/Actes/Partie-IV/Texte_IV-2_NGORAN_Kouame.pdf">ofe.umontreal.ca</a></li>
+      <li>[23] Assemblée nationale, cuisines sans salle : <a href="https://www2.assemblee-nationale.fr/questions/detail/15/qe/38659/(vue)/pdf">assemblee-nationale.fr</a></li>
+      <li>[24] Encaisser Wave et Orange Money en commerce : <a href="https://senefinder.com/fr/blog/encaisser-paiements-wave-orange-money-commerce">senefinder.com</a></li>
+      <li>[25] Restaurant365, gestion à livre ouvert : <a href="https://www.restaurant365.com/resources/metric-monday-benefits-of-open-book-management-for-restaurants/">restaurant365.com</a></li>
+      <li>[26] Gourmet Marketing, risques du partage des chiffres : <a href="https://www.gourmetmarketing.net/blog/open-book-restaurant-management-poses-unique-pros-cons">gourmetmarketing.net</a></li>
+    </ol>
+  </section>
+</main>

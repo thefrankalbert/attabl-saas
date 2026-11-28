@@ -3,6 +3,7 @@ import { getTenant } from '@/lib/cache';
 import { notFound } from 'next/navigation';
 import SingleOrderClient from '@/components/admin/SingleOrderClient';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
+import { ORDERS_VIEW } from '@/lib/admin-roles';
 import type { Order, ItemStatus, Course, CurrencyCode } from '@/types/admin.types';
 import { adminPageMetadata } from '@/lib/admin-page-metadata';
 
@@ -18,7 +19,7 @@ interface PageProps {
 
 export default async function SingleOrderPage({ params }: PageProps) {
   const { site, id } = await params;
-  await requireAdminPermission(site, 'orders.view');
+  await requireAdminPermission(site, ORDERS_VIEW);
 
   // Resolve tenant from site slug to scope the query
   const tenant = await getTenant(site);

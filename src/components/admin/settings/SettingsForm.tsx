@@ -79,16 +79,14 @@ export function SettingsForm({
     list.scrollLeft =
       active.offsetLeft - list.offsetLeft - (list.clientWidth - active.offsetWidth) / 2;
   }, [activeTab]);
-  // La page s'ouvre sur `settings.view` (admin-route-permissions.ts). Sans
-  // `settings.edit`, elle reste lisible mais figee: les champs sont desactives
-  // et ni l'enregistrement ni l'editeur de permissions ne s'affichent, au lieu
-  // de "Acces refuse" ou d'un formulaire que le serveur refuserait ensuite.
-  const { can, role } = usePermissions();
-  const canEdit = can('settings.edit');
+  // La page s'ouvre sur `settings.edit` (admin-route-permissions.ts) et le
+  // formulaire est enveloppe par `RoleGuard permission="settings.edit"`: sans ce
+  // droit il n'est jamais rendu, donc il n'a pas de mode lecture seule.
+  const { isOwner } = usePermissions();
   // Owner decision (2026-11-09): only the owner edits permissions. An admin
   // holds settings.edit, so the link must not hang on it alone: it led him to
   // an "access denied" page.
-  const canEditPermissions = role === 'owner';
+  const canEditPermissions = isOwner;
 
   const handleTabChange = useCallback(
     (value: string) => {
@@ -122,7 +120,7 @@ export function SettingsForm({
   } = useSettingsData(tenant);
 
   return (
-    <RoleGuard permission="settings.view">
+    <RoleGuard permission="settings.edit">
       <form
         onSubmit={form.handleSubmit(onSubmit, onValidationError)}
         className="flex flex-col h-full min-h-0"
@@ -188,62 +186,52 @@ export function SettingsForm({
             ref={scrollRef}
             className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6"
           >
-            {/* display: contents - aucun effet de mise en page, seulement le
-                verrou natif de tous les champs et boutons des onglets. */}
-            <fieldset disabled={!canEdit} className="contents" data-testid="settings-fields">
-              {/* Identity tab (includes domain + language) */}
-              <SettingsIdentity
-                form={form}
-                tenant={tenant}
-                logoPreview={logoPreview}
-                saving={saving}
-                onLogoChange={handleLogoChange}
-                onLogoRemove={handleLogoRemove}
-                t={t}
+            {/* Identity tab (includes domain + language) */}
+            <SettingsIdentity
+              form={form}
+              tenant={tenant}
+              logoPreview={logoPreview}
+              saving={saving}
+              onLogoChange={handleLogoChange}
+              onLogoRemove={handleLogoRemove}
+              t={t}
+            />
+
+            {/* Branding tab */}
+            <SettingsBranding form={form} t={t} />
+
+            {/* Billing tab */}
+            <SettingsBilling form={form} t={t} initialPaymentMethods={initialPaymentMethods} />
+
+            {/* Opening hours tab */}
+            <SettingsOpeningHours form={form} t={t} />
+
+            {/* Sounds tab */}
+            <TabsContent value="sounds" className="mt-0 space-y-6">
+              <SoundSettings
+                currentSoundId={selectedSoundId}
+                onSoundChange={setSelectedSoundId}
+                tenantId={tenant.id}
               />
+              <PushOptIn tenantId={tenant.id} />
+            </TabsContent>
 
-              {/* Branding tab */}
-              <SettingsBranding form={form} t={t} />
+            {/* Security tab */}
+            <SettingsSecurity form={form} t={t} tenantSlug={tenant.slug} tenantName={tenant.name} />
 
-              {/* Billing tab */}
-              <SettingsBilling form={form} t={t} initialPaymentMethods={initialPaymentMethods} />
+            {/* Contact tab */}
+            <SettingsContact form={form} t={t} />
 
-              {/* Opening hours tab */}
-              <SettingsOpeningHours form={form} t={t} />
-
-              {/* Sounds tab */}
-              <TabsContent value="sounds" className="mt-0 space-y-6">
-                <SoundSettings
-                  currentSoundId={selectedSoundId}
-                  onSoundChange={setSelectedSoundId}
-                  tenantId={tenant.id}
-                />
-                <PushOptIn tenantId={tenant.id} />
-              </TabsContent>
-
-              {/* Security tab */}
-              <SettingsSecurity
-                form={form}
-                t={t}
-                tenantSlug={tenant.slug}
-                tenantName={tenant.name}
-              />
-
-              {/* Contact tab */}
-              <SettingsContact form={form} t={t} />
-
-              {/* Reminders tab: its own save (the reminders live outside this form). */}
-              <ReminderSettingsPanel
-                initial={initialReminderSettings}
-                hasOpeningHours={Object.keys(tenant.opening_hours ?? {}).length > 0}
-                canEdit={canEdit}
-              />
-            </fieldset>
+            {/* Reminders tab: its own save (the reminders live outside this form). */}
+            <ReminderSettingsPanel
+              initial={initialReminderSettings}
+              hasOpeningHours={Object.keys(tenant.opening_hours ?? {}).length > 0}
+            />
           </div>
         </Tabs>
 
         {/* Actions - visible only when there are unsaved changes */}
-        {canEdit && (hasUnsavedChanges || saving) && (
+        {(hasUnsavedChanges || saving) && (
           <div className="shrink-0 flex justify-end gap-4 border-t border-app-border pt-4 mt-4">
             <Button
               type="submit"

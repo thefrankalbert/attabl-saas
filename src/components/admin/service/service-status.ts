@@ -1,4 +1,4 @@
-import type { AdminUser, Table, TableAssignment, Zone } from '@/types/admin.types';
+import type { FloorServer, Table, TableAssignment, Zone } from '@/types/admin.types';
 import type { OpenTableSession } from '@/services/service-manager.service';
 import type {
   ServiceServerStatus,
@@ -30,7 +30,7 @@ function deriveTableStatus(
   return 'free';
 }
 
-function deriveServerStatus(server: AdminUser, hasAssignment: boolean): ServiceServerStatus {
+function deriveServerStatus(server: FloorServer, hasAssignment: boolean): ServiceServerStatus {
   if (!server.is_active) return 'break';
   if (hasAssignment) return 'busy';
   return 'online';
@@ -71,7 +71,7 @@ export function buildTableVMs(
 }
 
 export function buildServerVMs(
-  servers: AdminUser[],
+  servers: FloorServer[],
   assignments: TableAssignment[],
   tables: Table[],
 ): ServiceServerVM[] {

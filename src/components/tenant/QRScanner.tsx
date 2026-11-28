@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { logger } from '@/lib/logger';
 import type { Table } from '@/types/admin.types';
+import { isEnterToSubmit } from '@/lib/utils/enter-key';
 
 // Sans lecteur QR integre au navigateur (Safari sur iPhone), la bibliotheque
 // decode avec un module WebAssembly qu'elle allait chercher sur
@@ -136,7 +137,10 @@ export default function QRScanner({
     let cancelled = false;
     void hasNoCamera().then((absent) => {
       if (cancelled || !absent) return;
-      setCameraProblem('absent');
+      // Un refus deja signale par la bibliotheque prime: la liste des cameras
+      // peut arriver APRES lui (vide sans permission sur certains navigateurs),
+      // et "aucune camera" cacherait alors ou autoriser la camera.
+      setCameraProblem((prev) => (prev === 'denied' ? prev : 'absent'));
       setScanStatus('error');
     });
     return () => {
@@ -393,7 +397,7 @@ export default function QRScanner({
                   placeholder={t('inputPlaceholder')}
                   className="flex-1 text-center bg-white/10 text-white border-white/20 placeholder:text-white/30 rounded-[var(--radius-card)]"
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') submitManualTable();
+                    if (isEnterToSubmit(e)) submitManualTable();
                   }}
                 />
                 <Button

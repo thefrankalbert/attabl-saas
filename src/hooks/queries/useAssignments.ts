@@ -13,7 +13,7 @@ export function useAssignments(tenantId: string) {
       const { data, error } = await supabase
         .from('table_assignments')
         .select(
-          '*, server:admin_users(id, full_name, role), table:tables(id, display_name, table_number, zone_id)',
+          '*, server:admin_users(id, full_name, postes), table:tables(id, display_name, table_number, zone_id)',
         )
         .eq('tenant_id', tenantId)
         .is('ended_at', null)

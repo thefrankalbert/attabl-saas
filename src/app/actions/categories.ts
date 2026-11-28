@@ -12,7 +12,6 @@ import { ServiceError } from '@/services/errors';
 import { createClient } from '@/lib/supabase/server';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
 import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-tenant-serving';
-import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 import { logger } from '@/lib/logger';
 import {
   categoryCreateSchema,
@@ -35,33 +34,40 @@ type ActionResponse = {
 };
 
 /**
- * SECURITY: Authenticates user and verifies tenant membership + role.
+ * SECURITY: Authenticates user and verifies tenant membership + droit `menu.edit`.
  * tenantId is verified against the session (IDOR prevention).
  */
 async function checkCategoryPermissions(tenantId: string) {
   try {
-    // `menu.edit` decide seule: une liste de roles ici annulait le droit que
+    // `menu.edit` decide seule: une liste de postes ici annulait le droit que
     // le proprietaire accorde dans /settings/permissions.
-    const { user, supabase, role } = await getAuthenticatedUserForTenant(
-      tenantId,
-      ALL_ADMIN_ROLES,
-      'menu.edit',
-    );
+    const { user, supabase, postes } = await getAuthenticatedUserForTenant(tenantId, 'menu.edit');
     // Coupure du restaurant: toute action de ce fichier est une ecriture.
     await assertTenantServing(tenantId);
-    return { error: null, supabase, user, role };
+    // Journal d'audit: tous les postes de l'auteur (cumul), separes par '+'.
+    return { error: null, supabase, user, postesLabel: postes.join('+') };
   } catch (err) {
     // Avant AuthError: un restaurant coupe n'a pas un probleme de permission,
     // et le message generique ci-dessous l'enverrait chercher un droit manquant.
     if (err instanceof TenantLockedError) {
-      return { error: err.message, supabase: null, user: null, role: undefined };
+      return { error: err.message, supabase: null, user: null, postesLabel: undefined };
     }
     if (err instanceof AuthError) {
       if (err.status === 401)
-        return { error: 'Non authentifie', supabase: null, user: null, role: undefined };
-      return { error: 'Permissions insuffisantes', supabase: null, user: null, role: undefined };
+        return { error: 'Non authentifie', supabase: null, user: null, postesLabel: undefined };
+      return {
+        error: 'Permissions insuffisantes',
+        supabase: null,
+        user: null,
+        postesLabel: undefined,
+      };
     }
-    return { error: 'Permissions insuffisantes', supabase: null, user: null, role: undefined };
+    return {
+      error: 'Permissions insuffisantes',
+      supabase: null,
+      user: null,
+      postesLabel: undefined,
+    };
   }
 }
 
@@ -78,7 +84,12 @@ export async function actionToggleCategoryActive(
     return { error: 'Invalid input' };
   }
 
-  const { error: permError, supabase, user, role } = await checkCategoryPermissions(tenantId);
+  const {
+    error: permError,
+    supabase,
+    user,
+    postesLabel,
+  } = await checkCategoryPermissions(tenantId);
   if (permError || !supabase) return { error: permError || 'Erreur serveur' };
 
   const { error } = await supabase
@@ -102,7 +113,7 @@ export async function actionToggleCategoryActive(
     tenantId,
     userId: user?.id,
     userEmail: user?.email ?? undefined,
-    userRole: role,
+    userRole: postesLabel,
   });
   audit.log({
     action: 'update',
