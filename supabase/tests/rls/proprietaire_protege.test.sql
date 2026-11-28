@@ -25,7 +25,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(31);
+select plan(35);
 
 -- Restaurant A : 1 proprietaire, 2 gerant, 3 serveur.
 -- Restaurant S (seul) : 4 proprietaire, unique membre.
@@ -137,10 +137,27 @@ select throws_ok(
 select throws_ok(
   $$update public.admin_users set user_id = 'a8000000-0000-4000-8000-000000000103' where id = 'a8000000-0000-4000-8000-000000000201'$$,
   '42501', 'the owner row cannot be reassigned', 'deplacement: changer le compte de la ligne du proprietaire est refuse');
-select lives_ok(
+-- Audit de securite L3 : desactiver le proprietaire par `is_active` seul (le
+-- geste d'equipe, ecrit en service_role) est refuse en base. Les deux gestes de
+-- la plateforme, qui datent la ligne, restent permis.
+select throws_ok(
   $$update public.admin_users set full_name = 'Patron', is_active = false where id = 'a8000000-0000-4000-8000-000000000201'$$,
-  'limite assumee: les autres colonnes du proprietaire restent modifiables (la plateforme peut le desactiver)');
-update public.admin_users set is_active = true where id = 'a8000000-0000-4000-8000-000000000201';
+  '42501', 'the owner of a live restaurant cannot be deactivated',
+  'desactivation: is_active = false seul sur le proprietaire est REFUSE');
+select lives_ok(
+  $$update public.admin_users set full_name = 'Patron' where id = 'a8000000-0000-4000-8000-000000000201'$$,
+  'temoin: les autres colonnes du proprietaire restent modifiables');
+select lives_ok(
+  $$update public.admin_users set is_active = false where id = 'a8000000-0000-4000-8000-000000000202'$$,
+  'temoin: desactiver un gerant par is_active seul passe');
+select lives_ok(
+  $$update public.admin_users set is_active = false, banned_at = now() where id = 'a8000000-0000-4000-8000-000000000201'$$,
+  'plateforme: bannir le proprietaire (is_active = false ET banned_at) passe');
+update public.admin_users set is_active = true, banned_at = null where id = 'a8000000-0000-4000-8000-000000000201';
+select lives_ok(
+  $$update public.admin_users set is_active = false where id = 'a8000000-0000-4000-8000-000000000205'$$,
+  'restaurant ferme: desactiver son proprietaire passe (anonymisation, suppression de compte)');
+update public.admin_users set is_active = true where id = 'a8000000-0000-4000-8000-000000000202';
 
 -- ===========================================================================
 -- 3. La ligne du proprietaire d'un restaurant vivant ne se supprime pas

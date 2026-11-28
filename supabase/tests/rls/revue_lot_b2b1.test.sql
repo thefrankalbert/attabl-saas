@@ -91,13 +91,13 @@ select throws_ok(
   '42501', null, 'B144: meme un gerant ne fait pas revenir une commande annulee (avant: accepte)');
 set local "request.jwt.claims" = '{"sub":"b2b10000-0000-4000-8000-000000000105","role":"authenticated"}';
 select lives_ok(
-  $$update public.orders set status = 'preparing' where id = 'b2b10000-0000-4000-8000-000000000303'$$,
-  'B144 temoin: le serveur fait avancer une commande non annulee');
+  $$update public.orders set status = 'delivered' where id = 'b2b10000-0000-4000-8000-000000000303'$$,
+  'B144 temoin: le serveur fait avancer une commande non annulee (il la sert)');
 reset role;
 select is((select status from public.orders where id = 'b2b10000-0000-4000-8000-000000000301'), 'cancelled',
   'B144: la commande annulee reste annulee (effet)');
-select is((select status from public.orders where id = 'b2b10000-0000-4000-8000-000000000303'), 'preparing',
-  'B144 temoin: la commande avancee est bien en preparation (effet)');
+select is((select status from public.orders where id = 'b2b10000-0000-4000-8000-000000000303'), 'delivered',
+  'B144 temoin: la commande avancee est bien servie (effet)');
 
 -- ===========================================================================
 -- B68 en base: une commande payee ne s'annule pas (elle se rembourse)

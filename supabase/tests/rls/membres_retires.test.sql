@@ -97,7 +97,10 @@ values ('ac000000-0000-4000-8000-000000000202', 'ac000000-0000-4000-8000-0000000
         'ac000000-0000-4000-8000-000000000101', 'retire@test.local', '{owner}', true);
 select ok(public.is_tenant_owner('ac000000-0000-4000-8000-000000000001'),
   'temoin: proprietaire actif, is_tenant_owner est vrai');
-update public.admin_users set is_active = false where id = 'ac000000-0000-4000-8000-000000000202';
+-- Le geste de la plateforme date la ligne (`banned_at`) : `is_active = false`
+-- seul sur un proprietaire est refuse en base (proprietaire_protege.test.sql).
+update public.admin_users set is_active = false, banned_at = now()
+ where id = 'ac000000-0000-4000-8000-000000000202';
 select ok(not public.is_tenant_owner('ac000000-0000-4000-8000-000000000001'),
   'proprietaire desactive par la plateforme: is_tenant_owner est faux');
 

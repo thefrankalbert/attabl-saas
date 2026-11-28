@@ -61,7 +61,7 @@ BEGIN
   END IF;
   SELECT string_agg(a.signature, ', ') INTO v_ecart
   FROM (VALUES
-    ('public.accept_invitation_membership(uuid, uuid, text)', '2d29249d3657c7ed9a48e2e436e526eb'),
+    ('public.accept_invitation_membership(uuid, uuid, text)', 'ea53f83f1de59578786b5882d1ce3441'),
     ('public.delete_admin_user_atomic(uuid, uuid)', 'e3177c313aa851202865d1998eb6c6e1'),
     ('public.delete_my_account()', '29adbeac860dec76a789e9679d9fe009')
   ) AS a(signature, empreinte)
@@ -131,6 +131,35 @@ $function$;
 -- Seul le `true` pose par la reprise est retire. Un `false` pose par le
 -- proprietaire est conserve (le retirer rendrait au compte la lecture des
 -- factures).
+--
+-- CONTROLE PREALABLE (audits du 2026-11-28). Le retrait ci-dessous ne vise que
+-- `role = 'admin'`. Tout AUTRE membre non proprietaire qui porte
+-- `billing.manage: true` est liste ici, ligne par ligne : c'est soit un choix
+-- du proprietaire (reglage par personne), soit un ancien administrateur passe
+-- au travers. Ce fichier n'y touche pas : le proprietaire tranche chaque ligne
+-- AVANT l'application (meme requete dans docs/roles-personnel/deroule-production.md).
+DO $controle_billing$
+DECLARE
+  v_ligne record;
+  v_nombre int := 0;
+BEGIN
+  FOR v_ligne IN
+    SELECT a.id, a.tenant_id, a.postes
+    FROM public.admin_users AS a
+    WHERE NOT ('owner' = ANY (a.postes))
+      AND a.role IS DISTINCT FROM 'admin'
+      AND a.deleted_at IS NULL
+      AND (a.permission_overrides -> 'billing.manage') = 'true'::jsonb
+    ORDER BY a.tenant_id, a.id
+  LOOP
+    v_nombre := v_nombre + 1;
+    RAISE NOTICE 'contraction : membre non proprietaire avec billing.manage entier, admin_users.id = %, restaurant = %, postes = %',
+      v_ligne.id, v_ligne.tenant_id, v_ligne.postes;
+  END LOOP;
+  RAISE NOTICE 'contraction : % membre(s) non proprietaire(s) hors ancien administrateur avec billing.manage entier (a faire trancher par le proprietaire)', v_nombre;
+END
+$controle_billing$;
+
 UPDATE public.admin_users
    SET permission_overrides = nullif(permission_overrides - 'billing.manage', '{}'::jsonb)
  WHERE role = 'admin' AND (permission_overrides -> 'billing.manage') = 'true'::jsonb;

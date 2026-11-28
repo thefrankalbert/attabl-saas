@@ -31,7 +31,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(61);
+select plan(65);
 
 -- Restaurant T : 1 proprietaire, 2 gerant, 3 a 8 membres crees par les cas.
 -- Restaurant M : 9 proprietaire protege par un facteur verifie.
@@ -107,6 +107,28 @@ select is((select postes::text || ' ' || coalesce(permission_overrides::text, 'n
             where id = 'aa000000-0000-4000-8000-000000000204'),
   '{cashier} null', 'A: un admin retrograde par l ancien code ne garde pas billing.manage');
 
+-- Audits du 2026-11-28 (decision G.f). Le NOUVEL ecran change les postes de
+-- l'ancien administrateur : `role` quitte `admin`, et la contraction (MIG4, qui
+-- filtre sur `role = 'admin'`) ne le verrait plus. Le reglage part donc ici.
+update public.admin_users set role = 'admin' where id = 'aa000000-0000-4000-8000-000000000204';
+select is((select role || ' ' || permission_overrides::text from public.admin_users
+            where id = 'aa000000-0000-4000-8000-000000000204'),
+  'admin {"billing.manage": true}', 'A temoin: redevenu admin, il porte de nouveau billing.manage');
+update public.admin_users set postes = '{manager,cashier}' where id = 'aa000000-0000-4000-8000-000000000204';
+select is((select role || ' ' || postes::text || ' ' || coalesce(permission_overrides::text, 'null')
+             from public.admin_users where id = 'aa000000-0000-4000-8000-000000000204'),
+  'manager {manager,cashier} null',
+  'A: postes changes par le nouvel ecran : l ancien admin devient gerant et PERD billing.manage');
+-- Le proprietaire qui regle `permission_overrides` dans la MEME ecriture est obei.
+update public.admin_users set role = 'admin' where id = 'aa000000-0000-4000-8000-000000000204';
+update public.admin_users set postes = '{manager,cashier}', permission_overrides = '{"billing.manage": true, "menu.price": false}'
+ where id = 'aa000000-0000-4000-8000-000000000204';
+select is((select permission_overrides from public.admin_users where id = 'aa000000-0000-4000-8000-000000000204'),
+  '{"billing.manage": true, "menu.price": false}'::jsonb,
+  'A temoin: un reglage par personne ecrit dans la meme ecriture est respecte');
+update public.admin_users set postes = '{cashier}', permission_overrides = null
+ where id = 'aa000000-0000-4000-8000-000000000204';
+
 -- Plus de role par defaut : un INSERT sans role ni postes est refuse.
 select throws_ok(
   $$insert into public.admin_users (tenant_id, user_id, email, is_active)
@@ -179,10 +201,10 @@ select lives_ok(
   $$select public.accept_invitation_membership('aa000000-0000-4000-8000-000000000401',
       'aa000000-0000-4000-8000-000000000105', 'Invite Admin')$$,
   'C: l invitation admin s accepte sans erreur');
-select is((select role || ' ' || postes::text || ' ' || permission_overrides::text from public.admin_users
-            where user_id = 'aa000000-0000-4000-8000-000000000105'),
-  'manager {manager} {"billing.manage": true}',
-  'C: le membre nait gerant (role manager), JAMAIS admin');
+select is((select role || ' ' || postes::text || ' ' || coalesce(permission_overrides::text, 'null')
+             from public.admin_users where user_id = 'aa000000-0000-4000-8000-000000000105'),
+  'manager {manager} null',
+  'C: le membre nait gerant (role manager), JAMAIS admin, et SANS le billing.manage de l invitation admin');
 
 -- Nouveau format : deux postes et un reglage, recopies a l'acceptation.
 insert into public.invitations (id, tenant_id, email, postes, permission_overrides, invited_by, token, expires_at)
@@ -198,6 +220,21 @@ select lives_ok(
 select is((select postes::text || ' ' || permission_overrides::text from public.admin_users
             where user_id = 'aa000000-0000-4000-8000-000000000106'),
   '{cashier,waiter} {"cash.count": false}', 'C: postes et reglage par personne recopies de l invitation');
+-- Temoin : un billing.manage pose par le proprietaire sur une invitation au
+-- NOUVEAU format (role projete = manager, pas admin) est bien recopie.
+insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
+values ('aa000000-0000-4000-8000-00000000011a', '00000000-0000-0000-0000-000000000000', 'authenticated',
+        'authenticated', 'transition-facture@test.local', 'x', now(), now());
+insert into public.invitations (id, tenant_id, email, postes, permission_overrides, invited_by, token, expires_at)
+values ('aa000000-0000-4000-8000-000000000403', 'aa000000-0000-4000-8000-00000000000a', 'transition-facture@test.local',
+        '{manager}', '{"billing.manage": true}', 'aa000000-0000-4000-8000-000000000201', 'jeton-facture',
+        now() + interval '1 day');
+select public.accept_invitation_membership('aa000000-0000-4000-8000-000000000403',
+  'aa000000-0000-4000-8000-00000000011a', 'Invite Facture');
+select is((select permission_overrides from public.admin_users
+            where user_id = 'aa000000-0000-4000-8000-00000000011a'),
+  '{"billing.manage": true}'::jsonb,
+  'C temoin: le billing.manage voulu par le proprietaire (invitation au nouveau format) est recopie');
 select throws_ok(
   $$insert into public.invitations (tenant_id, email, invited_by, token, expires_at)
     values ('aa000000-0000-4000-8000-00000000000a', 'vide@test.local',

@@ -382,6 +382,17 @@ BEGIN
     IF NEW.role IS DISTINCT FROM 'super_admin' AND cardinality(NEW.postes) > 0 THEN
       NEW.role := private.role_depuis_postes(NEW.postes);
     END IF;
+    -- Decision G.f : le paiement de l'abonnement n'etait laisse a l'ancien
+    -- administrateur que TANT QU'IL L'EST. Des que le nouvel ecran change ses
+    -- postes, `role` quitte `admin` et la contraction (MIG4, qui filtre sur
+    -- `role = 'admin'`) ne le verrait plus : le reglage est retire ici. Sauf
+    -- si cette meme ecriture regle `permission_overrides` (le proprietaire
+    -- seul le peut) : son choix explicite est respecte.
+    IF OLD.role = 'admin' AND NEW.role IS DISTINCT FROM 'admin'
+       AND NEW.permission_overrides IS NOT DISTINCT FROM OLD.permission_overrides THEN
+      NEW.permission_overrides :=
+        nullif(coalesce(NEW.permission_overrides, '{}'::jsonb) - 'billing.manage', '{}'::jsonb);
+    END IF;
   ELSIF NEW.role IS DISTINCT FROM OLD.role THEN
     NEW.postes := private.postes_depuis_role(NEW.role);
     IF NEW.role = 'admin' AND NOT (coalesce(NEW.permission_overrides, '{}'::jsonb) ? 'billing.manage') THEN
@@ -532,6 +543,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS admin_users_tenant_user_vivant
 -- Corps de schema.sql, avec `postes` et `permission_overrides` ajoutes a
 -- l'INSERT. Le declencheur projette `role` depuis `postes` : une invitation
 -- `admin` acceptee donne un gerant (role `manager`), jamais un administrateur.
+-- Ce gerant ne recoit donc PAS le `billing.manage: true` que la reprise a pose
+-- sur l'invitation (decision G.f) : il naitrait avec `role = 'manager'` et la
+-- contraction, qui filtre sur `role = 'admin'`, ne le lui retirerait jamais.
 CREATE OR REPLACE FUNCTION public.accept_invitation_membership(p_invitation_id uuid, p_user_id uuid, p_full_name text)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -564,7 +578,11 @@ BEGIN
     p_user_id, v_inv.tenant_id, v_inv.email,
     COALESCE(NULLIF(trim(p_full_name), ''), v_inv.email),
     v_inv.role, true, v_inv.custom_permissions,
-    v_inv.postes, v_inv.permission_overrides, v_inv.invited_by
+    v_inv.postes,
+    CASE WHEN v_inv.role = 'admin'
+         THEN nullif(coalesce(v_inv.permission_overrides, '{}'::jsonb) - 'billing.manage', '{}'::jsonb)
+         ELSE v_inv.permission_overrides END,
+    v_inv.invited_by
   );
 
   UPDATE invitations SET status = 'accepted', accepted_at = now() WHERE id = v_inv.id;

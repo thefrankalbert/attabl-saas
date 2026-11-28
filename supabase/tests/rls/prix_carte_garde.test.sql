@@ -21,7 +21,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(24);
+select plan(32);
 
 -- 1 chef sans menu.price, 2 chef par defaut.
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
@@ -43,6 +43,20 @@ values ('a9000000-0000-4000-8000-000000000202', 'a9000000-0000-4000-8000-0000000
 insert into public.item_modifiers (id, tenant_id, menu_item_id, name, price)
 values ('a9000000-0000-4000-8000-000000000203', 'a9000000-0000-4000-8000-000000000001',
         'a9000000-0000-4000-8000-000000000202', 'Piment', 100);
+-- Audit de securite M1 : supprimer un supplement payant puis le recreer gratuit.
+-- 204 gratuit, 205 payant par `prices` seul, et un second plat (206) qui porte
+-- un supplement payant (207), pour la suppression en cascade.
+insert into public.item_modifiers (id, tenant_id, menu_item_id, name, price, prices) values
+  ('a9000000-0000-4000-8000-000000000204', 'a9000000-0000-4000-8000-000000000001',
+   'a9000000-0000-4000-8000-000000000202', 'Sans sel', 0, null),
+  ('a9000000-0000-4000-8000-000000000205', 'a9000000-0000-4000-8000-000000000001',
+   'a9000000-0000-4000-8000-000000000202', 'Sauce', 0, '{"XOF": 200}');
+insert into public.menu_items (id, tenant_id, category_id, name, price)
+values ('a9000000-0000-4000-8000-000000000206', 'a9000000-0000-4000-8000-000000000001',
+        'a9000000-0000-4000-8000-000000000201', 'Plat a retirer', 1500);
+insert into public.item_modifiers (id, tenant_id, menu_item_id, name, price)
+values ('a9000000-0000-4000-8000-000000000207', 'a9000000-0000-4000-8000-000000000001',
+        'a9000000-0000-4000-8000-000000000206', 'Fromage', 500);
 
 select is((select p.prosecdef from pg_proc p where p.oid = 'public.garder_prix_carte()'::regprocedure), false,
   'garder_prix_carte est SECURITY INVOKER (en DEFINER elle ne se declencherait jamais)');
@@ -98,8 +112,29 @@ select throws_ok(
 select lives_ok(
   $$update public.item_modifiers set name = 'Piment fort' where id = 'a9000000-0000-4000-8000-000000000203'$$,
   'sans menu.price: renommer un supplement passe');
+-- Suppression : le detour "supprimer le supplement payant, le recreer gratuit".
+select throws_ok(
+  $$delete from public.item_modifiers where id = 'a9000000-0000-4000-8000-000000000203'$$,
+  '42501', 'changing a price requires the menu.price permission',
+  'sans menu.price: SUPPRIMER un supplement payant est REFUSE (sinon on le recree gratuit)');
+select throws_ok(
+  $$delete from public.item_modifiers where id = 'a9000000-0000-4000-8000-000000000205'$$,
+  '42501', 'changing a price requires the menu.price permission',
+  'sans menu.price: supprimer un supplement dont le prix est dans `prices` est REFUSE aussi');
+select lives_ok(
+  $$delete from public.item_modifiers where id = 'a9000000-0000-4000-8000-000000000204'$$,
+  'temoin: sans menu.price, supprimer un supplement GRATUIT passe (menu.edit suffit)');
+select lives_ok(
+  $$delete from public.menu_items where id = 'a9000000-0000-4000-8000-000000000206'$$,
+  'sans menu.price: supprimer un plat passe, son supplement payant part en cascade (limite L4, hors garde)');
 
 reset role;
+select is((select count(*)::int from public.item_modifiers
+            where id in ('a9000000-0000-4000-8000-000000000203', 'a9000000-0000-4000-8000-000000000205')), 2,
+  'sans menu.price: les deux supplements payants sont toujours la');
+select is((select count(*)::int from public.item_modifiers
+            where id in ('a9000000-0000-4000-8000-000000000204', 'a9000000-0000-4000-8000-000000000207')), 0,
+  'temoin: le supplement gratuit et celui du plat supprime ont bien disparu (les DELETE n etaient pas des no-op)');
 select is((select price::int || '/' || coalesce(prices::text, 'null') from public.menu_items
             where id = 'a9000000-0000-4000-8000-000000000202'), '2500/null',
   'sans menu.price: apres toutes les tentatives, le prix du plat est intact');
@@ -133,7 +168,12 @@ select lives_ok(
 select lives_ok(
   $$update public.item_modifiers set price = 900 where id = 'a9000000-0000-4000-8000-000000000203'$$,
   'temoin: un chef par defaut change le prix d un supplement');
+select lives_ok(
+  $$delete from public.item_modifiers where id = 'a9000000-0000-4000-8000-000000000205'$$,
+  'temoin: un chef par defaut supprime un supplement payant');
 reset role;
+select is((select count(*)::int from public.item_modifiers where id = 'a9000000-0000-4000-8000-000000000205'), 0,
+  'temoin: le supplement payant a bien ete supprime par le chef par defaut');
 select is((select price::int from public.menu_items where id = 'a9000000-0000-4000-8000-000000000202'), 3000,
   'temoin: le prix du plat a bien change (la garde ne bloque pas tout)');
 

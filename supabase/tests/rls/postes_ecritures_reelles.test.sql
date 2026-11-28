@@ -100,17 +100,19 @@ select throws_ok(
 -- ===========================================================================
 -- 4. orders UPDATE (orders.take OU kitchen.track)
 --    Tous les postes ont l'un des deux droits par defaut : le refus se prouve
---    donc avec un serveur a qui le proprietaire a retire orders.take.
+--    donc avec un serveur a qui le proprietaire a retire orders.take. Les
+--    statuts de cuisine (`preparing`, `ready`) ont en plus leur propre garde,
+--    prouvee par statut_cuisine_garde.test.sql : ici le serveur SERT.
 -- ===========================================================================
 set local request.jwt.claims = '{"sub":"a2000000-0000-4000-8000-000000000107"}';
-update public.orders set status = 'preparing' where id = 'a2000000-0000-4000-8000-000000000205';
+update public.orders set status = 'delivered' where id = 'a2000000-0000-4000-8000-000000000205';
 select is((select status from public.orders where id = 'a2000000-0000-4000-8000-000000000205'),
   'pending', 'commandes: un serveur prive de orders.take ne fait PAS avancer une commande (0 ligne)');
 
 set local request.jwt.claims = '{"sub":"a2000000-0000-4000-8000-000000000106"}';
-update public.orders set status = 'preparing' where id = 'a2000000-0000-4000-8000-000000000205';
+update public.orders set status = 'delivered' where id = 'a2000000-0000-4000-8000-000000000205';
 select is((select status from public.orders where id = 'a2000000-0000-4000-8000-000000000205'),
-  'preparing', 'commandes: un serveur fait avancer une commande (orders.take)');
+  'delivered', 'commandes: un serveur fait avancer une commande (orders.take)');
 
 set local request.jwt.claims = '{"sub":"a2000000-0000-4000-8000-000000000103"}';
 update public.orders set status = 'ready' where id = 'a2000000-0000-4000-8000-000000000205';

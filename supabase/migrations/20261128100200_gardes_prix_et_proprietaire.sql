@@ -13,9 +13,10 @@
 --
 -- A SAVOIR. Supprimer physiquement le compte auth.users du proprietaire d'un
 -- restaurant ouvert est desormais refuse (la cascade atteint sa ligne). Il faut
--- supprimer ou fermer le restaurant d'abord. La base n'empeche PAS de
--- desactiver la ligne du proprietaire (is_active, deleted_at, banned_at) : la
--- plateforme en a besoin ; cote restaurant c'est l'application qui le refuse.
+-- supprimer ou fermer le restaurant d'abord. La base refuse aussi de
+-- DESACTIVER le proprietaire d'un restaurant ouvert par `is_active` seul (le
+-- geste d'equipe). La plateforme garde ses deux gestes, qui datent la ligne :
+-- bannir (`banned_at`) et retirer (`deleted_at`).
 --
 -- RETOUR ARRIERE : supabase/retour-arriere/20261128100200_retour_gardes_prix_et_proprietaire.sql
 
@@ -32,7 +33,22 @@ BEGIN
   -- se declencherait jamais). service_role, postgres, taches planifiees et
   -- fonctions SECURITY DEFINER : hors de cette garde.
   IF current_user NOT IN ('authenticated', 'anon') THEN
-    RETURN NEW;
+    RETURN coalesce(NEW, OLD);
+  END IF;
+  IF TG_OP = 'DELETE' THEN
+    -- Supprimer un supplement PAYANT puis le recreer gratuit (deux gestes que
+    -- `menu.edit` permet) faisait passer son prix a 0 sans `menu.price`. La
+    -- suppression d'un supplement payant exige donc `menu.price`. La cascade
+    -- depuis la suppression d'un plat n'est pas concernee : PostgreSQL
+    -- l'execute au nom du proprietaire de la table, pas de l'appelant.
+    IF coalesce(OLD.price, 0) = 0 AND OLD.prices IS NULL THEN
+      RETURN OLD;
+    END IF;
+    IF NOT public.has_tenant_write_permission(OLD.tenant_id, 'menu.price') THEN
+      RAISE EXCEPTION 'changing a price requires the menu.price permission'
+        USING ERRCODE = '42501';
+    END IF;
+    RETURN OLD;
   END IF;
   IF TG_OP = 'UPDATE' THEN
     IF NEW.price IS NOT DISTINCT FROM OLD.price
@@ -53,12 +69,13 @@ $function$;
 REVOKE ALL ON FUNCTION public.garder_prix_carte() FROM PUBLIC, anon, authenticated, service_role;
 
 -- menu_items : UPDATE seulement, l'INSERT exige deja `menu.price` par sa
--- politique (MIG2). item_modifiers : INSERT et UPDATE.
+-- politique (MIG2). item_modifiers : INSERT, UPDATE et DELETE (un supplement
+-- payant ne disparait pas sans `menu.price`).
 DROP TRIGGER IF EXISTS trg_menu_items_prix ON public.menu_items;
 CREATE TRIGGER trg_menu_items_prix BEFORE UPDATE ON public.menu_items
   FOR EACH ROW EXECUTE FUNCTION public.garder_prix_carte();
 DROP TRIGGER IF EXISTS trg_item_modifiers_prix ON public.item_modifiers;
-CREATE TRIGGER trg_item_modifiers_prix BEFORE INSERT OR UPDATE ON public.item_modifiers
+CREATE TRIGGER trg_item_modifiers_prix BEFORE INSERT OR UPDATE OR DELETE ON public.item_modifiers
   FOR EACH ROW EXECUTE FUNCTION public.garder_prix_carte();
 
 -- ---------------------------------------------------------------------------
@@ -76,6 +93,18 @@ BEGIN
     IF 'owner' = ANY (OLD.postes)
        AND (NEW.tenant_id IS DISTINCT FROM OLD.tenant_id OR NEW.user_id IS DISTINCT FROM OLD.user_id) THEN
       RAISE EXCEPTION 'the owner row cannot be reassigned' USING ERRCODE = '42501';
+    END IF;
+    -- Desactiver le proprietaire d'un restaurant ouvert. Les gestes d'equipe
+    -- ecrivent en service_role : sans cette garde, la seule protection etait
+    -- le controle de l'application. Les gestes de la PLATEFORME restent permis
+    -- et se reconnaissent a ce qu'ils datent la ligne : bannir (`banned_at`)
+    -- ou retirer (`deleted_at`). Un geste d'equipe n'ecrit que `is_active`.
+    IF 'owner' = ANY (OLD.postes)
+       AND OLD.is_active IS DISTINCT FROM false AND NEW.is_active IS FALSE
+       AND NEW.banned_at IS NULL AND NEW.deleted_at IS NULL
+       AND EXISTS (
+         SELECT 1 FROM public.tenants AS t WHERE t.id = OLD.tenant_id AND t.deleted_at IS NULL) THEN
+      RAISE EXCEPTION 'the owner of a live restaurant cannot be deactivated' USING ERRCODE = '42501';
     END IF;
     RETURN NEW;
   END IF;

@@ -24,7 +24,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(68);
+select plan(71);
 
 -- signature, anon, authenticated, service_role
 create temp table attendus (signature text, anon boolean, authenticated boolean, service_role boolean) on commit drop;
@@ -52,10 +52,11 @@ insert into attendus values
   ('private.sync_postes_invitations()',                 false, false, false),
   ('private.garder_proprietaire()',                     false, false, false),
   ('public.role_permissions_vers_postes()',             false, false, false),
-  ('public.garder_prix_carte()',                        false, false, false);
+  ('public.garder_prix_carte()',                        false, false, false),
+  ('public.garder_statut_cuisine()',                    false, false, false);
 
-select is((select count(*)::int from attendus a where to_regprocedure(a.signature) is not null), 20,
-  'temoin: les 20 fonctions du tableau existent (aucune signature fausse)');
+select is((select count(*)::int from attendus a where to_regprocedure(a.signature) is not null), 21,
+  'temoin: les 21 fonctions du tableau existent (aucune signature fausse)');
 select ok((select count(*) filter (where a.authenticated) > 0 and count(*) filter (where not a.authenticated) > 0
            from attendus a), 'temoin: le tableau porte des attendus oui ET non');
 
@@ -85,7 +86,7 @@ select is((select count(*)::int from attendus a
             where not exists (select 1 from unnest(coalesce(p.proconfig, '{}')) c where c like 'search_path=%')), 0,
   'chaque fonction fixe son search_path');
 
--- Le mode de securite attendu : INVOKER pour les deux declencheurs qui lisent
+-- Le mode de securite attendu : INVOKER pour les trois declencheurs qui lisent
 -- current_user ou doivent subir la RLS de l'appelant, DEFINER pour les aides.
 select is((select array_agg(a.signature order by a.signature) from attendus a
             join pg_proc p on p.oid = to_regprocedure(a.signature) where p.prosecdef),
@@ -94,7 +95,7 @@ select is((select array_agg(a.signature order by a.signature) from attendus a
         'public.has_tenant_floor_permission(uuid)', 'public.has_tenant_money_permission(uuid)',
         'public.has_tenant_write_permission(uuid, text)', 'public.is_tenant_owner(uuid)',
         'public.tenant_permission_level(uuid, text)', 'public.tenants_avec_droit(text, text)'],
-  'SECURITY DEFINER : exactement ces onze fonctions (les deux declencheurs INVOKER n y sont pas)');
+  'SECURITY DEFINER : exactement ces onze fonctions (les trois declencheurs INVOKER n y sont pas)');
 
 -- Effet reel, pas seulement le catalogue : anon n'appelle pas une fonction interne.
 set local role anon;

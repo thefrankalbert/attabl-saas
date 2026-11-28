@@ -157,13 +157,13 @@ select ok(
 );
 
 select lives_ok(
-  $$update public.orders set status = 'ready'
+  $$update public.orders set status = 'delivered'
     where id = 'b4444444-4444-4444-4444-444444444444'$$,
-  'caisse: un caissier fait avancer une commande'
+  'caisse: un caissier fait avancer une commande (il la marque servie ; "prete" est un geste de cuisine)'
 );
 select is(
   (select status from public.orders where id = 'b4444444-4444-4444-4444-444444444444'),
-  'ready',
+  'delivered',
   'caisse: la commande a REELLEMENT avance (pas un refus masque)'
 );
 
