@@ -26,13 +26,42 @@ interface LogAuditInput {
 
 export interface AuditService {
   log(input: LogAuditInput): Promise<void>;
+  /**
+   * Comme `log`, mais LEVE si la ligne n'est pas ecrite. Pour les operations
+   * destructives qui ne doivent jamais passer sans trace (remise a zero).
+   */
+  logOrThrow(input: LogAuditInput): Promise<void>;
 }
 
 export function createAuditService(
   supabase: SupabaseClient,
   context: { tenantId: string; userId?: string; userEmail?: string; userRole?: string },
 ): AuditService {
+  const row = ({ action, entityType, entityId, oldData, newData, metadata }: LogAuditInput) => ({
+    tenant_id: context.tenantId,
+    user_id: context.userId || null,
+    user_email: context.userEmail || null,
+    user_role: context.userRole || null,
+    action,
+    entity_type: entityType,
+    entity_id: entityId || null,
+    old_data: oldData || null,
+    new_data: newData || null,
+    metadata: metadata || null,
+  });
+
   return {
+    async logOrThrow(input: LogAuditInput): Promise<void> {
+      const { error } = await supabase.from('audit_log').insert(row(input));
+      if (error) {
+        logger.error('Audit log insert refused (strict)', error, {
+          action: input.action,
+          entityType: input.entityType,
+        });
+        throw new ServiceError("Impossible d'enregistrer la trace d'audit", 'INTERNAL');
+      }
+    },
+
     /**
      * Log an audit event. Fire-and-forget - never throws.
      * The audit log should never block the primary operation.
@@ -48,18 +77,9 @@ export function createAuditService(
       try {
         // B30: PostgREST rend un refus (RLS, contrainte) dans `error` sans lever:
         // non lu, la ligne d'audit disparaissait sans trace.
-        const { error } = await supabase.from('audit_log').insert({
-          tenant_id: context.tenantId,
-          user_id: context.userId || null,
-          user_email: context.userEmail || null,
-          user_role: context.userRole || null,
-          action,
-          entity_type: entityType,
-          entity_id: entityId || null,
-          old_data: oldData || null,
-          new_data: newData || null,
-          metadata: metadata || null,
-        });
+        const { error } = await supabase
+          .from('audit_log')
+          .insert(row({ action, entityType, entityId, oldData, newData, metadata }));
         if (error) {
           logger.error('Audit log insert refused', error, { action, entityType, entityId });
         }

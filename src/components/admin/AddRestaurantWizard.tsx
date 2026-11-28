@@ -14,16 +14,8 @@ import {
 import { Loader2, ArrowLeft, ArrowRight, Check, X, Building2, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { logger } from '@/lib/logger';
-import {
-  createRestaurantStep1Schema,
-  createRestaurantStep2Schema,
-  ESTABLISHMENT_TYPES,
-  PLAN_OPTIONS,
-} from '@/lib/validations/restaurant.schema';
-import type {
-  CreateRestaurantStep1Input,
-  CreateRestaurantStep2Input,
-} from '@/lib/validations/restaurant.schema';
+import { createRestaurantSchema, ESTABLISHMENT_TYPES } from '@/lib/validations/restaurant.schema';
+import type { CreateRestaurantInput } from '@/lib/validations/restaurant.schema';
 
 // --- Slug generator -----------------------------------------
 function nameToSlug(name: string): string {
@@ -46,30 +38,6 @@ const TYPE_KEYS: Record<string, string> = {
   'quick-service': 'addRestaurant.typeQuickService',
 };
 
-// --- Plan keys (mapped to translation keys) -----------------
-const PLAN_KEYS: Record<string, { label: string; price: string; description: string }> = {
-  trial: {
-    label: 'addRestaurant.planTrialLabel',
-    price: 'addRestaurant.planTrialPrice',
-    description: 'addRestaurant.planTrialDesc',
-  },
-  starter: {
-    label: 'addRestaurant.planStarterLabel',
-    price: 'addRestaurant.planStarterPrice',
-    description: 'addRestaurant.planStarterDesc',
-  },
-  pro: {
-    label: 'addRestaurant.planProLabel',
-    price: 'addRestaurant.planProPrice',
-    description: 'addRestaurant.planProDesc',
-  },
-  business: {
-    label: 'addRestaurant.planBusinessLabel',
-    price: 'addRestaurant.planBusinessPrice',
-    description: 'addRestaurant.planBusinessDesc',
-  },
-};
-
 interface AddRestaurantWizardProps {
   onClose: () => void;
   onSuccess: (slug: string) => void;
@@ -90,21 +58,13 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
   const [slug, setSlug] = useState('');
   const [slugEdited, setSlugEdited] = useState(false);
 
-  // Step 2 data
-  const [plan, setPlan] = useState<string>('trial');
-
   // --- Validation ------------------------------------------
-  const step1Data: CreateRestaurantStep1Input = {
+  const step1Data: CreateRestaurantInput = {
     name,
-    type: type as CreateRestaurantStep1Input['type'],
+    type: type as CreateRestaurantInput['type'],
     slug,
   };
-  const step1Valid = createRestaurantStep1Schema.safeParse(step1Data).success;
-
-  const step2Data: CreateRestaurantStep2Input = {
-    plan: plan as CreateRestaurantStep2Input['plan'],
-  };
-  const step2Valid = createRestaurantStep2Schema.safeParse(step2Data).success;
+  const step1Valid = createRestaurantSchema.safeParse(step1Data).success;
 
   // --- Auto-slug -------------------------------------------
   const handleNameChange = (value: string) => {
@@ -128,7 +88,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
       const response = await fetch('/api/restaurants/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, type, slug, plan }),
+        body: JSON.stringify({ name, type, slug }),
       });
 
       const data = await response.json();
@@ -176,14 +136,14 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
             <div>
               <h2 className="text-lg font-bold text-app-text">{t('addRestaurant.title')}</h2>
               <p className="text-xs text-app-text-muted">
-                {t('addRestaurant.stepOf', { step, total: 3 })}
+                {t('addRestaurant.stepOf', { step, total: 2 })}
               </p>
             </div>
           </div>
 
           {/* Progress bar */}
           <div className="mt-4 flex gap-2">
-            {[1, 2, 3].map((s) => (
+            {[1, 2].map((s) => (
               <div
                 key={s}
                 className={`h-1 flex-1 rounded-full transition-colors ${
@@ -264,47 +224,8 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
             </div>
           )}
 
-          {/* --- STEP 2: Plan ----------------------------- */}
+          {/* --- STEP 2: Summary -------------------------- */}
           {step === 2 && (
-            <div className="space-y-3">
-              <p className="mb-2 text-sm font-medium text-app-text">
-                {t('addRestaurant.choosePlan')}
-              </p>
-              {PLAN_OPTIONS.map((p) => {
-                const keys = PLAN_KEYS[p];
-                return (
-                  <Button
-                    key={p}
-                    variant="outline"
-                    onClick={() => setPlan(p)}
-                    className={`w-full rounded-xl border-2 p-4 text-left h-auto whitespace-normal ${
-                      plan === p
-                        ? 'border-accent bg-accent/5'
-                        : 'border-app-border hover:border-app-border-hover'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-bold text-app-text">{t(keys.label)}</p>
-                        <p className="text-xs text-app-text-secondary">{t(keys.description)}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-app-text">{t(keys.price)}</p>
-                        {plan === p && (
-                          <div className="mt-1 flex items-center justify-end">
-                            <Check className="h-4 w-4 text-accent" />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </Button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* --- STEP 3: Summary -------------------------- */}
-          {step === 3 && (
             <div className="space-y-4">
               <div className="rounded-xl bg-app-bg p-4">
                 <div className="mb-4 flex items-center gap-3">
@@ -333,21 +254,13 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
                     </span>
                     <span className="text-sm font-medium text-app-text">{slug}.attabl.com</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-xs text-app-text-secondary">
-                      {t('addRestaurant.summaryPlan')}
-                    </span>
-                    <span className="text-sm font-medium text-app-text">
-                      {PLAN_KEYS[plan] ? t(PLAN_KEYS[plan].label) : plan}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-xs text-app-text-secondary">
-                      {t('addRestaurant.summaryPrice')}
-                    </span>
-                    <span className="text-sm font-bold text-app-text">
-                      {PLAN_KEYS[plan] ? t(PLAN_KEYS[plan].price) : '-'}
-                    </span>
+                  <div className="space-y-1 border-t border-app-border pt-3">
+                    <p className="text-xs text-app-text-secondary">
+                      {t('addRestaurant.summaryBilling')}
+                    </p>
+                    <p className="text-sm text-app-text">
+                      {t('addRestaurant.summaryBillingValue')}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -385,10 +298,10 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
             )}
           </Button>
 
-          {step < 3 ? (
+          {step < 2 ? (
             <Button
               onClick={() => setStep(step + 1)}
-              disabled={step === 1 ? !step1Valid : !step2Valid}
+              disabled={!step1Valid}
               className="gap-2 rounded-lg bg-accent text-sm font-semibold text-accent-text hover:bg-accent-hover disabled:opacity-50"
             >
               {t('addRestaurant.next')}

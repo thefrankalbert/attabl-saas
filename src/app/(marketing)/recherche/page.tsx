@@ -5,6 +5,7 @@ import { SearchClient, type SearchEntry } from './SearchClient';
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('marketing.recherche');
   return {
+    alternates: { canonical: '/recherche' },
     title: t('metaTitle'),
     description: t('metaDescription'),
     robots: { index: false, follow: true },
