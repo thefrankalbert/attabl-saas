@@ -4,7 +4,7 @@ import { Mail, Loader2, RefreshCw, Clock, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { getRoleConfig } from '@/lib/role-config';
+import { getPostesConfig } from '@/lib/role-config';
 import { ListRowsSkeleton } from '@/components/admin/skeletons/ListRowsSkeleton';
 import type { Invitation } from '@/types/invitation.types';
 import { timeAgo, timeUntil } from '@/hooks/useUsersData';
@@ -47,8 +47,7 @@ export default function PendingInvitations({
       ) : (
         <div className="grid gap-3">
           {pendingOnly.map((invitation) => {
-            const roleConfig = getRoleConfig(invitation.role, t);
-            const RoleIcon = roleConfig.icon;
+            const badges = getPostesConfig(invitation.postes, t);
             return (
               <div
                 key={invitation.id}
@@ -59,17 +58,20 @@ export default function PendingInvitations({
                     <Mail className="w-5 h-5 text-app-text-muted mt-0.5 shrink-0" />
                     <div className="space-y-1">
                       <p className="font-medium text-app-text">{invitation.email}</p>
-                      <div className="flex items-center gap-3 text-xs text-app-text-secondary">
-                        <div
-                          className={cn(
-                            'px-2 py-0.5 rounded-full font-medium flex items-center gap-1',
-                            roleConfig.bg,
-                            roleConfig.color,
-                          )}
-                        >
-                          <RoleIcon className="w-3 h-3" />
-                          {roleConfig.label}
-                        </div>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-app-text-secondary">
+                        {badges.map((badge) => (
+                          <div
+                            key={badge.label}
+                            className={cn(
+                              'px-2 py-0.5 rounded-full font-medium flex items-center gap-1',
+                              badge.bg,
+                              badge.color,
+                            )}
+                          >
+                            <badge.icon className="w-3 h-3" />
+                            {badge.label}
+                          </div>
+                        ))}
                         <span>{t('sentAgo', { time: timeAgo(invitation.created_at, t) })}</span>
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />

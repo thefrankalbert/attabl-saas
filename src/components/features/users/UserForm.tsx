@@ -5,23 +5,16 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { buildRoleConfig } from '@/lib/role-config';
+import PostesPicker from '@/components/features/users/PostesPicker';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
-import type { AdminRole } from '@/types/admin.types';
+import type { StaffPoste } from '@/types/permission.types';
 
 interface UserFormProps {
   // Invitation form
   inviteEmail: string;
   setInviteEmail: (email: string) => void;
-  inviteRole: string;
-  setInviteRole: (role: string) => void;
+  invitePostes: StaffPoste[];
+  setInvitePostes: (postes: StaffPoste[]) => void;
   inviting: boolean;
   onSendInvitation: () => Promise<void>;
 
@@ -33,28 +26,14 @@ interface UserFormProps {
 export default function UserForm({
   inviteEmail,
   setInviteEmail,
-  inviteRole,
-  setInviteRole,
+  invitePostes,
+  setInvitePostes,
   inviting,
   onSendInvitation,
   onClose,
 }: UserFormProps) {
   const t = useTranslations('users');
   const seg = useSegmentTerms();
-
-  const ROLE_CONFIG = buildRoleConfig(t);
-  const ROLE_DESC_KEYS: Record<string, string> = {
-    admin: 'roleDescAdmin',
-    manager: 'roleDescManager',
-    cashier: 'roleDescCashier',
-    chef: 'roleDescChef',
-    waiter: 'roleDescWaiter',
-  };
-  const roleDescription = (role: string) => (ROLE_DESC_KEYS[role] ? t(ROLE_DESC_KEYS[role]) : '');
-
-  const INVITABLE_ROLE_CONFIG = Object.fromEntries(
-    Object.entries(ROLE_CONFIG).filter(([key]) => key !== 'owner'),
-  ) as Record<string, (typeof ROLE_CONFIG)[AdminRole]>;
 
   return (
     <div className="space-y-4">
@@ -77,30 +56,20 @@ export default function UserForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="invite-role">{t('roleAndPermissions')}</Label>
-          <Select value={inviteRole} onValueChange={(v: string) => setInviteRole(v)}>
-            <SelectTrigger id="invite-role">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(INVITABLE_ROLE_CONFIG).map(([key, config]) => (
-                <SelectItem key={key} value={key}>
-                  <div className="flex items-center gap-2">
-                    <config.icon className="w-4 h-4" />
-                    <span>{config.label}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-app-text-secondary mt-1">{roleDescription(inviteRole)}</p>
+          <Label>{t('postesLabel')}</Label>
+          <p className="text-xs text-app-text-secondary">{t('postesHint')}</p>
+          <PostesPicker idPrefix="invite-poste" value={invitePostes} onChange={setInvitePostes} />
         </div>
 
         <div className="pt-4 flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>
             {t('cancel')}
           </Button>
-          <Button variant="default" onClick={onSendInvitation} disabled={inviting}>
+          <Button
+            variant="default"
+            onClick={onSendInvitation}
+            disabled={inviting || invitePostes.length === 0}
+          >
             {inviting ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : (

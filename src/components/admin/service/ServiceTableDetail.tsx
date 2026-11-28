@@ -19,6 +19,7 @@ import { ReassignTableDialog, type ReassignFreeTable } from './ReassignTableDial
 import { actionReleaseTable } from '@/app/actions/table-release';
 import type { ServiceServerVM, ServiceTableStatus, ServiceTableVM } from './service.types';
 import type { Order } from '@/types/admin.types';
+import { ORDERS_ADVANCE } from '@/lib/admin-roles';
 
 interface Props {
   vm: ServiceTableVM | null;
@@ -63,6 +64,7 @@ interface Props {
     reassignMoving: string;
     reassignSuccess: string;
     reassignError: string;
+    postesName: (postes: readonly string[] | undefined) => string;
   };
 }
 
@@ -88,8 +90,8 @@ export function ServiceTableDetail({
   const [freeing, setFreeing] = useState(false);
   const canAssign = useCanManageFloor();
   // Freeing a table is a floor gesture (waiter, cashier): same check as the
-  // server action (orders.manage), not the manager-only assignment gate.
-  const canFreeTable = usePermissions().can('orders.manage');
+  // server action (prendre ou suivre une commande), not the assignment gate.
+  const canFreeTable = usePermissions().can(ORDERS_ADVANCE);
 
   useEffect(() => {
     if (!vm) return;
@@ -199,7 +201,7 @@ export function ServiceTableDetail({
                     {assignedServer.server.full_name ?? '-'}
                   </div>
                   <div className="text-[10px] text-app-text-muted">
-                    {assignedServer.server.role}
+                    {labels.postesName(assignedServer.server.postes)}
                   </div>
                 </div>
                 {assignment && canAssign && (

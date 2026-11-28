@@ -94,7 +94,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
   const site = useParams()?.site as string | undefined;
 
   return (
-    <RoleGuard permission="pos.use">
+    <RoleGuard permission="orders.take">
       <div className="@container h-full flex flex-col overflow-hidden bg-app-bg">
         {!mounted || pos.loading ? (
           <div className="flex-1 flex items-center justify-center text-app-text-muted">

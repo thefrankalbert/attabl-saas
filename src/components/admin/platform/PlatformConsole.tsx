@@ -310,7 +310,9 @@ export function PlatformConsole({
                                       </span>
                                       <span className="shrink-0">{userStatusBadge(u)}</span>
                                     </div>
-                                    <span className="text-xs text-app-text-muted">{u.role}</span>
+                                    <span className="text-xs text-app-text-muted">
+                                      {u.postes?.length ? u.postes.join(' + ') : u.role}
+                                    </span>
                                   </div>
                                   <div className="flex flex-wrap gap-2">
                                     {u.banned_at ? (

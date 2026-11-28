@@ -7,7 +7,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import messages from '@/messages/fr-FR.json';
 import { PermissionsProvider } from '@/contexts/PermissionsContext';
-import { DEFAULT_PERMISSIONS, type PermissionCode } from '@/types/permission.types';
+import { getEffectiveLevels } from '@/lib/permissions';
 import type { Order } from '@/types/admin.types';
 
 // Verification visuelle du lot A (D2): la fenetre de detail de la page
@@ -129,10 +129,7 @@ function renderPage() {
   render(
     <QueryClientProvider client={client}>
       <NextIntlClientProvider locale="fr-FR" messages={messages} timeZone="UTC">
-        <PermissionsProvider
-          role="owner"
-          permissions={DEFAULT_PERMISSIONS.owner as Record<PermissionCode, boolean>}
-        >
+        <PermissionsProvider postes={['owner']} levels={getEffectiveLevels({ postes: ['owner'] })}>
           <OrdersClient tenantId={TENANT} initialOrders={[order()]} timeZone="UTC" />
         </PermissionsProvider>
       </NextIntlClientProvider>

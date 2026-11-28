@@ -10,41 +10,36 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
 import { actionUpdateAdminUser } from '@/app/actions/admin';
 import {
-  DEFAULT_PERMISSIONS,
+  LIMITED_HINT_KEYS,
+  PERMISSION_CATEGORIES,
+  permissionLabelKey,
+} from '@/lib/permission-catalogue-ui';
+import { permissionLevel, type PosteOverrides } from '@/lib/permissions';
+import {
   PERMISSION_CODES,
   type PermissionCode,
+  type PermissionLevel,
   type PermissionMap,
 } from '@/types/permission.types';
 import type { AdminUser } from '@/types/admin.types';
 
-// Same grouping as the role-level matrix (PermissionsClient) for consistency.
-const PERMISSION_CATEGORIES: { key: string; permissions: PermissionCode[] }[] = [
-  { key: 'menu', permissions: ['menu.view', 'menu.edit'] },
-  { key: 'orders', permissions: ['orders.view', 'orders.manage', 'orders.pay'] },
-  { key: 'reports', permissions: ['reports.view'] },
-  { key: 'pos', permissions: ['pos.use'] },
-  { key: 'inventory', permissions: ['inventory.view', 'inventory.edit'] },
-  { key: 'team', permissions: ['team.view', 'team.manage'] },
-  { key: 'settings', permissions: ['settings.view', 'settings.edit'] },
-];
-
 interface UserPermissionsDialogProps {
   user: AdminUser;
   tenantId: string;
-  /** Tenant-level override for THIS user's role (baseline before per-user diffs). */
-  roleOverride: PermissionMap;
+  /** Reglages du restaurant par poste: la base avant le reglage par personne. */
+  posteOverrides: PosteOverrides;
   onClose: () => void;
   onSaved: () => void;
 }
 
 /**
  * Per-user permission override editor. Mount it with a `key={user.id}` so it
- * remounts (and re-reads custom_permissions) per user - no prop-syncing effect.
+ * remounts (and re-reads permission_overrides) per user - no prop-syncing effect.
  */
 export default function UserPermissionsDialog({
   user,
   tenantId,
-  roleOverride,
+  posteOverrides,
   onClose,
   onSaved,
 }: UserPermissionsDialogProps) {
@@ -55,7 +50,7 @@ export default function UserPermissionsDialog({
   // Per-user diffs only (keys constrained to known codes).
   const [overrides, setOverrides] = useState<PermissionMap>(() => {
     const initial: PermissionMap = {};
-    const current = user.custom_permissions ?? {};
+    const current = user.permission_overrides ?? {};
     for (const code of PERMISSION_CODES) {
       if (typeof current[code] === 'boolean') {
         initial[code] = current[code];
@@ -70,16 +65,16 @@ export default function UserPermissionsDialog({
   const pendingRef = useRef<PermissionMap | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Persist the whole custom_permissions map (replaced wholesale; null = follow
-  // the role). Toast on success AND on error, plus the inline status: the
+  // Persist the whole permission_overrides map (replaced wholesale; null =
+  // follow the postes). Toast on success AND on error, plus the inline status: the
   // inline "Enregistre" alone went unnoticed (verification test 2026-11-24).
   const persist = useCallback(
     async (next: PermissionMap): Promise<boolean> => {
       setSaving(true);
       try {
         const res = await actionUpdateAdminUser(tenantId, user.id, {
-          custom_permissions: Object.keys(next).length > 0 ? next : null,
-        } as Partial<AdminUser>);
+          permission_overrides: Object.keys(next).length > 0 ? next : null,
+        });
         if (res.error) {
           toast({ title: res.error, variant: 'destructive' });
           return false;
@@ -120,14 +115,17 @@ export default function UserPermissionsDialog({
     };
   }, []);
 
-  // Effective value the ROLE grants by default in this tenant (the baseline).
+  // Ce que les POSTES du membre donnent dans ce restaurant, sans son reglage
+  // par personne (cumul: le niveau le plus haut entre ses postes).
+  const baselineLevel = useCallback(
+    (perm: PermissionCode): PermissionLevel | null =>
+      permissionLevel({ postes: user.postes ?? [] }, perm, posteOverrides),
+    [posteOverrides, user.postes],
+  );
+  // Le reglage par personne est booleen: seul le droit entier compte comme "oui".
   const baseline = useCallback(
-    (perm: PermissionCode): boolean => {
-      const override = roleOverride[perm];
-      if (override !== undefined) return override;
-      return DEFAULT_PERMISSIONS[user.role]?.[perm] ?? false;
-    },
-    [roleOverride, user.role],
+    (perm: PermissionCode): boolean => baselineLevel(perm) === 'full',
+    [baselineLevel],
   );
 
   const effective = useCallback(
@@ -143,7 +141,7 @@ export default function UserPermissionsDialog({
       const next = { ...overridesRef.current };
       const newValue = !(next[perm] !== undefined ? next[perm] : baseline(perm));
       if (newValue === baseline(perm)) {
-        // Back to the role baseline: drop the override.
+        // Back to the postes baseline: drop the override.
         delete next[perm];
       } else {
         next[perm] = newValue;
@@ -185,10 +183,10 @@ export default function UserPermissionsDialog({
     else onClose();
   }, [persist, onSaved, onClose]);
 
-  const permissionLabel = (perm: PermissionCode): string => t(`perm.${perm.replace('.', '_')}`);
+  const permissionLabel = (perm: PermissionCode): string => t(`perm.${permissionLabelKey(perm)}`);
   const categoryLabel = (key: string): string => t(`category.${key}`);
 
-  const isOwner = user.role === 'owner';
+  const isOwner = (user.postes ?? []).includes('owner');
 
   return (
     <AdminModal isOpen onClose={isOwner ? onClose : handleClose} title={t('userTitle')}>
@@ -213,6 +211,13 @@ export default function UserPermissionsDialog({
                 {category.permissions.map((perm) => {
                   const isOverridden = overrides[perm] !== undefined;
                   const enabled = effective(perm);
+                  // Droit borne par defaut ("avec code", "QR marchand",
+                  // "factures"): dit en texte, tant qu'aucun reglage ne tranche.
+                  const hintKey = LIMITED_HINT_KEYS[perm];
+                  const limitedHint =
+                    !isOverridden && hintKey && baselineLevel(perm) === 'limited'
+                      ? t(`limited.${hintKey}`)
+                      : null;
                   return (
                     <div key={perm} className="flex items-center justify-between gap-3 px-4 py-3">
                       <div className="flex items-center gap-2 min-w-0">
@@ -222,6 +227,11 @@ export default function UserPermissionsDialog({
                         {isOverridden && (
                           <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-[0.625rem] border border-[var(--border)] text-[var(--warning)]">
                             {t('modified')}
+                          </span>
+                        )}
+                        {limitedHint && (
+                          <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-[0.625rem] border border-[var(--border)] text-app-text-secondary">
+                            {limitedHint}
                           </span>
                         )}
                       </div>

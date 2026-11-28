@@ -38,7 +38,7 @@ import {
 import { useToast } from '@/components/ui/use-toast';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { usePermissions } from '@/hooks/usePermissions';
-import { isRoleAllowed, ORDER_MONEY_ROLES } from '@/lib/admin-roles';
+import { MONEY_PERMISSIONS } from '@/lib/admin-roles';
 import { formatCurrencyMinor } from '@/lib/utils/money';
 import {
   actionListHouseAccounts,
@@ -65,9 +65,9 @@ export default function HouseAccountsClient({
   const t = useTranslations('houseAccount');
   const tc = useTranslations('common');
   const { toast } = useToast();
-  const { role, can } = usePermissions();
-  // Meme regle que le serveur: role de gerant ET droit d'encaisser.
-  const canManage = isRoleAllowed(role, ORDER_MONEY_ROLES) && can('orders.pay');
+  const { can } = usePermissions();
+  // Meme regle que le serveur: l'autorite d'argent (les quatre droits ensemble).
+  const canManage = can(MONEY_PERMISSIONS);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState('');

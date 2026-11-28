@@ -2,35 +2,50 @@
 import React from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, cleanup, within } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import messages from '@/messages/fr-FR.json';
 import UsersTable from '../UsersTable';
-import type { AdminUser, AdminRole } from '@/types/admin.types';
+import type { AdminUser } from '@/types/admin.types';
+import { getEffectiveLevels, type PosteOverrides } from '@/lib/permissions';
+import type { TeamActor } from '@/lib/auth/poste-authority';
+import type { Poste } from '@/types/permission.types';
 
-function member(id: string, role: AdminRole, name: string): AdminUser {
+function member(id: string, postes: Poste[], name: string): AdminUser {
   return {
     id,
-    role,
+    postes,
     full_name: name,
     email: `${name.toLowerCase()}@resto.test`,
     is_active: true,
-  } as AdminUser;
+  } as unknown as AdminUser;
 }
 
 const TEAM: AdminUser[] = [
-  member('u-owner', 'owner', 'Patron'),
-  member('u-admin', 'admin', 'Adjoint'),
-  member('u-manager', 'manager', 'Gerant'),
-  member('u-waiter', 'waiter', 'Serveur'),
+  member('u-owner', ['owner'], 'Patron'),
+  member('u-manager', ['manager'], 'Adjoint'),
+  member('u-manager2', ['manager'], 'Associe'),
+  member('u-waiter', ['waiter'], 'Moussa'),
+  member('u-multi', ['cashier', 'chef'], 'Polyvalent'),
 ];
 
-function renderTable(currentUserRole: AdminRole, canManageUsers = true) {
+function actorOf(user: AdminUser, posteOverrides: PosteOverrides = {}): TeamActor {
+  const postes = user.postes ?? [];
+  return {
+    id: user.id,
+    isOwner: postes.includes('owner'),
+    levels: getEffectiveLevels({ postes }, posteOverrides),
+  };
+}
+
+function renderTable(actorId: string, canManageUsers = true, users: AdminUser[] = TEAM) {
+  const actor = actorOf(TEAM.find((u) => u.id === actorId) as AdminUser);
   return render(
     <NextIntlClientProvider locale="fr-FR" messages={messages}>
       <UsersTable
-        users={TEAM}
-        currentUserRole={currentUserRole}
+        users={users}
+        actor={actor}
+        posteOverrides={{}}
         canManageUsers={canManageUsers}
         onToggleStatus={vi.fn()}
         onDeleteUser={vi.fn()}
@@ -41,29 +56,55 @@ function renderTable(currentUserRole: AdminRole, canManageUsers = true) {
   );
 }
 
+// Une ligne = le conteneur du nom: on compte les menus de cette ligne.
+function menusOnRowOf(name: string): number {
+  const row = screen.getByText(name).closest('.divide-y > div') as HTMLElement;
+  return within(row).queryAllByRole('button').length;
+}
+
 /**
- * Verification 2026-11-24: la ligne du proprietaire proposait "Supprimer" a
- * lui-meme, alors que le serveur refuse (rang egal, canActOnUser) et que
- * retirer le dernier membre supprimerait le restaurant. Le menu suit la meme
- * regle que le serveur: rien sur un rang egal ou superieur.
+ * Le menu suit la meme regle que le serveur (canActOnMember): rien sur le
+ * proprietaire, sur soi-meme, ni sur un membre dont les droits ne sont pas
+ * STRICTEMENT inclus dans les siens (donc pas sur un autre gerant).
  */
-describe('UsersTable - actions limitees au rang', () => {
+describe('UsersTable - actions limitees par les droits', () => {
   afterEach(cleanup);
 
   it('le proprietaire n a pas de menu sur sa propre ligne, mais en a sur les autres', () => {
-    renderTable('owner');
-    // 4 lignes, 3 menus: admin, gerant, serveur. Pas le proprietaire.
-    expect(screen.getAllByRole('button')).toHaveLength(3);
+    renderTable('u-owner');
+    // 5 lignes, 4 menus: pas le proprietaire.
+    expect(screen.getAllByRole('button')).toHaveLength(4);
+    expect(menusOnRowOf('Patron')).toBe(0);
+    expect(menusOnRowOf('Adjoint')).toBe(1);
   });
 
-  it('un admin n a de menu ni sur le proprietaire, ni sur lui-meme (rang egal), ni sur un autre admin', () => {
-    renderTable('admin');
-    // gerant et serveur seulement
+  it('un gerant n a de menu ni sur le proprietaire, ni sur lui-meme, ni sur un autre gerant', () => {
+    renderTable('u-manager');
+    expect(menusOnRowOf('Patron')).toBe(0);
+    expect(menusOnRowOf('Adjoint')).toBe(0);
+    expect(menusOnRowOf('Associe')).toBe(0);
+  });
+
+  it('temoin: le meme gerant a un menu sur un serveur et sur un caissier-chef', () => {
+    renderTable('u-manager');
+    expect(menusOnRowOf('Moussa')).toBe(1);
+    expect(menusOnRowOf('Polyvalent')).toBe(1);
     expect(screen.getAllByRole('button')).toHaveLength(2);
   });
 
   it('temoin negatif: sans droit de gestion, aucun menu nulle part', () => {
-    renderTable('owner', false);
+    renderTable('u-owner', false);
     expect(screen.queryAllByRole('button')).toHaveLength(0);
+  });
+
+  it('une pastille par poste pour un membre a deux postes', () => {
+    renderTable('u-owner');
+    const row = screen.getByText('Polyvalent').closest('.divide-y > div') as HTMLElement;
+    // Les pastilles existent en version telephone et en version large.
+    expect(within(row).getAllByText(messages.users.roleCashier)).toHaveLength(2);
+    expect(within(row).getAllByText(messages.users.roleChef)).toHaveLength(2);
+    // Temoin: un membre a un seul poste n'a pas la pastille de l'autre.
+    const waiterRow = screen.getByText('Moussa').closest('.divide-y > div') as HTMLElement;
+    expect(within(waiterRow).queryByText(messages.users.roleCashier)).toBeNull();
   });
 });

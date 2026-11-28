@@ -70,7 +70,7 @@ export function SettingsDialog({
   // Chaque onglet ne fait que renvoyer vers une page: on ne montre que ceux dont
   // la page s'ouvre pour ce membre (meme regle que le middleware), au lieu
   // d'un bouton qui finit sur /unauthorized.
-  const { permissions, role } = usePermissions();
+  const { levels: permissions, isOwner } = usePermissions();
   const canOpen = (subPath: string) => canOpenAdminSubPath(subPath, permissions);
 
   const tabs: { key: SettingsTab; label: string; icon: typeof CircleUser }[] = [
@@ -158,7 +158,7 @@ export function SettingsDialog({
                 {/* Suppression du compte, rendue ICI et pas seulement dans
                     Parametres: un restaurant gele est renvoye sur /subscription
                     par le proxy, et ce volet y reste ouvert. */}
-                {role === 'owner' ? (
+                {isOwner ? (
                   <DeleteAccountSection variant="owner" restaurantName={tenant.name} />
                 ) : (
                   <DeleteAccountSection variant="staff" />

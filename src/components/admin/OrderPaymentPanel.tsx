@@ -26,7 +26,7 @@ import AttachToHouseAccount from '@/components/admin/orders/AttachToHouseAccount
 import type { PaymentSummary } from '@/services/payment.service';
 import type { CurrencyCode } from '@/types/admin.types';
 import { usePermissions } from '@/hooks/usePermissions';
-import { isRoleAllowed, ORDER_MONEY_ROLES } from '@/lib/admin-roles';
+import { MONEY_PERMISSIONS } from '@/lib/admin-roles';
 
 interface OrderPaymentPanelProps {
   tenantId: string;
@@ -67,11 +67,11 @@ export default function OrderPaymentPanel({
   const tMethod = useTranslations('admin.settings.paymentMethod');
   const { toast } = useToast();
   // Memes regles que le serveur: encaisser et l'ardoise = `orders.pay`;
-  // rembourser = en plus un role de gerant. Les autres voient le detail en
+  // rembourser = l'autorite d'argent (les quatre droits). Les autres voient le detail en
   // lecture seule au lieu d'un champ qui finit en refus.
-  const { role, can } = usePermissions();
+  const { can } = usePermissions();
   const canPay = can('orders.pay');
-  const canGiveMoneyBack = canPay && isRoleAllowed(role, ORDER_MONEY_ROLES);
+  const canGiveMoneyBack = can(MONEY_PERMISSIONS);
 
   const [loading, setLoading] = useState(false);
   const [tenderAmount, setTenderAmount] = useState('');

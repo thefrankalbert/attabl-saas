@@ -20,8 +20,6 @@ interface KitchenClientProps {
   barDisplayEnabled?: boolean;
 }
 
-const CHEF_VIEW_ROLES = ['owner', 'admin', 'manager', 'chef'] as const;
-
 export default function KitchenClient({
   tenantId,
   tenantName,
@@ -29,10 +27,12 @@ export default function KitchenClient({
 }: KitchenClientProps) {
   const t = useTranslations('kitchen');
   const tc = useTranslations('common');
-  const { role } = usePermissions();
+  const { can } = usePermissions();
 
   const ts = useTranslations('shortcuts');
-  const isChefView = (CHEF_VIEW_ROLES as readonly string[]).includes(role);
+  // Vue du chef: qui suit la cuisine ET modifie la carte (chef, gerant,
+  // proprietaire par defaut). Un cuisinier suit sans cette vue.
+  const isChefView = can('kitchen.track') && can('menu.edit');
 
   // Zone filter state - persisted per tenant in localStorage.
   // SSR default is 'all'; the stored value is hydrated in a useEffect after mount

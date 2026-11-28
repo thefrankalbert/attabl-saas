@@ -8,7 +8,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import messages from '@/messages/fr-FR.json';
 import { Tabs } from '@/components/ui/tabs';
 import { PermissionsProvider } from '@/contexts/PermissionsContext';
-import { DEFAULT_PERMISSIONS, type PermissionCode } from '@/types/permission.types';
+import { getEffectiveLevels } from '@/lib/permissions';
 import type { SettingsFormValues } from '@/hooks/useSettingsData';
 import SettingsSecurity from '../SettingsSecurity';
 
@@ -53,10 +53,7 @@ function Harness({ idle }: { idle: number | null }) {
 function renderPage(idle: number | null) {
   render(
     <NextIntlClientProvider locale="fr-FR" messages={messages}>
-      <PermissionsProvider
-        role="owner"
-        permissions={DEFAULT_PERMISSIONS.owner as Record<PermissionCode, boolean>}
-      >
+      <PermissionsProvider postes={['owner']} levels={getEffectiveLevels({ postes: ['owner'] })}>
         <Harness idle={idle} />
       </PermissionsProvider>
     </NextIntlClientProvider>,

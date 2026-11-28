@@ -4,8 +4,8 @@ import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
 import { AdminBottomNav } from '../AdminBottomNav';
 import { PermissionsProvider } from '@/contexts/PermissionsContext';
-import { DEFAULT_PERMISSIONS, type PermissionCode } from '@/types/permission.types';
-import type { AdminRole } from '@/types/admin.types';
+import { getEffectiveLevels } from '@/lib/permissions';
+import type { PermissionCode, Poste } from '@/types/permission.types';
 
 // X8: la barre du bas etait une liste fixe par role, sans controle de
 // permission: le caissier et le chef avaient "Analyse" (refuse), le serveur
@@ -15,11 +15,11 @@ import type { AdminRole } from '@/types/admin.types';
 vi.mock('next/navigation', () => ({ usePathname: () => '/sites/resto/admin' }));
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 
-function renderNav(role: AdminRole, overrides: Partial<Record<PermissionCode, boolean>> = {}) {
-  const permissions = { ...DEFAULT_PERMISSIONS[role], ...overrides };
+function renderNav(poste: Poste, overrides: Partial<Record<PermissionCode, boolean>> = {}) {
+  const levels = getEffectiveLevels({ postes: [poste], permission_overrides: overrides });
   return render(
-    <PermissionsProvider role={role} permissions={permissions}>
-      <AdminBottomNav basePath="/sites/resto/admin" role={role} />
+    <PermissionsProvider postes={[poste]} levels={levels}>
+      <AdminBottomNav basePath="/sites/resto/admin" />
     </PermissionsProvider>,
   );
 }
@@ -40,8 +40,8 @@ describe('AdminBottomNav - permissions effectives', () => {
     expect(screen.getByText('navPos')).toBeInTheDocument();
   });
 
-  it('serveur a qui le proprietaire retire la caisse: plus de lien', () => {
-    renderNav('waiter', { 'pos.use': false });
+  it('serveur a qui le proprietaire retire la prise de commande: plus de lien', () => {
+    renderNav('waiter', { 'orders.take': false });
     expect(screen.queryByText('navPos')).toBeNull();
   });
 

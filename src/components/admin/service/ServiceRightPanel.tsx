@@ -33,7 +33,7 @@ interface Props {
     tableShort: string;
     itemsCount: (count: number) => string;
     minutesAgoShort: (min: number) => string;
-    roleName: (role: string) => string;
+    postesName: (postes: readonly string[] | undefined) => string;
     availableStatus: string;
     tablesPlural: (n: number) => string;
   };
@@ -300,7 +300,7 @@ function ServerCard({
             ? labels.availableStatus
             : labels.tablesPlural(vm.assignedTables.length)}
           {' - '}
-          {labels.roleName(vm.server.role)}
+          {labels.postesName(vm.server.postes)}
         </div>
         {vm.assignedTables.length > 0 && (
           <div className="mt-1 flex flex-wrap gap-1">

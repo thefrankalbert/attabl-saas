@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
 import { getAdminPermission } from '@/lib/auth/require-admin-permission';
+import { BILLING_READ } from '@/lib/admin-roles';
 
 type GatedFeature =
   | 'kds'
@@ -48,11 +49,12 @@ export async function FeatureUpgradeWall({
   backHref,
 }: FeatureUpgradeWallProps) {
   const t = await getTranslations('admin.upgradeWall');
-  // Le bouton mene a /subscription (settings.view): le personnel ne peut pas
+  // Le bouton mene a /subscription (droit `billing.manage`, niveau borne
+  // compris): le personnel ne peut pas
   // l'ouvrir. Il lit a la place qui peut activer la fonction. Le restaurant se
   // lit dans l'en-tete injecte par le middleware, l'URL ne sert que de repli.
   const site = /\/sites\/([^/]+)\//.exec(checkoutUrl)?.[1] ?? '';
-  const canUpgrade = await getAdminPermission(site, 'settings.view');
+  const canUpgrade = await getAdminPermission(site, BILLING_READ);
   const isBusiness = BUSINESS_FEATURES.has(feature);
 
   if (tenantId) {

@@ -79,16 +79,16 @@ export function SettingsForm({
     list.scrollLeft =
       active.offsetLeft - list.offsetLeft - (list.clientWidth - active.offsetWidth) / 2;
   }, [activeTab]);
-  // La page s'ouvre sur `settings.view` (admin-route-permissions.ts). Sans
-  // `settings.edit`, elle reste lisible mais figee: les champs sont desactives
+  // La page s'ouvre sur `settings.edit` (admin-route-permissions.ts). Si le
+  // droit manque malgre tout, elle reste lisible mais figee: les champs sont desactives
   // et ni l'enregistrement ni l'editeur de permissions ne s'affichent, au lieu
   // de "Acces refuse" ou d'un formulaire que le serveur refuserait ensuite.
-  const { can, role } = usePermissions();
+  const { can, isOwner } = usePermissions();
   const canEdit = can('settings.edit');
   // Owner decision (2026-11-09): only the owner edits permissions. An admin
   // holds settings.edit, so the link must not hang on it alone: it led him to
   // an "access denied" page.
-  const canEditPermissions = role === 'owner';
+  const canEditPermissions = isOwner;
 
   const handleTabChange = useCallback(
     (value: string) => {
@@ -122,7 +122,7 @@ export function SettingsForm({
   } = useSettingsData(tenant);
 
   return (
-    <RoleGuard permission="settings.view">
+    <RoleGuard permission="settings.edit">
       <form
         onSubmit={form.handleSubmit(onSubmit, onValidationError)}
         className="flex flex-col h-full min-h-0"
