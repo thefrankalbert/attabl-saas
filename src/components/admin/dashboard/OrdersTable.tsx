@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ChevronUp, ChevronDown, ReceiptText } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -26,9 +25,12 @@ import { OrdersTableSelectionBar } from './OrdersTableSelectionBar';
 import { OrdersTableRow } from './OrdersTableRow';
 import { OrdersTableCard } from './OrdersTableCard';
 import { OrdersTableFooter } from './OrdersTableFooter';
+import Link from 'next/link';
 
 interface OrdersTableProps {
   orders: Order[];
+  /** Commandes de la periode en base (la liste peut en montrer moins). */
+  totalCount?: number;
   formatValue: (n: number) => string;
   locale: string;
   adminBase: string;
@@ -44,6 +46,7 @@ interface OrdersTableProps {
 
 export function OrdersTable({
   orders,
+  totalCount,
   formatValue,
   locale,
   adminBase,
@@ -53,8 +56,6 @@ export function OrdersTable({
   const t = useTranslations('admin');
   const to = useTranslations('orders');
   const tc = useTranslations('common');
-  const searchParams = useSearchParams();
-  const range = searchParams.get('range') || 'today';
 
   const [tab, setTab] = useState<TabKey>('all');
   const [page, setPage] = useState(0);
@@ -68,21 +69,9 @@ export function OrdersTable({
     items: true,
   });
 
-  // Orders scoped to the header period selector (?range=).
-  const dateScoped = useMemo(() => {
-    if (nowMs === null) return orders;
-    const startToday = new Date(nowMs);
-    startToday.setHours(0, 0, 0, 0);
-    const startMs = startToday.getTime();
-    return orders.filter((o) => {
-      const ts = new Date(o.created_at).getTime();
-      if (range === 'yesterday') return ts >= startMs - 86400000 && ts < startMs;
-      if (range === '7d') return ts >= nowMs - 7 * 86400000;
-      if (range === '30d') return ts >= nowMs - 30 * 86400000;
-      if (range === 'today') return ts >= startMs;
-      return true;
-    });
-  }, [orders, range, nowMs]);
+  // La periode (?range=) est appliquee EN BASE par useDashboardStats, dans le
+  // fuseau du restaurant: la liste recue est deja celle de la periode.
+  const dateScoped = orders;
 
   const counts = useMemo(() => {
     const c: Record<TabKey, number> = { all: 0, pending: 0, kitchen: 0, served: 0, cancelled: 0 };
@@ -207,6 +196,18 @@ export function OrdersTable({
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)]">
+      {/* Liste plafonnee: on le DIT, avec le lien vers toutes les commandes. */}
+      {totalCount !== undefined && totalCount > orders.length && (
+        <p className="border-b border-[var(--border)] px-3 py-2 text-xs text-[var(--muted-foreground)] sm:px-4">
+          {t('ordersListCapped', { shown: orders.length, total: totalCount })}{' '}
+          <Link
+            href={`${adminBase}/orders`}
+            className="font-medium text-[var(--foreground)] underline underline-offset-2"
+          >
+            {t('viewAll')}
+          </Link>
+        </p>
+      )}
       {/* Controls header: tabs, column picker and pagination, pinned to the top */}
       <div className="flex flex-col gap-3 border-b border-[var(--border)] p-3 sm:p-4">
         <OrdersTableToolbar

@@ -2,8 +2,10 @@
 
 import { useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { useDashboardData } from '@/hooks/useDashboardData';
+import { parseDashboardRange } from '@/hooks/queries/useDashboardStats';
 import type { UseDashboardDataParams } from '@/hooks/useDashboardData';
 import { getCurrencyConfig } from '@/lib/utils/currency';
 import { formatCurrencyMinor, fromMinorUnits } from '@/lib/utils/money';
@@ -12,18 +14,11 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useMinuteClock } from '@/hooks/useMinuteClock';
 import { SectionCards, type SectionCardData } from './dashboard/SectionCards';
 import { OrdersTable } from './dashboard/OrdersTable';
-import type {
-  DashboardBucketSeries,
-  DashboardChannelSeries,
-  TopDishRecord,
-} from '@/types/dashboard.types';
+import type { DashboardChannelSeries } from '@/types/dashboard.types';
 
-type DashboardClientProps = UseDashboardDataParams & {
+type DashboardClientProps = Omit<UseDashboardDataParams, 'range'> & {
   establishmentType?: string;
-  /** Legacy single-series buckets (still provided by the server, now unused here) */
-  initialBuckets?: DashboardBucketSeries;
   initialChannelBuckets?: DashboardChannelSeries;
-  initialTopDishes?: TopDishRecord[];
   initialActiveTables?: { used: number; total: number };
 };
 
@@ -57,7 +52,12 @@ export default function DashboardClient(props: DashboardClientProps) {
   );
   const currencySymbol = getCurrencyConfig(currency as CurrencyCode).symbol;
 
-  const { stats, recentOrders, loading, handleStatusChange } = useDashboardData(props);
+  // Periode du selecteur de l'en-tete: la liste est relue en base pour elle.
+  const range = parseDashboardRange(useSearchParams().get('range'));
+  const { stats, recentOrders, recentOrdersTotal, loading, handleStatusChange } = useDashboardData({
+    ...props,
+    range,
+  });
   const { can } = usePermissions();
   const showFin = can('reports.view');
 
@@ -223,6 +223,7 @@ export default function DashboardClient(props: DashboardClientProps) {
       <div className="order-2 min-w-0 px-3 sm:px-5 xl:col-start-1 xl:row-start-1 xl:row-span-2">
         <OrdersTable
           orders={recentOrders}
+          totalCount={recentOrdersTotal}
           formatValue={fmtF}
           locale={locale}
           adminBase={adminBase}

@@ -13,8 +13,10 @@ import {
   TrendingDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { usePermissions } from '@/hooks/usePermissions';
+import { permissionForAdminSubPath } from '@/lib/auth/admin-route-permissions';
 
-const ANALYSE_TABS = [
+export const ANALYSE_TABS = [
   { path: '/reports', labelKey: 'tabReports', icon: BarChart3 },
   { path: '/reports/venues', labelKey: 'tabVenueReports', icon: MapPin },
   { path: '/reports/advanced', labelKey: 'tabAdvancedReports', icon: ChartNoAxesCombined },
@@ -27,6 +29,14 @@ const ANALYSE_TABS = [
 export default function AnalyseTabs() {
   const pathname = usePathname();
   const t = useTranslations('reports');
+  const { can } = usePermissions();
+  // Un onglet dont la route est refusee au membre n'est pas propose: il menait a
+  // un refus (manager sur Factures, Journal d'audit). Audit d'equipe du
+  // 2026-11-27, contre-audit du lot 4.
+  const tabs = ANALYSE_TABS.filter(({ path }) => {
+    const required = permissionForAdminSubPath(path);
+    return required == null || can(required);
+  });
   const basePath = pathname.replace(
     /\/(reports|stock-history|stock-losses|invoices|audit-logs).*$/,
     '',
@@ -34,7 +44,7 @@ export default function AnalyseTabs() {
 
   return (
     <div className="flex items-center gap-1 border-b border-app-border pb-2 mb-1 overflow-x-auto">
-      {ANALYSE_TABS.map(({ path, labelKey, icon: Icon }) => {
+      {tabs.map(({ path, labelKey, icon: Icon }) => {
         const href = `${basePath}${path}`;
         // L'onglet actif est celui dont le chemin est le plus long a correspondre:
         // /reports/venues ne doit pas allumer aussi l'onglet /reports.
@@ -43,8 +53,7 @@ export default function AnalyseTabs() {
           return pathname === h || pathname.startsWith(`${h}/`);
         };
         const active =
-          matches(path) &&
-          !ANALYSE_TABS.some((o) => o.path.length > path.length && matches(o.path));
+          matches(path) && !tabs.some((o) => o.path.length > path.length && matches(o.path));
         return (
           <Link
             key={path}

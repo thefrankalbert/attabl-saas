@@ -10,15 +10,8 @@ import { useUpdateOrderStatus } from '@/hooks/mutations';
 import { useToast } from '@/components/ui/use-toast';
 import { useSound } from '@/contexts/SoundContext';
 import { usePermissions } from '@/hooks/usePermissions';
-import type {
-  Order,
-  DashboardStats,
-  PopularItem,
-  CurrencyCode,
-  CategoryBreakdown,
-  HourlyOrderCount,
-  SparklinePoint,
-} from '@/types/admin.types';
+import type { Order, DashboardStats, CurrencyCode } from '@/types/admin.types';
+import type { DashboardRange } from '@/hooks/queries/useDashboardStats';
 
 // --- Types -------------------------------------------------
 
@@ -29,22 +22,19 @@ export interface UseDashboardDataParams {
   userName?: string;
   initialStats: DashboardStats;
   initialRecentOrders: Order[];
-  initialPopularItems: PopularItem[];
-  initialRevenueSparkline?: SparklinePoint[];
-  initialOrdersSparkline?: SparklinePoint[];
+  /** Total des commandes du jour (la liste initiale peut etre plafonnee). */
+  initialRecentOrdersTotal?: number;
   currency?: CurrencyCode;
   /** Fuseau IANA du restaurant: la journee de caisse y commence a minuit (audit R-02). */
   timeZone?: string;
+  /** Periode de la liste des commandes (`?range=` du selecteur de l'en-tete). */
+  range?: DashboardRange;
 }
 
 export interface UseDashboardDataReturn {
   stats: DashboardStats;
   recentOrders: Order[];
-  categoryBreakdown: CategoryBreakdown[];
-  hourlyOrders: HourlyOrderCount[];
-  revenueSparkline: SparklinePoint[];
-  ordersSparkline: SparklinePoint[];
-  itemsSparkline: SparklinePoint[];
+  recentOrdersTotal: number;
   loading: boolean;
   handleStatusChange: (orderId: string, newStatus: string) => Promise<void>;
 }
@@ -55,9 +45,9 @@ export function useDashboardData({
   tenantId,
   initialStats,
   initialRecentOrders,
-  initialRevenueSparkline = [],
-  initialOrdersSparkline = [],
+  initialRecentOrdersTotal,
   timeZone,
+  range = 'today',
 }: UseDashboardDataParams): UseDashboardDataReturn {
   const { toast } = useToast();
   const ta = useTranslations('admin');
@@ -84,22 +74,16 @@ export function useDashboardData({
     {
       stats: initialStats,
       recentOrders: initialRecentOrders,
-      categoryBreakdown: [],
-      hourlyOrders: [],
-      revenueSparkline: initialRevenueSparkline,
-      ordersSparkline: initialOrdersSparkline,
-      itemsSparkline: [],
+      recentOrdersTotal: initialRecentOrdersTotal ?? initialRecentOrders.length,
     },
     timeZone,
+    range,
   );
 
   const stats = dashboardData?.stats ?? initialStats;
-  const recentOrders = dashboardData?.recentOrders ?? initialRecentOrders;
-  const categoryBreakdown = dashboardData?.categoryBreakdown ?? [];
-  const hourlyOrders = dashboardData?.hourlyOrders ?? [];
-  const revenueSparkline = dashboardData?.revenueSparkline ?? [];
-  const ordersSparkline = dashboardData?.ordersSparkline ?? [];
-  const itemsSparkline = dashboardData?.itemsSparkline ?? [];
+  const recentOrders =
+    dashboardData?.recentOrders ?? (range === 'today' ? initialRecentOrders : []);
+  const recentOrdersTotal = dashboardData?.recentOrdersTotal ?? recentOrders.length;
 
   // Mutation for order status changes
   const updateOrderStatus = useUpdateOrderStatus(tenantId);
@@ -203,11 +187,7 @@ export function useDashboardData({
   return {
     stats,
     recentOrders,
-    categoryBreakdown,
-    hourlyOrders,
-    revenueSparkline,
-    ordersSparkline,
-    itemsSparkline,
+    recentOrdersTotal,
     loading,
     handleStatusChange,
   };

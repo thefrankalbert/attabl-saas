@@ -2290,6 +2290,7 @@
     "stockTop10": "Top 10 produits (tri par stock croissant)",
     "outOfStockCount": "{count} rupture",
     "lowStockCount": "{count} bas",
+    "ordersListCapped": "Les {shown} commandes les plus récentes sur {total}.",
     "viewAll": "Voir tout",
     "ordersCountLabel": "{count} commandes",
     "mostOrdered": "Les plus commandés",
@@ -3375,6 +3376,7 @@
     "planTrial": "Essai",
     "planCardTrial": "Pendant l'essai, tout est ouvert. Choisissez votre plan avant la fin.",
     "planCardTrialCta": "Choisir mon plan",
+    "navAds": "Publicités",
     "navSupports": "Supports",
     "navInventoryCounts": "Inventaires physiques",
     "supports": {

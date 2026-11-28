@@ -5,20 +5,11 @@ import { headers } from 'next/headers';
 import { getAdminPermission, requireAdminMember } from '@/lib/auth/require-admin-permission';
 import DashboardClient from '@/components/admin/DashboardClient';
 import type { Order, DashboardStats } from '@/types/admin.types';
-import type {
-  DashboardBucketSeries,
-  DashboardChannelSeries,
-  TopDishRecord,
-} from '@/types/dashboard.types';
-import type { ServiceType } from '@/types/admin.types';
+import type { DashboardChannelSeries } from '@/types/dashboard.types';
 import TenantNotFound from '@/components/admin/TenantNotFound';
 import { logger } from '@/lib/logger';
-import {
-  averageLedgerTicket,
-  ledgerValue,
-  PAYMENT_STATUSES_WITH_MONEY,
-  sumLedgerNet,
-} from '@/lib/orders/revenue';
+import { averageLedgerTicket, sumLedgerNet } from '@/lib/orders/revenue';
+import { buildChannelBuckets, fetchChartPayments } from '@/lib/dashboard/channel-buckets';
 import { getTranslations } from 'next-intl/server';
 import AdminSrTitle from '@/components/admin/AdminSrTitle';
 import { adminPageMetadata } from '@/lib/admin-page-metadata';
@@ -29,74 +20,8 @@ export async function generateMetadata() {
 
 export const dynamic = 'force-dynamic';
 
-type DayBucket = { date: string; revenue: number; count: number };
-
-type LedgerEntry = {
-  amount?: number | null;
-  status?: string | null;
-  created_at: string;
-  order_id?: string | null;
-};
-
-function buildBuckets(
-  orders: { created_at: string }[],
-  payments: LedgerEntry[],
-  days: number,
-): DayBucket[] {
-  const buckets: Record<string, DayBucket> = {};
-  for (let i = 0; i < days; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() - (days - 1 - i));
-    const key = d.toISOString().slice(0, 10);
-    buckets[key] = { date: key, revenue: 0, count: 0 };
-  }
-  for (const o of orders) {
-    const key = o.created_at?.slice(0, 10);
-    if (!key || !buckets[key]) continue;
-    // count = orders placed (all).
-    buckets[key].count += 1;
-  }
-  for (const p of payments) {
-    // revenue = money received that day (ledger, src/lib/orders/revenue.ts).
-    const key = p.created_at?.slice(0, 10);
-    if (key && buckets[key]) buckets[key].revenue += ledgerValue(p);
-  }
-  return Object.values(buckets);
-}
-
-type ChannelBucket = { date: string; surplace: number; emporter: number };
-
-function buildChannelBuckets(
-  payments: Array<LedgerEntry & { orders?: { service_type?: ServiceType | null } | null }>,
-  days: number,
-): ChannelBucket[] {
-  const buckets: Record<string, ChannelBucket> = {};
-  for (let i = 0; i < days; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() - (days - 1 - i));
-    const key = d.toISOString().slice(0, 10);
-    buckets[key] = { date: key, surplace: 0, emporter: 0 };
-  }
-  for (const p of payments) {
-    const key = p.created_at?.slice(0, 10);
-    if (!key || !buckets[key]) continue;
-    // Revenue split = money received that day, by the order's service mode.
-    const amount = ledgerValue(p);
-    const serviceType = p.orders?.service_type;
-    // dine_in + room_service -> Sur place ; takeaway + delivery -> A emporter
-    const emporter = serviceType === 'takeaway' || serviceType === 'delivery';
-    if (emporter) buckets[key].emporter += amount;
-    else buckets[key].surplace += amount;
-  }
-  return Object.values(buckets);
-}
-
-const TREND_COLORS: ReadonlyArray<TopDishRecord['color']> = ['amber', 'indigo', 'violet', 'rose'];
-
-function initialsFor(name: string): string {
-  const parts = name.trim().split(/\s+/).slice(0, 2);
-  return parts.map((p) => p.charAt(0).toUpperCase()).join('') || '??';
-}
+/** Lignes de la liste des commandes du jour sur le tableau de bord. */
+const RECENT_ORDERS_LIMIT = 200;
 
 export default async function AdminDashboard({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
@@ -128,21 +53,19 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
     activeCards: 0,
   };
   let initialRecentOrders: Order[] = [];
-  let initialRevenueSparkline: { value: number }[] = [];
-  let initialOrdersSparkline: { value: number }[] = [];
-  let initialBuckets: DashboardBucketSeries = { week: [], month: [], quarter: [] };
+  let initialRecentOrdersTotal = 0;
   let initialChannelBuckets: DashboardChannelSeries = { week: [], month: [], quarter: [] };
-  let initialTopDishes: TopDishRecord[] = [];
   let activeTablesTotal = 0;
   let activeTablesUsed = 0;
+
+  const canSeeRevenue = await getAdminPermission(site, 'reports.view');
 
   try {
     // Journee de caisse = journee DU RESTAURANT (audit R-02), pas minuit du
     // serveur (UTC) ni de l'appareil de la personne connectee.
     const today = getTenantDayStart(tenant);
     const yesterday = getTenantDayStart(tenant, 1);
-    const ninetyDaysAgo = getTenantDayStart(tenant, 90);
-    const sevenDaysAgo = getTenantDayStart(tenant, 7);
+    const ninetyDaysAgo = getTenantDayStart(tenant, 89);
 
     const [
       ordersRes,
@@ -150,8 +73,6 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       venuesCountRes,
       recentOrdersRes,
       yesterdayRes,
-      quarterRes,
-      topDishesRes,
       tablesRes,
       openSessionsRes,
       adminUserRes,
@@ -180,16 +101,19 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
         .eq('tenant_id', tenant.id)
         .eq('is_active', true),
 
-      // Recent orders feed (live)
+      // Commandes du jour du restaurant (periode "Aujourd'hui" du selecteur;
+      // les autres periodes sont lues par le client, voir useDashboardStats).
       supabase
         .from('orders')
         .select(
           `id, order_number, table_number, status, total, tip_amount, created_at, service_type, payment_status,
            order_items(id, quantity, price_at_order, menu_items(name))`,
+          { count: 'exact' },
         )
         .eq('tenant_id', tenant.id)
+        .gte('created_at', today.toISOString())
         .order('created_at', { ascending: false })
-        .limit(20),
+        .limit(RECENT_ORDERS_LIMIT),
 
       // Yesterday for delta
       supabase
@@ -198,28 +122,6 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
         .eq('tenant_id', tenant.id)
         .gte('created_at', yesterday.toISOString())
         .lt('created_at', today.toISOString()),
-
-      // Last 90 days for chart buckets (week/month/quarter ranges)
-      supabase
-        .from('orders')
-        .select('id, total, tip_amount, created_at, status, payment_status, service_type')
-        .eq('tenant_id', tenant.id)
-        .gte('created_at', ninetyDaysAgo.toISOString()),
-
-      // Top dishes over the last 7 days.
-      // order_items has no tenant_id column and no indexable created_at -
-      // filter both tenant AND time-range via the parent orders join
-      // (matches prod pattern in src/hooks/queries/useReportData.ts:147-151).
-      supabase
-        .from('order_items')
-        .select(
-          `menu_item_id, quantity, price_at_order,
-           menu_items(id, name, is_available, category:categories(name)),
-           orders!inner(tenant_id, created_at, payment_status)`,
-        )
-        .eq('orders.tenant_id', tenant.id)
-        .in('orders.payment_status', [...PAYMENT_STATUSES_WITH_MONEY])
-        .gte('orders.created_at', sevenDaysAgo.toISOString()),
 
       // Active tables total. The `tables` table has no `status` column
       // (occupancy is derived, see components/admin/service/service-status.ts),
@@ -263,11 +165,9 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
         .eq('tenant_id', tenant.id)
         .gte('created_at', yesterday.toISOString())
         .lt('created_at', today.toISOString()),
-      supabase
-        .from('payments')
-        .select('amount, status, created_at, orders(service_type)')
-        .eq('tenant_id', tenant.id)
-        .gte('created_at', ninetyDaysAgo.toISOString()),
+      canSeeRevenue
+        ? fetchChartPayments(supabase, tenant.id, ninetyDaysAgo.toISOString())
+        : Promise.resolve({ data: [] }),
     ]);
 
     userName = adminUserRes.data?.full_name || userName;
@@ -306,30 +206,22 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       );
     }
 
-    // --- Chart buckets ----------------------------------
-    const quarterOrders = (quarterRes.data || []) as Array<{ created_at: string }>;
-    const quarterPayments = (quarterPaymentsRes.data || []) as unknown as Array<
-      LedgerEntry & { orders?: { service_type?: ServiceType | null } | null }
-    >;
-    const dayBuckets90 = buildBuckets(quarterOrders, quarterPayments, 90);
-    const last7 = dayBuckets90.slice(-7);
-    const last30 = dayBuckets90.slice(-30);
-    initialBuckets = {
-      week: last7,
-      month: last30,
-      quarter: dayBuckets90,
-    };
-
-    const channelBuckets90 = buildChannelBuckets(quarterPayments, 90);
+    // --- Chart buckets (90 jours du restaurant) ----------
+    const quarterPayments = quarterPaymentsRes.data;
+    const dayStarts = Array.from({ length: 90 }, (_, i) => getTenantDayStart(tenant, 89 - i));
+    const channelBuckets90 = buildChannelBuckets(
+      quarterPayments,
+      dayStarts,
+      resolveTenantTimezone(tenant),
+    );
     initialChannelBuckets = {
       week: channelBuckets90.slice(-7),
       month: channelBuckets90.slice(-30),
       quarter: channelBuckets90,
     };
-    initialRevenueSparkline = last7.map((b) => ({ value: b.revenue }));
-    initialOrdersSparkline = last7.map((b) => ({ value: b.count }));
 
     // --- Recent orders ----------------------------------
+    initialRecentOrdersTotal = recentOrdersRes.count ?? (recentOrdersRes.data || []).length;
     initialRecentOrders = (recentOrdersRes.data || []).map((order: Record<string, unknown>) => ({
       id: order.id as string,
       tenant_id: tenant.id,
@@ -350,44 +242,6 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
         }),
       ),
     }));
-
-    // --- Top dishes (7d aggregation) --------------------
-    const dishMap = new Map<string, TopDishRecord>();
-    for (const row of topDishesRes.data || []) {
-      const r = row as Record<string, unknown>;
-      const menuItem = r.menu_items as
-        | { id?: string; name?: string; is_available?: boolean; category?: { name?: string } }
-        | undefined;
-      if (!menuItem?.id) continue;
-      const existing = dishMap.get(menuItem.id);
-      const qty = Number(r.quantity || 0);
-      const price = Number(r.price_at_order || 0);
-      // Day bucket from the joined orders row, not order_items.created_at
-      // (that column is not indexed / not reliably present).
-      const ordersJoin = r.orders as { created_at?: string } | undefined;
-      const dayKey = ordersJoin?.created_at?.slice(0, 10);
-      if (existing) {
-        existing.portions += qty;
-        existing.revenue += qty * price;
-        if (dayKey) existing.dayCounts[dayKey] = (existing.dayCounts[dayKey] || 0) + qty;
-      } else {
-        const idx = dishMap.size;
-        dishMap.set(menuItem.id, {
-          id: menuItem.id,
-          name: menuItem.name || 'Plat inconnu',
-          category: menuItem.category?.name || 'Autre',
-          portions: qty,
-          revenue: qty * price,
-          dayCounts: dayKey ? { [dayKey]: qty } : {},
-          color: TREND_COLORS[idx % TREND_COLORS.length],
-          initials: initialsFor(menuItem.name || '?'),
-          available: menuItem.is_available !== false,
-        });
-      }
-    }
-    initialTopDishes = Array.from(dishMap.values())
-      .sort((a, b) => b.portions - a.portions)
-      .slice(0, 5);
 
     // --- Tables ----------------------------------------
     activeTablesTotal = tablesRes.count ?? 0;
@@ -410,8 +264,8 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
   // RBAC: revenue/financial widgets are restricted to roles with `reports.view`
   // (owner/admin/manager). The dashboard stays reachable for every role, but
   // cashier/chef/waiter must not see revenue, so blank the financial fields
-  // server-side (never ship the data in props/HTML).
-  const canSeeRevenue = await getAdminPermission(site, 'reports.view');
+  // server-side (never ship the data in props/HTML). `canSeeRevenue` est lu
+  // AVANT les requetes: le graphique de 90 jours n'est meme pas charge sans.
   if (!canSeeRevenue) {
     initialStats = {
       ...initialStats,
@@ -420,10 +274,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       avgTicketToday: 0,
       avgTicketTrend: undefined,
     };
-    initialRevenueSparkline = [];
-    initialBuckets = { week: [], month: [], quarter: [] };
     initialChannelBuckets = { week: [], month: [], quarter: [] };
-    initialTopDishes = [];
   }
 
   return (
@@ -436,12 +287,8 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
         userName={userName}
         initialStats={initialStats}
         initialRecentOrders={initialRecentOrders}
-        initialPopularItems={[]}
-        initialRevenueSparkline={initialRevenueSparkline}
-        initialOrdersSparkline={initialOrdersSparkline}
-        initialBuckets={initialBuckets}
+        initialRecentOrdersTotal={initialRecentOrdersTotal}
         initialChannelBuckets={initialChannelBuckets}
-        initialTopDishes={initialTopDishes}
         initialActiveTables={{ used: activeTablesUsed, total: activeTablesTotal }}
         currency={tenant.currency}
         timeZone={resolveTenantTimezone(tenant)}

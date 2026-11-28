@@ -2290,6 +2290,7 @@
     "stockTop10": "Top 10 products (sorted by stock ascending)",
     "outOfStockCount": "{count} out of stock",
     "lowStockCount": "{count} low",
+    "ordersListCapped": "The {shown} most recent orders out of {total}.",
     "viewAll": "View all",
     "ordersCountLabel": "{count} orders",
     "mostOrdered": "Most ordered",
@@ -3375,6 +3376,7 @@
     "planTrial": "Trial",
     "planCardTrial": "During the trial, everything is open. Pick your plan before it ends.",
     "planCardTrialCta": "Choose my plan",
+    "navAds": "Ads",
     "navSupports": "Print Materials",
     "navInventoryCounts": "Physical inventory",
     "supports": {

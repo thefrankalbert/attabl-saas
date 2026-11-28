@@ -11,6 +11,7 @@ import {
   Tag,
   Lightbulb,
   Printer,
+  Image as ImageIcon,
   Laptop,
   ChefHat,
   UserCheck,
@@ -135,6 +136,11 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         path: '/suggestions',
         icon: Lightbulb,
         labelKey: 'navSuggestions',
+      },
+      {
+        path: '/ads',
+        icon: ImageIcon,
+        labelKey: 'navAds',
       },
       {
         path: '/supports',
