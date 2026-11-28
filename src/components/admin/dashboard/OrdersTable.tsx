@@ -99,7 +99,7 @@ export function OrdersTable({
     const list = dateScoped.filter((o) => TAB_FILTER[tab](o.status));
     if (!sortKey) return list;
     const dir = sortDir === 'asc' ? 1 : -1;
-    return [...list].sort((a, b) => {
+    return list.toSorted((a, b) => {
       if (sortKey === 'id') {
         return (a.order_number || a.id).localeCompare(b.order_number || b.id) * dir;
       }

@@ -29,14 +29,12 @@ export function usePosCoupon(total: number) {
       setCouponLoading(true);
       setCouponError('');
       // BUG-38: Abort coupon validation after 10s to prevent hanging requests
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
       try {
         const res = await fetch('/api/coupons/validate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ code, subtotal: total }),
-          signal: controller.signal,
+          signal: AbortSignal.timeout(10000),
         });
         const data: {
           valid: boolean;
@@ -71,7 +69,6 @@ export function usePosCoupon(total: number) {
         setAppliedCoupon(null);
         setCouponError(t('couponValidationError'));
       } finally {
-        clearTimeout(timeoutId);
         setCouponLoading(false);
       }
     },

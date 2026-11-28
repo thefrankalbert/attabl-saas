@@ -123,9 +123,9 @@ export default function OrderPaymentPanel({
       : method;
   const remaining = Math.max(0, summary.due - summary.net);
   // Rembourser par defaut avec le moyen du dernier encaissement abouti.
-  const lastTenderMethod = [...summary.tenders]
-    .reverse()
-    .find((tender) => tender.status === 'completed')?.method;
+  const lastTenderMethod = summary.tenders.findLast(
+    (tender) => tender.status === 'completed',
+  )?.method;
   const refundMethod: PaymentMethodId = effectivePaymentMethod(
     refundMethodChoice ?? methodChoices.find((id) => id === lastTenderMethod) ?? null,
     methodChoices,

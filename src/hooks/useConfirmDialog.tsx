@@ -40,6 +40,7 @@ export function useConfirmDialog() {
   const confirm = useCallback((opts: ConfirmOptions): Promise<boolean> => {
     setOptions(opts);
     setOpen(true);
+    // Pas de Promise.withResolvers : il exige Safari 17.4, le projet supporte Safari 16.4 (iPhone 8 et X restent sur iOS 16).
     return new Promise<boolean>((resolve) => {
       resolverRef.current = resolve;
     });

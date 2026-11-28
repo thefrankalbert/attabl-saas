@@ -110,7 +110,7 @@ export function pickHomeTenantSlug(rows: readonly PostLoginMembership[]): string
   const candidates = liveOnly(rows).filter((row) => row.tenantSlug !== null);
   if (candidates.length === 0) return null;
 
-  const sorted = [...candidates].sort((a, b) => {
+  const sorted = candidates.toSorted((a, b) => {
     // Une date manquante passe en dernier, pour que l'ordre reste total.
     if (a.tenantCreatedAt === b.tenantCreatedAt) return 0;
     if (a.tenantCreatedAt === null) return 1;

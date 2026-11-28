@@ -87,12 +87,12 @@ export default function POSItemCustomizer({
 
   // --- Sorted variants and modifiers ----------------------
   const sortedVariants = useMemo(
-    () => [...variants].sort((a, b) => a.display_order - b.display_order),
+    () => variants.toSorted((a, b) => a.display_order - b.display_order),
     [variants],
   );
 
   const sortedModifiers = useMemo(
-    () => [...modifiers].sort((a, b) => a.display_order - b.display_order),
+    () => modifiers.toSorted((a, b) => a.display_order - b.display_order),
     [modifiers],
   );
 

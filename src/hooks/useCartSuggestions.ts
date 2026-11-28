@@ -86,7 +86,7 @@ export function useCartSuggestions(
 
             if (coItems && coItems.length >= 3) {
               const orderMap = new Map(coIds.map((id, i) => [id, i]));
-              const sorted = [...coItems].sort(
+              const sorted = coItems.toSorted(
                 (a, b) => (orderMap.get(a.id) ?? 99) - (orderMap.get(b.id) ?? 99),
               );
 
