@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/currency';
 import type { CurrencyCode, PricingBreakdown } from '@/types/admin.types';
 import type { CartItem, AppliedCoupon } from '@/hooks/usePOSData';
+import { isEnterToSubmit } from '@/lib/utils/enter-key';
 
 interface POSCartFooterProps {
   cart: CartItem[];
@@ -122,7 +123,7 @@ export function POSCartFooter({
                   aria-label={t('couponPlaceholder')}
                   className="min-h-[44px] text-base md:text-xs flex-1 min-w-0"
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && couponCode.trim()) onValidateCoupon(couponCode);
+                    if (isEnterToSubmit(e) && couponCode.trim()) onValidateCoupon(couponCode);
                   }}
                   disabled={couponLoading || cart.length === 0}
                 />
