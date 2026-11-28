@@ -126,7 +126,7 @@ values ('e3d0000b-0000-0000-0000-00000000000b', '00000000-0000-0000-0000-0000000
 insert into public.admin_users (id, user_id, tenant_id, email, role, is_active) values
   ('d3d0000c-0000-0000-0000-00000000000c', 'e3d0000b-0000-0000-0000-00000000000b',
    'd3a00000-0000-0000-0000-00000000000a', 'gerant-d3@exemple.test', 'manager', true);
-insert into public.role_permissions (tenant_id, role, permissions)
+insert into public.poste_permissions (tenant_id, poste, permissions)
 values ('d3a00000-0000-0000-0000-00000000000a', 'manager', '{"settings.edit": false}'::jsonb);
 
 set local role authenticated;

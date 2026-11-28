@@ -31,7 +31,7 @@ values
 insert into public.tenants (id, slug, name, is_active)
 values ('e3333333-3333-4333-8333-333333333333', 'tenant-bornes', 'Tenant Bornes', true);
 
-insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, custom_permissions)
+insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, permission_overrides)
 values
   ('ea000000-0000-4000-8000-000000000002', 'e3333333-3333-4333-8333-333333333333',
    'e2222222-2222-4222-8222-222222222222', 'gerant-bornes@test.local', 'manager', true, null),

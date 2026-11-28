@@ -20,7 +20,7 @@
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
 
-FIXTURE_MARKER="20260628000000"
+FIXTURE_MARKER="20261128120000"
 SCHEMA_FIXTURE="tests/journeys/fixtures/schema.sql"
 LOCAL_DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
 MIG_BAK="$(mktemp -d)"

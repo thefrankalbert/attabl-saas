@@ -81,11 +81,11 @@ insert into public.venues (id, tenant_id, slug, name)
 values ('ba000000-0000-4000-8000-00000000000a', 'b3333333-3333-3333-3333-333333333333',
         'lieu-argent', 'Lieu Argent');
 
--- AUCUNE ligne dans `role_permissions` pour ce tenant, et aucune
--- `custom_permissions` sauf pour le gerant limite. C'est tout l'interet du
+-- AUCUNE ligne dans `poste_permissions` pour ce tenant, et aucun
+-- `permission_overrides` sauf pour le gerant limite. C'est tout l'interet du
 -- test: la caisse doit fonctionner sur le DEFAUT, sans qu'un proprietaire ait
 -- eu a deleguer quoi que ce soit.
-insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, custom_permissions)
+insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, permission_overrides)
 values
   (gen_random_uuid(), 'b3333333-3333-3333-3333-333333333333',
    'b1111111-1111-1111-1111-111111111111', 'caissier@test.local', 'cashier', true, null),
@@ -100,7 +100,7 @@ values
   -- repasser par la branche de role.
   (gen_random_uuid(), 'b3333333-3333-3333-3333-333333333333',
    'b8888888-8888-8888-8888-888888888888', 'gerant-limite@test.local', 'manager', true,
-   '{"orders.manage": false}'::jsonb),
+   '{"orders.take": false, "kitchen.track": false, "orders.cancel": false, "orders.discount": false, "orders.refund": false}'::jsonb),
   -- LE MEME caissier, membre AUSSI du restaurant voisin. C'est ce qui rend la
   -- section 11 honnete: sans cette ligne, la policy refuse deja le changement
   -- de tenant parce qu'il n'y est pas membre, et l'assertion passerait pour une

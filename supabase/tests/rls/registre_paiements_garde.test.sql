@@ -23,7 +23,7 @@ insert into public.tenants (id, slug, name, is_active)
 values ('c3333333-3333-3333-3333-333333333333', 'tenant-registre', 'Tenant Registre', true),
        ('c3999999-9999-4999-8999-999999999999', 'tenant-registre-voisin', 'Voisin', true);
 
-insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, custom_permissions)
+insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, permission_overrides)
 values
   ('ca000000-0000-4000-8000-000000000001', 'c3333333-3333-3333-3333-333333333333',
    'c1111111-1111-1111-1111-111111111111', 'caissier-registre@test.local', 'cashier', true, null),

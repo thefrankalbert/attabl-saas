@@ -32,13 +32,13 @@ values
   ('da000000-0000-4000-8000-00000000000b', 'pb-pro', 'Pro', true, 'pro', 'active', null),
   ('da000000-0000-4000-8000-00000000000d', 'pb-voisin', 'Voisin', true, 'pro', 'active', null);
 
-insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, custom_permissions)
+insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, permission_overrides)
 values
   ('db000000-0000-4000-8000-000000000003', 'da000000-0000-4000-8000-00000000000b',
    'd3333333-3333-3333-3333-333333333333', 'caissier-pro@test.local', 'cashier', true,
-   -- Droit donne par le proprietaire: les rapports exigent reports.view en base
+   -- Droit donne par le proprietaire: les rapports exigent ce droit en base
    -- depuis 20261123120000 (le caissier ne l'a pas par defaut).
-   '{"reports.view": true}'),
+   '{"reports.money": true, "reports.menu": true}'),
   ('db000000-0000-4000-8000-000000000005', 'da000000-0000-4000-8000-00000000000b',
    'd5555555-5555-5555-5555-555555555555', 'serveur-pro@test.local', 'waiter', true, null),
   ('db000000-0000-4000-8000-000000000006', 'da000000-0000-4000-8000-00000000000b',

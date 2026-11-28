@@ -45,9 +45,9 @@
 -- les rejouer casserait la base de test. A mettre a jour a chaque regeneration.
 -- SCHEMA_SNAPSHOT_MIGRATION=20261124210700
 --
--- A NE PAS CONFONDRE avec tests/journeys/fixtures/schema.sql, qui est FIGE au
--- marqueur FIXTURE_MARKER=20260628000000 et sert de base aux tests de parcours :
--- celui-la ne doit pas etre regenere sans adapter les tests.
+-- A NE PAS CONFONDRE avec tests/journeys/fixtures/schema.sql, qui porte son
+-- propre marqueur (FIXTURE_MARKER, ecrit dans son en-tete) et sert de base aux
+-- tests de parcours : celui-la ne doit pas etre regenere sans adapter les tests.
 -- ============================================================================
 --
 -- PostgreSQL database dump
