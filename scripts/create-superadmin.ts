@@ -106,7 +106,7 @@ async function createSuperAdmin() {
     tenantId = newTenant.id;
   }
 
-  console.log('Linking admin role...');
+  console.log('Linking platform row...');
   const { data: existingLink } = await supabase
     .from('admin_users')
     .select('id')
@@ -120,7 +120,13 @@ async function createSuperAdmin() {
       tenant_id: tenantId,
       email,
       full_name: 'Super Admin',
-      role: 'superadmin',
+      // Ligne de PLATEFORME : aucun poste de restaurant (`postes` vide), le
+      // drapeau `is_super_admin` et la valeur `super_admin`. L'ancienne valeur
+      // 'superadmin' (sans tiret bas) etait refusee par le CHECK de la colonne :
+      // le script echouait a cette etape.
+      role: 'super_admin',
+      is_super_admin: true,
+      postes: [],
       is_active: true,
     });
 

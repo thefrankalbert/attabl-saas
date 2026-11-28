@@ -189,9 +189,9 @@ export async function seedTenantWithMenu(
 }
 
 // Les personas cote restaurant utilisent des libelles (server, kitchen) qui ne
-// sont pas les valeurs de l'enum admin_users.role. On mappe vers les vraies
-// valeurs autorisees par la contrainte admin_users_role_check.
-const DB_ROLE: Record<RestaurantRole, string> = {
+// sont pas des codes de poste. On mappe vers les vrais codes, ceux de la
+// contrainte admin_users_postes_check. La base projette `role` depuis `postes`.
+const DB_POSTE: Record<RestaurantRole, string> = {
   owner: 'owner',
   manager: 'manager',
   cashier: 'cashier',
@@ -217,18 +217,18 @@ export async function seedStaffForTenant(tenantId: string, personas: Persona[]):
       user_id: userId,
       email: p.email,
       full_name: p.label,
-      role: DB_ROLE[p.role],
+      postes: [DB_POSTE[p.role]],
       is_active: true,
     });
     if (error && !/duplicate|already exists/i.test(error.message)) {
-      throw new Error(`seed staff ${p.email} (${DB_ROLE[p.role]}) echec: ${error.message}`);
+      throw new Error(`seed staff ${p.email} (${DB_POSTE[p.role]}) echec: ${error.message}`);
     }
   }
 }
 
 /**
  * Retourne admin_users.id (la cle de la ligne staff, PAS le user_id auth) pour un
- * role donne d'un tenant. invitations.invited_by et table_assignments.server_id
+ * poste donne d'un tenant. invitations.invited_by et table_assignments.server_id
  * referencent admin_users.id - on en a besoin pour seeder ces lignes.
  */
 export async function getStaffAdminId(
@@ -241,7 +241,7 @@ export async function getStaffAdminId(
     .from('admin_users')
     .select('id')
     .eq('tenant_id', tenantId)
-    .eq('role', DB_ROLE[role])
+    .contains('postes', [DB_POSTE[role]])
     .maybeSingle();
   return (data?.id as string | undefined) ?? null;
 }
@@ -380,7 +380,7 @@ export async function seedOrderRow(
 export async function seedInvitation(
   tenantId: string,
   invitedByAdminId: string,
-  opts: { email?: string; role?: 'admin' | 'manager' | 'cashier' | 'chef' | 'waiter' } = {},
+  opts: { email?: string; postes?: string[] } = {},
 ): Promise<string> {
   assertNotProduction();
   const db = getAdmin();
@@ -390,7 +390,7 @@ export async function seedInvitation(
     .insert({
       tenant_id: tenantId,
       email: opts.email ?? `invitee-${tenantId.slice(0, 8)}@journey.test`,
-      role: opts.role ?? 'waiter',
+      postes: opts.postes ?? ['waiter'],
       invited_by: invitedByAdminId,
       token: randomBytes(32).toString('hex'),
       expires_at: expiresAt,
