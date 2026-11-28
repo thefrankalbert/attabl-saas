@@ -9,7 +9,7 @@
  */
 
 export interface SupportContact {
-  /** Le numero tel qu'on l'affiche, ex: +226 55 21 22 93. */
+  /** Le numero tel qu'on l'affiche, ex: +226 65 56 54 11. */
   display: string;
   /** Chiffres seuls, indicatif compris: ce qu'attendent wa.me et tel:. */
   digits: string;

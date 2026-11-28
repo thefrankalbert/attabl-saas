@@ -41,7 +41,7 @@ set local request.jwt.claim.role = '';
 insert into public.cron_heartbeats (job, schedule, last_run_at, last_status, last_duration_ms)
 values ('reminders', '* * * * *', now(), 'ok', 10);
 insert into public.platform_settings (key, value) values
-  ('support_contact', '{"phone": "+226 55 21 22 93"}');
+  ('support_contact', '{"phone": "+226 65 56 54 11"}');
 
 -- ===========================================================================
 -- 1. cron_heartbeats: service_role seulement (3)
@@ -82,7 +82,7 @@ set local role authenticated;
 set local request.jwt.claims = '{"sub":"e1111111-1111-1111-1111-111111111111"}';
 select is(
   (select value ->> 'phone' from public.platform_settings where key = 'support_contact'),
-  '+226 55 21 22 93',
+  '+226 65 56 54 11',
   'membre connecte: lit le numero du support'
 );
 update public.platform_settings set value = '{"phone": "+1 555 000 0000"}'
@@ -96,7 +96,7 @@ select throws_ok(
 reset role;
 select is(
   (select value ->> 'phone' from public.platform_settings where key = 'support_contact'),
-  '+226 55 21 22 93',
+  '+226 65 56 54 11',
   'la tentative du proprietaire n a rien change (relu)'
 );
 
