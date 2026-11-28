@@ -34,7 +34,6 @@ export type Database = {
           banned_by: string | null;
           created_at: string;
           created_by: string | null;
-          custom_permissions: Json | null;
           deleted_at: string | null;
           deleted_by: string | null;
           email: string;
@@ -45,7 +44,9 @@ export type Database = {
           last_login: string | null;
           last_login_at: string | null;
           login_count: number | null;
+          permission_overrides: Json | null;
           phone: string | null;
+          postes: string[];
           role: string;
           tenant_id: string;
           user_id: string;
@@ -56,7 +57,6 @@ export type Database = {
           banned_by?: string | null;
           created_at?: string;
           created_by?: string | null;
-          custom_permissions?: Json | null;
           deleted_at?: string | null;
           deleted_by?: string | null;
           email: string;
@@ -67,8 +67,10 @@ export type Database = {
           last_login?: string | null;
           last_login_at?: string | null;
           login_count?: number | null;
+          permission_overrides?: Json | null;
           phone?: string | null;
-          role?: string;
+          postes?: string[];
+          role: string;
           tenant_id: string;
           user_id: string;
         };
@@ -78,7 +80,6 @@ export type Database = {
           banned_by?: string | null;
           created_at?: string;
           created_by?: string | null;
-          custom_permissions?: Json | null;
           deleted_at?: string | null;
           deleted_by?: string | null;
           email?: string;
@@ -89,7 +90,9 @@ export type Database = {
           last_login?: string | null;
           last_login_at?: string | null;
           login_count?: number | null;
+          permission_overrides?: Json | null;
           phone?: string | null;
+          postes?: string[];
           role?: string;
           tenant_id?: string;
           user_id?: string;
@@ -900,11 +903,12 @@ export type Database = {
         Row: {
           accepted_at: string | null;
           created_at: string;
-          custom_permissions: Json | null;
           email: string;
           expires_at: string;
           id: string;
           invited_by: string;
+          permission_overrides: Json | null;
+          postes: string[];
           role: string;
           status: string;
           tenant_id: string;
@@ -913,11 +917,12 @@ export type Database = {
         Insert: {
           accepted_at?: string | null;
           created_at?: string;
-          custom_permissions?: Json | null;
           email: string;
           expires_at: string;
           id?: string;
           invited_by: string;
+          permission_overrides?: Json | null;
+          postes?: string[];
           role: string;
           status?: string;
           tenant_id: string;
@@ -926,11 +931,12 @@ export type Database = {
         Update: {
           accepted_at?: string | null;
           created_at?: string;
-          custom_permissions?: Json | null;
           email?: string;
           expires_at?: string;
           id?: string;
           invited_by?: string;
+          permission_overrides?: Json | null;
+          postes?: string[];
           role?: string;
           status?: string;
           tenant_id?: string;
@@ -2077,6 +2083,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      poste_permissions: {
+        Row: {
+          id: string;
+          permissions: Json;
+          poste: string;
+          tenant_id: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          permissions?: Json;
+          poste: string;
+          tenant_id: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          permissions?: Json;
+          poste?: string;
+          tenant_id?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'poste_permissions_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'poste_permissions_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'admin_users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       push_subscriptions: {
         Row: {
           auth: string;
@@ -2364,48 +2412,6 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [];
-      };
-      role_permissions: {
-        Row: {
-          id: string;
-          permissions: Json;
-          role: string;
-          tenant_id: string;
-          updated_at: string;
-          updated_by: string | null;
-        };
-        Insert: {
-          id?: string;
-          permissions?: Json;
-          role: string;
-          tenant_id: string;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
-        Update: {
-          id?: string;
-          permissions?: Json;
-          role?: string;
-          tenant_id?: string;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'role_permissions_tenant_id_fkey';
-            columns: ['tenant_id'];
-            isOneToOne: false;
-            referencedRelation: 'tenants';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'role_permissions_updated_by_fkey';
-            columns: ['updated_by'];
-            isOneToOne: false;
-            referencedRelation: 'admin_users';
-            referencedColumns: ['id'];
-          },
-        ];
       };
       settings: {
         Row: {
@@ -3885,6 +3891,7 @@ export type Database = {
         Returns: boolean;
       };
       is_tenant_name_taken: { Args: { p_name: string }; Returns: boolean };
+      is_tenant_owner: { Args: { p_tenant: string }; Returns: boolean };
       mfa_satisfait: { Args: never; Returns: boolean };
       mon_restaurant_a_le_stock: {
         Args: { p_tenant_id: string };
@@ -4058,6 +4065,14 @@ export type Database = {
         Returns: undefined;
       };
       tenant_effective_plan: { Args: { p_tenant_id: string }; Returns: string };
+      tenant_permission_level: {
+        Args: { p_perm: string; p_tenant: string };
+        Returns: string;
+      };
+      tenants_avec_droit: {
+        Args: { p_niveau_min?: string; p_perm: string };
+        Returns: string[];
+      };
       unclaim_coupon_usage: {
         Args: { p_coupon_id: string };
         Returns: undefined;

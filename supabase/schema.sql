@@ -39,11 +39,17 @@
 -- 20261124190000 (email_unsubscribes), appliquee par une autre session et
 -- absente du depot: ses objets figurent dans cet instantane.
 --
+-- 2026-11-28 : regenere apres la mise en production du lot 1 de la refonte des
+-- roles du personnel (postes cumulables, 22 droits, contraction MIG4) et des PR
+-- #502 et #504. Toutes les migrations du depot jusqu'a 20261128120000 sont
+-- enregistrees en production, et la production n'en porte aucune autre
+-- (comparaison faite, 9 sur 9 depuis l'ancien marqueur).
+--
 -- MARQUEUR LU PAR scripts/run-pgtap.sh. Derniere migration DEJA comprise dans
 -- cet instantane. L'executant charge ce fichier puis applique uniquement les
 -- migrations POSTERIEURES - beaucoup des anciennes ne sont pas idempotentes et
 -- les rejouer casserait la base de test. A mettre a jour a chaque regeneration.
--- SCHEMA_SNAPSHOT_MIGRATION=20261124210700
+-- SCHEMA_SNAPSHOT_MIGRATION=20261128120000
 --
 -- A NE PAS CONFONDRE avec tests/journeys/fixtures/schema.sql, qui porte son
 -- propre marqueur (FIXTURE_MARKER, ecrit dans son en-tete) et sert de base aux
@@ -95,6 +101,228 @@ COMMENT ON SCHEMA "public" IS 'standard public schema';
 
 
 --
+-- Name: codes_droits(); Type: FUNCTION; Schema: private; Owner: postgres
+--
+
+CREATE FUNCTION "private"."codes_droits"() RETURNS "text"[]
+    LANGUAGE "sql" IMMUTABLE
+    SET "search_path" TO ''
+    AS $$
+  SELECT ARRAY[
+    'menu.view','menu.edit','menu.price',
+    'orders.take','kitchen.track','orders.cancel','orders.discount','orders.refund',
+    'orders.pay','cash.close','cash.count',
+    'reports.menu','reports.money','reports.own',
+    'inventory.view','inventory.edit','suppliers.manage',
+    'team.view','team.manage','settings.edit','audit.view','billing.manage'
+  ]::text[];
+$$;
+
+
+ALTER FUNCTION "private"."codes_droits"() OWNER TO "postgres";
+
+--
+-- Name: droits_hors_catalogue(); Type: FUNCTION; Schema: private; Owner: postgres
+--
+
+CREATE FUNCTION "private"."droits_hors_catalogue"() RETURNS TABLE("origine" "text", "code" "text")
+    LANGUAGE "sql" STABLE
+    SET "search_path" TO ''
+    AS $_$
+  WITH textes AS (
+    SELECT 'politique ' || pol.tablename || ' / ' || pol.policyname AS origine,
+           coalesce(pol.qual, '') || ' ' || coalesce(pol.with_check, '') AS texte
+    FROM pg_catalog.pg_policies AS pol
+    UNION ALL
+    SELECT 'fonction ' || n.nspname || '.' || p.proname, p.prosrc
+    FROM pg_catalog.pg_proc AS p
+    JOIN pg_catalog.pg_namespace AS n ON n.oid = p.pronamespace
+    WHERE n.nspname IN ('public', 'private')
+  )
+  SELECT t.origine, coalesce(m.l[1], m.l[2])
+  FROM textes AS t
+  CROSS JOIN LATERAL regexp_matches(
+    t.texte,
+    $re$(?:has_tenant_write_permission|tenant_permission_level)"?\s*\(\s*[^,()]+,\s*'([^']*)'|tenants_avec_droit"?\s*\(\s*'([^']*)'$re$,
+    'g') AS m(l)
+  WHERE NOT (coalesce(m.l[1], m.l[2]) = ANY (private.codes_droits()));
+$_$;
+
+
+ALTER FUNCTION "private"."droits_hors_catalogue"() OWNER TO "postgres";
+
+--
+-- Name: droits_valides("jsonb"); Type: FUNCTION; Schema: private; Owner: postgres
+--
+
+CREATE FUNCTION "private"."droits_valides"("p" "jsonb") RETURNS boolean
+    LANGUAGE "sql" IMMUTABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+  SELECT CASE
+    WHEN p IS NULL OR jsonb_typeof(p) <> 'object' THEN false
+    ELSE NOT EXISTS (
+      SELECT 1 FROM jsonb_each(p) AS e
+      WHERE NOT (e.key = ANY (private.codes_droits())) OR jsonb_typeof(e.value) <> 'boolean')
+  END;
+$$;
+
+
+ALTER FUNCTION "private"."droits_valides"("p" "jsonb") OWNER TO "postgres";
+
+--
+-- Name: garder_proprietaire(); Type: FUNCTION; Schema: private; Owner: postgres
+--
+
+CREATE FUNCTION "private"."garder_proprietaire"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+BEGIN
+  IF TG_OP = 'UPDATE' THEN
+    IF ('owner' = ANY (OLD.postes)) IS DISTINCT FROM ('owner' = ANY (NEW.postes)) THEN
+      RAISE EXCEPTION 'the owner poste cannot be granted or removed' USING ERRCODE = '42501';
+    END IF;
+    IF 'owner' = ANY (OLD.postes)
+       AND (NEW.tenant_id IS DISTINCT FROM OLD.tenant_id OR NEW.user_id IS DISTINCT FROM OLD.user_id) THEN
+      RAISE EXCEPTION 'the owner row cannot be reassigned' USING ERRCODE = '42501';
+    END IF;
+    -- Desactiver le proprietaire d'un restaurant ouvert. Les gestes d'equipe
+    -- ecrivent en service_role : sans cette garde, la seule protection etait
+    -- le controle de l'application. Les gestes de la PLATEFORME restent permis
+    -- et se reconnaissent a ce qu'ils datent la ligne : bannir (`banned_at`)
+    -- ou retirer (`deleted_at`). Un geste d'equipe n'ecrit que `is_active`.
+    IF 'owner' = ANY (OLD.postes)
+       AND OLD.is_active IS DISTINCT FROM false AND NEW.is_active IS FALSE
+       AND NEW.banned_at IS NULL AND NEW.deleted_at IS NULL
+       AND EXISTS (
+         SELECT 1 FROM public.tenants AS t WHERE t.id = OLD.tenant_id AND t.deleted_at IS NULL) THEN
+      RAISE EXCEPTION 'the owner of a live restaurant cannot be deactivated' USING ERRCODE = '42501';
+    END IF;
+    RETURN NEW;
+  END IF;
+  -- DELETE : interdit tant que le restaurant existe et n'est pas ferme. La
+  -- suppression en cascade depuis tenants passe (la ligne tenants n'est plus
+  -- visible quand la cascade arrive), delete_my_account sur un restaurant
+  -- ferme passe aussi.
+  IF 'owner' = ANY (OLD.postes) AND EXISTS (
+       SELECT 1 FROM public.tenants AS t WHERE t.id = OLD.tenant_id AND t.deleted_at IS NULL) THEN
+    RAISE EXCEPTION 'the owner of a live restaurant cannot be removed' USING ERRCODE = '42501';
+  END IF;
+  RETURN OLD;
+END;
+$$;
+
+
+ALTER FUNCTION "private"."garder_proprietaire"() OWNER TO "postgres";
+
+--
+-- Name: matrice_postes(); Type: FUNCTION; Schema: private; Owner: postgres
+--
+
+CREATE FUNCTION "private"."matrice_postes"() RETURNS TABLE("poste" "text", "droit" "text", "niveau" "text")
+    LANGUAGE "plpgsql" IMMUTABLE
+    SET "search_path" TO ''
+    AS $$
+BEGIN
+  RETURN QUERY
+  VALUES
+    ('manager','menu.view','full'), ('manager','menu.edit','full'), ('manager','menu.price','full'),
+    ('manager','orders.take','full'), ('manager','kitchen.track','full'), ('manager','orders.cancel','full'),
+    ('manager','orders.discount','full'), ('manager','orders.refund','full'), ('manager','orders.pay','full'),
+    ('manager','cash.close','full'), ('manager','cash.count','full'), ('manager','reports.menu','full'),
+    ('manager','reports.money','full'), ('manager','reports.own','full'), ('manager','inventory.view','full'),
+    ('manager','inventory.edit','full'), ('manager','suppliers.manage','full'), ('manager','team.view','full'),
+    ('manager','team.manage','full'), ('manager','settings.edit','full'), ('manager','audit.view','full'),
+    ('manager','billing.manage','limited'),
+    ('chef','menu.view','full'), ('chef','menu.edit','full'), ('chef','menu.price','full'),
+    ('chef','kitchen.track','full'), ('chef','reports.menu','full'), ('chef','inventory.view','full'),
+    ('chef','inventory.edit','full'), ('chef','suppliers.manage','full'),
+    ('cashier','menu.view','full'), ('cashier','orders.take','full'), ('cashier','orders.cancel','limited'),
+    ('cashier','orders.discount','limited'), ('cashier','orders.refund','limited'), ('cashier','orders.pay','full'),
+    ('cashier','cash.count','full'), ('cashier','reports.own','full'),
+    ('bartender','menu.view','full'), ('bartender','orders.take','full'), ('bartender','kitchen.track','full'),
+    ('bartender','orders.cancel','limited'), ('bartender','orders.discount','limited'), ('bartender','orders.refund','limited'),
+    ('bartender','orders.pay','full'), ('bartender','cash.count','full'), ('bartender','reports.own','full'),
+    ('bartender','inventory.view','full'),
+    ('reception','menu.view','full'), ('reception','orders.take','full'), ('reception','orders.cancel','limited'),
+    ('reception','orders.discount','limited'), ('reception','orders.refund','limited'), ('reception','orders.pay','full'),
+    ('reception','cash.count','full'), ('reception','reports.own','full'),
+    ('waiter','menu.view','full'), ('waiter','orders.take','full'), ('waiter','orders.cancel','limited'),
+    ('waiter','orders.discount','limited'), ('waiter','orders.pay','limited'), ('waiter','reports.own','full'),
+    ('cook','menu.view','full'), ('cook','kitchen.track','full'), ('cook','inventory.view','full'),
+    ('crew','menu.view','full'), ('crew','orders.take','full'), ('crew','kitchen.track','full'),
+    ('crew','orders.cancel','limited'), ('crew','orders.discount','limited'), ('crew','orders.refund','limited'),
+    ('crew','orders.pay','full'), ('crew','cash.count','full'), ('crew','reports.own','full'),
+    ('crew','inventory.view','full'),
+    ('sales','menu.view','full'), ('sales','orders.take','full'), ('sales','orders.cancel','limited'),
+    ('sales','orders.discount','limited'), ('sales','orders.refund','limited'), ('sales','orders.pay','full'),
+    ('sales','cash.count','full'), ('sales','reports.own','full'),
+    ('production','menu.view','full'), ('production','kitchen.track','full'), ('production','inventory.view','full')
+  ;
+END;
+$$;
+
+
+ALTER FUNCTION "private"."matrice_postes"() OWNER TO "postgres";
+
+--
+-- Name: postes_depuis_role("text"); Type: FUNCTION; Schema: private; Owner: postgres
+--
+
+CREATE FUNCTION "private"."postes_depuis_role"("p_role" "text") RETURNS "text"[]
+    LANGUAGE "sql" IMMUTABLE
+    SET "search_path" TO ''
+    AS $$
+  SELECT CASE p_role
+    WHEN 'super_admin' THEN '{}'::text[]
+    WHEN 'admin' THEN ARRAY['manager']
+    ELSE ARRAY[p_role]
+  END;
+$$;
+
+
+ALTER FUNCTION "private"."postes_depuis_role"("p_role" "text") OWNER TO "postgres";
+
+--
+-- Name: postes_normalises("text"[]); Type: FUNCTION; Schema: private; Owner: postgres
+--
+
+CREATE FUNCTION "private"."postes_normalises"("p" "text"[]) RETURNS "text"[]
+    LANGUAGE "sql" IMMUTABLE
+    SET "search_path" TO ''
+    AS $$
+  SELECT coalesce(array_agg(x.poste ORDER BY x.rang, x.poste), '{}'::text[])
+  FROM (
+    SELECT DISTINCT u.poste,
+           coalesce(array_position(ARRAY['owner','manager','chef','cashier','bartender','reception',
+                                         'waiter','cook','crew','sales','production'], u.poste), 99) AS rang
+    FROM unnest(coalesce(p, '{}'::text[])) AS u(poste)
+  ) AS x;
+$$;
+
+
+ALTER FUNCTION "private"."postes_normalises"("p" "text"[]) OWNER TO "postgres";
+
+--
+-- Name: role_depuis_postes("text"[]); Type: FUNCTION; Schema: private; Owner: postgres
+--
+
+CREATE FUNCTION "private"."role_depuis_postes"("p_postes" "text"[]) RETURNS "text"
+    LANGUAGE "sql" IMMUTABLE
+    SET "search_path" TO ''
+    AS $$
+  SELECT c.poste
+  FROM unnest(ARRAY['owner','manager','chef','cashier','bartender','reception',
+                    'waiter','cook','crew','sales','production']) WITH ORDINALITY AS c(poste, rang)
+  WHERE c.poste = ANY (p_postes)
+  ORDER BY c.rang LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "private"."role_depuis_postes"("p_postes" "text"[]) OWNER TO "postgres";
+
+--
 -- Name: storefront_tenant_visible("uuid"); Type: FUNCTION; Schema: private; Owner: postgres
 --
 
@@ -121,6 +349,72 @@ $$;
 
 
 ALTER FUNCTION "private"."storefront_tenant_visible"("p_tenant_id" "uuid") OWNER TO "postgres";
+
+--
+-- Name: sync_postes_admin_users(); Type: FUNCTION; Schema: private; Owner: postgres
+--
+
+CREATE FUNCTION "private"."sync_postes_admin_users"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+BEGIN
+  NEW.postes := private.postes_normalises(NEW.postes);
+  IF TG_OP = 'INSERT' THEN
+    IF cardinality(NEW.postes) = 0 THEN
+      NEW.postes := private.postes_depuis_role(NEW.role);
+    ELSIF NEW.role IS DISTINCT FROM 'super_admin' THEN
+      NEW.role := private.role_depuis_postes(NEW.postes);
+    END IF;
+    RETURN NEW;
+  END IF;
+
+  IF NEW.postes IS DISTINCT FROM OLD.postes THEN
+    IF NEW.role IS DISTINCT FROM 'super_admin' AND cardinality(NEW.postes) > 0 THEN
+      NEW.role := private.role_depuis_postes(NEW.postes);
+    END IF;
+  ELSIF NEW.role IS DISTINCT FROM OLD.role THEN
+    NEW.postes := private.postes_depuis_role(NEW.role);
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "private"."sync_postes_admin_users"() OWNER TO "postgres";
+
+--
+-- Name: sync_postes_invitations(); Type: FUNCTION; Schema: private; Owner: postgres
+--
+
+CREATE FUNCTION "private"."sync_postes_invitations"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+BEGIN
+  NEW.postes := private.postes_normalises(NEW.postes);
+  IF TG_OP = 'INSERT' THEN
+    IF cardinality(NEW.postes) = 0 THEN
+      NEW.postes := private.postes_depuis_role(NEW.role);
+    ELSE
+      NEW.role := private.role_depuis_postes(NEW.postes);
+    END IF;
+    RETURN NEW;
+  END IF;
+
+  IF NEW.postes IS DISTINCT FROM OLD.postes THEN
+    IF cardinality(NEW.postes) > 0 THEN
+      NEW.role := private.role_depuis_postes(NEW.postes);
+    END IF;
+  ELSIF NEW.role IS DISTINCT FROM OLD.role THEN
+    NEW.postes := private.postes_depuis_role(NEW.role);
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "private"."sync_postes_invitations"() OWNER TO "postgres";
 
 --
 -- Name: viewer_owns_tenant_group("uuid"); Type: FUNCTION; Schema: private; Owner: postgres
@@ -170,11 +464,11 @@ BEGIN
   END IF;
 
   INSERT INTO admin_users (
-    user_id, tenant_id, email, full_name, role, is_active, custom_permissions, created_by
+    user_id, tenant_id, email, full_name, role, is_active, postes, permission_overrides, created_by
   ) VALUES (
     p_user_id, v_inv.tenant_id, v_inv.email,
     COALESCE(NULLIF(trim(p_full_name), ''), v_inv.email),
-    v_inv.role, true, v_inv.custom_permissions, v_inv.invited_by
+    v_inv.role, true, v_inv.postes, v_inv.permission_overrides, v_inv.invited_by
   );
 
   UPDATE invitations SET status = 'accepted', accepted_at = now() WHERE id = v_inv.id;
@@ -653,10 +947,10 @@ BEGIN
   IF auth.role() = 'service_role' OR public.is_super_admin() THEN
     RETURN;
   END IF;
-  -- Meme resolution que l'application: role, surcharge du role, surcharge
-  -- individuelle (has_tenant_write_permission, DEFAULT_PERMISSIONS).
-  IF NOT public.has_tenant_write_permission(p_tenant_id, 'reports.view') THEN
-    RAISE EXCEPTION 'Reports require the reports.view permission'
+  -- Meme resolution que l'application (has_tenant_write_permission). Au lot 1
+  -- tous les rapports exigent `reports.money` ; le lot 2 separe carte et argent.
+  IF NOT public.has_tenant_write_permission(p_tenant_id, 'reports.money') THEN
+    RAISE EXCEPTION 'Reports require the reports.money permission'
       USING ERRCODE = '42501';
   END IF;
 END;
@@ -700,7 +994,7 @@ DECLARE
   v_role text;
 BEGIN
   IF current_user IN ('authenticated', 'anon') THEN
-    SELECT au.email, au.role INTO v_email, v_role
+    SELECT au.email, array_to_string(au.postes, '+') INTO v_email, v_role
       FROM public.admin_users au
      WHERE au.user_id = (SELECT auth.uid())
        AND au.tenant_id = NEW.tenant_id
@@ -1358,8 +1652,6 @@ BEGIN
   ELSE
     UPDATE admin_users SET created_by = NULL
       WHERE created_by = p_admin_user_id AND tenant_id = v_tenant_id;
-    UPDATE role_permissions SET updated_by = NULL
-      WHERE updated_by = p_admin_user_id AND tenant_id = v_tenant_id;
     UPDATE invitations SET invited_by = (
       SELECT id FROM admin_users
       WHERE tenant_id = v_tenant_id AND id <> p_admin_user_id
@@ -1444,7 +1736,6 @@ BEGIN
   -- Leave every restaurant the way the web removes a member (delete_admin_user_atomic, else-branch).
   FOR m IN SELECT id, tenant_id FROM admin_users WHERE user_id = v_uid LOOP
     UPDATE admin_users SET created_by = NULL WHERE created_by = m.id AND tenant_id = m.tenant_id;
-    UPDATE role_permissions SET updated_by = NULL WHERE updated_by = m.id AND tenant_id = m.tenant_id;
     UPDATE invitations SET invited_by = (
       SELECT id FROM admin_users
       WHERE tenant_id = m.tenant_id AND id <> m.id
@@ -2496,6 +2787,97 @@ $$;
 ALTER FUNCTION "public"."garder_ecriture_registre_paiements"() OWNER TO "postgres";
 
 --
+-- Name: garder_prix_carte(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION "public"."garder_prix_carte"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO ''
+    AS $$
+BEGIN
+  -- SECURITY INVOKER voulu : current_user doit etre celui de l'appelant (en
+  -- DEFINER il vaudrait toujours le proprietaire de la fonction et la garde ne
+  -- se declencherait jamais). service_role, postgres, taches planifiees et
+  -- fonctions SECURITY DEFINER : hors de cette garde.
+  IF current_user NOT IN ('authenticated', 'anon') THEN
+    RETURN coalesce(NEW, OLD);
+  END IF;
+  IF TG_OP = 'DELETE' THEN
+    -- Supprimer un supplement PAYANT puis le recreer gratuit (deux gestes que
+    -- `menu.edit` permet) faisait passer son prix a 0 sans `menu.price`. La
+    -- suppression d'un supplement payant exige donc `menu.price`. La cascade
+    -- depuis la suppression d'un plat n'est pas concernee : PostgreSQL
+    -- l'execute au nom du proprietaire de la table, pas de l'appelant.
+    IF coalesce(OLD.price, 0) = 0 AND OLD.prices IS NULL THEN
+      RETURN OLD;
+    END IF;
+    IF NOT public.has_tenant_write_permission(OLD.tenant_id, 'menu.price') THEN
+      RAISE EXCEPTION 'changing a price requires the menu.price permission'
+        USING ERRCODE = '42501';
+    END IF;
+    RETURN OLD;
+  END IF;
+  IF TG_OP = 'UPDATE' THEN
+    IF NEW.price IS NOT DISTINCT FROM OLD.price
+       AND NEW.prices IS NOT DISTINCT FROM OLD.prices THEN
+      RETURN NEW;
+    END IF;
+  ELSIF coalesce(NEW.price, 0) = 0 AND NEW.prices IS NULL THEN
+    -- INSERT sans prix (un modificateur gratuit) : `menu.edit` suffit.
+    RETURN NEW;
+  END IF;
+  IF NOT public.has_tenant_write_permission(NEW.tenant_id, 'menu.price') THEN
+    RAISE EXCEPTION 'changing a price requires the menu.price permission'
+      USING ERRCODE = '42501';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."garder_prix_carte"() OWNER TO "postgres";
+
+--
+-- Name: garder_statut_cuisine(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION "public"."garder_statut_cuisine"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO ''
+    AS $$
+DECLARE
+  v_statut text;
+BEGIN
+  -- SECURITY INVOKER voulu : current_user doit etre celui de l'appelant (en
+  -- DEFINER il vaudrait toujours le proprietaire de la fonction et la garde ne
+  -- se declencherait jamais).
+  IF current_user NOT IN ('authenticated', 'anon') THEN
+    RETURN NEW;
+  END IF;
+  IF TG_TABLE_NAME = 'orders' THEN
+    IF NEW.status IS NOT DISTINCT FROM OLD.status THEN
+      RETURN NEW;
+    END IF;
+    v_statut := NEW.status;
+  ELSE
+    IF NEW.item_status IS NOT DISTINCT FROM OLD.item_status THEN
+      RETURN NEW;
+    END IF;
+    v_statut := NEW.item_status;
+  END IF;
+  IF v_statut IN ('preparing', 'ready')
+     AND NOT public.has_tenant_write_permission(NEW.tenant_id, 'kitchen.track') THEN
+    RAISE EXCEPTION 'setting a kitchen status requires the kitchen.track permission'
+      USING ERRCODE = '42501';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."garder_statut_cuisine"() OWNER TO "postgres";
+
+--
 -- Name: generate_menu_slug("uuid", "text"); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2815,8 +3197,11 @@ CREATE FUNCTION "public"."get_my_inventory_tenant_ids"() RETURNS "uuid"[]
   SELECT COALESCE(array_agg(DISTINCT au.tenant_id), '{}')
   FROM public.admin_users au
   WHERE au.user_id = (SELECT auth.uid())
+    AND au.is_active IS TRUE
+    AND au.deleted_at IS NULL
     AND (public.has_tenant_write_permission(au.tenant_id, 'inventory.view')
-         OR public.has_tenant_write_permission(au.tenant_id, 'inventory.edit'));
+         OR public.has_tenant_write_permission(au.tenant_id, 'inventory.edit')
+         OR public.has_tenant_write_permission(au.tenant_id, 'suppliers.manage'));
 $$;
 
 
@@ -2834,6 +3219,7 @@ CREATE FUNCTION "public"."get_my_tenant_ids"() RETURNS SETOF "uuid"
   from admin_users
   where user_id = auth.uid()
     and coalesce(is_active, true) = true
+    and deleted_at is null
     and public.mfa_satisfait()
 $$;
 
@@ -2852,6 +3238,7 @@ CREATE FUNCTION "public"."get_my_tenant_ids_array"() RETURNS "uuid"[]
   from admin_users
   where user_id = auth.uid()
     and coalesce(is_active, true) = true
+    and deleted_at is null
     and public.mfa_satisfait()
 $$;
 
@@ -2961,7 +3348,9 @@ begin
             'quantity', oi.quantity,
             'price_at_order', oi.price_at_order,
             'menu_item_id', oi.menu_item_id,
-            'image_url', mi.image_url
+            'image_url', mi.image_url,
+            'modifiers', coalesce(oi.modifiers, '[]'::jsonb),
+            'customer_notes', oi.customer_notes
           ))
           from order_items oi
           left join menu_items mi on mi.id = oi.menu_item_id
@@ -3329,6 +3718,26 @@ $$;
 ALTER FUNCTION "public"."get_stock_status"("p_tenant_id" "uuid") OWNER TO "postgres";
 
 --
+-- Name: get_storefront_ads("uuid"); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION "public"."get_storefront_ads"("p_tenant_id" "uuid") RETURNS TABLE("id" "uuid", "image_url" "text", "link" "text")
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+  select a.id, a.image_url, a.link
+  from public.ads a
+  where a.tenant_id = p_tenant_id
+    and a.is_active = true
+    and private.storefront_tenant_visible(p_tenant_id)
+  order by a.sort_order asc, a.created_at asc
+  limit 6;
+$$;
+
+
+ALTER FUNCTION "public"."get_storefront_ads"("p_tenant_id" "uuid") OWNER TO "postgres";
+
+--
 -- Name: get_tenant_by_slug("text"); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -3620,18 +4029,9 @@ ALTER FUNCTION "public"."guard_table_delete_occupied"() OWNER TO "postgres";
 
 CREATE FUNCTION "public"."has_tenant_floor_permission"("p_tenant" "uuid") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public', 'pg_temp'
+    SET "search_path" TO ''
     AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.admin_users au
-    WHERE au.user_id = (SELECT auth.uid())
-      AND au.tenant_id = p_tenant
-      AND (au.is_active IS NULL OR au.is_active = true)
-      AND au.deleted_at IS NULL
-      AND au.role = ANY (ARRAY['owner', 'admin', 'manager'])
-  )
-  AND public.has_tenant_write_permission(p_tenant, 'orders.manage');
+  SELECT public.has_tenant_write_permission(p_tenant, 'settings.edit');
 $$;
 
 
@@ -3643,19 +4043,12 @@ ALTER FUNCTION "public"."has_tenant_floor_permission"("p_tenant" "uuid") OWNER T
 
 CREATE FUNCTION "public"."has_tenant_money_permission"("p_tenant" "uuid") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public', 'pg_temp'
+    SET "search_path" TO ''
     AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.admin_users au
-    WHERE au.user_id = (SELECT auth.uid())
-      AND au.tenant_id = p_tenant
-      AND (au.is_active IS NULL OR au.is_active = true)
-      AND au.deleted_at IS NULL
-      AND au.role = ANY (ARRAY['owner', 'admin', 'manager'])
-  )
-  AND public.has_tenant_write_permission(p_tenant, 'orders.manage')
-  AND public.has_tenant_write_permission(p_tenant, 'orders.pay');
+  SELECT public.has_tenant_write_permission(p_tenant, 'orders.pay')
+     AND public.has_tenant_write_permission(p_tenant, 'orders.refund')
+     AND public.has_tenant_write_permission(p_tenant, 'orders.cancel')
+     AND public.has_tenant_write_permission(p_tenant, 'orders.discount');
 $$;
 
 
@@ -3667,48 +4060,9 @@ ALTER FUNCTION "public"."has_tenant_money_permission"("p_tenant" "uuid") OWNER T
 
 CREATE FUNCTION "public"."has_tenant_write_permission"("p_tenant" "uuid", "p_perm" "text") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public', 'pg_temp'
+    SET "search_path" TO ''
     AS $$
-  SELECT public.mfa_satisfait() AND EXISTS (
-    SELECT 1
-    FROM public.admin_users au
-    LEFT JOIN public.role_permissions rp
-      ON rp.tenant_id = au.tenant_id AND rp.role = au.role
-    WHERE au.user_id = (SELECT auth.uid())
-      AND au.tenant_id = p_tenant
-      AND (au.is_active IS NULL OR au.is_active = true)
-      AND au.deleted_at IS NULL
-      AND (
-        au.role = 'owner'
-        OR CASE
-             -- Surcharge individuelle de l'employe: elle tranche, dans les
-             -- deux sens, pour n'importe quel role.
-             WHEN au.custom_permissions ? p_perm
-               THEN (au.custom_permissions -> p_perm) = 'true'::jsonb
-             -- Puis la surcharge de role posee par le proprietaire.
-             WHEN rp.permissions ? p_perm
-               THEN (rp.permissions -> p_perm) = 'true'::jsonb
-             -- Sans surcharge: DEFAULT_PERMISSIONS (src/types/permission.types.ts).
-             ELSE CASE p_perm
-                    WHEN 'orders.manage'
-                      THEN au.role = ANY (ARRAY['admin', 'manager', 'cashier', 'chef', 'waiter'])
-                    WHEN 'orders.pay'
-                      THEN au.role = ANY (ARRAY['admin', 'manager', 'cashier'])
-                    WHEN 'settings.edit'
-                      THEN au.role = 'admin'
-                    WHEN 'menu.edit'
-                      THEN au.role = ANY (ARRAY['admin', 'manager'])
-                    WHEN 'inventory.edit'
-                      THEN au.role = ANY (ARRAY['admin', 'manager'])
-                    -- B127: DEFAULT_PERMISSIONS donne aussi la lecture du stock
-                    -- au chef (permission.types.ts), pas au caissier ni au serveur.
-                    WHEN 'inventory.view'
-                      THEN au.role = ANY (ARRAY['admin', 'manager', 'chef'])
-                    ELSE au.role = ANY (ARRAY['admin', 'manager'])
-                  END
-           END
-      )
-  );
+  SELECT coalesce(public.tenant_permission_level(p_tenant, p_perm) = 'full', false);
 $$;
 
 
@@ -3905,17 +4259,25 @@ CREATE FUNCTION "public"."is_super_admin"() RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
-  SELECT public.mfa_satisfait() AND EXISTS (
-    SELECT 1 FROM admin_users
-    WHERE user_id = auth.uid()
-      AND (is_super_admin = true OR role = 'super_admin')
-      AND COALESCE(is_active, true)
-      AND deleted_at IS NULL
-  );
+  SELECT coalesce((SELECT auth.jwt() ->> 'aal'), 'aal1') = 'aal2'
+    AND EXISTS (
+      SELECT 1 FROM admin_users
+      WHERE user_id = auth.uid()
+        AND (is_super_admin = true OR role = 'super_admin')
+        AND COALESCE(is_active, true)
+        AND deleted_at IS NULL
+    );
 $$;
 
 
 ALTER FUNCTION "public"."is_super_admin"() OWNER TO "postgres";
+
+--
+-- Name: FUNCTION "is_super_admin"(); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION "public"."is_super_admin"() IS 'Vrai si l appelant est super administrateur actif ET que son jeton est aal2 (code TOTP saisi). Sans facteur enregistre, aucun droit de plateforme.';
+
 
 --
 -- Name: is_table_occupied("uuid", "text"); Type: FUNCTION; Schema: public; Owner: postgres
@@ -3957,6 +4319,26 @@ $$;
 
 
 ALTER FUNCTION "public"."is_tenant_name_taken"("p_name" "text") OWNER TO "postgres";
+
+--
+-- Name: is_tenant_owner("uuid"); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION "public"."is_tenant_owner"("p_tenant" "uuid") RETURNS boolean
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+  SELECT public.mfa_satisfait() AND EXISTS (
+    SELECT 1 FROM public.admin_users AS au
+    WHERE au.user_id = (SELECT auth.uid())
+      AND au.tenant_id = p_tenant
+      AND au.is_active IS TRUE
+      AND au.deleted_at IS NULL
+      AND 'owner' = ANY (au.postes));
+$$;
+
+
+ALTER FUNCTION "public"."is_tenant_owner"("p_tenant" "uuid") OWNER TO "postgres";
 
 --
 -- Name: item_suggestions_modifiee_devient_manuelle(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -4614,12 +4996,13 @@ BEGIN
   -- Tenant-isolation guard: a member cannot reassign another tenant's order.
   PERFORM public.assert_tenant_member(p_tenant_id);
 
-  -- A15: meme droit que l'action serveur (`orders.manage`). Sans ce controle,
-  -- un membre sans ce droit deplacait une commande par l'API directe.
+  -- A15: meme droit que l'action serveur (`orders.take` : deplacer une
+  -- commande est un geste de salle). Sans ce controle, un membre sans ce droit
+  -- deplacait une commande par l'API directe.
   IF coalesce(auth.role(), '') <> 'service_role'
      AND NOT public.is_super_admin()
-     AND NOT public.has_tenant_write_permission(p_tenant_id, 'orders.manage') THEN
-    RAISE EXCEPTION 'access denied: reassigning an order requires orders.manage'
+     AND NOT public.has_tenant_write_permission(p_tenant_id, 'orders.take') THEN
+    RAISE EXCEPTION 'access denied: reassigning an order requires orders.take'
       USING ERRCODE = '42501';
   END IF;
 
@@ -4835,10 +5218,6 @@ DECLARE
   v_net        numeric;
   v_payment_id uuid;
   v_actor      uuid;
-  v_role       text;
-  v_custom     jsonb;
-  v_tenant_ovr jsonb;
-  v_allowed    boolean;
 BEGIN
   -- (1) APPARTENANCE, avant toute autre chose. Leve 42501 si l'appelant n'est
   -- pas membre du restaurant. Laisse passer service_role et les super-admins.
@@ -4853,12 +5232,11 @@ BEGIN
     -- La ligne de membre de l'APPELANT, jamais un parametre. `is_active` et
     -- `deleted_at` sont verifies ici: un compte suspendu ou retire ne doit pas
     -- pouvoir sortir de l'argent de la caisse.
-    SELECT a.id, a.role, a.custom_permissions
-      INTO v_actor, v_role, v_custom
-    FROM admin_users a
-    WHERE a.user_id = auth.uid()
+    SELECT a.id INTO v_actor
+    FROM public.admin_users AS a
+    WHERE a.user_id = (SELECT auth.uid())
       AND a.tenant_id = p_tenant_id
-      AND a.is_active = true
+      AND a.is_active IS TRUE
       AND a.deleted_at IS NULL;
 
     IF NOT FOUND THEN
@@ -4866,53 +5244,12 @@ BEGIN
         USING ERRCODE = '42501';
     END IF;
 
-    -- Le role doit figurer dans la MEME liste que celle de l'action serveur
-    -- `actionRefundOrder`: ['owner','admin','manager']. Elle est plus stricte
-    -- que la permission seule - par defaut `orders.manage` est aussi vrai pour
-    -- `cashier` et `chef` (src/types/permission.types.ts) - et c'est la regle
-    -- reellement appliquee en production aujourd'hui. On la reproduit telle
-    -- quelle: une migration de securite n'est pas le lieu pour ELARGIR un
-    -- acces.
-    IF v_role NOT IN ('owner', 'admin', 'manager') THEN
-      RAISE EXCEPTION 'access denied: role % cannot record refunds', v_role
-        USING ERRCODE = '42501';
-    END IF;
-
-    -- Resolution de `orders.manage` dans l'ordre de src/lib/permissions.ts
-    -- (hasPermission): owner toujours autorise, puis la derogation
-    -- individuelle, puis la derogation du restaurant, puis le defaut du role.
-    IF v_role = 'owner' THEN
-      v_allowed := true;
-    ELSIF v_custom ? 'orders.manage' THEN
-      v_allowed := coalesce((v_custom -> 'orders.manage')::boolean, false);
-    ELSE
-      SELECT rp.permissions
-        INTO v_tenant_ovr
-      FROM role_permissions rp
-      WHERE rp.tenant_id = p_tenant_id
-        AND rp.role = v_role;
-
-      IF v_tenant_ovr ? 'orders.manage' THEN
-        v_allowed := coalesce((v_tenant_ovr -> 'orders.manage')::boolean, false);
-      ELSE
-        -- Defaut du role. Seul `waiter` a false, et il est de toute facon
-        -- deja ecarte par la liste de roles ci-dessus.
-        v_allowed := v_role IN ('owner', 'admin', 'manager', 'cashier', 'chef');
-      END IF;
-    END IF;
-
-    IF NOT v_allowed THEN
-      RAISE EXCEPTION 'access denied: orders.manage denied for role %', v_role
-        USING ERRCODE = '42501';
-    END IF;
-
-    -- (3) ARGENT. Rembourser fait sortir de l'argent de la caisse: il faut en
-    -- plus `orders.pay`, resolu par la meme fonction que la RLS (owner
-    -- toujours, puis surcharge individuelle, puis surcharge de role, puis
-    -- defaut). Ajoute par 20261109200000: un gerant a qui le proprietaire
-    -- retire l'argent ne rembourse plus, meme en appelant la RPC en direct.
-    IF NOT public.has_tenant_write_permission(p_tenant_id, 'orders.pay') THEN
-      RAISE EXCEPTION 'access denied: orders.pay denied for role %', v_role
+    -- (3) ARGENT. Rembourser fait sortir de l'argent de la caisse : il faut
+    -- l'autorite d'argent du lot 1 (encaisser, rembourser, annuler, remiser,
+    -- les quatre en entier), resolue par la MEME fonction que la RLS. Par
+    -- defaut : proprietaire et gerant, comme l'ancienne liste de roles.
+    IF NOT public.has_tenant_money_permission(p_tenant_id) THEN
+      RAISE EXCEPTION 'access denied: refund requires the money permission'
         USING ERRCODE = '42501';
     END IF;
   END IF;
@@ -6256,6 +6593,81 @@ $$;
 ALTER FUNCTION "public"."tenant_effective_plan"("p_tenant_id" "uuid") OWNER TO "postgres";
 
 --
+-- Name: tenant_permission_level("uuid", "text"); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION "public"."tenant_permission_level"("p_tenant" "uuid", "p_perm" "text") RETURNS "text"
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+DECLARE
+  v_niveau text;
+BEGIN
+  IF p_perm IS NULL OR NOT (p_perm = ANY (private.codes_droits())) THEN RETURN NULL; END IF;
+  IF NOT public.mfa_satisfait() THEN RETURN NULL; END IF;
+  SELECT n.niveau INTO v_niveau
+  FROM public.admin_users AS au
+  CROSS JOIN LATERAL (
+    SELECT CASE
+      WHEN 'owner' = ANY (au.postes) THEN 'full'
+      WHEN au.permission_overrides ? p_perm THEN
+        CASE WHEN (au.permission_overrides -> p_perm) = 'true'::jsonb THEN 'full' END
+      ELSE (
+        SELECT CASE max(CASE x.niveau WHEN 'full' THEN 2 WHEN 'limited' THEN 1 ELSE 0 END)
+                 WHEN 2 THEN 'full' WHEN 1 THEN 'limited' END
+        FROM (
+          SELECT CASE
+                   WHEN pp.permissions ? p_perm THEN
+                     CASE WHEN (pp.permissions -> p_perm) = 'true'::jsonb THEN 'full' END
+                   ELSE m.niveau
+                 END AS niveau
+          FROM unnest(au.postes) AS p(poste)
+          LEFT JOIN public.poste_permissions AS pp
+                 ON pp.tenant_id = au.tenant_id AND pp.poste = p.poste
+          LEFT JOIN private.matrice_postes() AS m
+                 ON m.poste = p.poste AND m.droit = p_perm
+        ) AS x
+      )
+    END AS niveau
+  ) AS n
+  WHERE au.user_id = (SELECT auth.uid())
+    AND au.tenant_id = p_tenant
+    AND au.is_active IS TRUE
+    AND au.deleted_at IS NULL
+    AND n.niveau IS NOT NULL
+  ORDER BY (n.niveau = 'full') DESC
+  LIMIT 1;
+  RETURN v_niveau;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."tenant_permission_level"("p_tenant" "uuid", "p_perm" "text") OWNER TO "postgres";
+
+--
+-- Name: tenants_avec_droit("text", "text"); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION "public"."tenants_avec_droit"("p_perm" "text", "p_niveau_min" "text" DEFAULT 'full'::"text") RETURNS "uuid"[]
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+  SELECT coalesce(array_agg(au.tenant_id), '{}'::uuid[])
+  FROM public.admin_users AS au
+  WHERE au.user_id = (SELECT auth.uid())
+    AND au.is_active IS TRUE
+    AND au.deleted_at IS NULL
+    AND CASE p_niveau_min
+          WHEN 'full' THEN public.tenant_permission_level(au.tenant_id, p_perm) = 'full'
+          WHEN 'limited' THEN public.tenant_permission_level(au.tenant_id, p_perm) IS NOT NULL
+          ELSE false
+        END;
+$$;
+
+
+ALTER FUNCTION "public"."tenants_avec_droit"("p_perm" "text", "p_niveau_min" "text") OWNER TO "postgres";
+
+--
 -- Name: unclaim_coupon_usage("uuid"); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -6472,7 +6884,7 @@ CREATE TABLE "public"."admin_users" (
     "user_id" "uuid" NOT NULL,
     "email" "text" NOT NULL,
     "full_name" "text",
-    "role" "text" DEFAULT 'admin'::"text" NOT NULL,
+    "role" "text" NOT NULL,
     "is_active" boolean DEFAULT true NOT NULL,
     "last_login" timestamp with time zone,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
@@ -6481,13 +6893,17 @@ CREATE TABLE "public"."admin_users" (
     "phone" character varying(50),
     "last_login_at" timestamp with time zone,
     "login_count" integer DEFAULT 0,
-    "custom_permissions" "jsonb",
     "deleted_at" timestamp with time zone,
     "deleted_by" "uuid",
     "banned_at" timestamp with time zone,
     "banned_by" "uuid",
     "ban_reason" "text",
-    CONSTRAINT "admin_users_role_check" CHECK (("role" = ANY (ARRAY['owner'::"text", 'admin'::"text", 'manager'::"text", 'cashier'::"text", 'chef'::"text", 'waiter'::"text", 'super_admin'::"text"])))
+    "postes" "text"[] DEFAULT '{}'::"text"[] NOT NULL,
+    "permission_overrides" "jsonb",
+    CONSTRAINT "admin_users_overrides_check" CHECK ((("permission_overrides" IS NULL) OR "private"."droits_valides"("permission_overrides"))),
+    CONSTRAINT "admin_users_postes_check" CHECK (("postes" <@ ARRAY['owner'::"text", 'manager'::"text", 'chef'::"text", 'cashier'::"text", 'bartender'::"text", 'reception'::"text", 'waiter'::"text", 'cook'::"text", 'crew'::"text", 'sales'::"text", 'production'::"text"])),
+    CONSTRAINT "admin_users_postes_non_vide" CHECK ((("cardinality"("postes") >= 1) OR ("role" = 'super_admin'::"text") OR ("is_super_admin" IS TRUE))),
+    CONSTRAINT "admin_users_role_check" CHECK (("role" = ANY (ARRAY['owner'::"text", 'admin'::"text", 'manager'::"text", 'cashier'::"text", 'chef'::"text", 'waiter'::"text", 'super_admin'::"text", 'bartender'::"text", 'reception'::"text", 'cook'::"text", 'crew'::"text", 'sales'::"text", 'production'::"text"])))
 );
 
 
@@ -6530,7 +6946,8 @@ CREATE TABLE "public"."ads" (
     "link" "text",
     "sort_order" integer DEFAULT 0 NOT NULL,
     "is_active" boolean DEFAULT true NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "ads_link_http" CHECK ((("link" IS NULL) OR ("link" ~* '^https?://'::"text")))
 );
 
 
@@ -6907,14 +7324,18 @@ CREATE TABLE "public"."invitations" (
     "tenant_id" "uuid" NOT NULL,
     "email" "text" NOT NULL,
     "role" "text" NOT NULL,
-    "custom_permissions" "jsonb",
     "invited_by" "uuid" NOT NULL,
     "token" "text" NOT NULL,
     "expires_at" timestamp with time zone NOT NULL,
     "status" "text" DEFAULT 'pending'::"text" NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "accepted_at" timestamp with time zone,
-    CONSTRAINT "invitations_role_check" CHECK (("role" = ANY (ARRAY['admin'::"text", 'manager'::"text", 'cashier'::"text", 'chef'::"text", 'waiter'::"text"]))),
+    "postes" "text"[] DEFAULT '{}'::"text"[] NOT NULL,
+    "permission_overrides" "jsonb",
+    CONSTRAINT "invitations_overrides_check" CHECK ((("permission_overrides" IS NULL) OR "private"."droits_valides"("permission_overrides"))),
+    CONSTRAINT "invitations_postes_check" CHECK (("postes" <@ ARRAY['manager'::"text", 'chef'::"text", 'cashier'::"text", 'bartender'::"text", 'reception'::"text", 'waiter'::"text", 'cook'::"text", 'crew'::"text", 'sales'::"text", 'production'::"text"])),
+    CONSTRAINT "invitations_postes_non_vide" CHECK (("cardinality"("postes") >= 1)),
+    CONSTRAINT "invitations_role_check" CHECK (("role" = ANY (ARRAY['admin'::"text", 'manager'::"text", 'cashier'::"text", 'chef'::"text", 'waiter'::"text", 'bartender'::"text", 'reception'::"text", 'cook'::"text", 'crew'::"text", 'sales'::"text", 'production'::"text"]))),
     CONSTRAINT "invitations_status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'accepted'::"text", 'expired'::"text", 'cancelled'::"text"])))
 );
 
@@ -7422,6 +7843,24 @@ CREATE TABLE "public"."platform_settings" (
 ALTER TABLE "public"."platform_settings" OWNER TO "postgres";
 
 --
+-- Name: poste_permissions; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE "public"."poste_permissions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "tenant_id" "uuid" NOT NULL,
+    "poste" "text" NOT NULL,
+    "permissions" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_by" "uuid",
+    CONSTRAINT "poste_permissions_droits_check" CHECK ("private"."droits_valides"("permissions")),
+    CONSTRAINT "poste_permissions_poste_check" CHECK (("poste" = ANY (ARRAY['manager'::"text", 'chef'::"text", 'cashier'::"text", 'bartender'::"text", 'reception'::"text", 'waiter'::"text", 'cook'::"text", 'crew'::"text", 'sales'::"text", 'production'::"text"])))
+);
+
+
+ALTER TABLE "public"."poste_permissions" OWNER TO "postgres";
+
+--
 -- Name: push_subscriptions; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -7541,23 +7980,6 @@ CREATE TABLE "public"."restaurant_groups" (
 
 
 ALTER TABLE "public"."restaurant_groups" OWNER TO "postgres";
-
---
--- Name: role_permissions; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE "public"."role_permissions" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "tenant_id" "uuid" NOT NULL,
-    "role" "text" NOT NULL,
-    "permissions" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_by" "uuid",
-    CONSTRAINT "role_permissions_role_check" CHECK (("role" = ANY (ARRAY['admin'::"text", 'manager'::"text", 'cashier'::"text", 'chef'::"text", 'waiter'::"text"])))
-);
-
-
-ALTER TABLE "public"."role_permissions" OWNER TO "postgres";
 
 --
 -- Name: settings; Type: TABLE; Schema: public; Owner: postgres
@@ -8432,6 +8854,22 @@ ALTER TABLE ONLY "public"."platform_settings"
 
 
 --
+-- Name: poste_permissions poste_permissions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY "public"."poste_permissions"
+    ADD CONSTRAINT "poste_permissions_pkey" PRIMARY KEY ("id");
+
+
+--
+-- Name: poste_permissions poste_permissions_tenant_poste_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY "public"."poste_permissions"
+    ADD CONSTRAINT "poste_permissions_tenant_poste_key" UNIQUE ("tenant_id", "poste");
+
+
+--
 -- Name: push_subscriptions push_subscriptions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -8517,22 +8955,6 @@ ALTER TABLE ONLY "public"."restaurant_groups"
 
 ALTER TABLE ONLY "public"."restaurant_groups"
     ADD CONSTRAINT "restaurant_groups_pkey" PRIMARY KEY ("id");
-
-
---
--- Name: role_permissions role_permissions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY "public"."role_permissions"
-    ADD CONSTRAINT "role_permissions_pkey" PRIMARY KEY ("id");
-
-
---
--- Name: role_permissions role_permissions_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY "public"."role_permissions"
-    ADD CONSTRAINT "role_permissions_unique" UNIQUE ("tenant_id", "role");
 
 
 --
@@ -8741,6 +9163,20 @@ ALTER TABLE ONLY "public"."wave_events"
 
 ALTER TABLE ONLY "public"."zones"
     ADD CONSTRAINT "zones_pkey" PRIMARY KEY ("id");
+
+
+--
+-- Name: admin_users_tenant_user_vivant; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "admin_users_tenant_user_vivant" ON "public"."admin_users" USING "btree" ("tenant_id", "user_id") WHERE ("deleted_at" IS NULL);
+
+
+--
+-- Name: admin_users_un_proprietaire; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "admin_users_un_proprietaire" ON "public"."admin_users" USING "btree" ("tenant_id") WHERE (('owner'::"text" = ANY ("postes")) AND ("deleted_at" IS NULL));
 
 
 --
@@ -9549,6 +9985,13 @@ CREATE INDEX "idx_platform_settings_updated_by" ON "public"."platform_settings" 
 
 
 --
+-- Name: idx_poste_permissions_updated_by; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "idx_poste_permissions_updated_by" ON "public"."poste_permissions" USING "btree" ("updated_by");
+
+
+--
 -- Name: idx_push_subscriptions_last_used; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -9644,13 +10087,6 @@ CREATE INDEX "idx_reminders_recipient_created" ON "public"."reminders" USING "bt
 --
 
 CREATE INDEX "idx_restaurant_groups_owner" ON "public"."restaurant_groups" USING "btree" ("owner_user_id");
-
-
---
--- Name: idx_role_permissions_updated_by; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX "idx_role_permissions_updated_by" ON "public"."role_permissions" USING "btree" ("updated_by");
 
 
 --
@@ -10088,10 +10524,31 @@ CREATE UNIQUE INDEX "zones_venue_lower_name_key" ON "public"."zones" USING "btre
 
 
 --
+-- Name: admin_users aa_admin_users_sync_postes; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER "aa_admin_users_sync_postes" BEFORE INSERT OR UPDATE ON "public"."admin_users" FOR EACH ROW EXECUTE FUNCTION "private"."sync_postes_admin_users"();
+
+
+--
+-- Name: invitations aa_invitations_sync_postes; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER "aa_invitations_sync_postes" BEFORE INSERT OR UPDATE ON "public"."invitations" FOR EACH ROW EXECUTE FUNCTION "private"."sync_postes_invitations"();
+
+
+--
 -- Name: categories categories_menu_same_tenant; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
 CREATE TRIGGER "categories_menu_same_tenant" BEFORE INSERT OR UPDATE OF "menu_id", "tenant_id" ON "public"."categories" FOR EACH ROW EXECUTE FUNCTION "public"."enforce_category_menu_tenant"();
+
+
+--
+-- Name: admin_users garder_proprietaire_trg; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER "garder_proprietaire_trg" BEFORE DELETE OR UPDATE ON "public"."admin_users" FOR EACH ROW EXECUTE FUNCTION "private"."garder_proprietaire"();
 
 
 --
@@ -10326,6 +10783,13 @@ CREATE TRIGGER "trg_inscrire_espace_commande" BEFORE INSERT OR UPDATE OF "table_
 
 
 --
+-- Name: item_modifiers trg_item_modifiers_prix; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER "trg_item_modifiers_prix" BEFORE INSERT OR DELETE OR UPDATE ON "public"."item_modifiers" FOR EACH ROW EXECUTE FUNCTION "public"."garder_prix_carte"();
+
+
+--
 -- Name: item_suggestions trg_item_suggestions_modifiee_devient_manuelle; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -10347,10 +10811,24 @@ CREATE TRIGGER "trg_menu_items_masquage_manuel" BEFORE UPDATE OF "is_available" 
 
 
 --
+-- Name: menu_items trg_menu_items_prix; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER "trg_menu_items_prix" BEFORE UPDATE ON "public"."menu_items" FOR EACH ROW EXECUTE FUNCTION "public"."garder_prix_carte"();
+
+
+--
 -- Name: orders trg_montants_commande_non_reecrits; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
 CREATE TRIGGER "trg_montants_commande_non_reecrits" BEFORE UPDATE ON "public"."orders" FOR EACH ROW EXECUTE FUNCTION "public"."refuser_reecriture_montants_commande"();
+
+
+--
+-- Name: order_items trg_order_items_statut_cuisine; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER "trg_order_items_statut_cuisine" BEFORE UPDATE OF "item_status" ON "public"."order_items" FOR EACH ROW EXECUTE FUNCTION "public"."garder_statut_cuisine"();
 
 
 --
@@ -10379,6 +10857,13 @@ CREATE TRIGGER "trg_orders_house_account_open" BEFORE INSERT OR UPDATE OF "house
 --
 
 CREATE TRIGGER "trg_orders_ready_at" BEFORE UPDATE OF "status" ON "public"."orders" FOR EACH ROW EXECUTE FUNCTION "public"."stamp_order_ready_at"();
+
+
+--
+-- Name: orders trg_orders_statut_cuisine; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER "trg_orders_statut_cuisine" BEFORE UPDATE OF "status" ON "public"."orders" FOR EACH ROW EXECUTE FUNCTION "public"."garder_statut_cuisine"();
 
 
 --
@@ -11139,6 +11624,22 @@ ALTER TABLE ONLY "public"."platform_settings"
 
 
 --
+-- Name: poste_permissions poste_permissions_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY "public"."poste_permissions"
+    ADD CONSTRAINT "poste_permissions_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
+
+
+--
+-- Name: poste_permissions poste_permissions_updated_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY "public"."poste_permissions"
+    ADD CONSTRAINT "poste_permissions_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "public"."admin_users"("id") ON DELETE SET NULL;
+
+
+--
 -- Name: push_subscriptions push_subscriptions_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -11240,22 +11741,6 @@ ALTER TABLE ONLY "public"."reminders"
 
 ALTER TABLE ONLY "public"."restaurant_groups"
     ADD CONSTRAINT "restaurant_groups_owner_user_id_fkey" FOREIGN KEY ("owner_user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
-
-
---
--- Name: role_permissions role_permissions_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY "public"."role_permissions"
-    ADD CONSTRAINT "role_permissions_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
-
-
---
--- Name: role_permissions role_permissions_updated_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY "public"."role_permissions"
-    ADD CONSTRAINT "role_permissions_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "public"."admin_users"("id");
 
 
 --
@@ -11509,9 +11994,7 @@ CREATE POLICY "Admins can insert audit logs" ON "public"."audit_log" FOR INSERT 
 -- Name: audit_log Admins can read audit logs; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Admins can read audit logs" ON "public"."audit_log" FOR SELECT USING (("tenant_id" IN ( SELECT "au"."tenant_id"
-   FROM "public"."admin_users" "au"
-  WHERE (("au"."user_id" = ( SELECT "auth"."uid"() AS "uid")) AND ("au"."role" = ANY (ARRAY['owner'::"text", 'admin'::"text", 'manager'::"text"])) AND COALESCE("au"."is_active", true) AND ("au"."deleted_at" IS NULL)))));
+CREATE POLICY "Admins can read audit logs" ON "public"."audit_log" FOR SELECT USING (("tenant_id" = ANY (( SELECT "public"."tenants_avec_droit"('audit.view'::"text") AS "tenants_avec_droit")::"uuid"[])));
 
 
 --
@@ -11794,7 +12277,7 @@ CREATE POLICY "Inventory managers can delete own tenant stock_counts" ON "public
 -- Name: suppliers Inventory managers can delete own tenant suppliers; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Inventory managers can delete own tenant suppliers" ON "public"."suppliers" FOR DELETE USING ("public"."has_tenant_write_permission"("tenant_id", 'inventory.edit'::"text"));
+CREATE POLICY "Inventory managers can delete own tenant suppliers" ON "public"."suppliers" FOR DELETE USING ("public"."has_tenant_write_permission"("tenant_id", 'suppliers.manage'::"text"));
 
 
 --
@@ -11836,7 +12319,7 @@ CREATE POLICY "Inventory managers can insert own tenant stock_counts" ON "public
 -- Name: suppliers Inventory managers can insert own tenant suppliers; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Inventory managers can insert own tenant suppliers" ON "public"."suppliers" FOR INSERT WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'inventory.edit'::"text"));
+CREATE POLICY "Inventory managers can insert own tenant suppliers" ON "public"."suppliers" FOR INSERT WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'suppliers.manage'::"text"));
 
 
 --
@@ -11878,7 +12361,7 @@ CREATE POLICY "Inventory managers can update own tenant stock_counts" ON "public
 -- Name: suppliers Inventory managers can update own tenant suppliers; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Inventory managers can update own tenant suppliers" ON "public"."suppliers" FOR UPDATE USING ("public"."has_tenant_write_permission"("tenant_id", 'inventory.edit'::"text")) WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'inventory.edit'::"text"));
+CREATE POLICY "Inventory managers can update own tenant suppliers" ON "public"."suppliers" FOR UPDATE USING ("public"."has_tenant_write_permission"("tenant_id", 'suppliers.manage'::"text")) WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'suppliers.manage'::"text"));
 
 
 --
@@ -12052,14 +12535,14 @@ CREATE POLICY "Membres: leurs restaurants avant double authentification" ON "pub
 -- Name: ads Menu managers can delete own tenant ads; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Menu managers can delete own tenant ads" ON "public"."ads" FOR DELETE USING ("public"."has_tenant_write_permission"("tenant_id", 'menu.edit'::"text"));
+CREATE POLICY "Menu managers can delete own tenant ads" ON "public"."ads" FOR DELETE USING ("public"."has_tenant_write_permission"("tenant_id", 'settings.edit'::"text"));
 
 
 --
 -- Name: announcements Menu managers can delete own tenant announcements; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Menu managers can delete own tenant announcements" ON "public"."announcements" FOR DELETE USING ("public"."has_tenant_write_permission"("tenant_id", 'menu.edit'::"text"));
+CREATE POLICY "Menu managers can delete own tenant announcements" ON "public"."announcements" FOR DELETE USING ("public"."has_tenant_write_permission"("tenant_id", 'settings.edit'::"text"));
 
 
 --
@@ -12073,7 +12556,7 @@ CREATE POLICY "Menu managers can delete own tenant categories" ON "public"."cate
 -- Name: coupons Menu managers can delete own tenant coupons; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Menu managers can delete own tenant coupons" ON "public"."coupons" FOR DELETE USING ("public"."has_tenant_write_permission"("tenant_id", 'menu.edit'::"text"));
+CREATE POLICY "Menu managers can delete own tenant coupons" ON "public"."coupons" FOR DELETE USING ("public"."has_tenant_write_permission"("tenant_id", 'orders.discount'::"text"));
 
 
 --
@@ -12115,28 +12598,28 @@ CREATE POLICY "Menu managers can delete own tenant menus" ON "public"."menus" FO
 -- Name: item_price_variants Menu managers can delete own tenant price variants; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Menu managers can delete own tenant price variants" ON "public"."item_price_variants" FOR DELETE USING ("public"."has_tenant_write_permission"("tenant_id", 'menu.edit'::"text"));
+CREATE POLICY "Menu managers can delete own tenant price variants" ON "public"."item_price_variants" FOR DELETE USING ("public"."has_tenant_write_permission"("tenant_id", 'menu.price'::"text"));
 
 
 --
 -- Name: ads Menu managers can insert own tenant ads; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Menu managers can insert own tenant ads" ON "public"."ads" FOR INSERT WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'menu.edit'::"text"));
+CREATE POLICY "Menu managers can insert own tenant ads" ON "public"."ads" FOR INSERT WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'settings.edit'::"text"));
 
 
 --
 -- Name: announcements Menu managers can insert own tenant announcements; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Menu managers can insert own tenant announcements" ON "public"."announcements" FOR INSERT WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'menu.edit'::"text"));
+CREATE POLICY "Menu managers can insert own tenant announcements" ON "public"."announcements" FOR INSERT WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'settings.edit'::"text"));
 
 
 --
 -- Name: coupons Menu managers can insert own tenant coupons; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Menu managers can insert own tenant coupons" ON "public"."coupons" FOR INSERT WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'menu.edit'::"text"));
+CREATE POLICY "Menu managers can insert own tenant coupons" ON "public"."coupons" FOR INSERT WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'orders.discount'::"text"));
 
 
 --
@@ -12171,21 +12654,21 @@ CREATE POLICY "Menu managers can insert own tenant menus" ON "public"."menus" FO
 -- Name: item_price_variants Menu managers can insert own tenant price variants; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Menu managers can insert own tenant price variants" ON "public"."item_price_variants" FOR INSERT WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'menu.edit'::"text"));
+CREATE POLICY "Menu managers can insert own tenant price variants" ON "public"."item_price_variants" FOR INSERT WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'menu.price'::"text"));
 
 
 --
 -- Name: ads Menu managers can update own tenant ads; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Menu managers can update own tenant ads" ON "public"."ads" FOR UPDATE USING ("public"."has_tenant_write_permission"("tenant_id", 'menu.edit'::"text")) WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'menu.edit'::"text"));
+CREATE POLICY "Menu managers can update own tenant ads" ON "public"."ads" FOR UPDATE USING ("public"."has_tenant_write_permission"("tenant_id", 'settings.edit'::"text")) WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'settings.edit'::"text"));
 
 
 --
 -- Name: announcements Menu managers can update own tenant announcements; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Menu managers can update own tenant announcements" ON "public"."announcements" FOR UPDATE USING ("public"."has_tenant_write_permission"("tenant_id", 'menu.edit'::"text")) WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'menu.edit'::"text"));
+CREATE POLICY "Menu managers can update own tenant announcements" ON "public"."announcements" FOR UPDATE USING ("public"."has_tenant_write_permission"("tenant_id", 'settings.edit'::"text")) WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'settings.edit'::"text"));
 
 
 --
@@ -12199,7 +12682,7 @@ CREATE POLICY "Menu managers can update own tenant categories" ON "public"."cate
 -- Name: coupons Menu managers can update own tenant coupons; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Menu managers can update own tenant coupons" ON "public"."coupons" FOR UPDATE USING ("public"."has_tenant_write_permission"("tenant_id", 'menu.edit'::"text")) WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'menu.edit'::"text"));
+CREATE POLICY "Menu managers can update own tenant coupons" ON "public"."coupons" FOR UPDATE USING ("public"."has_tenant_write_permission"("tenant_id", 'orders.discount'::"text")) WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'orders.discount'::"text"));
 
 
 --
@@ -12241,7 +12724,7 @@ CREATE POLICY "Menu managers can update own tenant menus" ON "public"."menus" FO
 -- Name: item_price_variants Menu managers can update own tenant price variants; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Menu managers can update own tenant price variants" ON "public"."item_price_variants" FOR UPDATE USING ("public"."has_tenant_write_permission"("tenant_id", 'menu.edit'::"text")) WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'menu.edit'::"text"));
+CREATE POLICY "Menu managers can update own tenant price variants" ON "public"."item_price_variants" FOR UPDATE USING ("public"."has_tenant_write_permission"("tenant_id", 'menu.price'::"text")) WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'menu.price'::"text"));
 
 
 --
@@ -12287,16 +12770,16 @@ CREATE POLICY "Money managers can update own tenant house_accounts" ON "public".
 -- Name: order_notes Order managers can insert own tenant order_notes; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Order managers can insert own tenant order_notes" ON "public"."order_notes" FOR INSERT WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'orders.manage'::"text"));
+CREATE POLICY "Order managers can insert own tenant order_notes" ON "public"."order_notes" FOR INSERT WITH CHECK (("public"."has_tenant_write_permission"("tenant_id", 'orders.take'::"text") OR "public"."has_tenant_write_permission"("tenant_id", 'kitchen.track'::"text")));
 
 
 --
 -- Name: order_items Order managers can update own tenant order items; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Order managers can update own tenant order items" ON "public"."order_items" FOR UPDATE USING (("public"."has_tenant_write_permission"("tenant_id", 'orders.manage'::"text") AND (EXISTS ( SELECT 1
+CREATE POLICY "Order managers can update own tenant order items" ON "public"."order_items" FOR UPDATE USING ((("public"."has_tenant_write_permission"("tenant_id", 'orders.take'::"text") OR "public"."has_tenant_write_permission"("tenant_id", 'kitchen.track'::"text")) AND (EXISTS ( SELECT 1
    FROM "public"."orders" "o"
-  WHERE (("o"."id" = "order_items"."order_id") AND ("o"."tenant_id" = "order_items"."tenant_id")))))) WITH CHECK (("public"."has_tenant_write_permission"("tenant_id", 'orders.manage'::"text") AND (EXISTS ( SELECT 1
+  WHERE (("o"."id" = "order_items"."order_id") AND ("o"."tenant_id" = "order_items"."tenant_id")))))) WITH CHECK ((("public"."has_tenant_write_permission"("tenant_id", 'orders.take'::"text") OR "public"."has_tenant_write_permission"("tenant_id", 'kitchen.track'::"text")) AND (EXISTS ( SELECT 1
    FROM "public"."orders" "o"
   WHERE (("o"."id" = "order_items"."order_id") AND ("o"."tenant_id" = "order_items"."tenant_id"))))));
 
@@ -12305,7 +12788,7 @@ CREATE POLICY "Order managers can update own tenant order items" ON "public"."or
 -- Name: orders Order managers can update own tenant orders; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Order managers can update own tenant orders" ON "public"."orders" FOR UPDATE USING ("public"."has_tenant_write_permission"("tenant_id", 'orders.manage'::"text")) WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'orders.manage'::"text"));
+CREATE POLICY "Order managers can update own tenant orders" ON "public"."orders" FOR UPDATE USING (("public"."has_tenant_write_permission"("tenant_id", 'orders.take'::"text") OR "public"."has_tenant_write_permission"("tenant_id", 'kitchen.track'::"text"))) WITH CHECK (("public"."has_tenant_write_permission"("tenant_id", 'orders.take'::"text") OR "public"."has_tenant_write_permission"("tenant_id", 'kitchen.track'::"text")));
 
 
 --
@@ -12328,9 +12811,7 @@ CREATE POLICY "Price variants viewable by anon for available items" ON "public".
 -- Name: flutterwave_payments Proprietaires et admins lisent les paiements Flutterwave; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Proprietaires et admins lisent les paiements Flutterwave" ON "public"."flutterwave_payments" FOR SELECT TO "authenticated" USING (("tenant_id" IN ( SELECT "au"."tenant_id"
-   FROM "public"."admin_users" "au"
-  WHERE (("au"."user_id" = ( SELECT "auth"."uid"() AS "uid")) AND (COALESCE("au"."is_active", true) = true) AND ("au"."role" = ANY (ARRAY['owner'::"text", 'admin'::"text"]))))));
+CREATE POLICY "Proprietaires et admins lisent les paiements Flutterwave" ON "public"."flutterwave_payments" FOR SELECT TO "authenticated" USING (("tenant_id" = ANY (( SELECT "public"."tenants_avec_droit"('billing.manage'::"text", 'limited'::"text") AS "tenants_avec_droit")::"uuid"[])));
 
 
 --
@@ -12668,7 +13149,7 @@ CREATE POLICY "atfood_insert_categories" ON "public"."categories" FOR INSERT TO 
 -- Name: menu_items atfood_insert_menu_items; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "atfood_insert_menu_items" ON "public"."menu_items" FOR INSERT TO "authenticated" WITH CHECK ("public"."has_tenant_write_permission"("tenant_id", 'menu.edit'::"text"));
+CREATE POLICY "atfood_insert_menu_items" ON "public"."menu_items" FOR INSERT TO "authenticated" WITH CHECK (("public"."has_tenant_write_permission"("tenant_id", 'menu.edit'::"text") AND "public"."has_tenant_write_permission"("tenant_id", 'menu.price'::"text")));
 
 
 --
@@ -12941,17 +13422,6 @@ CREATE POLICY "owner_can_insert_own_group" ON "public"."restaurant_groups" FOR I
 
 
 --
--- Name: role_permissions owner_can_manage_role_permissions; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY "owner_can_manage_role_permissions" ON "public"."role_permissions" USING (("tenant_id" IN ( SELECT "au"."tenant_id"
-   FROM "public"."admin_users" "au"
-  WHERE (("au"."user_id" = ( SELECT "auth"."uid"() AS "uid")) AND ("au"."role" = 'owner'::"text") AND COALESCE("au"."is_active", true) AND ("au"."deleted_at" IS NULL))))) WITH CHECK (("tenant_id" IN ( SELECT "au"."tenant_id"
-   FROM "public"."admin_users" "au"
-  WHERE (("au"."user_id" = ( SELECT "auth"."uid"() AS "uid")) AND ("au"."role" = 'owner'::"text") AND COALESCE("au"."is_active", true) AND ("au"."deleted_at" IS NULL)))));
-
-
---
 -- Name: restaurant_groups owner_can_select_own_group; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -13002,6 +13472,40 @@ ALTER TABLE "public"."platform_audit_log" ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE "public"."platform_settings" ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: poste_permissions; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE "public"."poste_permissions" ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: poste_permissions poste_permissions_delete; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "poste_permissions_delete" ON "public"."poste_permissions" FOR DELETE TO "authenticated" USING ("public"."is_tenant_owner"("tenant_id"));
+
+
+--
+-- Name: poste_permissions poste_permissions_insert; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "poste_permissions_insert" ON "public"."poste_permissions" FOR INSERT TO "authenticated" WITH CHECK ("public"."is_tenant_owner"("tenant_id"));
+
+
+--
+-- Name: poste_permissions poste_permissions_select; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "poste_permissions_select" ON "public"."poste_permissions" FOR SELECT TO "authenticated" USING (("tenant_id" = ANY (( SELECT "public"."get_my_tenant_ids_array"() AS "get_my_tenant_ids_array")::"uuid"[])));
+
+
+--
+-- Name: poste_permissions poste_permissions_update; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "poste_permissions_update" ON "public"."poste_permissions" FOR UPDATE TO "authenticated" USING ("public"."is_tenant_owner"("tenant_id")) WITH CHECK ("public"."is_tenant_owner"("tenant_id"));
+
 
 --
 -- Name: push_subscriptions; Type: ROW SECURITY; Schema: public; Owner: postgres
@@ -13142,12 +13646,6 @@ CREATE POLICY "reminders_select_own" ON "public"."reminders" FOR SELECT TO "auth
 ALTER TABLE "public"."restaurant_groups" ENABLE ROW LEVEL SECURITY;
 
 --
--- Name: role_permissions; Type: ROW SECURITY; Schema: public; Owner: postgres
---
-
-ALTER TABLE "public"."role_permissions" ENABLE ROW LEVEL SECURITY;
-
---
 -- Name: restaurant_groups service_role_full_access; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -13159,13 +13657,6 @@ CREATE POLICY "service_role_full_access" ON "public"."restaurant_groups" TO "ser
 --
 
 CREATE POLICY "service_role_full_access_invitations" ON "public"."invitations" TO "service_role" USING ((( SELECT "auth"."role"() AS "role") = 'service_role'::"text")) WITH CHECK ((( SELECT "auth"."role"() AS "role") = 'service_role'::"text"));
-
-
---
--- Name: role_permissions service_role_full_access_role_permissions; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY "service_role_full_access_role_permissions" ON "public"."role_permissions" TO "service_role" USING ((( SELECT "auth"."role"() AS "role") = 'service_role'::"text")) WITH CHECK ((( SELECT "auth"."role"() AS "role") = 'service_role'::"text"));
 
 
 --
@@ -13243,37 +13734,10 @@ CREATE POLICY "table_sessions_tenant_select" ON "public"."table_sessions" FOR SE
 ALTER TABLE "public"."tables" ENABLE ROW LEVEL SECURITY;
 
 --
--- Name: invitations tenant_admins_can_insert_invitations; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY "tenant_admins_can_insert_invitations" ON "public"."invitations" FOR INSERT WITH CHECK (("tenant_id" IN ( SELECT "admin_users"."tenant_id"
-   FROM "public"."admin_users"
-  WHERE (("admin_users"."user_id" = ( SELECT "auth"."uid"() AS "uid")) AND ("admin_users"."role" = ANY (ARRAY['owner'::"text", 'admin'::"text"]))))));
-
-
---
--- Name: invitations tenant_admins_can_update_invitations; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY "tenant_admins_can_update_invitations" ON "public"."invitations" FOR UPDATE USING (("tenant_id" IN ( SELECT "admin_users"."tenant_id"
-   FROM "public"."admin_users"
-  WHERE (("admin_users"."user_id" = ( SELECT "auth"."uid"() AS "uid")) AND ("admin_users"."role" = ANY (ARRAY['owner'::"text", 'admin'::"text"]))))));
-
-
---
 -- Name: invitations tenant_admins_can_view_invitations; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "tenant_admins_can_view_invitations" ON "public"."invitations" FOR SELECT USING (("tenant_id" IN ( SELECT "au"."tenant_id"
-   FROM "public"."admin_users" "au"
-  WHERE (("au"."user_id" = ( SELECT "auth"."uid"() AS "uid")) AND ("au"."role" = ANY (ARRAY['owner'::"text", 'admin'::"text"])) AND COALESCE("au"."is_active", true) AND ("au"."deleted_at" IS NULL)))));
-
-
---
--- Name: role_permissions tenant_members_can_view_role_permissions; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY "tenant_members_can_view_role_permissions" ON "public"."role_permissions" FOR SELECT USING (("tenant_id" = ANY ("public"."get_my_tenant_ids_array"())));
+CREATE POLICY "tenant_admins_can_view_invitations" ON "public"."invitations" FOR SELECT USING (("tenant_id" = ANY (( SELECT "public"."tenants_avec_droit"('team.manage'::"text") AS "tenants_avec_droit")::"uuid"[])));
 
 
 --
@@ -13358,6 +13822,64 @@ GRANT USAGE ON SCHEMA "public" TO "service_role";
 
 
 --
+-- Name: FUNCTION "codes_droits"(); Type: ACL; Schema: private; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "private"."codes_droits"() FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION "droits_hors_catalogue"(); Type: ACL; Schema: private; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "private"."droits_hors_catalogue"() FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION "droits_valides"("p" "jsonb"); Type: ACL; Schema: private; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "private"."droits_valides"("p" "jsonb") FROM PUBLIC;
+GRANT ALL ON FUNCTION "private"."droits_valides"("p" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "private"."droits_valides"("p" "jsonb") TO "service_role";
+
+
+--
+-- Name: FUNCTION "garder_proprietaire"(); Type: ACL; Schema: private; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "private"."garder_proprietaire"() FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION "matrice_postes"(); Type: ACL; Schema: private; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "private"."matrice_postes"() FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION "postes_depuis_role"("p_role" "text"); Type: ACL; Schema: private; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "private"."postes_depuis_role"("p_role" "text") FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION "postes_normalises"("p" "text"[]); Type: ACL; Schema: private; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "private"."postes_normalises"("p" "text"[]) FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION "role_depuis_postes"("p_postes" "text"[]); Type: ACL; Schema: private; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "private"."role_depuis_postes"("p_postes" "text"[]) FROM PUBLIC;
+
+
+--
 -- Name: FUNCTION "storefront_tenant_visible"("p_tenant_id" "uuid"); Type: ACL; Schema: private; Owner: postgres
 --
 
@@ -13365,6 +13887,20 @@ REVOKE ALL ON FUNCTION "private"."storefront_tenant_visible"("p_tenant_id" "uuid
 GRANT ALL ON FUNCTION "private"."storefront_tenant_visible"("p_tenant_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "private"."storefront_tenant_visible"("p_tenant_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "private"."storefront_tenant_visible"("p_tenant_id" "uuid") TO "service_role";
+
+
+--
+-- Name: FUNCTION "sync_postes_admin_users"(); Type: ACL; Schema: private; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "private"."sync_postes_admin_users"() FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION "sync_postes_invitations"(); Type: ACL; Schema: private; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "private"."sync_postes_invitations"() FROM PUBLIC;
 
 
 --
@@ -13796,6 +14332,20 @@ GRANT ALL ON FUNCTION "public"."garder_ecriture_registre_paiements"() TO "servic
 
 
 --
+-- Name: FUNCTION "garder_prix_carte"(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "public"."garder_prix_carte"() FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION "garder_statut_cuisine"(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "public"."garder_statut_cuisine"() FROM PUBLIC;
+
+
+--
 -- Name: FUNCTION "generate_menu_slug"("p_tenant_id" "uuid", "p_name" "text"); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -14019,6 +14569,16 @@ GRANT ALL ON FUNCTION "public"."get_stock_status"("p_tenant_id" "uuid") TO "serv
 
 
 --
+-- Name: FUNCTION "get_storefront_ads"("p_tenant_id" "uuid"); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "public"."get_storefront_ads"("p_tenant_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."get_storefront_ads"("p_tenant_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."get_storefront_ads"("p_tenant_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_storefront_ads"("p_tenant_id" "uuid") TO "service_role";
+
+
+--
 -- Name: FUNCTION "get_tenant_by_slug"("p_slug" "text"); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -14179,6 +14739,16 @@ GRANT ALL ON FUNCTION "public"."is_table_occupied"("p_tenant_id" "uuid", "p_tabl
 
 REVOKE ALL ON FUNCTION "public"."is_tenant_name_taken"("p_name" "text") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."is_tenant_name_taken"("p_name" "text") TO "service_role";
+
+
+--
+-- Name: FUNCTION "is_tenant_owner"("p_tenant" "uuid"); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "public"."is_tenant_owner"("p_tenant" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."is_tenant_owner"("p_tenant" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_tenant_owner"("p_tenant" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_tenant_owner"("p_tenant" "uuid") TO "service_role";
 
 
 --
@@ -14573,6 +15143,26 @@ GRANT ALL ON FUNCTION "public"."tenant_effective_plan"("p_tenant_id" "uuid") TO 
 
 
 --
+-- Name: FUNCTION "tenant_permission_level"("p_tenant" "uuid", "p_perm" "text"); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "public"."tenant_permission_level"("p_tenant" "uuid", "p_perm" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."tenant_permission_level"("p_tenant" "uuid", "p_perm" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."tenant_permission_level"("p_tenant" "uuid", "p_perm" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."tenant_permission_level"("p_tenant" "uuid", "p_perm" "text") TO "service_role";
+
+
+--
+-- Name: FUNCTION "tenants_avec_droit"("p_perm" "text", "p_niveau_min" "text"); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "public"."tenants_avec_droit"("p_perm" "text", "p_niveau_min" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."tenants_avec_droit"("p_perm" "text", "p_niveau_min" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."tenants_avec_droit"("p_perm" "text", "p_niveau_min" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."tenants_avec_droit"("p_perm" "text", "p_niveau_min" "text") TO "service_role";
+
+
+--
 -- Name: FUNCTION "unclaim_coupon_usage"("p_coupon_id" "uuid"); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -14876,13 +15466,6 @@ GRANT SELECT("email") ON TABLE "public"."invitations" TO "authenticated";
 --
 
 GRANT SELECT("role") ON TABLE "public"."invitations" TO "authenticated";
-
-
---
--- Name: COLUMN "invitations"."custom_permissions"; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT SELECT("custom_permissions") ON TABLE "public"."invitations" TO "authenticated";
 
 
 --
@@ -15368,6 +15951,14 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "public"."platform_settings" TO "auth
 
 
 --
+-- Name: TABLE "poste_permissions"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE "public"."poste_permissions" TO "service_role";
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "public"."poste_permissions" TO "authenticated";
+
+
+--
 -- Name: TABLE "push_subscriptions"; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -15424,15 +16015,6 @@ GRANT ALL ON TABLE "public"."reminders" TO "service_role";
 GRANT SELECT,MAINTAIN ON TABLE "public"."restaurant_groups" TO "anon";
 GRANT ALL ON TABLE "public"."restaurant_groups" TO "authenticated";
 GRANT ALL ON TABLE "public"."restaurant_groups" TO "service_role";
-
-
---
--- Name: TABLE "role_permissions"; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT SELECT,MAINTAIN ON TABLE "public"."role_permissions" TO "anon";
-GRANT ALL ON TABLE "public"."role_permissions" TO "authenticated";
-GRANT ALL ON TABLE "public"."role_permissions" TO "service_role";
 
 
 --
@@ -16056,7 +16638,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "supabase_admin" IN SCHEMA "public" GRANT ALL 
 -- Declencheurs poses sur auth.users par les migrations de ce depot
 -- (20261114120000). pg_dump --schema public --schema private ne les emporte
 -- pas, puisque la table est dans auth. Definitions relues en production avec
--- pg_get_triggerdef le 2026-11-27, fonction qualifiee (le search_path du dump
+-- pg_get_triggerdef le 2026-11-28, fonction qualifiee (le search_path du dump
 -- est vide).
 --
 
