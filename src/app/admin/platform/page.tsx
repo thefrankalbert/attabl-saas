@@ -50,7 +50,9 @@ export default async function PlatformConsolePage() {
       .order('created_at', { ascending: false }),
     admin
       .from('admin_users')
-      .select('id, email, full_name, role, tenant_id, is_active, banned_at, ban_reason, deleted_at')
+      .select(
+        'id, email, full_name, role, postes, tenant_id, is_active, banned_at, ban_reason, deleted_at',
+      )
       // Never list platform super-admin operator accounts as manageable staff.
       .not('is_super_admin', 'is', true),
   ]);

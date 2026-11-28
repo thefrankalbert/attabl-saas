@@ -62,7 +62,7 @@ const NOW = new Date('2026-11-16T12:00:00Z');
 
 const group = (over: Partial<ReminderGroup> = {}): ReminderGroup => ({
   tenant: { id: 'tenant-a', slug: 'resto' },
-  recipient: { id: 'waiter1', userId: 'u-w1', tenantId: 'tenant-a', role: 'waiter' },
+  recipient: { id: 'waiter1', userId: 'u-w1', tenantId: 'tenant-a', postes: ['waiter'] },
   rule: 'order_ready_not_served',
   level: 1,
   subjects: [

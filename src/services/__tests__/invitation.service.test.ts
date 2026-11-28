@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { StaffPoste } from '@/types/permission.types';
 import { createInvitationService } from '../invitation.service';
 import { ServiceError } from '../errors';
 
@@ -44,8 +45,8 @@ function createMockSupabase(
     id: 'inv-001',
     tenant_id: 'tenant-xyz',
     email: 'new@example.com',
-    role: 'staff',
-    custom_permissions: null,
+    postes: ['waiter'],
+    permission_overrides: null,
     invited_by: 'owner-123',
     token: 'mock-token-abc123def456',
     expires_at: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
@@ -200,14 +201,14 @@ describe('InvitationService', () => {
       const result = await service.createInvitation({
         tenantId: 'tenant-xyz',
         email: 'new@example.com',
-        role: 'staff',
+        postes: ['waiter'],
         invitedBy: 'owner-123',
       });
 
       expect(result.status).toBe('pending');
       expect(result.token).toBeTruthy();
       expect(result.email).toBe('new@example.com');
-      expect(result.role).toBe('staff');
+      expect(result.postes).toEqual(['waiter']);
       expect(result.tenant_id).toBe('tenant-xyz');
 
       // Should have queried invitations table, not admin_users
@@ -225,7 +226,7 @@ describe('InvitationService', () => {
         service.createInvitation({
           tenantId: 'tenant-xyz',
           email: 'new@example.com',
-          role: 'staff',
+          postes: ['waiter'],
           invitedBy: 'owner-123',
         }),
       ).rejects.toMatchObject({ code: 'VALIDATION' });
@@ -243,7 +244,7 @@ describe('InvitationService', () => {
         .createInvitation({
           tenantId: 'tenant-xyz',
           email: 'new@example.com',
-          role: 'staff',
+          postes: ['waiter'],
           invitedBy: 'owner-123',
         })
         .catch((e: unknown) => e);
@@ -259,7 +260,7 @@ describe('InvitationService', () => {
         createInvitationService(supabase).createInvitation({
           tenantId: 'tenant-xyz',
           email: 'new@example.com',
-          role: 'staff',
+          postes: ['waiter'],
           invitedBy: 'owner-123',
         }),
       ).rejects.toMatchObject({ code: 'INTERNAL' });
@@ -273,7 +274,7 @@ describe('InvitationService', () => {
         .createInvitation({
           tenantId: 'tenant-xyz',
           email: 'new@example.com',
-          role: 'staff',
+          postes: ['waiter'],
           invitedBy: 'owner-123',
         })
         .catch((e: unknown) => e);
@@ -296,7 +297,7 @@ describe('InvitationService', () => {
       const result = await service.createInvitation({
         tenantId: 'tenant-xyz',
         email: 'existing@example.com',
-        role: 'manager',
+        postes: ['manager'],
         invitedBy: 'owner-123',
       });
 
@@ -325,13 +326,13 @@ describe('InvitationService', () => {
       const known = await serviceKnown.createInvitation({
         tenantId: 'tenant-xyz',
         email: 'existing@example.com',
-        role: 'staff',
+        postes: ['waiter'],
         invitedBy: 'owner-123',
       });
       const unknown = await serviceUnknown.createInvitation({
         tenantId: 'tenant-xyz',
         email: 'new@example.com',
-        role: 'staff',
+        postes: ['waiter'],
         invitedBy: 'owner-123',
       });
 
@@ -348,8 +349,8 @@ describe('InvitationService', () => {
           id: 'inv-001',
           tenant_id: 'tenant-xyz',
           email: 'invited@example.com',
-          role: 'staff',
-          custom_permissions: null,
+          postes: ['waiter'],
+          permission_overrides: null,
           invited_by: 'owner-123',
           token: 'valid-token-xyz',
           expires_at: futureDate,
@@ -386,8 +387,8 @@ describe('InvitationService', () => {
           id: 'inv-expired',
           tenant_id: 'tenant-xyz',
           email: 'expired@example.com',
-          role: 'staff',
-          custom_permissions: null,
+          postes: ['waiter'],
+          permission_overrides: null,
           invited_by: 'owner-123',
           token: 'expired-token',
           expires_at: pastDate,
@@ -523,7 +524,7 @@ describe('createInvitation: invitation perimee restee pending (B53)', () => {
   const input = {
     tenantId: 'tenant-xyz',
     email: 'serveur@example.com',
-    role: 'waiter',
+    postes: ['waiter'] as StaffPoste[],
     invitedBy: 'owner-123',
   };
   const row = (expiresAt: string): Row => ({
@@ -532,6 +533,23 @@ describe('createInvitation: invitation perimee restee pending (B53)', () => {
     email: 'serveur@example.com',
     status: 'pending',
     expires_at: expiresAt,
+  });
+
+  it('insere les postes cumules et le reglage par personne, sans colonne role', async () => {
+    const rows: Row[] = [];
+    const { client } = statefulClient(rows);
+
+    await createInvitationService(client).createInvitation({
+      ...input,
+      postes: ['manager', 'cashier'],
+      permissionOverrides: { 'billing.manage': true },
+    });
+
+    expect(rows[0]).toMatchObject({
+      postes: ['manager', 'cashier'],
+      permission_overrides: { 'billing.manage': true },
+    });
+    expect(rows[0]).not.toHaveProperty('role');
   });
 
   it('l invitation perimee passe a expired, la nouvelle est creee', async () => {

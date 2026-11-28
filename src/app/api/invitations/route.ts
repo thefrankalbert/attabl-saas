@@ -14,15 +14,16 @@ import {
 import { verifyOrigin } from '@/lib/csrf';
 import { createInvitationService } from '@/services/invitation.service';
 import { createAuditService } from '@/services/audit.service';
-import { canGrantRole } from '@/lib/auth/role-hierarchy';
+import { canGrantPostes } from '@/lib/auth/poste-authority';
+import { loadPosteOverrides } from '@/lib/auth/member-rights';
 import { createInvitationSchema } from '@/lib/validations/invitation.schema';
 import { sendInvitationEmail } from '@/services/email.service';
 import { jsonWithCache } from '@/lib/cache-headers';
-import { createPlanEnforcementService, STAFF_ROLES } from '@/services/plan-enforcement.service';
+import { createPlanEnforcementService, isAdminSeat } from '@/services/plan-enforcement.service';
 import type { Tenant } from '@/types/admin.types';
 import { parsePaginationFromUrl, buildPaginationMeta } from '@/lib/pagination';
 import { runApiRoute } from '@/lib/api-route-context';
-import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
+import { resolveLiveMember } from '@/lib/auth/resolve-admin-permission';
 import { getTranslations } from 'next-intl/server';
 import { retryAfterSeconds } from '@/lib/retry-after';
 import { tenantLockResponse } from '@/lib/billing/tenant-lock-response';
@@ -70,29 +71,11 @@ export async function GET(request: Request) {
       if (!tenant) {
         return NextResponse.json({ error: 'Tenant non trouve' }, { status: 404 });
       }
-      const { data: adminUser } = await supabase
-        .from('admin_users')
-        .select('role')
-        .eq('user_id', user.id)
-        .eq('tenant_id', tenant.id)
-        .eq('is_active', true)
-        .in('role', ['owner', 'admin'])
-        .maybeSingle();
-
-      if (!adminUser) {
-        return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
-      }
-
-      // Inviter fait entrer du personnel: meme permission que creer un membre
-      // (team.manage, check-tenant-admin). Sans elle, un admin a qui le
-      // proprietaire avait retire team.manage invitait encore.
-      const { allowed: canManageTeam } = await resolveAdminPermission(
-        supabase,
-        user.id,
-        tenant.id,
-        'team.manage',
-      );
-      if (!canManageTeam) {
+      // Voir les invitations fait partie de la gestion de l'equipe: le droit
+      // `team.manage` decide seul (un gerant l'a par defaut, le proprietaire
+      // peut le lui retirer). Seuls les membres VIVANTS du restaurant passent.
+      const member = await resolveLiveMember(supabase, user.id, tenant.id);
+      if (member?.levels['team.manage'] !== 'full') {
         return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
       }
 
@@ -196,54 +179,42 @@ export async function POST(request: Request) {
       if (!currentTenant) {
         return NextResponse.json({ error: 'Tenant non trouve' }, { status: 404 });
       }
-      const { data: adminUser } = await supabase
-        .from('admin_users')
-        .select('id, role')
-        .eq('user_id', user.id)
-        .eq('tenant_id', currentTenant.id)
-        .eq('is_active', true)
-        .in('role', ['owner', 'admin'])
-        .maybeSingle();
-
-      if (!adminUser) {
+      // Inviter fait entrer du personnel: le droit `team.manage` decide seul,
+      // comme pour modifier un membre (check-tenant-admin).
+      const actor = await resolveLiveMember(supabase, user.id, currentTenant.id);
+      if (actor?.levels['team.manage'] !== 'full') {
         return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
       }
-
-      // Inviter fait entrer du personnel: meme permission que creer un membre
-      // (team.manage, check-tenant-admin). Sans elle, un admin a qui le
-      // proprietaire avait retire team.manage invitait encore.
-      const { allowed: canManageTeam } = await resolveAdminPermission(
-        supabase,
-        user.id,
-        currentTenant.id,
-        'team.manage',
-      );
-      if (!canManageTeam) {
-        return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
-      }
+      const actorIsOwner = actor.isOwner;
 
       // Coupure du restaurant: inviter est une ecriture (revoquer, lui, reste permis).
       const locked = await tenantLockResponse(currentTenant.id);
       if (locked) return locked;
 
-      // Seul le proprietaire regle des permissions (decision du 2026-11-09).
-      // Une surcharge individuelle prime sur tout: l'accepter d'un admin lui
+      // Seul le proprietaire pose un reglage par personne (decision du
+      // 2026-11-09). Ce reglage prime sur tout: l'accepter d'un gerant lui
       // permettait de donner l'encaissement ou les reglages a un employe.
-      if (parsed.data.custom_permissions && adminUser.role !== 'owner') {
-        return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
-      }
-
-      // SECURITY: prevent privilege escalation - an admin can only invite roles
-      // strictly below admin (never another admin or an owner). Same policy as
-      // l'ancienne creation directe, partage via canGrantRole so the two creation
-      // paths cannot diverge.
-      if (!canGrantRole(adminUser.role, parsed.data.role)) {
+      if (parsed.data.permission_overrides && !actorIsOwner) {
         return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
       }
 
       const tenantId = currentTenant.id;
 
       const adminClient = createAdminClient();
+
+      // SECURITE: on ne donne pas un droit qu'on n'a pas. Les postes de
+      // l'invitation, avec les reglages du restaurant, ne doivent rien ouvrir
+      // que l'invitant ne detienne. Meme regle que le changement de postes
+      // (`canGrantPostes`), pour que les deux chemins ne divergent pas. ECHEC
+      // FERME si les reglages du restaurant ne se lisent pas.
+      const { overrides, failed } = await loadPosteOverrides(
+        adminClient,
+        tenantId,
+        parsed.data.postes,
+      );
+      if (failed || !canGrantPostes(actor.levels, parsed.data.postes, overrides)) {
+        return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
+      }
 
       // Check plan limits before creating invitation
       const { data: tenant } = await adminClient
@@ -256,12 +227,12 @@ export async function POST(request: Request) {
 
       if (tenant) {
         const enforcement = createPlanEnforcementService(adminClient);
-        // Staff roles count against maxStaff; admin/owner count against maxAdmins
+        // Siege d'administrateur ou de personnel: regle `isAdminSeat` (G.a).
         try {
-          if ((STAFF_ROLES as readonly string[]).includes(parsed.data.role)) {
-            await enforcement.canAddStaff(tenant as Tenant);
-          } else {
+          if (isAdminSeat(parsed.data.postes)) {
             await enforcement.canAddAdmin(tenant as Tenant);
+          } else {
+            await enforcement.canAddStaff(tenant as Tenant);
           }
         } catch (limitError) {
           // Limite du plan: code dedie pour que l'ecran Equipe affiche le
@@ -295,11 +266,11 @@ export async function POST(request: Request) {
       const invitation = await service.createInvitation({
         tenantId,
         email: parsed.data.email,
-        role: parsed.data.role,
+        postes: parsed.data.postes,
         // FK invitations_invited_by_fkey references admin_users(id), NOT auth.users.
         // user.id is the auth user id; use the actor's membership-row PK.
-        invitedBy: adminUser.id,
-        customPermissions: parsed.data.custom_permissions,
+        invitedBy: actor.adminUserId,
+        permissionOverrides: parsed.data.permission_overrides,
       });
 
       // Journal d'audit: l'auteur est le membre qui invite, dans CE restaurant.
@@ -308,12 +279,12 @@ export async function POST(request: Request) {
         tenantId,
         userId: user.id,
         userEmail: user.email ?? undefined,
-        userRole: adminUser.role,
+        userRole: actor.postes.join('+'),
       }).log({
         action: 'create',
         entityType: 'user',
         entityId: invitation.id,
-        newData: { email: invitation.email, role: invitation.role, status: invitation.status },
+        newData: { email: invitation.email, postes: invitation.postes, status: invitation.status },
         metadata: { event: 'invitation_created', invitation_id: invitation.id },
       });
 
@@ -335,7 +306,7 @@ export async function POST(request: Request) {
           const sent = await sendInvitationEmail(parsed.data.email, {
             restaurantName: tenant?.name || 'Restaurant',
             restaurantLogoUrl: tenant?.logo_url || undefined,
-            role: parsed.data.role,
+            postes: parsed.data.postes,
             inviteUrl,
           });
           if (!sent) {

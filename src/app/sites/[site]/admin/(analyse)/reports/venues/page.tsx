@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function VenueReportsPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
-  await requireAdminPermission(site, 'reports.view');
+  await requireAdminPermission(site, 'reports.money');
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 

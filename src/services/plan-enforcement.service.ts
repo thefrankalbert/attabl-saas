@@ -5,11 +5,6 @@ import type { SubscriptionStatus } from '@/types/billing';
 import { ServiceError } from './errors';
 
 /**
- * Roles counted against the per-plan staff limit (maxStaff).
- * Admin/owner roles are counted against maxAdmins instead.
- */
-
-/**
  * C-080: pendant l'essai, le restaurant a les limites de l'offre Business, mais
  * les messages citaient son plan enregistre ("starter"), ce qui contredisait la
  * limite affichee.
@@ -23,7 +18,31 @@ function planLabel(tenant: Tenant): string {
   return `pour votre plan ${tenant.subscription_plan || 'starter'}`;
 }
 
-export const STAFF_ROLES = ['manager', 'cashier', 'chef', 'waiter'] as const;
+/**
+ * Decision G.a du proprietaire (2026-11-28) : le gerant compte comme PERSONNEL
+ * (`maxStaff`), pas comme administrateur (`maxAdmins`). C'est la regle d'avant
+ * le lot 1. Un seul endroit pour la changer.
+ */
+export type ManagerSeat = 'staff' | 'admin';
+const MANAGER_SEAT = 'staff' as ManagerSeat;
+
+/**
+ * Le membre occupe-t-il un siege d'administrateur ? Proprietaire toujours ;
+ * gerant si `managerSeat` vaut `admin` ; et toute ligne dont `role` vaut encore
+ * `admin` (transition : l'ancien administrateur garde son siege jusqu'au
+ * retrait de la colonne, fin du lot 4).
+ */
+export function isAdminSeat(
+  postes: readonly string[],
+  legacyRole?: string | null,
+  managerSeat: ManagerSeat = MANAGER_SEAT,
+): boolean {
+  return (
+    postes.includes('owner') ||
+    legacyRole === 'admin' ||
+    (managerSeat === 'admin' && postes.includes('manager'))
+  );
+}
 
 /**
  * Order-feature plan gate. Rejects an order that uses a feature the tenant's plan
@@ -80,7 +99,16 @@ export interface PlanEnforcementService {
   remainingItemSlots(tenant: Tenant): Promise<number>;
 }
 
-export function createPlanEnforcementService(supabase: SupabaseClient): PlanEnforcementService {
+export function createPlanEnforcementService(
+  supabase: SupabaseClient,
+  managerSeat: ManagerSeat = MANAGER_SEAT,
+): PlanEnforcementService {
+  // Filtre PostgREST des sieges d'administrateur, miroir de `isAdminSeat`.
+  const adminSeatFilter =
+    managerSeat === 'admin'
+      ? 'postes.cs.{owner},postes.cs.{manager},role.eq.admin'
+      : 'postes.cs.{owner},role.eq.admin';
+
   return {
     /**
      * Check if tenant can add more admin users
@@ -99,10 +127,11 @@ export function createPlanEnforcementService(supabase: SupabaseClient): PlanEnfo
         .select('id', { count: 'exact', head: true })
         .eq('tenant_id', tenant.id)
         .eq('is_active', true)
-        // Only owner/admin count here: staff roles have their own quota
-        // (canAddStaff). Counting them made one hired cashier use up the
-        // admin seat of a starter plan.
-        .in('role', ['owner', 'admin']);
+        .is('deleted_at', null)
+        // Seuls les sieges d'administrateur comptent ici: le personnel a son
+        // propre quota (canAddStaff). Les compter faisait qu'un caissier
+        // embauche prenait le siege d'administrateur d'une formule Starter.
+        .or(adminSeatFilter);
 
       if (error) {
         throw new ServiceError('Erreur de vérification des limites', 'INTERNAL', error);
@@ -117,7 +146,8 @@ export function createPlanEnforcementService(supabase: SupabaseClient): PlanEnfo
     },
 
     /**
-     * Check if tenant can add more staff members (manager, cashier, chef, waiter)
+     * Check if tenant can add more staff members: tout membre actif qui
+     * n'occupe pas un siege d'administrateur (ni la plateforme).
      */
     async canAddStaff(tenant: Tenant): Promise<void> {
       const limits = getPlanLimits(
@@ -128,12 +158,18 @@ export function createPlanEnforcementService(supabase: SupabaseClient): PlanEnfo
 
       if (limits.maxStaff === -1) return;
 
-      const { count, error } = await supabase
+      const staffCount = supabase
         .from('admin_users')
         .select('id', { count: 'exact', head: true })
         .eq('tenant_id', tenant.id)
         .eq('is_active', true)
-        .in('role', [...STAFF_ROLES]);
+        .is('deleted_at', null)
+        .not('postes', 'cs', '{owner}')
+        .neq('role', 'admin')
+        .neq('role', 'super_admin');
+      const staffQuery =
+        managerSeat === 'admin' ? staffCount.not('postes', 'cs', '{manager}') : staffCount;
+      const { count, error } = await staffQuery;
 
       if (error) {
         throw new ServiceError('Erreur de vérification des limites', 'INTERNAL', error);

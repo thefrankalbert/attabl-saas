@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ORDERS_ADVANCE } from '@/lib/admin-roles';
 
 // "Liberer la table": tenant from the session, floor permission, service-role
 // write; refusal surfaced to the staff.
@@ -27,11 +28,11 @@ describe('actionReleaseTable', () => {
     mockAuth.mockResolvedValue({ tenantId: 'tenant-from-session' });
   });
 
-  it('requires orders.manage and uses the tenant of the session', async () => {
+  it('requires ORDERS_ADVANCE and uses the tenant of the session', async () => {
     const { actionReleaseTable } = await import('../table-release');
     const res = await actionReleaseTable('5', 'Salle 5');
 
-    expect(mockAuth).toHaveBeenCalledWith('orders.manage');
+    expect(mockAuth).toHaveBeenCalledWith(ORDERS_ADVANCE);
     expect(mockRelease).toHaveBeenCalledWith('tenant-from-session', '5', 'Salle 5');
     expect(res).toEqual({ success: true });
   });

@@ -13,9 +13,7 @@ import { verifyOrigin } from '@/lib/csrf';
 import { createInvitationService } from '@/services/invitation.service';
 import { sendInvitationEmail } from '@/services/email.service';
 import { parseRouteUuid } from '@/lib/validations/common.schema';
-import { canActOnUser } from '@/lib/auth/role-hierarchy';
-import type { AdminRole } from '@/types/admin.types';
-import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
+import { canManageInvitation } from '@/lib/auth/invitation-authority';
 import { getTranslations } from 'next-intl/server';
 import { retryAfterSeconds } from '@/lib/retry-after';
 import { tenantLockResponse } from '@/lib/billing/tenant-lock-response';
@@ -60,7 +58,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const adminClient = createAdminClient();
     const { data: existingInvitation } = await adminClient
       .from('invitations')
-      .select('tenant_id, role')
+      .select('tenant_id, postes, permission_overrides')
       .eq('id', id)
       .single();
 
@@ -68,43 +66,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: 'Invitation introuvable' }, { status: 404 });
     }
 
-    // Verify caller is owner or admin of this tenant
-    const { data: adminUser } = await supabase
-      .from('admin_users')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('tenant_id', existingInvitation.tenant_id)
-      .eq('is_active', true)
-      .is('deleted_at', null)
-      .maybeSingle();
-
-    if (!adminUser || !['owner', 'admin'].includes(adminUser.role)) {
-      return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
-    }
-
-    // Inviter fait entrer du personnel: meme permission que creer un membre
-    // (team.manage, check-tenant-admin). Sans elle, un admin a qui le
-    // proprietaire avait retire team.manage invitait encore.
-    const { allowed: canManageTeam } = await resolveAdminPermission(
-      supabase,
-      user.id,
-      existingInvitation.tenant_id,
-      'team.manage',
-    );
-    if (!canManageTeam) {
+    // `team.manage`, et autorite sur ce que l'invitation donnerait: jamais sur
+    // l'invitation d'un pair (voir `canManageInvitation`).
+    if (!(await canManageInvitation(supabase, adminClient, user.id, existingInvitation))) {
       return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
     }
 
     // Coupure du restaurant: renvoyer une invitation envoie un courriel reel.
     const locked = await tenantLockResponse(existingInvitation.tenant_id);
     if (locked) return locked;
-
-    // Anti-escalation: an admin cannot resend an invitation for a peer/higher
-    // role (e.g. one the owner created for another admin/owner). Mirrors the
-    // canGrantRole gate on the create path.
-    if (!canActOnUser(adminUser.role as AdminRole, existingInvitation.role as AdminRole)) {
-      return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
-    }
 
     // P-10: un renvoi envoie un courriel reel comme une creation: meme plafond
     // quotidien par restaurant (sinon un renvoi en boucle contourne la limite).
@@ -137,7 +107,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       emailSent = await sendInvitationEmail(invitation.email, {
         restaurantName: tenant?.name || 'Restaurant',
         restaurantLogoUrl: tenant?.logo_url || undefined,
-        role: invitation.role,
+        postes: invitation.postes,
         inviteUrl,
       });
     } catch (emailError) {

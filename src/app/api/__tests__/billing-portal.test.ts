@@ -68,36 +68,53 @@ function mockRateLimit(allowed: boolean) {
   });
 }
 
+interface MockMember {
+  postes: string[];
+  permission_overrides?: Record<string, boolean> | null;
+}
+
 function createMockSupabase(overrides?: {
   authUser?: { id: string; email: string } | null;
   authError?: { message: string } | null;
-  adminUser?: { data: unknown; error: unknown };
+  /** `null` = aucune ligne de membre vivante. */
+  member?: MockMember | null;
+  stripeCustomerId?: string | null;
 }) {
   const user = overrides?.authUser ?? { id: 'user-1', email: 'owner@test.com' };
   const authError = overrides?.authError ?? null;
+  const member: MockMember | null =
+    overrides?.member === undefined ? { postes: ['owner'] } : overrides.member;
+  const stripeCustomerId =
+    overrides?.stripeCustomerId === undefined ? 'cus_test_123' : overrides.stripeCustomerId;
 
-  const adminUserResult = overrides?.adminUser ?? {
-    data: {
-      tenant_id: 'tenant-1',
-      role: 'owner',
-      tenants: { stripe_customer_id: 'cus_test_123', slug: 'my-restaurant' },
-    },
-    error: null,
+  // resolveLiveMember: .select().eq('user_id').eq('tenant_id').eq('is_active').is('deleted_at').maybeSingle()
+  const adminUsersChain = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    is: vi.fn().mockReturnThis(),
+    maybeSingle: vi.fn().mockResolvedValue({
+      data: member
+        ? {
+            id: 'admin-row-1',
+            postes: member.postes,
+            permission_overrides: member.permission_overrides ?? null,
+            is_super_admin: false,
+            role: 'staff',
+          }
+        : null,
+      error: null,
+    }),
+  };
+  // loadPosteOverrides: .select().eq('tenant_id').in('poste', [...]) -> aucun reglage du restaurant
+  const posteChain = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    in: vi.fn().mockResolvedValue({ data: [], error: null }),
   };
 
-  // Chain: .select().eq('user_id').eq('tenant_id').eq('is_active').maybeSingle()
-  const mockMaybeSingle = vi.fn().mockResolvedValue(adminUserResult);
-  const mockEqActive = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
-  const mockEqTenant = vi.fn().mockReturnValue({ eq: mockEqActive });
-  const mockEqUser = vi.fn().mockReturnValue({ eq: mockEqTenant });
-  const mockSelect = vi.fn().mockReturnValue({ eq: mockEqUser });
-
-  // The Stripe id is no longer embedded in the session-client query: it comes
-  // from the service-role helper. Keep the fixtures above as the single source.
-  const tenants = (adminUserResult.data as { tenants?: { stripe_customer_id?: string | null } })
-    ?.tenants;
+  // The Stripe id comes from the service-role helper, never from the session client.
   vi.mocked(getTenantBillingIds).mockResolvedValue({
-    stripe_customer_id: tenants?.stripe_customer_id ?? null,
+    stripe_customer_id: stripeCustomerId,
     stripe_subscription_id: null,
   });
 
@@ -108,7 +125,7 @@ function createMockSupabase(overrides?: {
         error: authError,
       }),
     },
-    from: vi.fn().mockReturnValue({ select: mockSelect }),
+    from: vi.fn((table: string) => (table === 'poste_permissions' ? posteChain : adminUsersChain)),
   };
 }
 
@@ -147,19 +164,18 @@ describe('POST /api/billing-portal', () => {
     expect(json.error).toContain('Non autoris');
   });
 
-  it('returns 403 when the user role is not owner or admin', async () => {
+  it.each([
+    ['chef', { postes: ['chef'] }],
+    ['cashier', { postes: ['cashier'] }],
+    // Le gerant VOIT les factures (billing.manage limite) mais ne gere pas la facturation.
+    ['manager sans reglage billing.manage', { postes: ['manager'] }],
+    [
+      'manager avec billing.manage retire',
+      { postes: ['manager'], permission_overrides: { 'billing.manage': false } },
+    ],
+  ])('returns 403 for %s, Stripe jamais appele', async (_label, member) => {
     mockRateLimit(true);
-    const mock = createMockSupabase({
-      adminUser: {
-        data: {
-          tenant_id: 'tenant-1',
-          role: 'staff',
-          tenants: { stripe_customer_id: 'cus_x', slug: 's' },
-        },
-        error: null,
-      },
-    });
-    vi.mocked(createClient).mockResolvedValue(mock as never);
+    vi.mocked(createClient).mockResolvedValue(createMockSupabase({ member }) as never);
 
     const res = await POST(buildRequest());
     const json = (await res.json()) as { error: string };
@@ -170,9 +186,26 @@ describe('POST /api/billing-portal', () => {
     expect(getTenantBillingIds).not.toHaveBeenCalled();
   });
 
+  it('temoin: un gerant avec permission_overrides billing.manage ouvre le portail', async () => {
+    mockRateLimit(true);
+    vi.mocked(createClient).mockResolvedValue(
+      createMockSupabase({
+        member: { postes: ['manager'], permission_overrides: { 'billing.manage': true } },
+      }) as never,
+    );
+    vi.mocked(stripe.billingPortal.sessions.create).mockResolvedValue({
+      url: 'https://billing.stripe.com/session/test',
+    } as never);
+
+    const res = await POST(buildRequest());
+
+    expect(res.status).toBe(200);
+    expect(stripe.billingPortal.sessions.create).toHaveBeenCalledTimes(1);
+  });
+
   it('returns 403 when no admin_users row matches the user and tenant', async () => {
     mockRateLimit(true);
-    const mock = createMockSupabase({ adminUser: { data: null, error: null } });
+    const mock = createMockSupabase({ member: null });
     vi.mocked(createClient).mockResolvedValue(mock as never);
 
     const res = await POST(buildRequest());
@@ -185,16 +218,7 @@ describe('POST /api/billing-portal', () => {
 
   it('returns 400 when tenant has no stripe_customer_id', async () => {
     mockRateLimit(true);
-    const mock = createMockSupabase({
-      adminUser: {
-        data: {
-          tenant_id: 'tenant-1',
-          role: 'owner',
-          tenants: { stripe_customer_id: null, slug: 'test' },
-        },
-        error: null,
-      },
-    });
+    const mock = createMockSupabase({ stripeCustomerId: null });
     vi.mocked(createClient).mockResolvedValue(mock as never);
 
     const res = await POST(buildRequest());

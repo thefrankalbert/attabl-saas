@@ -145,7 +145,7 @@ function fakeDb(opts: {
       let after: { at: string; id: string } | null = null;
       let limit = Infinity;
       chain.select = (cols: string) => (tenantFilters.push(['select', cols]), chain);
-      for (const m of ['eq', 'is', 'not', 'lt', 'gt', 'or', 'order', 'limit']) {
+      for (const m of ['eq', 'is', 'not', 'lt', 'gt', 'or', 'order', 'limit', 'contains']) {
         chain[m] = (...args: unknown[]) => {
           tenantFilters.push([m, ...args]);
           const cursor =
@@ -241,7 +241,7 @@ describe('sendTrialIdleEmails (B104)', () => {
         ['not', 'last_active_at', 'is', null],
         ['lt', 'last_active_at', ago(48)],
         ['is', 'activation_events->>idle_email_sent', null],
-        ['eq', 'owners.role', 'owner'],
+        ['contains', 'owners.postes', ['owner']],
         ['eq', 'owners.is_active', true],
         ['is', 'owners.deleted_at', null],
         ['not', 'owners.email', 'is', null],

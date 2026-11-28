@@ -3,7 +3,7 @@
 // quelqu'un MAINTENANT, et qui peut agir ? Le moteur (reminder.service.ts) se
 // charge des lectures, du "deja envoye", des preferences et de l'envoi.
 
-import type { AdminRole } from '@/types/admin.types';
+import type { Poste } from '@/types/permission.types';
 import type { ReminderRule, ReminderSettings } from '@/lib/validations/reminders.schema';
 import { localClock, openingMinutesForDay } from '@/lib/opening-hours';
 import type { OpeningHoursMap } from '@/types/admin.types';
@@ -12,7 +12,8 @@ export interface StaffMember {
   id: string;
   userId: string | null;
   tenantId: string;
-  role: AdminRole;
+  /** Postes cumules du membre. */
+  postes: readonly Poste[];
 }
 
 export interface DueReminder {
@@ -32,11 +33,17 @@ export interface SubjectRef {
   order: string;
 }
 
-const MANAGER_ROLES: readonly AdminRole[] = ['owner', 'admin', 'manager'];
+/** Les responsables: proprietaire et gerant (les deux postes qui ont `reports.money`). */
+const MANAGER_POSTES: readonly Poste[] = ['owner', 'manager'];
+/** La cuisine: chef et cuisinier. */
+const KITCHEN_POSTES: readonly Poste[] = ['chef', 'cook'];
+
+const holds = (member: StaffMember, postes: readonly Poste[]): boolean =>
+  member.postes.some((poste) => postes.includes(poste));
 const MINUTE = 60_000;
 
 export function managersOf(staff: StaffMember[], tenantId: string): StaffMember[] {
-  return staff.filter((s) => s.tenantId === tenantId && MANAGER_ROLES.includes(s.role));
+  return staff.filter((s) => s.tenantId === tenantId && holds(s, MANAGER_POSTES));
 }
 
 function refOf(o: { table_number: string | null; order_number: string }): SubjectRef {
@@ -134,7 +141,7 @@ export function dueNotStarted(
     const settings = settingsOf(o.tenant_id);
     if (!settings.rules.order_not_started) continue;
     const ageMin = (now.getTime() - new Date(o.created_at).getTime()) / MINUTE;
-    const chefs = staff.filter((s) => s.tenantId === o.tenant_id && s.role === 'chef');
+    const chefs = staff.filter((s) => s.tenantId === o.tenant_id && holds(s, KITCHEN_POSTES));
     out.push(
       ...levels(
         { tenantId: o.tenant_id, rule: 'order_not_started', subjectKey: o.id, ref: refOf(o) },

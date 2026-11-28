@@ -9,7 +9,7 @@ import { verifyOrigin } from '@/lib/csrf';
 import { createAssignmentService } from '@/services/assignment.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { parseRouteUuid } from '@/lib/validations/common.schema';
-import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
+import { resolveLiveMember } from '@/lib/auth/resolve-admin-permission';
 import { tenantLockResponse } from '@/lib/billing/tenant-lock-response';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -50,26 +50,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       .single();
     if (!tenant) return NextResponse.json({ error: 'Tenant non trouvé' }, { status: 404 });
 
-    // Verify user belongs to this tenant
-    const { data: adminUser } = await supabase
-      .from('admin_users')
-      .select('id, role')
-      .eq('user_id', user.id)
-      .eq('tenant_id', tenant.id)
-      .eq('is_active', true)
-      .single();
-    if (!adminUser) return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
-
-    // Prendre une commande en charge modifie la commande: meme regle que la
-    // faire avancer, `orders.manage` en trois niveaux. L'ancienne liste de roles
-    // oubliait `admin` et ignorait les reglages du proprietaire.
-    const { allowed: canClaim } = await resolveAdminPermission(
-      supabase,
-      user.id,
-      tenant.id,
-      'orders.manage',
-    );
-    if (!canClaim) {
+    // Membre VIVANT du restaurant, et droit de prendre des commandes. Prendre
+    // une commande en charge est un geste de SALLE: `orders.take` (le chef, qui
+    // suit en cuisine, ne sert pas une table).
+    const member = await resolveLiveMember(supabase, user.id, tenant.id);
+    if (!member) return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
+    if (member.levels['orders.take'] !== 'full') {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
@@ -86,7 +72,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     // Use admin_users.id (not auth user.id) since orders.server_id references admin_users(id)
     const service = createAssignmentService(supabase);
-    await service.claimOrder(id, adminUser.id, tenant.id);
+    await service.claimOrder(id, member.adminUserId, tenant.id);
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error instanceof ServiceError)

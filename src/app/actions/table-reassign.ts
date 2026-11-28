@@ -49,7 +49,7 @@ export async function actionReassignOrderTable(
   }
 
   try {
-    const { tenantId, supabase } = await getAuthenticatedUserWithTenant('orders.manage');
+    const { tenantId, supabase } = await getAuthenticatedUserWithTenant('orders.take');
     // Coupure du restaurant: deplacer une commande est une ecriture de service.
     await assertTenantServing(tenantId);
 

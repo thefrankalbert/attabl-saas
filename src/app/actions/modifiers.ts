@@ -2,8 +2,9 @@
 
 import { z } from 'zod';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
+import { MENU_WITH_PRICE } from '@/lib/admin-roles';
+import type { PermissionRequirement } from '@/lib/permissions';
 import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-tenant-serving';
-import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 import { createModifierService } from '@/services/modifier.service';
 import { ServiceError } from '@/services/errors';
 import { createClient } from '@/lib/supabase/server';
@@ -29,9 +30,12 @@ const createModifierPayloadSchema = z.object({
   display_order: z.number().int().min(0),
 });
 
-async function checkPermissions(tenantId: string): Promise<{ error: string | null }> {
+async function checkPermissions(
+  tenantId: string,
+  requirement: PermissionRequirement = 'menu.edit',
+): Promise<{ error: string | null }> {
   try {
-    await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
+    await getAuthenticatedUserForTenant(tenantId, requirement);
     // Coupure du restaurant: toute action de ce fichier est une ecriture.
     await assertTenantServing(tenantId);
     return { error: null };
@@ -66,7 +70,12 @@ export async function actionCreateModifier(
 
   if (parsedPayload.data.tenant_id !== tenantId) return { error: 'Tenant mismatch' };
 
-  const { error: permError } = await checkPermissions(tenantId);
+  // Un supplement payant fixe un prix: `menu.price` en plus, comme le
+  // declencheur `garder_prix_carte` sur `item_modifiers`.
+  const { error: permError } = await checkPermissions(
+    tenantId,
+    parsedPayload.data.price > 0 ? MENU_WITH_PRICE : 'menu.edit',
+  );
   if (permError) return { error: permError };
 
   try {

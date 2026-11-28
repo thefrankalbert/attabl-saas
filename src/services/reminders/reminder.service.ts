@@ -6,7 +6,8 @@ import {
   type ReminderRule,
   type ReminderSettings,
 } from '@/lib/validations/reminders.schema';
-import type { AdminRole, OpeningHoursMap } from '@/types/admin.types';
+import type { OpeningHoursMap } from '@/types/admin.types';
+import { toPostes } from '@/lib/permissions';
 import type { ServicePush } from '@/services/push.service';
 import {
   dueNotStarted,
@@ -95,7 +96,7 @@ export function createReminderService(supabase: SupabaseClient, deps: { push: Se
       inBatches(ids, async (batch) => {
         const { data, error: e } = await supabase
           .from('admin_users')
-          .select('id, user_id, tenant_id, role')
+          .select('id, user_id, tenant_id, postes')
           .in('tenant_id', batch)
           .eq('is_active', true)
           .is('deleted_at', null);
@@ -120,7 +121,7 @@ export function createReminderService(supabase: SupabaseClient, deps: { push: Se
       id: s.id as string,
       userId: (s.user_id as string | null) ?? null,
       tenantId: s.tenant_id as string,
-      role: s.role as AdminRole,
+      postes: toPostes(s.postes),
     }));
     const muted = new Set(muteRows.map((m) => `${m.admin_user_id}:${m.rule}`));
     return {
@@ -411,8 +412,9 @@ export function createReminderService(supabase: SupabaseClient, deps: { push: Se
     }
 
     const week = settings.rules.weekly_coach ? weeklyCoachWindow(tz, now) : null;
-    const owners = managers.filter((m) => m.role === 'owner' || m.role === 'admin');
-    const weekTo = week ? await pendingRecipients('weekly_coach', week.ymd, owners) : [];
+    // Le coach hebdomadaire contient du chiffre d'affaires: il va aux postes qui
+    // ont `reports.money`, proprietaire et gerant (`managersOf`).
+    const weekTo = week ? await pendingRecipients('weekly_coach', week.ymd, managers) : [];
     if (week && weekTo.length) {
       const facts = await loadCoachFacts(supabase, tenant.id, tz, now);
       if (facts && (facts.peak || facts.dropped.length)) {

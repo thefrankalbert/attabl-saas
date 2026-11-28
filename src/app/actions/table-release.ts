@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { logger } from '@/lib/logger';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { ORDERS_ADVANCE } from '@/lib/admin-roles';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 import { assertTenantServing } from '@/lib/billing/assert-tenant-serving';
 import { createOrderService } from '@/services/order.service';
@@ -33,7 +34,7 @@ export async function actionReleaseTable(
   if (!parsed.success) return { success: false, error: 'Donnees invalides' };
 
   try {
-    const { tenantId } = await getAuthenticatedUserWithTenant('orders.manage');
+    const { tenantId } = await getAuthenticatedUserWithTenant(ORDERS_ADVANCE);
     await assertTenantServing(tenantId);
     await createOrderService(createAdminClient()).releaseTableSession(
       tenantId,

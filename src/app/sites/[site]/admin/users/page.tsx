@@ -9,8 +9,9 @@ import {
   toSupabaseRange,
   type ServerListPagination,
 } from '@/lib/pagination';
-import type { AdminUser, AdminRole } from '@/types/admin.types';
-import type { PermissionMap } from '@/types/permission.types';
+import { toPermissionMap, type PosteOverrides } from '@/lib/permissions';
+import type { AdminUser } from '@/types/admin.types';
+import type { StaffPoste } from '@/types/permission.types';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 import { adminPageMetadata } from '@/lib/admin-page-metadata';
 
@@ -51,12 +52,16 @@ export default async function UsersPage({
     return <div>{tErr('notAuthenticated')}</div>;
   }
 
+  // Ligne VIVANTE du membre connecte: son identifiant sert a la regle
+  // "jamais d'action sur soi" de l'ecran.
   const { data: currentUserData } = await supabase
     .from('admin_users')
-    .select('role')
+    .select('id')
     .eq('user_id', user.id)
     .eq('tenant_id', tenant.id)
-    .single();
+    .eq('is_active', true)
+    .is('deleted_at', null)
+    .maybeSingle();
 
   if (!currentUserData) {
     return <div>{tErr('permissionDenied')}</div>;
@@ -86,25 +91,26 @@ export default async function UsersPage({
     total: count ?? users?.length ?? 0,
   };
 
-  // Tenant-level role overrides: used as the baseline against which a member's
-  // individual permission overrides are displayed (the per-user dialog needs to
-  // know what each role grants by default in THIS tenant).
-  const { data: rolePerms } = await supabase
-    .from('role_permissions')
-    .select('role, permissions')
+  // Reglages du restaurant par poste: la base sur laquelle s'affichent les
+  // droits de chaque membre (le dialogue par personne doit savoir ce que
+  // chaque poste donne dans CE restaurant).
+  const { data: postePerms } = await supabase
+    .from('poste_permissions')
+    .select('poste, permissions')
     .eq('tenant_id', tenant.id);
-  const roleOverrides: Record<string, PermissionMap> = {};
-  for (const rp of rolePerms ?? []) {
-    roleOverrides[rp.role as string] = (rp.permissions ?? {}) as PermissionMap;
+  const posteOverrides: PosteOverrides = {};
+  for (const row of postePerms ?? []) {
+    const map = toPermissionMap(row.permissions);
+    if (map) posteOverrides[row.poste as StaffPoste] = map;
   }
 
   return (
     <div className="h-full flex flex-col min-h-0">
       <UsersClient
         tenantId={tenant.id}
-        currentUserRole={currentUserData.role as AdminRole}
+        currentAdminUserId={currentUserData.id as string}
         initialUsers={(users as AdminUser[]) || []}
-        roleOverrides={roleOverrides}
+        posteOverrides={posteOverrides}
         serverListPagination={serverListPagination}
       />
     </div>

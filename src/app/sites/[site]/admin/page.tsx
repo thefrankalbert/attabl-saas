@@ -411,7 +411,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
   // (owner/admin/manager). The dashboard stays reachable for every role, but
   // cashier/chef/waiter must not see revenue, so blank the financial fields
   // server-side (never ship the data in props/HTML).
-  const canSeeRevenue = await getAdminPermission(site, 'reports.view');
+  const canSeeRevenue = await getAdminPermission(site, 'reports.money');
   if (!canSeeRevenue) {
     initialStats = {
       ...initialStats,

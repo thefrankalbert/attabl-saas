@@ -248,7 +248,7 @@ export async function sendTrialIdleEmails(
       .lt('last_active_at', idleBefore)
       .gt('trial_ends_at', now.toISOString())
       .is('activation_events->>idle_email_sent', null)
-      .eq('owners.role', 'owner')
+      .contains('owners.postes', ['owner'])
       .eq('owners.is_active', true)
       .is('owners.deleted_at', null)
       .not('owners.email', 'is', null)

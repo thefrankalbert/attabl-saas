@@ -23,7 +23,7 @@ export async function actionUpdateTenantSettings(formData: FormData) {
   const t = await getTranslations('errors');
   try {
     // 1. Authenticate + get tenant from session (NOT from client)
-    const { tenantId, supabase, user, role } =
+    const { tenantId, supabase, user, postes } =
       await getAuthenticatedUserWithTenant('settings.edit');
     // Coupure du restaurant: modifier les reglages est une ecriture.
     await assertTenantServing(tenantId);
@@ -138,7 +138,7 @@ export async function actionUpdateTenantSettings(formData: FormData) {
       tenantId,
       userId: user.id,
       userEmail: user.email,
-      userRole: role,
+      userRole: postes.join('+'),
     });
     audit.log({
       action: 'update',

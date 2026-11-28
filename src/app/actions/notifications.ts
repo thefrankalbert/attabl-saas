@@ -3,7 +3,6 @@
 import { z } from 'zod';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
 import { logger } from '@/lib/logger';
-import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 
 type ActionResponse = {
   success?: boolean;
@@ -33,7 +32,7 @@ async function markReadForMe(
 ): Promise<ActionResponse> {
   try {
     // Tout membre recoit la cloche: tout membre peut la vider, pour lui seul.
-    const { supabase, user } = await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES);
+    const { supabase, user } = await getAuthenticatedUserForTenant(tenantId);
 
     const { error } = await supabase.from('notification_reads').upsert(
       notificationIds.map((id) => ({

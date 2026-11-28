@@ -1,8 +1,10 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase/admin';
-import { AdminRole, AdminUser } from '@/types/admin.types';
-import { canGrantRole, canActOnUser } from '@/lib/auth/role-hierarchy';
+import { canGrantPostes, canActOnMember, type TeamTarget } from '@/lib/auth/poste-authority';
+import { loadPosteOverrides } from '@/lib/auth/member-rights';
+import { getEffectiveLevels, toPermissionMap, toPostes } from '@/lib/permissions';
+import type { PermissionMap, StaffPoste } from '@/types/permission.types';
 import { updateAdminUserSchema, updateUserEmailSchema } from '@/lib/validations/admin-user.schema';
 import { checkTargetAccountScope } from '@/lib/auth/target-account-scope';
 import {
@@ -16,13 +18,14 @@ import {
   getClientIpFromHeaders,
 } from '@/lib/rate-limit';
 import { headers } from 'next/headers';
-import { createPlanEnforcementService, STAFF_ROLES } from '@/services/plan-enforcement.service';
+import { createPlanEnforcementService, isAdminSeat } from '@/services/plan-enforcement.service';
 import { createAuditService } from '@/services/audit.service';
 import { createMemberSessionService } from '@/services/member-session.service';
 import { ServiceError } from '@/services/errors';
 import { logger } from '@/lib/logger';
 import { getTranslations } from 'next-intl/server';
 import { checkTenantAdminPermissions } from '@/lib/auth/check-tenant-admin';
+import type { AuthenticatedUserWithTenant } from '@/lib/auth/get-session';
 import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-tenant-serving';
 import { revalidateTenantUsersPath } from '@/lib/admin/revalidate-tenant-users';
 import { getStorageCleanup } from '@/services/storage-cleanup.service';
@@ -32,18 +35,24 @@ type ActionResponse = {
   error?: string;
 };
 
+const actorOf = (actor: AuthenticatedUserWithTenant) => ({
+  id: actor.adminUserId,
+  isOwner: actor.isOwner,
+  levels: actor.levels,
+});
+
 /**
- * Plan seat check for a member who is about to hold `role` while active.
- * Staff roles count against maxStaff, owner/admin against maxAdmins, as in the
- * invitation routes. Returns an error message, or null when a seat is free.
- * Shared by role change and reactivation: a quota that only one of those
- * paths checks is not a quota. Joining the team goes through the invitation
- * routes, which apply the same rule.
+ * Plan seat check for a member who is about to hold a seat while active. Un
+ * siege d'administrateur compte dans `maxAdmins`, tout autre membre dans
+ * `maxStaff` (regle `isAdminSeat`, decision G.a), comme dans les routes
+ * d'invitation. Returns an error message, or null when a seat is free.
+ * Shared by poste change and reactivation: a quota that only one of those
+ * paths checks is not a quota.
  */
 async function checkSeatQuota(
   adminClient: ReturnType<typeof createAdminClient>,
   tenantId: string,
-  role: string,
+  adminSeat: boolean,
   t: (key: string) => string,
 ): Promise<string | null> {
   try {
@@ -57,10 +66,10 @@ async function checkSeatQuota(
     if (tenantError || !tenant) return t('tenantNotFound');
 
     const planService = createPlanEnforcementService(adminClient);
-    if ((STAFF_ROLES as readonly string[]).includes(role)) {
-      await planService.canAddStaff(tenant);
-    } else {
+    if (adminSeat) {
       await planService.canAddAdmin(tenant);
+    } else {
+      await planService.canAddStaff(tenant);
     }
     return null;
   } catch (err) {
@@ -68,7 +77,31 @@ async function checkSeatQuota(
   }
 }
 
-const isStaffRole = (role: string): boolean => (STAFF_ROLES as readonly string[]).includes(role);
+interface TargetRow {
+  postes: unknown;
+  permission_overrides: unknown;
+}
+
+/**
+ * Cible d'une action d'equipe, avec ses droits EFFECTIFS (cumul des postes,
+ * reglages du restaurant, reglage par personne). `canActOnMember` compare ces
+ * droits a ceux de l'acteur. ECHEC FERME: si les reglages du restaurant ne se
+ * lisent pas, l'action est refusee (`null`).
+ */
+async function loadTeamTarget(
+  adminClient: ReturnType<typeof createAdminClient>,
+  tenantId: string,
+  id: string,
+  row: TargetRow,
+): Promise<TeamTarget | null> {
+  const member = {
+    postes: toPostes(row.postes),
+    permission_overrides: toPermissionMap(row.permission_overrides),
+  };
+  const { overrides, failed } = await loadPosteOverrides(adminClient, tenantId, member.postes);
+  if (failed) return null;
+  return { id, postes: member.postes, levels: getEffectiveLevels(member, overrides) };
+}
 
 /**
  * Coupure du restaurant: renvoie le message de refus, ou null s'il sert encore.
@@ -97,19 +130,17 @@ export async function actionDeleteAdminUser(
   tenantId: string,
   userId: string,
 ): Promise<ActionResponse> {
-  const {
-    error: permError,
-    user: currentUser,
-    role,
-  } = await checkTenantAdminPermissions(tenantId, ['owner', 'admin']);
-  if (permError) return { error: permError };
+  const check = await checkTenantAdminPermissions(tenantId);
+  if (!check.actor) return { error: check.error };
+  const actor = check.actor;
+  const currentUser = actor.user;
 
   const adminClient = createAdminClient();
 
   // Get the user to find auth_id
   const { data: targetUser } = await adminClient
     .from('admin_users')
-    .select('user_id, email, full_name, role')
+    .select('user_id, email, full_name, postes, permission_overrides')
     .eq('id', userId)
     .eq('tenant_id', tenantId)
     .is('deleted_at', null)
@@ -119,9 +150,10 @@ export async function actionDeleteAdminUser(
 
   if (!targetUser) return { error: t('userNotFound') };
 
-  // SECURITY: an actor cannot delete a peer or higher-ranked account (e.g. an
-  // admin deleting the owner).
-  if (!canActOnUser(role, targetUser.role as AdminRole)) {
+  // SECURITE: jamais le proprietaire, jamais soi, jamais un pair. Seul un membre
+  // dont les droits sont strictement inclus dans ceux de l'acteur est retirable.
+  const target = await loadTeamTarget(adminClient, tenantId, userId, targetUser);
+  if (!target || !canActOnMember(actorOf(actor), target)) {
     return { error: t('permissionDenied') };
   }
 
@@ -186,13 +218,13 @@ export async function actionDeleteAdminUser(
     tenantId,
     userId: currentUser?.id,
     userEmail: currentUser?.email ?? undefined,
-    userRole: role ?? undefined,
+    userRole: actor.postes.join('+'),
   });
   audit.log({
     action: 'delete',
     entityType: 'user',
     entityId: userId,
-    oldData: { email: targetUser.email, full_name: targetUser.full_name, role: targetUser.role },
+    oldData: { email: targetUser.email, full_name: targetUser.full_name, postes: target.postes },
   });
 
   await revalidateTenantUsersPath(adminClient, tenantId);
@@ -200,20 +232,26 @@ export async function actionDeleteAdminUser(
   return { success: true };
 }
 
+/** Champs modifiables d'un membre (postes, nom, etat, reglage par personne). */
+export interface UpdateAdminUserInput {
+  postes?: StaffPoste[];
+  full_name?: string;
+  is_active?: boolean;
+  permission_overrides?: PermissionMap | null;
+}
+
 /**
- * Updates a user's role or details.
+ * Updates a member's postes or details.
  */
 export async function actionUpdateAdminUser(
   tenantId: string,
   userId: string,
-  data: Partial<AdminUser>,
+  data: UpdateAdminUserInput,
 ): Promise<ActionResponse> {
-  const {
-    error: permError,
-    user: currentUser,
-    role: currentRole,
-  } = await checkTenantAdminPermissions(tenantId, ['owner', 'admin']);
-  if (permError) return { error: permError };
+  const check = await checkTenantAdminPermissions(tenantId);
+  if (!check.actor) return { error: check.error };
+  const actor = check.actor;
+  const currentUser = actor.user;
 
   // Validate input with Zod before DB write
   const parsed = updateAdminUserSchema.safeParse(data);
@@ -223,40 +261,50 @@ export async function actionUpdateAdminUser(
   }
 
   // Coupure du restaurant: seule la desactivation PURE d'un membre reste permise
-  // (securite: couper l'acces d'un ex-employe). Tout autre changement (role,
-  // nom, permissions, reactivation) est une ecriture refusee.
+  // (securite: couper l'acces d'un ex-employe). Tout autre changement (postes,
+  // nom, droits, reactivation) est une ecriture refusee.
   const isPureDeactivation =
     parsed.data.is_active === false &&
-    parsed.data.role === undefined &&
+    parsed.data.postes === undefined &&
     parsed.data.full_name === undefined &&
-    parsed.data.custom_permissions === undefined;
+    parsed.data.permission_overrides === undefined;
   if (!isPureDeactivation) {
     const lockError = await tenantLockError(tenantId);
     if (lockError) return { error: lockError };
   }
 
-  // SECURITY: prevent privilege escalation when changing a role.
-  if (parsed.data.role && !canGrantRole(currentRole, parsed.data.role)) {
-    return { error: t('permissionDenied') };
-  }
-
-  // SECURITY: seules les permissions INDIVIDUELLES priment sur tout le reste
-  // (hasPermission, etape 1). Les laisser a l'admin contournait la regle "seul
-  // le proprietaire regle les permissions" (/api/permissions, verifyOwner): un
-  // admin pouvait donner l'encaissement a un serveur ou les reglages a un
-  // caissier. Decision du proprietaire du 2026-11-09.
-  if (parsed.data.custom_permissions !== undefined && currentRole !== 'owner') {
+  // SECURITE: le reglage PAR PERSONNE prime sur tout le reste (resolution,
+  // etape 3). Il reste reserve au proprietaire, comme les reglages par poste
+  // (/api/permissions): un gerant pourrait sinon se donner, ou donner a un
+  // serveur, un droit que ses postes n'ont pas. Decision du 2026-11-09.
+  if (parsed.data.permission_overrides !== undefined && !actor.isOwner) {
     return { error: t('permissionDenied') };
   }
 
   const adminClient = createAdminClient();
 
-  // SECURITY: verify the actor outranks the target's CURRENT role before any
-  // mutation - covers is_active / full_name too, not only role changes - so an
-  // admin cannot disable or demote the owner.
+  // SECURITE: on ne donne pas un droit qu'on n'a pas. Les postes demandes,
+  // avec les reglages du restaurant, ne doivent rien ouvrir que l'acteur ne
+  // detienne deja. `owner` n'est jamais attribuable (schema, puis ici, puis le
+  // declencheur `garder_proprietaire` en base). ECHEC FERME si les reglages du
+  // restaurant ne se lisent pas.
+  if (parsed.data.postes) {
+    const { overrides, failed } = await loadPosteOverrides(
+      adminClient,
+      tenantId,
+      parsed.data.postes,
+    );
+    if (failed || !canGrantPostes(actor.levels, parsed.data.postes, overrides)) {
+      return { error: t('permissionDenied') };
+    }
+  }
+
+  // SECURITE: l'acteur doit avoir autorite sur la cible AVANT toute ecriture -
+  // is_active et full_name compris, pas seulement les postes - pour qu'un
+  // gerant ne puisse ni desactiver ni modifier le proprietaire ou un pair.
   //
   // SECURITE (refutation R2 point 2.2 du contre-audit LOT 6): `.is('deleted_at',
-  // null)`. Sans ce filtre, un admin du tenant pouvait remettre `is_active =
+  // null)`. Sans ce filtre, un membre du tenant pouvait remettre `is_active =
   // true` sur une ligne que la PLATEFORME venait de retirer par soft-delete
   // (`platform-admin.service.ts`, `softDeleteAdminUser`), et donc ANNULER la
   // remediation d'une ligne `admin_users` parasite - la seule sortie de la
@@ -269,44 +317,42 @@ export async function actionUpdateAdminUser(
   // service_role, qui ignore le RLS. Les deux couches sont necessaires.
   const { data: targetUser } = await adminClient
     .from('admin_users')
-    .select('role, is_active, user_id')
+    .select('postes, permission_overrides, role, is_active, user_id')
     .eq('id', userId)
     .eq('tenant_id', tenantId)
     .is('deleted_at', null)
     .maybeSingle();
   if (!targetUser) return { error: t('userNotFound') };
-  if (!canActOnUser(currentRole, targetUser.role as AdminRole)) {
+  const target = await loadTeamTarget(adminClient, tenantId, userId, targetUser);
+  if (!target || !canActOnMember(actorOf(actor), target)) {
     return { error: t('permissionDenied') };
   }
 
-  // A seat is taken when the member becomes active again, or moves between the
-  // staff and admin quotas while active. Without this, demote-then-promote or
-  // deactivate-then-reactivate went around the plan limit.
-  const nextRole = parsed.data.role ?? targetUser.role;
+  // Un siege est pris quand le membre redevient actif, ou passe du quota du
+  // personnel a celui des administrateurs (ou l'inverse) en restant actif.
+  // Sans cela, desactiver puis reactiver contournait la limite de la formule.
+  // `role` n'est lu ici que pour le siege de l'ancien administrateur
+  // (transition, voir `isAdminSeat`); il le perd des que ses postes changent.
+  const currentAdminSeat = isAdminSeat(target.postes, targetUser.role);
+  const nextAdminSeat = parsed.data.postes ? isAdminSeat(parsed.data.postes) : currentAdminSeat;
   const nextActive = parsed.data.is_active ?? targetUser.is_active !== false;
   const takesNewSeat =
-    nextActive &&
-    (targetUser.is_active === false || isStaffRole(nextRole) !== isStaffRole(targetUser.role));
+    nextActive && (targetUser.is_active === false || nextAdminSeat !== currentAdminSeat);
   if (takesNewSeat) {
-    const quotaError = await checkSeatQuota(adminClient, tenantId, nextRole, t);
+    const quotaError = await checkSeatQuota(adminClient, tenantId, nextAdminSeat, t);
     if (quotaError) return { error: quotaError };
   }
 
-  // Only send keys that were provided. custom_permissions: an object sets the
-  // overrides, null clears them (member falls back to role permissions),
-  // undefined leaves them untouched.
-  const updatePayload: {
-    role?: AdminRole;
-    full_name?: string;
-    is_active?: boolean;
-    custom_permissions?: Record<string, boolean> | null;
-  } = {
-    role: parsed.data.role,
+  // Only send keys that were provided. permission_overrides: un objet pose le
+  // reglage, null l'efface (le membre retombe sur ses postes), undefined n'y
+  // touche pas. `role` n'est jamais ecrit: la base le projette depuis `postes`.
+  const updatePayload: UpdateAdminUserInput = {
+    postes: parsed.data.postes,
     full_name: parsed.data.full_name,
     is_active: parsed.data.is_active,
   };
-  if (parsed.data.custom_permissions !== undefined) {
-    updatePayload.custom_permissions = parsed.data.custom_permissions;
+  if (parsed.data.permission_overrides !== undefined) {
+    updatePayload.permission_overrides = parsed.data.permission_overrides;
   }
 
   const { error } = await adminClient
@@ -336,22 +382,22 @@ export async function actionUpdateAdminUser(
 
   // Fire-and-forget audit log. A permission-only change is logged as a
   // 'permission' entity so it stands out in the audit trail.
-  const permissionsChanged = parsed.data.custom_permissions !== undefined;
+  const permissionsChanged = parsed.data.permission_overrides !== undefined;
   const audit = createAuditService(adminClient, {
     tenantId,
     userId: currentUser?.id,
     userEmail: currentUser?.email ?? undefined,
-    userRole: currentRole ?? undefined,
+    userRole: actor.postes.join('+'),
   });
   audit.log({
     action: 'update',
     entityType: permissionsChanged ? 'permission' : 'user',
     entityId: userId,
     newData: {
-      role: data.role,
-      full_name: data.full_name,
-      is_active: data.is_active,
-      ...(permissionsChanged ? { custom_permissions: parsed.data.custom_permissions } : {}),
+      postes: parsed.data.postes,
+      full_name: parsed.data.full_name,
+      is_active: parsed.data.is_active,
+      ...(permissionsChanged ? { permission_overrides: parsed.data.permission_overrides } : {}),
     },
   });
 
@@ -407,12 +453,10 @@ export async function actionResetUserPassword(
     return { error: t('permissionDenied') };
   }
 
-  const {
-    error: permError,
-    user: currentUser,
-    role,
-  } = await checkTenantAdminPermissions(tenantId, ['owner', 'admin']);
-  if (permError) return { error: permError };
+  const check = await checkTenantAdminPermissions(tenantId);
+  if (!check.actor) return { error: check.error };
+  const actor = check.actor;
+  const currentUser = actor.user;
 
   // Coupure du restaurant: envoyer un lien de reinitialisation est une ecriture
   // de service (un courriel reel part vers la boite du collaborateur).
@@ -420,7 +464,7 @@ export async function actionResetUserPassword(
   if (lockError) return { error: lockError };
 
   // 2. LIMITATION DE DEBIT, DEUXIEME ETAPE: par COMPTE CIBLE, une fois
-  // l'appelant authentifie et reconnu owner/admin du tenant. Le prejudice est
+  // l'appelant authentifie et detenteur de `team.manage` dans le tenant. Le prejudice est
   // par boite aux lettres (harcelement du titulaire, usure de la reputation
   // d'expedition du domaine, donc delivrabilite de TOUS les courriels ATTABL),
   // et un restaurant entier sort par une seule IP. Fail-closed (voir le
@@ -447,7 +491,7 @@ export async function actionResetUserPassword(
   // Get the auth user_id from admin_users
   const { data: targetUser } = await adminClient
     .from('admin_users')
-    .select('user_id, email, role')
+    .select('user_id, email, postes, permission_overrides')
     .eq('id', userId)
     .eq('tenant_id', tenantId)
     .is('deleted_at', null)
@@ -455,9 +499,10 @@ export async function actionResetUserPassword(
 
   if (!targetUser) return { error: t('userNotFound') };
 
-  // SECURITY: an actor cannot reset the password of a peer or higher-ranked
-  // account (e.g. an admin taking over the owner).
-  if (!canActOnUser(role, targetUser.role as AdminRole)) {
+  // SECURITE: pas de reinitialisation du mot de passe du proprietaire, de soi
+  // ni d'un pair (prise de controle d'un compte de meme niveau).
+  const target = await loadTeamTarget(adminClient, tenantId, userId, targetUser);
+  if (!target || !canActOnMember(actorOf(actor), target)) {
     return { error: t('permissionDenied') };
   }
 
@@ -544,7 +589,7 @@ export async function actionResetUserPassword(
     tenantId,
     userId: currentUser?.id,
     userEmail: currentUser?.email ?? undefined,
-    userRole: role ?? undefined,
+    userRole: actor.postes.join('+'),
   });
   audit.log({
     action: 'update',
@@ -565,14 +610,11 @@ export async function actionUpdateUserEmail(
   userId: string,
   newEmail: string,
 ): Promise<ActionResponse> {
-  const {
-    error: permError,
-    user: currentUser,
-    role,
-    adminUserId: requesterId,
-  } = await checkTenantAdminPermissions(tenantId, ['owner', 'admin']);
-  if (permError) return { error: permError };
-  if (!requesterId) return { error: (await getTranslations('errors'))('permissionDenied') };
+  const check = await checkTenantAdminPermissions(tenantId);
+  if (!check.actor) return { error: check.error };
+  const actor = check.actor;
+  const currentUser = actor.user;
+  const requesterId = actor.adminUserId;
 
   const lockError = await tenantLockError(tenantId);
   if (lockError) return { error: lockError };
@@ -597,7 +639,7 @@ export async function actionUpdateUserEmail(
   // legitime: la ligne n'est plus affichee dans l'equipe du tenant.
   const { data: targetUser } = await adminClient
     .from('admin_users')
-    .select('user_id, email, role')
+    .select('user_id, email, postes, permission_overrides')
     .eq('id', userId)
     .eq('tenant_id', tenantId)
     .is('deleted_at', null)
@@ -605,9 +647,10 @@ export async function actionUpdateUserEmail(
 
   if (!targetUser) return { error: t('userNotFound') };
 
-  // SECURITY: an actor cannot change the email of a peer or higher-ranked
-  // account (e.g. an admin taking over the owner).
-  if (!canActOnUser(role, targetUser.role as AdminRole)) {
+  // SECURITE: pas de changement d'email du proprietaire, de soi ni d'un pair
+  // (l'adresse sert ensuite a reprendre le compte).
+  const target = await loadTeamTarget(adminClient, tenantId, userId, targetUser);
+  if (!target || !canActOnMember(actorOf(actor), target)) {
     return { error: t('permissionDenied') };
   }
 
@@ -721,7 +764,7 @@ export async function actionUpdateUserEmail(
     tenantId,
     userId: currentUser?.id,
     userEmail: currentUser?.email ?? undefined,
-    userRole: role ?? undefined,
+    userRole: actor.postes.join('+'),
   });
   audit.log({
     action: 'update',

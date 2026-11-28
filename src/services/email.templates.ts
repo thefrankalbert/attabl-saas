@@ -239,29 +239,37 @@ export function buildSignupFailedEmail(data: SignupFailedEmailData): EmailConten
   return { subject: "Votre inscription n'a pas abouti", html, text };
 }
 
+/** Libelles des 10 postes invitables (cahier des charges). */
+const POSTE_LABELS_FR: Record<string, string> = {
+  manager: 'Gerant',
+  chef: 'Chef',
+  cashier: 'Caissier',
+  bartender: 'Barman',
+  reception: 'Reception',
+  waiter: 'Serveur',
+  cook: 'Cuisinier',
+  crew: 'Equipier polyvalent',
+  sales: 'Vente',
+  production: 'Fabrication',
+};
+
 export function buildTeamInvitationEmail(data: TeamInvitationEmailData): EmailContent {
-  const roleLabels: Record<string, string> = {
-    admin: 'Administrateur',
-    manager: 'Gerant',
-    cashier: 'Caissier',
-    chef: 'Chef de cuisine',
-    waiter: 'Serveur',
-  };
-  const roleLabel = roleLabels[data.role] || data.role;
+  // Tous les postes de l'invitation (cumul), dans l'ordre recu.
+  const posteLabel = data.postes.map((poste) => POSTE_LABELS_FR[poste] ?? poste).join(', ');
   const safeName = escapeHtml(data.restaurantName);
-  const safeRole = escapeHtml(roleLabel);
+  const safePostes = escapeHtml(posteLabel);
 
   const html = wrap(
     `${data.restaurantName} vous invite a rejoindre son equipe.`,
     card(
       `<p style="margin:0 0 8px;font-size:20px;font-weight:600;color:#111827;">Vous avez ete invite</p>
-          <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;"><strong style="color:#111827;">${safeName}</strong> vous invite a rejoindre son equipe en tant que <strong style="color:#111827;">${safeRole}</strong>.</p>
+          <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;"><strong style="color:#111827;">${safeName}</strong> vous invite a rejoindre son equipe en tant que <strong style="color:#111827;">${safePostes}</strong>.</p>
           ${cta(data.inviteUrl, "Accepter l'invitation")}
           <p style="margin:16px 0 0;font-size:12px;color:#6b7280;">Cette invitation est valide pendant 24 heures.</p>`,
     ),
   );
 
-  const text = `Invitation - ${data.restaurantName}\n\n${data.restaurantName} vous invite en tant que ${roleLabel}.\n\nAcceptez ici : ${data.inviteUrl}\n\nValide 24 heures.\n\n${FOOTER}`;
+  const text = `Invitation - ${data.restaurantName}\n\n${data.restaurantName} vous invite en tant que ${posteLabel}.\n\nAcceptez ici : ${data.inviteUrl}\n\nValide 24 heures.\n\n${FOOTER}`;
 
   return { subject: `Invitation : rejoignez ${data.restaurantName} sur ATTABL`, html, text };
 }

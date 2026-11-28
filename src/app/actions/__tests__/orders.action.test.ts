@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { canAccessFeature } from '@/lib/plans/features';
+import { MONEY_PERMISSIONS } from '@/lib/admin-roles';
 import * as Sentry from '@sentry/nextjs';
 
 // --- Mocks -----------------------------------------------------
@@ -285,19 +286,15 @@ describe('actionCompOrder - manager gating + audit', () => {
     });
   });
 
-  it('is gated to ORDER_MONEY_ROLES (NOT cashier/chef/waiter) and derives compedBy = adminUserId', async () => {
+  it('is gated to MONEY_PERMISSIONS (NOT cashier/chef/waiter) and derives compedBy = adminUserId', async () => {
     const { actionCompOrder } = await import('@/app/actions/orders');
     const result = await actionCompOrder(TENANT_ID, ORDER_ID, 'Geste commercial');
 
     expect(result.success).toBe(true);
     expect(result.paymentStatus).toBe('comp');
-    // Deliberately narrower than `orders.manage`, which cashier and chef hold too.
-    // ET le droit d'encaisser (orders.pay), que le proprietaire peut retirer.
-    expect(mockGetAuthUserForTenant).toHaveBeenCalledWith(
-      TENANT_ID,
-      ['owner', 'admin', 'manager'],
-      ['orders.manage', 'orders.pay'],
-    );
+    // Les QUATRE droits d'argent ensemble: ni le caissier ni le serveur ne
+    // les ont tous par defaut. Retirer cette garde fait echouer ce test.
+    expect(mockGetAuthUserForTenant).toHaveBeenCalledWith(TENANT_ID, MONEY_PERMISSIONS);
     expect(mockCompOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID, {
       reason: 'Geste commercial',
       compedBy: 'admin-9',
@@ -308,7 +305,7 @@ describe('actionCompOrder - manager gating + audit', () => {
     );
   });
 
-  it('rejects a disallowed role (AuthError) and maps it to { error }', async () => {
+  it('rejects a member without the money rights (AuthError) and maps it to { error }', async () => {
     mockGetAuthUserForTenant.mockRejectedValue(new MockAuthError('Permissions insuffisantes'));
 
     const { actionCompOrder } = await import('@/app/actions/orders');

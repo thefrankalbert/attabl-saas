@@ -52,7 +52,7 @@ vi.mock('@/lib/supabase/server', () => ({
 const mockResolveSessionAdminUser = vi.fn().mockResolvedValue({
   ok: true,
   userId: 'user-1',
-  adminUser: { tenant_id: 'tenant-1', role: 'owner' },
+  adminUser: { tenant_id: 'tenant-1', isOwner: true },
 });
 
 vi.mock('@/lib/auth/session-admin-user', () => ({
@@ -66,7 +66,7 @@ describe('POST /api/onboarding/complete', () => {
     mockResolveSessionAdminUser.mockResolvedValue({
       ok: true,
       userId: 'user-1',
-      adminUser: { tenant_id: 'tenant-1', role: 'owner' },
+      adminUser: { tenant_id: 'tenant-1', isOwner: true },
     });
 
     mockRateLimitCheck.mockResolvedValue({ success: true });
@@ -79,7 +79,7 @@ describe('POST /api/onboarding/complete', () => {
         const chain = (): Record<string, ReturnType<typeof vi.fn>> => {
           const c: Record<string, ReturnType<typeof vi.fn>> = {};
           c.single = vi.fn().mockResolvedValue({
-            data: { tenant_id: 'tenant-1', role: 'owner' },
+            data: { tenant_id: 'tenant-1', postes: ['owner'] },
             error: null,
           });
           c.eq = vi.fn().mockImplementation(() => c);
@@ -134,7 +134,7 @@ describe('POST /api/onboarding/complete', () => {
     mockResolveSessionAdminUser.mockResolvedValueOnce({
       ok: true,
       userId: 'user-1',
-      adminUser: { tenant_id: 'tenant-1', role: 'manager' },
+      adminUser: { tenant_id: 'tenant-1', isOwner: false },
     });
 
     const { POST } = await import('@/app/api/onboarding/complete/route');

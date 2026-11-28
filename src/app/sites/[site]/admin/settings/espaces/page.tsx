@@ -18,7 +18,7 @@ export const dynamic = 'force-dynamic';
 export default async function EspacesPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
   const tTitle = await getTranslations('espaces');
-  await requireAdminPermission(site, 'settings.view');
+  await requireAdminPermission(site, 'settings.edit');
   const supabase = await createClient();
 
   const {

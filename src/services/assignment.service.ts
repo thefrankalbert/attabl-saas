@@ -23,7 +23,7 @@ export function createAssignmentService(supabase: SupabaseClient): AssignmentSer
     ): Promise<TableAssignment> {
       const { data: server, error: serverErr } = await supabase
         .from('admin_users')
-        .select('id, role')
+        .select('id')
         .eq('id', serverId)
         .eq('tenant_id', tenantId)
         .single();
@@ -54,7 +54,7 @@ export function createAssignmentService(supabase: SupabaseClient): AssignmentSer
           server_id: serverId,
         })
         .select(
-          '*, server:admin_users(id, full_name, role), table:tables(id, display_name, table_number)',
+          '*, server:admin_users(id, full_name, postes), table:tables(id, display_name, table_number)',
         )
         .single();
 
