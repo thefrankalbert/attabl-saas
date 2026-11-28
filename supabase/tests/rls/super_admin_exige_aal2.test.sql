@@ -22,13 +22,16 @@ values
 insert into public.tenants (id, slug, name, is_active, subscription_plan, subscription_status)
 values
   ('f7000000-0000-4000-8000-00000000000a', 'aal2-plateforme', 'Plateforme', true, 'business', 'active'),
+  -- Un restaurant par super administrateur: la base n'admet qu'un proprietaire
+  -- par restaurant (index admin_users_un_proprietaire, refonte des roles).
+  ('f7000000-0000-4000-8000-00000000000c', 'aal2-plateforme-bis', 'Plateforme bis', true, 'business', 'active'),
   ('f7000000-0000-4000-8000-00000000000b', 'aal2-autre', 'Autre restaurant', true, 'business', 'active');
 
 set local request.jwt.claim.role = 'service_role';
 insert into public.admin_users (tenant_id, user_id, email, role, is_active, is_super_admin)
 values
   ('f7000000-0000-4000-8000-00000000000a', 'f7000000-0000-4000-8000-0000000000b1', 'sa-sans-facteur@test.local', 'owner', true, true),
-  ('f7000000-0000-4000-8000-00000000000a', 'f7000000-0000-4000-8000-0000000000b2', 'sa-avec-facteur@test.local', 'owner', true, true),
+  ('f7000000-0000-4000-8000-00000000000c', 'f7000000-0000-4000-8000-0000000000b2', 'sa-avec-facteur@test.local', 'owner', true, true),
   ('f7000000-0000-4000-8000-00000000000b', 'f7000000-0000-4000-8000-0000000000b3', 'autre-proprio@test.local', 'owner', true, false);
 set local request.jwt.claim.role = '';
 
