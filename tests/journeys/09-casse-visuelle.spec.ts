@@ -476,9 +476,23 @@ test.describe('09 - Aucun ecran casse', () => {
   }) => {
     test.setTimeout(120_000);
     await avec(contexteAnonyme(browser, 390, 844), async (ctx) => {
+      // Un telephone dont le client refuse la camera: il A une camera. Sans ce
+      // second bouchon, le serveur de CI (aucune camera) faisait aussi repondre
+      // la detection "aucune camera", et l'ecran affiche dependait de la reponse
+      // arrivee la derniere (test instable depuis le 2026-11-27).
       await ctx.addInitScript(() => {
         navigator.mediaDevices.getUserMedia = () =>
           Promise.reject(new DOMException('Permission denied', 'NotAllowedError'));
+        navigator.mediaDevices.enumerateDevices = () =>
+          Promise.resolve([
+            {
+              deviceId: 'camera-arriere',
+              groupId: 'telephone',
+              kind: 'videoinput',
+              label: '',
+              toJSON: () => ({}),
+            },
+          ]);
       });
       const page = await ctx.newPage();
       await page.goto(`/sites/${SLUG}`, { waitUntil: 'domcontentloaded' });
