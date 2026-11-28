@@ -24,7 +24,8 @@ import { FluxList } from '@/components/admin/tenants/v2/FluxList';
 import { TenantsListDialog } from '@/components/admin/tenants/v2/TenantsListDialog';
 import type { OwnerDashboardRow } from '@/types/restaurant-group.types';
 import type { ChartMode, ChartPeriod, LocationStat, Tenant } from '@/types/command-center.types';
-import { initialsFor } from './command-center.derive';
+import { commonCurrency, initialsFor } from './command-center.derive';
+import { getCurrencySymbol } from '@/lib/utils/currency';
 import { useCommandCenterData } from './use-command-center-data';
 
 /** Minimal directory row used to make any tenant findable in the search dialog. */
@@ -95,6 +96,7 @@ export default function TenantsPageClient({
       subscription_status: r.tenant_status || '',
       subscription_plan: r.tenant_plan || '',
       is_active: r.tenant_is_active,
+      currency: r.tenant_currency ?? null,
     }));
   }, [serverMode, serverTenants, serverRestaurants]);
 
@@ -150,6 +152,7 @@ export default function TenantsPageClient({
         tenant_plan: r.subscription_plan,
         tenant_logo_url: null,
         is_active: r.is_active,
+        currency: null,
         revenue_today: 0,
         revenue_yesterday: 0,
         orders_today: 0,
@@ -227,11 +230,17 @@ export default function TenantsPageClient({
     if (!plan) return undefined;
     return plan.charAt(0).toUpperCase() + plan.slice(1);
   }, []);
-  // "No activity" is scoped to TODAY: a day with zero orders/revenue shows the
-  // activation view (establishment + first steps), matching the design intent -
-  // even for accounts that have historical orders. When sales come in today,
-  // the full dashboard (revenue, chart, recent activity) takes over.
-  const noActivity = globals.orders_today === 0 && globals.revenue_today === 0;
+  // Vue "Premiers pas" seulement pour un compte qui n'a encore rien vendu, ni
+  // aujourd'hui ni hier. Avant, chaque matin avant la premiere commande, un
+  // client installe depuis des mois recevait ce message d'activation sans
+  // aucun chiffre de la veille (audit d'equipe du 2026-11-27, onboarding #28).
+  const noActivity =
+    globals.orders_today === 0 &&
+    globals.revenue_today === 0 &&
+    globals.orders_yesterday === 0 &&
+    globals.revenue_yesterday === 0;
+  const groupCurrency = commonCurrency(locations);
+  const heroCurrencyLabel = groupCurrency ? getCurrencySymbol(groupCurrency) : null;
   const firstSlug = locations[0]?.tenant_slug;
   const firstSteps: FirstStep[] = firstSlug
     ? [
@@ -327,16 +336,16 @@ export default function TenantsPageClient({
                     {locations.length}
                   </span>
                 </div>
+                {/* Action ecrite en toutes lettres: une icone "+" grise sans
+                    texte etait introuvable (audit d'equipe, onboarding #29). */}
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="icon"
+                  variant="outline"
                   onClick={() => setShowWizard(true)}
-                  className="min-h-[44px] min-w-[44px] rounded-md"
-                  style={{ color: 'var(--cc-text-3)' }}
-                  aria-label={tEst('add')}
+                  className="min-h-[44px] gap-1.5 rounded-md text-[13px]"
                 >
-                  <Plus className="size-4" strokeWidth={2} />
+                  <Plus className="size-4" strokeWidth={2} aria-hidden />
+                  {tEst('add')}
                 </Button>
               </div>
               <div
@@ -412,6 +421,7 @@ export default function TenantsPageClient({
                     revenueToday={globals.revenue_today}
                     revenueYesterday={globals.revenue_yesterday}
                     lastOrderAt={lastOrderAt}
+                    currencyLabel={heroCurrencyLabel}
                   />
                   <MicroRow
                     ordersToday={globals.orders_today}
@@ -427,6 +437,7 @@ export default function TenantsPageClient({
                     onModeChange={setChartMode}
                     onPeriodChange={handlePeriodChange}
                     isLoading={isChartLoading}
+                    currencyLabel={heroCurrencyLabel}
                   />
                 </div>
                 <aside className="flex min-h-0 flex-col gap-7">
@@ -455,6 +466,7 @@ export default function TenantsPageClient({
                 revenueToday={globals.revenue_today}
                 revenueYesterday={globals.revenue_yesterday}
                 lastOrderAt={lastOrderAt}
+                currencyLabel={heroCurrencyLabel}
               />
               <MicroRow
                 ordersToday={globals.orders_today}
@@ -479,6 +491,7 @@ export default function TenantsPageClient({
                 onModeChange={setChartMode}
                 onPeriodChange={handlePeriodChange}
                 isLoading={isChartLoading}
+                currencyLabel={heroCurrencyLabel}
               />
             </section>
 

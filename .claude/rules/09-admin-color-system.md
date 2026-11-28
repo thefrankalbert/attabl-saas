@@ -8,7 +8,8 @@ ATTABL a DEUX langages couleur distincts. Ne jamais les melanger.
 | --- | --- | --- |
 | **Admin** (dashboard tenant, super-admin plateforme) | shadcn neutral | **bleu** (`#3B82F6` / tokens) |
 | **Command Center** (`/admin/tenants`, tokens `--cc-*`) | shadcn neutral | **neutre** (pas de bleu) |
-| **Tenant / marketing / auth / onboarding / storefront** | marque ATTABL | **lime `#CCFF00`** |
+| **Onboarding** (`/onboarding`, `onboarding-brand.css`) | shadcn neutral | **neutre** (comme le dashboard) |
+| **Tenant / marketing / auth / storefront** | marque ATTABL | **lime `#CCFF00`** |
 
 Le PR #168 a purge tout le vert/lime de l'admin et l'a aligne sur shadcn neutral +
 accent bleu. Nuance apportee par le PR #173 : le Command Center (`/admin/tenants`,
@@ -35,11 +36,21 @@ Dans toute surface admin :
   Le segment fourre-tout ("Autres") utilise `CHART_NEUTRAL` (gris), pas une teinte
   de la palette.
 
+## Onboarding : NEUTRE (decision du proprietaire, 2026-11-28)
+
+L'onboarding se presente comme le tableau de bord sur lequel l'utilisateur
+atterrit : palette neutre, accent near-black en clair et near-white en sombre,
+PAS de lime (`src/app/onboarding/onboarding-brand.css`). Decision ecrite du
+proprietaire du 2026-11-28, apres le constat #12 de l'audit d'equipe qui
+demandait une couleur de marque. Seule exception : la palette "Lime" proposee
+au restaurant dans l'ecran couleurs (`BrandingStep.tsx`), qui est un CHOIX de
+branding du restaurant, pas une couleur de l'interface.
+
 ## Ce qui reste legitime (NE PAS toucher)
 
 Le lime `#CCFF00` est la couleur de MARQUE ATTABL. Il est correct et voulu dans :
 
-- Pages auth (`src/components/auth/`), onboarding (`src/components/onboarding/`)
+- Pages auth (`src/components/auth/`)
 - Marketing / landing (`src/app/(marketing)/`, `src/components/marketing/`)
 - Storefront / menu client / cart tenant (`src/app/sites/[site]/` hors `/admin`)
 - Theme PWA (`src/app/layout.tsx` `themeColor`), color-picker de branding tenant

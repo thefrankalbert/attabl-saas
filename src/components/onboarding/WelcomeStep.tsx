@@ -13,9 +13,9 @@ interface WelcomeStepProps {
 }
 
 const PHASES = [
-  { icon: Building2, label: 'phaseIdentity', desc: 'phaseIdentityDesc', num: '01' },
-  { icon: UtensilsCrossed, label: 'phaseMenu', desc: 'phaseMenuDesc', num: '02' },
-  { icon: Rocket, label: 'phaseLaunch', desc: 'phaseLaunchDesc', num: '03' },
+  { icon: Building2, label: 'phaseIdentity', desc: 'phaseIdentityDesc' },
+  { icon: UtensilsCrossed, label: 'phaseMenu', desc: 'phaseMenuDesc' },
+  { icon: Rocket, label: 'phaseLaunch', desc: 'phaseLaunchDesc' },
 ] as const;
 
 export function WelcomeStep({
@@ -50,13 +50,11 @@ export function WelcomeStep({
 
       {/* Main content */}
       <div className="relative z-10 flex flex-col items-center text-center max-w-lg w-full">
-        {/* Branded header pill */}
-        <div className="inline-flex items-center gap-3 mb-10 opacity-0 animate-[fadeSlideIn_0.6s_0.1s_ease-out_forwards]">
-          <div className="h-px w-10 bg-gradient-to-r from-transparent to-border" />
-          <span className="text-xs font-bold uppercase tracking-[0.4em] text-muted-foreground">
-            ATTABL
-          </span>
-          <div className="h-px w-10 bg-gradient-to-l from-transparent to-border" />
+        {/* Pastille de marque. Accent NEUTRE: decision du proprietaire du
+            2026-11-28 (regle 09, onboarding-brand.css). */}
+        <div className="mb-10 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 opacity-0 animate-[fadeSlideIn_0.6s_0.1s_ease-out_forwards]">
+          <span aria-hidden className="h-2 w-2 rounded-full bg-accent" />
+          <span className="text-xs font-semibold tracking-wide text-foreground">ATTABL</span>
         </div>
 
         {/* Headline */}
@@ -69,34 +67,37 @@ export function WelcomeStep({
 
         {/* Phase journey -- vertical card-style timeline */}
         <div className="w-full max-w-sm mb-16 opacity-0 animate-[fadeSlideIn_0.7s_0.5s_ease-out_forwards]">
-          <div className="relative flex flex-col gap-0">
+          <ol className="relative flex flex-col gap-0">
             {PHASES.map((phase, i) => {
               const Icon = phase.icon;
               const isLast = i === PHASES.length - 1;
               return (
-                <div key={i} className="relative flex items-start gap-4">
+                <li key={i} className="relative flex items-start gap-4">
                   {/* Timeline spine */}
                   <div className="flex flex-col items-center">
-                    <div className="w-10 h-10 rounded-full border border-border bg-card flex items-center justify-center flex-shrink-0 relative">
-                      <Icon className="h-[18px] w-[18px] text-app-text-secondary" strokeWidth={2} />
-                      <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-muted border border-border flex items-center justify-center text-xs font-bold text-muted-foreground leading-none">
-                        {phase.num}
-                      </span>
+                    {/* Ordre porte par la liste <ol>: plus de numero pose sur le
+                        cercle, qu'il chevauchait (onboarding #12). */}
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-accent/15">
+                      <Icon
+                        className="h-[18px] w-[18px] text-foreground"
+                        strokeWidth={2}
+                        aria-hidden
+                      />
                     </div>
                     {!isLast && <div className="w-px h-full min-h-[20px] bg-border" />}
                   </div>
 
                   {/* Phase content */}
-                  <div className={`pt-2 pb-6 ${isLast ? 'pb-0' : ''}`}>
+                  <div className={`pt-2 pb-6 text-left ${isLast ? 'pb-0' : ''}`}>
                     <p className="text-[13px] font-semibold text-foreground leading-none mb-1">
                       {t(phase.label)}
                     </p>
                     <p className="text-xs text-muted-foreground leading-relaxed">{t(phase.desc)}</p>
                   </div>
-                </div>
+                </li>
               );
             })}
-          </div>
+          </ol>
         </div>
 
         {/* CTA */}

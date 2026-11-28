@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { RecentOrder } from '@/types/command-center.types';
 import { mapFluxStatus, type FluxStatus } from './flux-status';
+import { getCurrencySymbol } from '@/lib/utils/currency';
 
 interface FluxListProps {
   orders: RecentOrder[];
@@ -144,7 +145,7 @@ function FluxRow({ order, isFirst, showTenant, onClick, statusLabel, locale }: F
         </div>
       </div>
       <div className="cc-mono whitespace-nowrap text-[12.5px]" style={{ color: 'var(--cc-text)' }}>
-        {formatAmount(order.total, locale)} F
+        {formatAmount(order.total, locale)} {getCurrencySymbol(order.currency)}
       </div>
     </>
   );

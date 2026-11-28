@@ -6,6 +6,8 @@ export interface OwnerDashboardRow {
   tenant_status: string | null;
   tenant_logo_url: string | null;
   tenant_is_active: boolean;
+  /** Devise du restaurant (montants dans cette devise). */
+  tenant_currency?: string | null;
   orders_today: number;
   revenue_today: number;
   orders_month: number;

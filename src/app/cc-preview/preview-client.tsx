@@ -85,6 +85,7 @@ const EMPTY_LOCATIONS: LocationStat[] = [
     orders_today: 0,
     orders_yesterday: 0,
     sparkline: [],
+    currency: 'XAF',
   },
 ];
 
@@ -101,6 +102,7 @@ const ACTIVE_LOCATIONS: LocationStat[] = [
     orders_today: 23,
     orders_yesterday: 19,
     sparkline: [2, 4, 3, 6, 8, 7, 9, 12, 10, 14, 13, 16],
+    currency: 'XAF',
   },
   {
     tenant_id: 't-maquis',
@@ -114,6 +116,7 @@ const ACTIVE_LOCATIONS: LocationStat[] = [
     orders_today: 41,
     orders_yesterday: 44,
     sparkline: [5, 7, 6, 9, 11, 10, 13, 12, 15, 14, 18, 17],
+    currency: 'XAF',
   },
   {
     tenant_id: 't-cafe',
@@ -127,6 +130,7 @@ const ACTIVE_LOCATIONS: LocationStat[] = [
     orders_today: 0,
     orders_yesterday: 4,
     sparkline: [1, 0, 2, 1, 0, 0, 1, 0, 0, 0, 0, 0],
+    currency: 'XAF',
   },
 ];
 
@@ -168,6 +172,7 @@ const ACTIVE_ORDERS: RecentOrder[] = [
     created_at: new Date(Date.now() - 3 * 60000).toISOString(),
     tenant_name: 'Gianni food',
     tenant_slug: 'blutable',
+    currency: 'XAF',
   },
   {
     id: 'o2',
@@ -177,6 +182,7 @@ const ACTIVE_ORDERS: RecentOrder[] = [
     created_at: new Date(Date.now() - 11 * 60000).toISOString(),
     tenant_name: 'Le Maquis Royal',
     tenant_slug: 'maquis-royal',
+    currency: 'XAF',
   },
   {
     id: 'o3',
@@ -186,6 +192,7 @@ const ACTIVE_ORDERS: RecentOrder[] = [
     created_at: new Date(Date.now() - 26 * 60000).toISOString(),
     tenant_name: 'Gianni food',
     tenant_slug: 'blutable',
+    currency: 'XAF',
   },
   {
     id: 'o4',
@@ -195,6 +202,7 @@ const ACTIVE_ORDERS: RecentOrder[] = [
     created_at: new Date(Date.now() - 44 * 60000).toISOString(),
     tenant_name: 'Le Maquis Royal',
     tenant_slug: 'maquis-royal',
+    currency: 'XAF',
   },
 ];
 
@@ -372,6 +380,7 @@ export function PreviewClient() {
                 revenueToday={globals.revenue_today}
                 revenueYesterday={globals.revenue_yesterday}
                 lastOrderAt={lastOrderAt}
+                currencyLabel="FCFA"
               />
               <MicroRow
                 ordersToday={globals.orders_today}
@@ -387,6 +396,7 @@ export function PreviewClient() {
                 onModeChange={setChartMode}
                 onPeriodChange={setChartPeriod}
                 isLoading={false}
+                currencyLabel="FCFA"
               />
             </div>
             <aside className="flex min-h-0 flex-col gap-7">

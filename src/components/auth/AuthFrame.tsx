@@ -33,7 +33,7 @@ export function AuthFrame({
 }) {
   return (
     <div className="auth-shell relative flex min-h-full w-full flex-col overflow-x-clip lg:block lg:h-full lg:min-h-0 lg:overflow-hidden">
-      <main className="auth-main relative z-10 order-2 -mt-7 flex min-w-0 flex-1 flex-col lg:absolute lg:inset-y-0 lg:left-0 lg:mt-0 lg:w-1/2 lg:flex-row lg:items-center lg:justify-center lg:py-10">
+      <main className="auth-main relative z-10 order-2 -mt-7 max-lg:[@media(max-height:700px)]:mt-0 flex min-w-0 flex-1 flex-col lg:absolute lg:inset-y-0 lg:left-0 lg:mt-0 lg:w-1/2 lg:flex-row lg:items-center lg:justify-center lg:py-10">
         <div className="auth-card w-full flex-1 rounded-t-[28px] bg-[var(--card)] px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-7 sm:px-10 lg:max-h-full lg:w-[500px] lg:flex-none lg:overflow-y-auto lg:rounded-[32px] lg:p-10 lg:shadow-[0_24px_60px_rgba(0,0,0,0.28)]">
           <div className="auth-head mb-8 flex items-center justify-between">
             <Link href="/" className={cn('flex items-center gap-[9px]', HIT_AREA_ROW)}>

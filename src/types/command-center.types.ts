@@ -5,6 +5,8 @@ export interface Tenant {
   subscription_status: string;
   subscription_plan: string;
   is_active: boolean;
+  /** Devise du restaurant (XAF, XOF, EUR...). Absente = inconnue. */
+  currency?: string | null;
 }
 
 export interface ChartDataPoint {
@@ -21,6 +23,8 @@ export interface RecentOrder {
   created_at: string;
   tenant_name: string;
   tenant_slug: string;
+  /** Devise de la commande (son total est dans cette devise). */
+  currency: string | null;
 }
 
 export type ChartPeriod = 'day' | 'week' | 'month';
@@ -38,6 +42,8 @@ export interface LocationStat {
   orders_today: number;
   orders_yesterday: number;
   sparkline: number[];
+  /** Devise du restaurant: les montants ci-dessus sont dans CETTE devise. */
+  currency: string | null;
 }
 
 export interface CommandCenterAlert {

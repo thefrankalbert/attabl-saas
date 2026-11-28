@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Eye, EyeOff, MailCheck } from 'lucide-react';
 import Link from 'next/link';
-import { Turnstile } from '@marsidev/react-turnstile';
 import { HONEYPOT_FIELD } from '@/lib/honeypot';
 import { cn } from '@/lib/utils';
 import { HIT_AREA_ICON_POSITIONED, HIT_AREA_ROW_UP_POSITIONED } from '@/lib/ui/hit-area';
@@ -16,6 +15,7 @@ import { AuthCard } from './AuthCard';
 import { ConfirmationSentScreen } from './ConfirmationSentScreen';
 import { useAuthForm } from './useAuthForm';
 import { PasswordStrengthLine } from './PasswordRules';
+import { SecurityCheck } from './SecurityCheck';
 
 interface AuthFormProps {
   mode: 'login' | 'signup';
@@ -331,13 +331,7 @@ function AuthForm({ mode }: AuthFormProps) {
               plupart des visiteurs et ne s'ouvre que si Cloudflare doute. Place au-dessus,
               son apparition tardive poussait le bouton (CLS 0,12 mesure par Lighthouse). */}
           {turnstileSiteKey && (
-            <Turnstile
-              siteKey={turnstileSiteKey}
-              onSuccess={setCfToken}
-              onExpire={() => setCfToken('')}
-              onError={() => setCfToken('')}
-              options={{ theme: 'auto', size: 'flexible', appearance: 'interaction-only' }}
-            />
+            <SecurityCheck siteKey={turnstileSiteKey} token={cfToken} onToken={setCfToken} />
           )}
 
           {/* Remplace l'ancienne ligne "14 jours gratuits": deja dit par le titre, et la

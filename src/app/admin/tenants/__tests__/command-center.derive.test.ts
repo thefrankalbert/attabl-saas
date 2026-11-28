@@ -11,6 +11,7 @@ import {
   sumLocations,
   type DerivableOrder,
   type DerivablePayment,
+  commonCurrency,
 } from '../command-center.derive';
 import type { Tenant } from '@/types/command-center.types';
 
@@ -293,5 +294,19 @@ describe('initialsFor', () => {
     expect(initialsFor('')).toBe('??');
     expect(initialsFor('Radisson')).toBe('RA');
     expect(initialsFor('Le Jardin')).toBe('LJ');
+  });
+});
+
+describe('commonCurrency (audit d equipe 2026-11-27, onboarding #27)', () => {
+  it('rend la devise quand tous les restaurants la partagent', () => {
+    expect(commonCurrency([{ currency: 'XOF' }, { currency: 'xof' }])).toBe('XOF');
+  });
+
+  it('rend null quand les devises different: pas de somme melangee', () => {
+    expect(commonCurrency([{ currency: 'XAF' }, { currency: 'EUR' }])).toBeNull();
+  });
+
+  it('une devise absente compte comme XAF (defaut de la base)', () => {
+    expect(commonCurrency([{ currency: null }, { currency: 'XAF' }])).toBe('XAF');
   });
 });

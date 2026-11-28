@@ -191,12 +191,23 @@ export function buildLocations(
       orders_today: td.orders,
       orders_yesterday: yd.orders,
       sparkline: sliceSparkline(td.sparkline, currentHour),
+      currency: t.currency ?? null,
     };
   });
   return computed.toSorted((a, b) => {
     if (a.is_active !== b.is_active) return a.is_active ? -1 : 1;
     return b.revenue_today - a.revenue_today;
   });
+}
+
+/**
+ * Devise commune a des restaurants, ou `null` s'ils n'en ont pas une seule.
+ * Additionner des montants de devises differentes donnait une somme fausse
+ * etiquetee FCFA (audit d'equipe du 2026-11-27, onboarding #27).
+ */
+export function commonCurrency(locations: Pick<LocationStat, 'currency'>[]): string | null {
+  const codes = new Set(locations.map((l) => (l.currency || 'XAF').toUpperCase()));
+  return codes.size === 1 ? [...codes][0] : null;
 }
 
 /** Sum a numeric field across all locations. */
