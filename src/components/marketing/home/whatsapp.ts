@@ -3,6 +3,6 @@
 // ponytail: en dur, la page est statique. Le numero d'assistance des
 // restaurateurs, lui, se regle en base (platform_settings) : le lire ici si les
 // deux doivent toujours rester identiques.
-export const BURKINA_PHONE_DIGITS = '22655212293';
-export const BURKINA_PHONE_DISPLAY = '+226 55 21 22 93';
+export const BURKINA_PHONE_DIGITS = '22665565411';
+export const BURKINA_PHONE_DISPLAY = '+226 65 56 54 11';
 export const WHATSAPP_LINK = `https://wa.me/${BURKINA_PHONE_DIGITS}`;

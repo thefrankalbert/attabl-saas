@@ -21,7 +21,7 @@ import { WHATSAPP_LINK } from '@/components/marketing/home/whatsapp';
 const CITY_KEYS = ['yaounde', 'ouaga', 'ndjamena'] as const;
 const CITY_TEL: Record<(typeof CITY_KEYS)[number], string> = {
   yaounde: '+237658651050',
-  ouaga: '+22655212293',
+  ouaga: '+22665565411',
   ndjamena: '+23564940372',
 };
 const FAQ_KEYS = ['q1', 'q2', 'q3'] as const;

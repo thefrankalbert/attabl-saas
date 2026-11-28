@@ -143,21 +143,21 @@ describe('loadSupportContact', () => {
 
 describe('numero du support', () => {
   it('normalise l affichage et garde les chiffres pour wa.me et tel:', () => {
-    expect(toSupportContact('  226  55 21 22 93 ')).toEqual({
-      display: '+226 55 21 22 93',
-      digits: '22655212293',
+    expect(toSupportContact('  226  65 56 54 11 ')).toEqual({
+      display: '+226 65 56 54 11',
+      digits: '22665565411',
     });
   });
 
   it('accepte un numero international et refuse lettres, trop court ou trop long', () => {
-    expect(supportContactSchema.safeParse({ phone: '+226 55 21 22 93' }).success).toBe(true);
+    expect(supportContactSchema.safeParse({ phone: '+226 65 56 54 11' }).success).toBe(true);
     expect(supportContactSchema.safeParse({ phone: '+226 55 21 abc' }).success).toBe(false);
     expect(supportContactSchema.safeParse({ phone: '+226 55' }).success).toBe(false);
     expect(supportContactSchema.safeParse({ phone: '+1234567890123456' }).success).toBe(false);
     // Sans "+" et indicatif, wa.me et tel: viseraient un autre pays.
     expect(supportContactSchema.safeParse({ phone: '70 12 34 56' }).success).toBe(false);
-    expect(supportContactSchema.safeParse({ phone: '00226 55 21 22 93' }).success).toBe(false);
-    expect(supportContactSchema.safeParse({ phone: '+0226 55 21 22 93' }).success).toBe(false);
+    expect(supportContactSchema.safeParse({ phone: '00226 65 56 54 11' }).success).toBe(false);
+    expect(supportContactSchema.safeParse({ phone: '+0226 65 56 54 11' }).success).toBe(false);
   });
 });
 
@@ -167,7 +167,7 @@ describe('saveSupportContact', () => {
     const chain = {
       select: () => chain,
       eq: () => chain,
-      maybeSingle: async () => ({ data: { value: { phone: '+226 55 21 22 93' } }, error: null }),
+      maybeSingle: async () => ({ data: { value: { phone: '+226 65 56 54 11' } }, error: null }),
     };
     const client = {
       from: (table: string) => ({
@@ -196,7 +196,7 @@ describe('saveSupportContact', () => {
         row: expect.objectContaining({
           action: 'update_support_contact',
           actor_user_id: 'u1',
-          metadata: { from: '+226 55 21 22 93', to: '+237 6 99 00 11 22' },
+          metadata: { from: '+226 65 56 54 11', to: '+237 6 99 00 11 22' },
         }),
       }),
     ]);
